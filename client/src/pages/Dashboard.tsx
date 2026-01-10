@@ -1,0 +1,161 @@
+import { useStats } from "@/hooks/use-stats";
+import { useAuth } from "@/hooks/use-auth";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { Wallet, TrendingUp, TrendingDown, Plus, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TransactionForm } from "@/components/transactions/TransactionForm";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from "recharts";
+import { format } from "date-fns";
+
+export default function Dashboard() {
+  const { user, isLoading: authLoading } = useAuth();
+  const { data: stats, isLoading: statsLoading } = useStats();
+
+  if (authLoading || statsLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Calculate generic chart data from stats if available, else placeholders
+  const COLORS = ['#0891b2', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'];
+  const expenseData = stats?.expensesByCategory.map((item) => ({
+    name: item.category,
+    value: Number(item.amount)
+  })) || [];
+
+  return (
+    <div className="flex min-h-screen bg-background">
+      <Sidebar />
+      <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+        <div className="max-w-7xl mx-auto space-y-8">
+          
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl lg:text-4xl font-display font-bold text-foreground">
+                Welcome back, {user?.firstName || "Friend"}! 👋
+              </h1>
+              <p className="text-muted-foreground mt-1">Here's what your finances look like today.</p>
+            </div>
+            <TransactionForm>
+              <Button size="lg" className="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
+                <Plus className="mr-2 w-5 h-5" />
+                New Transaction
+              </Button>
+            </TransactionForm>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <StatCard 
+              title="Total Balance" 
+              value={`$${stats?.balance.toFixed(2) || "0.00"}`} 
+              icon={Wallet} 
+              variant="primary"
+            />
+            <StatCard 
+              title="Total Income" 
+              value={`$${stats?.totalIncome.toFixed(2) || "0.00"}`} 
+              icon={TrendingUp} 
+              trend="+12%" 
+              trendUp={true}
+            />
+            <StatCard 
+              title="Total Expenses" 
+              value={`$${stats?.totalExpenses.toFixed(2) || "0.00"}`} 
+              icon={TrendingDown} 
+              trend="-5%" 
+              trendUp={true}
+            />
+          </div>
+
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Expense Breakdown */}
+            <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/50">
+              <h3 className="font-display text-xl font-bold mb-6">Expense Breakdown</h3>
+              <div className="h-[300px] w-full">
+                {expenseData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={expenseData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {expenseData.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
+                      <Legend verticalAlign="bottom" height={36}/>
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-muted-foreground bg-muted/20 rounded-xl border border-dashed border-muted">
+                    No expense data yet
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Recent Activity List (Simplified for dashboard) */}
+            <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/50 flex flex-col">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-display text-xl font-bold">Recent Activity</h3>
+                <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80">View All</Button>
+              </div>
+              <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                {stats?.recentTransactions && stats.recentTransactions.length > 0 ? (
+                  stats.recentTransactions.map((tx) => (
+                    <div key={tx.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/30 transition-colors group">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-secondary/20 text-secondary-foreground flex items-center justify-center text-lg">
+                          {tx.category?.icon ? <span dangerouslySetInnerHTML={{__html: tx.category.icon}}/> : (tx.amount > 0 ? '💰' : '💸')}
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">{tx.description || "Untitled Transaction"}</p>
+                          <p className="text-xs text-muted-foreground">{format(new Date(tx.date), 'MMM d, yyyy')}</p>
+                        </div>
+                      </div>
+                      <span className={`font-mono font-medium ${Number(tx.amount) > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                        {Number(tx.amount) > 0 ? '+' : ''}${Math.abs(Number(tx.amount)).toFixed(2)}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground text-center py-8">
+                    <p>No recent activity.</p>
+                    <TransactionForm>
+                      <Button variant="link" className="mt-2 text-primary">Create your first transaction</Button>
+                    </TransactionForm>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  );
+}
