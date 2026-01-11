@@ -4,7 +4,6 @@ import { storage } from "./storage";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { seedDatabase } from "./seed";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -108,6 +107,46 @@ export async function registerRoutes(
     res.status(204).end();
   });
 
+  // Cards
+  app.get(api.cards.list.path, isAuthenticated, async (req, res) => {
+    const userId = (req.user as any).claims.sub;
+    const cards = await storage.getLinkedCards(userId);
+    res.json(cards);
+  });
+
+  app.post(api.cards.link.path, isAuthenticated, async (req, res) => {
+    const userId = (req.user as any).claims.sub;
+    const { cardNumber, bankName } = api.cards.link.input.parse(req.body);
+    const lastFour = cardNumber.slice(-4);
+    
+    const card = await storage.linkCard({ userId, lastFour, bankName });
+
+    // Mock sync: Create realistic Bahamian transactions
+    const mockTransactions = [
+      { amount: "12.50", description: "Super Value Food Store", category: "Food & Dining" },
+      { amount: "45.00", description: "Rubis Gas Station", category: "Transportation" },
+      { amount: "8.00", description: "Starbucks Nassau", category: "Food & Dining" },
+      { amount: "120.00", description: "Bahamas Power & Light", category: "Bills & Utilities" },
+      { amount: "25.00", description: "Quality Home Centre", category: "Housing" },
+    ];
+
+    const categoriesList = await storage.getCategories(userId);
+    for (const mock of mockTransactions) {
+      const category = categoriesList.find(c => c.name === mock.category);
+      await storage.createTransaction({
+        userId,
+        amount: mock.amount,
+        description: mock.description,
+        categoryId: category?.id,
+        date: new Date(),
+        isAutoSynced: true,
+        currency: "BSD"
+      });
+    }
+
+    res.status(201).json(card);
+  });
+
   // Dashboard Stats
   app.get(api.stats.get.path, isAuthenticated, async (req, res) => {
     const userId = (req.user as any).claims.sub;
@@ -118,9 +157,6 @@ export async function registerRoutes(
     const stats = await storage.getDashboardStats(userId, filters);
     res.json(stats);
   });
-
-  // Seed default categories for new users
-  await seedDatabase();
 
   return httpServer;
 }

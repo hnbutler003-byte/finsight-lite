@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertTransactionSchema, insertCategorySchema, insertBudgetSchema, transactions, categories, budgets } from './schema';
+import { insertTransactionSchema, insertCategorySchema, insertBudgetSchema, insertLinkedCardSchema, transactions, categories, budgets, linkedCards } from './schema';
 
 // ============================================
 // SHARED ERROR SCHEMAS
@@ -108,6 +108,29 @@ export const api = {
       },
     },
   },
+  cards: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/cards',
+      responses: {
+        200: z.array(z.custom<typeof linkedCards.$inferSelect>()),
+        401: errorSchemas.unauthorized,
+      },
+    },
+    link: {
+      method: 'POST' as const,
+      path: '/api/cards/link',
+      input: z.object({
+        cardNumber: z.string().min(16).max(16),
+        bankName: z.string(),
+      }),
+      responses: {
+        201: z.custom<typeof linkedCards.$inferSelect>(),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+      },
+    },
+  },
   stats: {
     get: {
       method: 'GET' as const,
@@ -126,6 +149,7 @@ export const api = {
             amount: z.number(),
             color: z.string().optional(),
           })),
+          isCardLinked: z.boolean(),
         }),
         401: errorSchemas.unauthorized,
       },
@@ -148,3 +172,4 @@ export function buildUrl(path: string, params?: Record<string, string | number>)
 export type TransactionResponse = z.infer<typeof api.transactions.list.responses[200]>[number];
 export type CategoryResponse = z.infer<typeof api.categories.list.responses[200]>[number];
 export type BudgetResponse = z.infer<typeof api.budgets.list.responses[200]>[number];
+export type CardResponse = z.infer<typeof api.cards.list.responses[200]>[number];

@@ -27,6 +27,7 @@ export const transactions = pgTable("transactions", {
   categoryId: integer("category_id").references(() => categories.id),
   date: timestamp("date").notNull(),
   description: text("description"),
+  isAutoSynced: boolean("is_auto_synced").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -36,6 +37,14 @@ export const budgets = pgTable("budgets", {
   categoryId: integer("category_id").notNull().references(() => categories.id),
   amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
   period: text("period").default("monthly").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const linkedCards = pgTable("linked_cards", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  lastFour: text("last_four").notNull(),
+  bankName: text("bank_name").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -72,10 +81,18 @@ export const budgetsRelations = relations(budgets, ({ one }) => ({
   }),
 }));
 
+export const linkedCardsRelations = relations(linkedCards, ({ one }) => ({
+  user: one(users, {
+    fields: [linkedCards.userId],
+    references: [users.id],
+  }),
+}));
+
 export const usersRelations = relations(users, ({ many }) => ({
   transactions: many(transactions),
   budgets: many(budgets),
   customCategories: many(categories),
+  linkedCards: many(linkedCards),
 }));
 
 // === BASE SCHEMAS ===
@@ -83,22 +100,19 @@ export const usersRelations = relations(users, ({ many }) => ({
 export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
 export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true, createdAt: true });
 export const insertBudgetSchema = createInsertSchema(budgets).omit({ id: true, createdAt: true });
+export const insertLinkedCardSchema = createInsertSchema(linkedCards).omit({ id: true, createdAt: true });
 
 // === EXPLICIT API CONTRACT TYPES ===
 
 export type Category = typeof categories.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
 export type Budget = typeof budgets.$inferSelect;
+export type LinkedCard = typeof linkedCards.$inferSelect;
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type InsertBudget = z.infer<typeof insertBudgetSchema>;
-
-export type CreateTransactionRequest = InsertTransaction;
-export type UpdateTransactionRequest = Partial<InsertTransaction>;
-
-export type CreateBudgetRequest = InsertBudget;
-export type UpdateBudgetRequest = Partial<InsertBudget>;
+export type InsertLinkedCard = z.infer<typeof insertLinkedCardSchema>;
 
 // API Responses
 export type TransactionResponse = Transaction & { category?: Category };
@@ -110,4 +124,5 @@ export type DashboardStats = {
   balance: number;
   recentTransactions: TransactionResponse[];
   expensesByCategory: { category: string; amount: number; color?: string }[];
+  isCardLinked: boolean;
 };

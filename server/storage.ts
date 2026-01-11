@@ -1,23 +1,20 @@
 import { 
-  users, categories, transactions, budgets,
+  users, categories, transactions, budgets, linkedCards,
   type User, type InsertUser,
   type Category, type InsertCategory,
   type Transaction, type InsertTransaction,
   type Budget, type InsertBudget,
-  type DashboardStats,
-  type CreateTransactionRequest,
-  type CreateBudgetRequest
+  type LinkedCard, type InsertLinkedCard,
+  type DashboardStats
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, gte, lte } from "drizzle-orm";
 import { authStorage, type IAuthStorage } from "./replit_integrations/auth/storage";
 
 export interface IStorage extends IAuthStorage {
-  // Categories
   getCategories(userId: string): Promise<Category[]>;
   createCategory(category: InsertCategory): Promise<Category>;
   
-  // Transactions
   getTransactions(userId: string, filters?: { 
     startDate?: string, 
     endDate?: string, 
@@ -27,17 +24,17 @@ export interface IStorage extends IAuthStorage {
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   deleteTransaction(id: number, userId: string): Promise<void>;
   
-  // Budgets
   getBudgets(userId: string): Promise<(Budget & { category: Category | null })[]>;
   createBudget(budget: InsertBudget): Promise<Budget>;
   deleteBudget(id: number, userId: string): Promise<void>;
 
-  // Dashboard
+  getLinkedCards(userId: string): Promise<LinkedCard[]>;
+  linkCard(card: InsertLinkedCard): Promise<LinkedCard>;
+
   getDashboardStats(userId: string, filters?: { startDate?: string, endDate?: string }): Promise<DashboardStats>;
 }
 
 export class DatabaseStorage implements IStorage {
-  // Auth methods delegated to authStorage
   getUser(id: string): Promise<User | undefined> {
     return authStorage.getUser(id);
   }
@@ -45,7 +42,6 @@ export class DatabaseStorage implements IStorage {
     return authStorage.upsertUser(user);
   }
 
-  // Categories
   async getCategories(userId: string): Promise<Category[]> {
     return await db.select().from(categories)
       .where(sql`${categories.userId} = ${userId} OR ${categories.userId} IS NULL`);
@@ -56,7 +52,6 @@ export class DatabaseStorage implements IStorage {
     return newCategory;
   }
 
-  // Transactions
   async getTransactions(userId: string, filters?: { 
     startDate?: string, 
     endDate?: string, 
@@ -64,16 +59,9 @@ export class DatabaseStorage implements IStorage {
     limit?: number 
   }): Promise<(Transaction & { category: Category | null })[]> {
     let conditions = [eq(transactions.userId, userId)];
-    
-    if (filters?.startDate) {
-      conditions.push(gte(transactions.date, new Date(filters.startDate)));
-    }
-    if (filters?.endDate) {
-      conditions.push(lte(transactions.date, new Date(filters.endDate)));
-    }
-    if (filters?.categoryId) {
-      conditions.push(eq(transactions.categoryId, filters.categoryId));
-    }
+    if (filters?.startDate) conditions.push(gte(transactions.date, new Date(filters.startDate)));
+    if (filters?.endDate) conditions.push(lte(transactions.date, new Date(filters.endDate)));
+    if (filters?.categoryId) conditions.push(eq(transactions.categoryId, filters.categoryId));
 
     const query = db.select({
       transaction: transactions,
@@ -84,9 +72,7 @@ export class DatabaseStorage implements IStorage {
     .where(and(...conditions))
     .orderBy(desc(transactions.date));
 
-    if (filters?.limit) {
-      query.limit(filters.limit);
-    }
+    if (filters?.limit) query.limit(filters.limit);
 
     const results = await query;
     return results.map(r => ({ ...r.transaction, category: r.category }));
@@ -102,7 +88,6 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(transactions.id, id), eq(transactions.userId, userId)));
   }
 
-  // Budgets
   async getBudgets(userId: string): Promise<(Budget & { category: Category | null })[]> {
     const results = await db.select({
       budget: budgets,
@@ -111,7 +96,6 @@ export class DatabaseStorage implements IStorage {
     .from(budgets)
     .leftJoin(categories, eq(budgets.categoryId, categories.id))
     .where(eq(budgets.userId, userId));
-
     return results.map(r => ({ ...r.budget, category: r.category }));
   }
 
@@ -125,7 +109,15 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(budgets.id, id), eq(budgets.userId, userId)));
   }
 
-  // Dashboard
+  async getLinkedCards(userId: string): Promise<LinkedCard[]> {
+    return await db.select().from(linkedCards).where(eq(linkedCards.userId, userId));
+  }
+
+  async linkCard(card: InsertLinkedCard): Promise<LinkedCard> {
+    const [newCard] = await db.insert(linkedCards).values(card).returning();
+    return newCard;
+  }
+
   async getDashboardStats(userId: string, filters?: { startDate?: string, endDate?: string }): Promise<DashboardStats> {
     let dateCondition = sql`TRUE`;
     if (filters?.startDate && filters?.endDate) {
@@ -135,7 +127,6 @@ export class DatabaseStorage implements IStorage {
       )!;
     }
 
-    // Calculate totals
     const totals = await db.select({
       type: categories.type,
       total: sql<number>`sum(${transactions.amount})`
@@ -147,18 +138,15 @@ export class DatabaseStorage implements IStorage {
 
     let totalIncome = 0;
     let totalExpenses = 0;
-
     totals.forEach(t => {
       if (t.type === 'income') totalIncome += Number(t.total);
       if (t.type === 'expense') totalExpenses += Number(t.total);
     });
 
     const balance = totalIncome - totalExpenses;
-
-    // Get recent transactions
     const recentTransactions = await this.getTransactions(userId, { limit: 5 });
+    const cards = await this.getLinkedCards(userId);
 
-    // Expenses by category
     const expensesByCategoryResult = await db.select({
       category: categories.name,
       amount: sql<number>`sum(${transactions.amount})`,
@@ -166,25 +154,20 @@ export class DatabaseStorage implements IStorage {
     })
     .from(transactions)
     .leftJoin(categories, eq(transactions.categoryId, categories.id))
-    .where(and(
-      eq(transactions.userId, userId), 
-      eq(categories.type, 'expense'),
-      dateCondition
-    ))
+    .where(and(eq(transactions.userId, userId), eq(categories.type, 'expense'), dateCondition))
     .groupBy(categories.id, categories.name, categories.color);
     
-    const expensesByCategory = expensesByCategoryResult.map(item => ({
-      category: item.category || 'Uncategorized',
-      amount: Number(item.amount),
-      color: item.color || undefined
-    }));
-
     return {
       totalIncome,
       totalExpenses,
       balance,
       recentTransactions,
-      expensesByCategory
+      expensesByCategory: expensesByCategoryResult.map(item => ({
+        category: item.category || 'Uncategorized',
+        amount: Number(item.amount),
+        color: item.color || undefined
+      })),
+      isCardLinked: cards.length > 0
     };
   }
 }
