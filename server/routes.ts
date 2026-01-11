@@ -1,5 +1,5 @@
-import type { Express } from "express";
-import { createServer, type Server } from "http";
+import { Express } from "express";
+import { Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { api } from "@shared/routes";
@@ -31,7 +31,12 @@ export async function registerRoutes(
   app.post(api.transactions.create.path, isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).claims.sub;
-      const input = api.transactions.create.input.parse(req.body);
+      // Coerce numeric fields for robustness since they might come as strings or numbers from forms
+      const bodySchema = api.transactions.create.input.extend({
+        amount: z.coerce.string(), // numeric columns in pg are strings in JS/TS but we want to validate it's a valid decimal string
+        categoryId: z.coerce.number().optional(),
+      });
+      const input = bodySchema.parse(req.body);
       const transaction = await storage.createTransaction({ ...input, userId });
       res.status(201).json(transaction);
     } catch (err) {
@@ -86,7 +91,11 @@ export async function registerRoutes(
   app.post(api.budgets.create.path, isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).claims.sub;
-      const input = api.budgets.create.input.parse(req.body);
+      const bodySchema = api.budgets.create.input.extend({
+        amount: z.coerce.string(),
+        categoryId: z.coerce.number(),
+      });
+      const input = bodySchema.parse(req.body);
       const budget = await storage.createBudget({ ...input, userId });
       res.status(201).json(budget);
     } catch (err) {
