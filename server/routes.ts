@@ -31,10 +31,11 @@ export async function registerRoutes(
   app.post(api.transactions.create.path, isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).claims.sub;
-      // Coerce numeric fields for robustness since they might come as strings or numbers from forms
+      // Coerce numeric fields and date for robustness
       const bodySchema = api.transactions.create.input.extend({
-        amount: z.coerce.string(), // numeric columns in pg are strings in JS/TS but we want to validate it's a valid decimal string
+        amount: z.coerce.string(),
         categoryId: z.coerce.number().optional(),
+        date: z.coerce.date(), // Handle date strings from frontend
       });
       const input = bodySchema.parse(req.body);
       const transaction = await storage.createTransaction({ ...input, userId });
