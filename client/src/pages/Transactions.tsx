@@ -1,7 +1,7 @@
 import { useTransactions, useDeleteTransaction } from "@/hooks/use-transactions";
 import { useCategories } from "@/hooks/use-categories";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { Loader2, Trash2, Filter } from "lucide-react";
+import { Loader2, Trash2, Filter, HelpCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
@@ -12,6 +12,12 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useState } from "react";
 import {
   AlertDialog,
@@ -43,21 +49,44 @@ export default function Transactions() {
               <p className="text-muted-foreground">Manage and track every dollar.</p>
             </div>
             <div className="flex gap-2">
-               <Select onValueChange={(val) => setCategoryFilter(val === 'all' ? undefined : val)}>
-                <SelectTrigger className="w-[180px] bg-white">
-                  <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
-                  <SelectValue placeholder="Filter Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories?.map(c => (
-                    <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <TransactionForm>
-                <Button>Add New</Button>
-              </TransactionForm>
+               <TooltipProvider>
+                 <Tooltip>
+                   <TooltipTrigger asChild>
+                     <div>
+                       <Select onValueChange={(val) => setCategoryFilter(val === 'all' ? undefined : val)}>
+                        <SelectTrigger className="w-[180px] bg-white">
+                          <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
+                          <SelectValue placeholder="Filter Category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Categories</SelectItem>
+                          {categories?.map(c => (
+                            <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                     </div>
+                   </TooltipTrigger>
+                   <TooltipContent>
+                     <p>Filter your transactions by category</p>
+                   </TooltipContent>
+                 </Tooltip>
+               </TooltipProvider>
+
+               <TooltipProvider>
+                 <Tooltip>
+                   <TooltipTrigger asChild>
+                     <div>
+                      <TransactionForm>
+                        <Button>Add New</Button>
+                      </TransactionForm>
+                     </div>
+                   </TooltipTrigger>
+                   <TooltipContent>
+                     <p>Record a new income or expense</p>
+                   </TooltipContent>
+                 </Tooltip>
+               </TooltipProvider>
             </div>
           </div>
 
@@ -99,11 +128,20 @@ export default function Transactions() {
                         </td>
                         <td className="px-6 py-4 text-center">
                           <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Remove this record</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Delete Transaction?</AlertDialogTitle>

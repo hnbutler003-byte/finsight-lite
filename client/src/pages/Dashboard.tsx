@@ -2,15 +2,21 @@ import { useStats } from "@/hooks/use-stats";
 import { useAuth } from "@/hooks/use-auth";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { Wallet, TrendingUp, TrendingDown, Plus, Loader2 } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Plus, Loader2, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   BarChart,
   Bar,
   XAxis,
   YAxis,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -52,12 +58,23 @@ export default function Dashboard() {
               </h1>
               <p className="text-muted-foreground mt-1">Here's what your finances look like today.</p>
             </div>
-            <TransactionForm>
-              <Button size="lg" className="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
-                <Plus className="mr-2 w-5 h-5" />
-                New Transaction
-              </Button>
-            </TransactionForm>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <TransactionForm>
+                      <Button size="lg" className="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
+                        <Plus className="mr-2 w-5 h-5" />
+                        New Transaction
+                      </Button>
+                    </TransactionForm>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Manually log cash income or expenses</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
 
           {/* Stats Grid */}
@@ -67,6 +84,7 @@ export default function Dashboard() {
               value={`$${stats?.balance.toFixed(2) || "0.00"}`} 
               icon={Wallet} 
               variant="primary"
+              description="Your current net worth in BSD"
             />
             <StatCard 
               title="Total Income" 
@@ -74,6 +92,7 @@ export default function Dashboard() {
               icon={TrendingUp} 
               trend="+12%" 
               trendUp={true}
+              description="Total money received this period"
             />
             <StatCard 
               title="Total Expenses" 
@@ -81,6 +100,7 @@ export default function Dashboard() {
               icon={TrendingDown} 
               trend="-5%" 
               trendUp={true}
+              description="Total money spent this period"
             />
           </div>
 
@@ -88,7 +108,19 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Expense Breakdown */}
             <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/50">
-              <h3 className="font-display text-xl font-bold mb-6">Expense Breakdown</h3>
+              <div className="flex items-center gap-2 mb-6">
+                <h3 className="font-display text-xl font-bold">Expense Breakdown</h3>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>See where your money goes at a glance</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <div className="h-[300px] w-full">
                 {expenseData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -106,7 +138,7 @@ export default function Dashboard() {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
+                      <RechartsTooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
                       <Legend verticalAlign="bottom" height={36}/>
                     </PieChart>
                   </ResponsiveContainer>

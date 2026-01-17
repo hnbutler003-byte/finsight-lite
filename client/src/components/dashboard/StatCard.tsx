@@ -1,5 +1,11 @@
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface StatCardProps {
   title: string;
@@ -8,18 +14,19 @@ interface StatCardProps {
   trendUp?: boolean;
   icon: LucideIcon;
   variant?: "default" | "primary" | "secondary";
+  description?: string;
 }
 
-export function StatCard({ title, value, trend, trendUp, icon: Icon, variant = "default" }: StatCardProps) {
+export function StatCard({ title, value, trend, trendUp, icon: Icon, variant = "default", description }: StatCardProps) {
   const variants = {
     default: "bg-white border-border/50 hover:border-primary/20",
     primary: "bg-primary text-primary-foreground border-transparent",
     secondary: "bg-secondary/20 border-secondary/20 hover:border-secondary",
   };
 
-  return (
+  const cardContent = (
     <div className={cn(
-      "p-6 rounded-2xl border shadow-sm transition-all duration-300 hover:shadow-md",
+      "p-6 rounded-2xl border shadow-sm transition-all duration-300 hover:shadow-md h-full cursor-help",
       variants[variant]
     )}>
       <div className="flex items-start justify-between">
@@ -48,5 +55,20 @@ export function StatCard({ title, value, trend, trendUp, icon: Icon, variant = "
         </div>
       )}
     </div>
+  );
+
+  if (!description) return cardContent;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {cardContent}
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{description}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
