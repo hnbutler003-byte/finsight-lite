@@ -178,7 +178,7 @@ export default function Dashboard() {
                   <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground text-center py-8">
                     <p>No recent activity.</p>
                     <TransactionForm>
-                      <Button variant="link" className="mt-2 text-primary">Create your first transaction</Button>
+                      <Button variant="ghost" className="mt-2 text-primary p-0 h-auto font-medium hover:bg-transparent">Create your first transaction</Button>
                     </TransactionForm>
                   </div>
                 )}

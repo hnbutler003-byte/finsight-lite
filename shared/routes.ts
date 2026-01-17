@@ -144,6 +144,7 @@ export const api = {
           totalIncome: z.number(),
           totalExpenses: z.number(),
           balance: z.number(),
+          recentTransactions: z.array(z.custom<typeof transactions.$inferSelect & { category?: typeof categories.$inferSelect }>()),
           expensesByCategory: z.array(z.object({
             category: z.string(),
             amount: z.number(),

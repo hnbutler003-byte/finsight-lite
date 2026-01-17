@@ -21,7 +21,8 @@ export function useStats(filters?: { startDate?: string; endDate?: string }) {
       }
       
       if (!res.ok) throw new Error("Failed to fetch stats");
-      return api.stats.get.responses[200].parse(await res.json());
+      const data = await res.json();
+      return api.stats.get.responses[200].parse(data);
     },
   });
 }
