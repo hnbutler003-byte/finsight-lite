@@ -106,6 +106,8 @@ export const insertLinkedCardSchema = createInsertSchema(linkedCards).omit({ id:
 
 // === EXPLICIT API CONTRACT TYPES ===
 
+export type User = typeof users.$inferSelect;
+export type UpsertUser = typeof users.$inferInsert;
 export type Category = typeof categories.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
 export type Budget = typeof budgets.$inferSelect;

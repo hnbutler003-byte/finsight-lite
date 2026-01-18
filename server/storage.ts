@@ -49,7 +49,7 @@ export class DatabaseStorage implements IStorage {
   getUser(id: string): Promise<User | undefined> {
     return authStorage.getUser(id);
   }
-  upsertUser(user: InsertUser): Promise<User> {
+  upsertUser(user: UpsertUser): Promise<User> {
     return authStorage.upsertUser(user);
   }
 
@@ -115,7 +115,7 @@ export class DatabaseStorage implements IStorage {
     if (filters?.limit) query.limit(filters.limit);
 
     const results = await query;
-    return results.map(r => ({ ...r.transaction, category: r.category }));
+    return results.map(r => ({ ...r.transaction, category: r.category || undefined }));
   }
 
   async createTransaction(transaction: InsertTransaction): Promise<Transaction> {

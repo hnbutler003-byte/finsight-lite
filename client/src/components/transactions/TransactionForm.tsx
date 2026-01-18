@@ -34,6 +34,7 @@ export function TransactionForm({ children, transaction }: { children: React.Rea
       date: transaction ? new Date(transaction.date) : new Date(),
       currency: transaction?.currency || "BSD",
       userId: transaction?.userId || "current", 
+      categoryId: transaction?.categoryId || undefined,
     },
   });
 

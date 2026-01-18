@@ -58,6 +58,17 @@ export const api = {
         401: errorSchemas.unauthorized,
       },
     },
+    update: {
+      method: 'PATCH' as const,
+      path: '/api/transactions/:id',
+      input: insertTransactionSchema.partial(),
+      responses: {
+        200: z.custom<typeof transactions.$inferSelect>(),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+        404: errorSchemas.notFound,
+      },
+    },
   },
   categories: {
     list: {

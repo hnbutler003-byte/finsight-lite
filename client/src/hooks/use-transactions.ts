@@ -1,7 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, buildUrl, type CreateTransactionRequest } from "@shared/routes";
+import { api, buildUrl } from "@shared/routes";
 import { isUnauthorizedError, redirectToLogin } from "@/lib/auth-utils";
 import { useToast } from "@/hooks/use-toast";
+import type { insertTransactionSchema } from "@shared/schema";
+import { z } from "zod";
+
+type CreateTransactionRequest = z.infer<typeof insertTransactionSchema>;
 
 export function useTransactions(filters?: { startDate?: string; endDate?: string; categoryId?: string; limit?: number }) {
   const { toast } = useToast();
@@ -92,7 +96,7 @@ export function useUpdateTransaction() {
         throw new Error(error.message || "Failed to update transaction");
       }
 
-      return api.transactions.update.responses[200].parse(await res.json());
+      return await res.json() as any;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.transactions.list.path] });
