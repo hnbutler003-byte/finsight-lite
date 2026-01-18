@@ -119,8 +119,9 @@ export default function Transactions() {
                         </td>
                         <td className="px-6 py-4 font-medium">{tx.description}</td>
                         <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary/10 text-secondary-foreground">
-                            {tx.category?.name || 'Uncategorized'}
+                          <span className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary/10 text-secondary-foreground">
+                            <span>{tx.category?.icon || '📁'}</span>
+                            <span>{tx.category?.name || 'Uncategorized'}</span>
                           </span>
                         </td>
                         <td className={`px-6 py-4 text-right font-mono font-medium ${Number(tx.amount) > 0 ? 'text-green-600' : 'text-red-500'}`}>

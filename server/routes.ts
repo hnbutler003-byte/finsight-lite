@@ -43,7 +43,13 @@ export async function registerRoutes(
         response_format: { type: "json_object" }
       });
 
-      res.json(JSON.parse(response.choices[0].message.content || "{}"));
+      const content = response.choices[0].message.content || "{}";
+      const parsed = JSON.parse(content);
+      
+      // Ensure the response has the 'insights' field even if AI returns a different root
+      const result = parsed.insights ? parsed : { insights: Object.values(parsed).filter(v => Array.isArray(v))[0] || [] };
+      
+      res.json(result);
     } catch (err) {
       console.error("AI Insight error:", err);
       res.status(500).json({ message: "Failed to generate insights" });
