@@ -35,6 +35,8 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   return <Component />;
 }
 
+import Reports from "@/pages/Reports";
+
 function Router() {
   const { user, isLoading } = useAuth();
 
@@ -60,12 +62,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/transactions" component={Transactions} />
       <Route path="/budgets" component={Budgets} />
-      {/* Reports could be a separate page or part of dashboard, placeholder for now */}
-      <Route path="/reports" component={() => (
-        <div className="p-8 flex items-center justify-center h-screen text-muted-foreground">
-          Coming Soon
-        </div>
-      )} />
+      <Route path="/reports" component={Reports} />
       <Route component={NotFound} />
     </Switch>
   );

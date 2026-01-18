@@ -5,6 +5,11 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { api } from "@shared/routes";
 import { z } from "zod";
 
+import { registerChatRoutes } from "./replit_integrations/chat";
+import { registerImageRoutes } from "./replit_integrations/image";
+import { registerAudioRoutes } from "./replit_integrations/audio";
+import { openai } from "./replit_integrations/chat/routes";
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -13,8 +18,38 @@ export async function registerRoutes(
   await setupAuth(app);
   registerAuthRoutes(app);
 
+  // OpenAI integration routes
+  registerChatRoutes(app);
+  registerImageRoutes(app);
+  registerAudioRoutes(app);
+
   // Protected API routes
   
+  // AI Insights
+  app.get("/api/ai/insights", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const transactions = await storage.getTransactions(userId, { limit: 100 });
+      const budgets = await storage.getBudgets(userId);
+      
+      const prompt = `Analyze this user's spending data for the past 3 months. Identify unusual patterns, trends, or habits. For each insight, explain the behavior and suggest one actionable step. 
+      Also compare habits against budgets. 
+      Data: ${JSON.stringify({ transactions, budgets })}
+      Format as a list of insights with 'title', 'behavior', and 'suggestion'.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "system", content: "You are a financial advisor for FinSight users in the Bahamas." }, { role: "user", content: prompt }],
+        response_format: { type: "json_object" }
+      });
+
+      res.json(JSON.parse(response.choices[0].message.content || "{}"));
+    } catch (err) {
+      console.error("AI Insight error:", err);
+      res.status(500).json({ message: "Failed to generate insights" });
+    }
+  });
+
   // Transactions
   app.get(api.transactions.list.path, isAuthenticated, async (req, res) => {
     const userId = (req.user as any).claims.sub;

@@ -95,6 +95,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   linkedCards: many(linkedCards),
 }));
 
+export * from "./models/chat";
+
 // === BASE SCHEMAS ===
 
 export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });

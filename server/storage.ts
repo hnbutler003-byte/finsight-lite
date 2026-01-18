@@ -5,11 +5,13 @@ import {
   type Transaction, type InsertTransaction,
   type Budget, type InsertBudget,
   type LinkedCard, type InsertLinkedCard,
-  type DashboardStats
+  type DashboardStats,
+  type Conversation, type Message
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, gte, lte } from "drizzle-orm";
 import { authStorage, type IAuthStorage } from "./replit_integrations/auth/storage";
+import { conversations, messages } from "@shared/models/chat";
 
 export interface IStorage extends IAuthStorage {
   getCategories(userId: string): Promise<Category[]>;
@@ -32,6 +34,14 @@ export interface IStorage extends IAuthStorage {
   linkCard(card: InsertLinkedCard): Promise<LinkedCard>;
 
   getDashboardStats(userId: string, filters?: { startDate?: string, endDate?: string }): Promise<DashboardStats>;
+
+  // Chat integration
+  getConversation(id: number): Promise<Conversation | undefined>;
+  getAllConversations(): Promise<Conversation[]>;
+  createConversation(title: string): Promise<Conversation>;
+  deleteConversation(id: number): Promise<void>;
+  getMessagesByConversation(conversationId: number): Promise<Message[]>;
+  createMessage(conversationId: number, role: string, content: string): Promise<Message>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -40,6 +50,35 @@ export class DatabaseStorage implements IStorage {
   }
   upsertUser(user: InsertUser): Promise<User> {
     return authStorage.upsertUser(user);
+  }
+
+  // Chat methods
+  async getConversation(id: number): Promise<Conversation | undefined> {
+    const [conversation] = await db.select().from(conversations).where(eq(conversations.id, id));
+    return conversation;
+  }
+
+  async getAllConversations(): Promise<Conversation[]> {
+    return await db.select().from(conversations).orderBy(desc(conversations.createdAt));
+  }
+
+  async createConversation(title: string): Promise<Conversation> {
+    const [conversation] = await db.insert(conversations).values({ title }).returning();
+    return conversation;
+  }
+
+  async deleteConversation(id: number): Promise<void> {
+    await db.delete(messages).where(eq(messages.conversationId, id));
+    await db.delete(conversations).where(eq(conversations.id, id));
+  }
+
+  async getMessagesByConversation(conversationId: number): Promise<Message[]> {
+    return await db.select().from(messages).where(eq(messages.conversationId, conversationId)).orderBy(messages.createdAt);
+  }
+
+  async createMessage(conversationId: number, role: string, content: string): Promise<Message> {
+    const [message] = await db.insert(messages).values({ conversationId, role, content }).returning();
+    return message;
   }
 
   async getCategories(userId: string): Promise<Category[]> {
