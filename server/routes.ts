@@ -39,7 +39,7 @@ export async function registerRoutes(
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
-        messages: [{ role: "system", content: "You are a financial advisor for FinSight users in the Bahamas." }, { role: "user", content: prompt }],
+        messages: [{ role: "system", content: "You are a financial advisor for FinSight users across the Caribbean." }, { role: "user", content: prompt }],
         response_format: { type: "json_object" }
       });
 

@@ -27,13 +27,13 @@ export default function AuthPage() {
             <span className="text-secondary">live your life.</span>
           </h1>
           <p className="text-primary-foreground/80 text-lg max-w-md leading-relaxed">
-            The simplest way to track expenses, set budgets, and achieve financial freedom in The Bahamas.
+            The simplest way to track expenses, set budgets, and achieve financial freedom across the Caribbean.
           </p>
         </div>
 
         <div className="relative z-10 space-y-4">
           {[
-            "Track BSD & USD transactions seamlessly",
+            "Track regional transactions seamlessly",
             "Visual insights into your spending habits",
             "Secure, bank-grade data protection"
           ].map((feature, i) => (

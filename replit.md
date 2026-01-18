@@ -2,7 +2,7 @@
 
 ## Overview
 
-FinSight is a personal finance management application designed for users in The Bahamas. It enables tracking of income and expenses, budget management, and financial insights through a modern web interface. The application supports BSD (Bahamian Dollar) and USD currencies, with features for categorizing transactions, setting budgets, and visualizing spending patterns.
+FinSight is a personal finance management application designed for users in The Bahamas and the wider Caribbean. It enables tracking of income and expenses, budget management, and financial insights through a modern web interface. The application supports BSD (Bahamian Dollar), USD, and other regional currencies, with features for categorizing transactions, setting budgets, and visualizing spending patterns.
 
 ## User Preferences
 
