@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCreateTransaction } from "@/hooks/use-transactions";
+import { useCreateTransaction, useUpdateTransaction } from "@/hooks/use-transactions";
 import { useCategories } from "@/hooks/use-categories";
-import { insertTransactionSchema } from "@shared/schema";
+import { insertTransactionSchema, type Transaction } from "@shared/schema";
 import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // Extend schema for form usage (coerce numbers)
 const formSchema = insertTransactionSchema.extend({
@@ -20,38 +20,53 @@ const formSchema = insertTransactionSchema.extend({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function TransactionForm({ children }: { children: React.ReactNode }) {
+export function TransactionForm({ children, transaction }: { children: React.ReactNode, transaction?: Transaction }) {
   const [open, setOpen] = useState(false);
-  const { mutate, isPending } = useCreateTransaction();
+  const { mutate: createTx, isPending: isCreating } = useCreateTransaction();
+  const { mutate: updateTx, isPending: isUpdating } = useUpdateTransaction();
   const { data: categories } = useCategories();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      amount: 0,
-      description: "",
-      date: new Date(),
-      currency: "BSD",
-      userId: "", // Will be set by backend from auth context if omitted, but schema might require it?
-                  // Wait, schema says userId is required string. 
-                  // HOWEVER, backend should inject userId from session.
-                  // Let's assume we pass a dummy string and backend overrides it, 
-                  // OR we can make it optional in schema if we could. 
-                  // Since we import schema directly, let's just pass a placeholder 
-                  // and ensure backend overwrites it.
-      userId: "current", 
+      amount: transaction ? Number(transaction.amount) : 0,
+      description: transaction?.description || "",
+      date: transaction ? new Date(transaction.date) : new Date(),
+      currency: transaction?.currency || "BSD",
+      userId: transaction?.userId || "current", 
     },
   });
 
-  // Filter categories by type? For now show all.
+  useEffect(() => {
+    if (transaction) {
+      form.reset({
+        amount: Number(transaction.amount),
+        description: transaction.description || "",
+        date: new Date(transaction.date),
+        currency: transaction.currency,
+        categoryId: transaction.categoryId || undefined,
+        userId: transaction.userId,
+      });
+    }
+  }, [transaction, form]);
+  
+  const isPending = isCreating || isUpdating;
   
   const onSubmit = (data: FormValues) => {
-    mutate(data, {
-      onSuccess: () => {
-        setOpen(false);
-        form.reset();
-      },
-    });
+    if (transaction) {
+      updateTx({ id: transaction.id, data }, {
+        onSuccess: () => {
+          setOpen(false);
+        },
+      });
+    } else {
+      createTx(data, {
+        onSuccess: () => {
+          setOpen(false);
+          form.reset();
+        },
+      });
+    }
   };
 
   return (
@@ -61,7 +76,9 @@ export function TransactionForm({ children }: { children: React.ReactNode }) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl text-primary">Add Transaction</DialogTitle>
+          <DialogTitle className="font-display text-2xl text-primary">
+            {transaction ? "Edit Transaction" : "Add Transaction"}
+          </DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
@@ -140,7 +157,7 @@ export function TransactionForm({ children }: { children: React.ReactNode }) {
             />
 
             <Button type="submit" className="w-full h-12 text-lg font-medium" disabled={isPending}>
-              {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save Transaction"}
+              {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (transaction ? "Update Transaction" : "Save Transaction")}
             </Button>
           </form>
         </Form>

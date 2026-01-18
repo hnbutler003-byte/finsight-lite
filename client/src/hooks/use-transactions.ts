@@ -68,6 +68,45 @@ export function useCreateTransaction() {
   });
 }
 
+export function useUpdateTransaction() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<CreateTransactionRequest> }) => {
+      const url = buildUrl(api.transactions.update.path, { id });
+      const res = await fetch(url, {
+        method: api.transactions.update.method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+
+      if (res.status === 401) {
+        redirectToLogin(toast);
+        throw new Error("Unauthorized");
+      }
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to update transaction");
+      }
+
+      return api.transactions.update.responses[200].parse(await res.json());
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.transactions.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.stats.get.path] });
+      toast({ title: "Success", description: "Transaction updated" });
+    },
+    onError: (error) => {
+      if (!isUnauthorizedError(error as Error)) {
+        toast({ title: "Error", description: (error as Error).message, variant: "destructive" });
+      }
+    }
+  });
+}
+
 export function useDeleteTransaction() {
   const queryClient = useQueryClient();
   const { toast } = useToast();

@@ -92,6 +92,31 @@ export async function registerRoutes(
     }
   });
 
+  app.patch(api.transactions.update.path, isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const id = Number(req.params.id);
+      
+      const bodySchema = api.transactions.update.input.partial().extend({
+        amount: z.coerce.string().optional(),
+        categoryId: z.coerce.number().optional(),
+        date: z.coerce.date().optional(),
+      });
+      
+      const input = bodySchema.parse(req.body);
+      const transaction = await storage.updateTransaction(id, userId, input);
+      res.json(transaction);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      res.status(500).json({ message: "Failed to update transaction" });
+    }
+  });
+
   app.delete(api.transactions.delete.path, isAuthenticated, async (req, res) => {
     const userId = (req.user as any).claims.sub;
     const id = Number(req.params.id);

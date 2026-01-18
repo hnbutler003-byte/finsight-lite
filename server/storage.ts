@@ -24,6 +24,7 @@ export interface IStorage extends IAuthStorage {
     limit?: number 
   }): Promise<(Transaction & { category: Category | null })[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  updateTransaction(id: number, userId: string, data: Partial<InsertTransaction>): Promise<Transaction>;
   deleteTransaction(id: number, userId: string): Promise<void>;
   
   getBudgets(userId: string): Promise<(Budget & { category: Category | null })[]>;
@@ -120,6 +121,19 @@ export class DatabaseStorage implements IStorage {
   async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
     const [newTransaction] = await db.insert(transactions).values(transaction).returning();
     return newTransaction;
+  }
+
+  async updateTransaction(id: number, userId: string, data: Partial<InsertTransaction>): Promise<Transaction> {
+    const [updatedTransaction] = await db.update(transactions)
+      .set(data)
+      .where(and(eq(transactions.id, id), eq(transactions.userId, userId)))
+      .returning();
+    
+    if (!updatedTransaction) {
+      throw new Error("Transaction not found or unauthorized");
+    }
+    
+    return updatedTransaction;
   }
 
   async deleteTransaction(id: number, userId: string): Promise<void> {
