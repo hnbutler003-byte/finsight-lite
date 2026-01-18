@@ -19,7 +19,7 @@ export default function AuthPage() {
             <span className="w-10 h-10 rounded-xl bg-white text-primary flex items-center justify-center text-2xl font-bold shadow-lg">
               $
             </span>
-            <span className="text-2xl font-bold font-display tracking-tight">BahamaFi</span>
+            <span className="text-2xl font-bold font-display tracking-tight">FinSight</span>
           </div>
           
           <h1 className="text-4xl lg:text-6xl font-display font-bold leading-tight mb-6">
@@ -45,7 +45,7 @@ export default function AuthPage() {
         </div>
 
         <div className="relative z-10 mt-12 text-xs text-primary-foreground/40">
-          © 2024 BahamaFi Financial Technologies. All rights reserved.
+          © 2024 FinSight Financial Technologies. All rights reserved.
         </div>
       </div>
 

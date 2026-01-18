@@ -32,7 +32,7 @@ export function Sidebar() {
           <span className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center">
             $
           </span>
-          BahamaFi
+          FinSight
         </h1>
         <p className="text-sm text-muted-foreground mt-1">Financial Wellness</p>
       </div>
