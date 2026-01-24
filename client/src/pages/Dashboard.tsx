@@ -6,6 +6,7 @@ import { Wallet, TrendingUp, TrendingDown, Plus, Loader2, HelpCircle, Link as Li
 import { Button } from "@/components/ui/button";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
 import { ComplianceConsentModal } from "@/components/compliance/ComplianceConsentModal";
+import { BankLinkModal } from "@/components/compliance/BankLinkModal";
 import { useState } from "react";
 import {
   Tooltip,
@@ -27,6 +28,7 @@ export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const { data: stats, isLoading: statsLoading } = useStats();
   const [showConsent, setShowConsent] = useState(false);
+  const [showBankSelect, setShowBankSelect] = useState(false);
 
   if (authLoading || statsLoading) {
     return (
@@ -91,8 +93,15 @@ export default function Dashboard() {
             onOpenChange={setShowConsent}
             onAccept={() => {
               setShowConsent(false);
-              // In a real app, this would trigger the actual bank linking flow
-              console.log("Consent accepted, proceeding to bank link");
+              setShowBankSelect(true);
+            }}
+          />
+
+          <BankLinkModal
+            isOpen={showBankSelect}
+            onOpenChange={setShowBankSelect}
+            onSuccess={() => {
+              setShowBankSelect(false);
             }}
           />
 
