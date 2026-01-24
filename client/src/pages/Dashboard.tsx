@@ -190,7 +190,7 @@ export default function Dashboard() {
                     <div key={tx.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/30 transition-colors group">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-full bg-secondary/20 text-secondary-foreground flex items-center justify-center text-lg">
-                          {tx.category?.icon ? <span dangerouslySetInnerHTML={{__html: tx.category.icon}}/> : (tx.amount > 0 ? '💰' : '💸')}
+                          {tx.category?.icon ? <span dangerouslySetInnerHTML={{__html: tx.category.icon}}/> : (Number(tx.amount) > 0 ? '💰' : '💸')}
                         </div>
                         <div>
                           <p className="font-medium text-foreground">{tx.description || "Untitled Transaction"}</p>
