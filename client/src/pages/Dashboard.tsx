@@ -14,16 +14,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
-  Legend
+  Legend,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip
 } from "recharts";
 import { format } from "date-fns";
 

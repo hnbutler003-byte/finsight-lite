@@ -1,10 +1,13 @@
 import { useTransactions, useDeleteTransaction, useUpdateTransaction } from "@/hooks/use-transactions";
 import { useCategories } from "@/hooks/use-categories";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { Loader2, Trash2, Filter, HelpCircle, Edit2 } from "lucide-react";
+import { Loader2, Trash2, Filter, HelpCircle, Edit2, Download, FileJson, FileSpreadsheet } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
+import Papa from "papaparse";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 import { 
   Select, 
   SelectContent, 
@@ -12,6 +15,12 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
@@ -37,6 +46,53 @@ export default function Transactions() {
   const { data: categories } = useCategories();
   const { mutate: deleteTx } = useDeleteTransaction();
 
+  const exportToCSV = () => {
+    if (!transactions) return;
+    const data = transactions.map(tx => ({
+      Date: format(new Date(tx.date), 'yyyy-MM-dd'),
+      Description: tx.description || "N/A",
+      Category: tx.category?.name || "Uncategorized",
+      Amount: `${tx.currency} ${Number(tx.amount).toFixed(2)}`,
+    }));
+    const csv = Papa.unparse(data);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `FinSight_Transactions_${format(new Date(), 'yyyyMMdd')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToPDF = () => {
+    if (!transactions) return;
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("FinSight Financial Report", 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${format(new Date(), 'PPP')}`, 14, 30);
+    
+    const tableData = transactions.map(tx => [
+      format(new Date(tx.date), 'MMM d, yyyy'),
+      tx.description || "N/A",
+      tx.category?.name || "Uncategorized",
+      `${tx.currency} ${Number(tx.amount).toFixed(2)}`
+    ]);
+
+    (doc as any).autoTable({
+      head: [['Date', 'Description', 'Category', 'Amount']],
+      body: tableData,
+      startY: 40,
+      theme: 'striped',
+      headStyles: { fillColor: [8, 145, 178] }, // Primary Caribbean Teal
+    });
+
+    doc.save(`FinSight_Transactions_${format(new Date(), 'yyyyMMdd')}.pdf`);
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
@@ -49,6 +105,25 @@ export default function Transactions() {
               <p className="text-muted-foreground">Manage and track every dollar.</p>
             </div>
             <div className="flex gap-2">
+               <DropdownMenu>
+                 <DropdownMenuTrigger asChild>
+                   <Button variant="outline" className="gap-2">
+                     <Download className="w-4 h-4" />
+                     Export
+                   </Button>
+                 </DropdownMenuTrigger>
+                 <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                   <DropdownMenuItem onClick={exportToCSV} className="gap-2 cursor-pointer">
+                     <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                     Export as CSV
+                   </DropdownMenuItem>
+                   <DropdownMenuItem onClick={exportToPDF} className="gap-2 cursor-pointer">
+                     <FileJson className="w-4 h-4 text-red-500" />
+                     Export as PDF
+                   </DropdownMenuItem>
+                 </DropdownMenuContent>
+               </DropdownMenu>
+
                <TooltipProvider>
                  <Tooltip>
                    <TooltipTrigger asChild>
