@@ -84,6 +84,10 @@ export function BankLinkModal({ isOpen, onOpenChange, onSuccess }: BankLinkModal
           </DialogDescription>
         </DialogHeader>
 
+        <div className="mt-4 text-xs text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
+          <strong>Note:</strong> Real-time bank integration requires a production API key (e.g., Plaid/Mono). In this version, linking is for demonstration purposes.
+        </div>
+
         <div className="py-4">
           {step === "select" ? (
             <div className="grid gap-3">

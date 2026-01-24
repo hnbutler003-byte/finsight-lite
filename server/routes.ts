@@ -198,29 +198,6 @@ export async function registerRoutes(
     
     const card = await storage.linkCard({ userId, lastFour, bankName });
 
-    // Mock sync: Create realistic Bahamian transactions
-    const mockTransactions = [
-      { amount: "12.50", description: "Super Value Food Store", category: "Food & Dining" },
-      { amount: "45.00", description: "Rubis Gas Station", category: "Transportation" },
-      { amount: "8.00", description: "Starbucks Nassau", category: "Food & Dining" },
-      { amount: "120.00", description: "Bahamas Power & Light", category: "Bills & Utilities" },
-      { amount: "25.00", description: "Quality Home Centre", category: "Housing" },
-    ];
-
-    const categoriesList = await storage.getCategories(userId);
-    for (const mock of mockTransactions) {
-      const category = categoriesList.find(c => c.name === mock.category);
-      await storage.createTransaction({
-        userId,
-        amount: mock.amount,
-        description: mock.description,
-        categoryId: category?.id,
-        date: new Date(),
-        isAutoSynced: true,
-        currency: "BSD"
-      });
-    }
-
     res.status(201).json(card);
   });
 
