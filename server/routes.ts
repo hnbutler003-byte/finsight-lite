@@ -35,7 +35,8 @@ export async function registerRoutes(
       const prompt = `Analyze this user's spending data for the past 3 months. Identify unusual patterns, trends, or habits. For each insight, explain the behavior and suggest one actionable step. 
       Also compare habits against budgets. 
       Data: ${JSON.stringify({ transactions, budgets })}
-      Format as a list of insights with 'title', 'behavior', and 'suggestion'.`;
+      Format as a list of insights with 'title', 'behavior', and 'suggestion'. 
+      Return the response as a JSON object.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
