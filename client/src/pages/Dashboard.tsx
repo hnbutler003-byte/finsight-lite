@@ -2,9 +2,11 @@ import { useStats } from "@/hooks/use-stats";
 import { useAuth } from "@/hooks/use-auth";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { Wallet, TrendingUp, TrendingDown, Plus, Loader2, HelpCircle } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Plus, Loader2, HelpCircle, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
+import { ComplianceConsentModal } from "@/components/compliance/ComplianceConsentModal";
+import { useState } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -28,6 +30,7 @@ import { format } from "date-fns";
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const { data: stats, isLoading: statsLoading } = useStats();
+  const [showConsent, setShowConsent] = useState(false);
 
   if (authLoading || statsLoading) {
     return (
@@ -58,24 +61,44 @@ export default function Dashboard() {
               </h1>
               <p className="text-muted-foreground mt-1">Here's what your finances look like today.</p>
             </div>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <TransactionForm>
-                      <Button size="lg" className="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
-                        <Plus className="mr-2 w-5 h-5" />
-                        New Transaction
-                      </Button>
-                    </TransactionForm>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Manually log cash income or expenses</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowConsent(true)}
+                className="hidden sm:flex border-primary/20 hover:bg-primary/5 text-primary"
+              >
+                <LinkIcon className="mr-2 w-4 h-4" />
+                Link Bank
+              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <TransactionForm>
+                        <Button size="lg" className="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
+                          <Plus className="mr-2 w-5 h-5" />
+                          New Transaction
+                        </Button>
+                      </TransactionForm>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Manually log cash income or expenses</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </div>
+
+          <ComplianceConsentModal 
+            isOpen={showConsent} 
+            onOpenChange={setShowConsent}
+            onAccept={() => {
+              setShowConsent(false);
+              // In a real app, this would trigger the actual bank linking flow
+              console.log("Consent accepted, proceeding to bank link");
+            }}
+          />
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
