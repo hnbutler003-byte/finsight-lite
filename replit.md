@@ -1,8 +1,8 @@
-# BlueLedger
+# Ledger One
 
 ## Overview
 
-BlueLedger is a personal finance management application developed by FinSight Ltd. for users in The Bahamas and the wider Caribbean. It enables tracking of income and expenses, budget management, and financial insights through a modern web interface. The application supports BSD (Bahamian Dollar), USD, and other regional currencies, with features for categorizing transactions, setting budgets, and visualizing spending patterns.
+Ledger One is a personal finance management application developed by FinSight Ltd. for users in The Bahamas and the wider Caribbean. It enables tracking of income and expenses, budget management, and financial insights through a modern web interface. The application supports BSD (Bahamian Dollar), USD, and other regional currencies, with features for categorizing transactions, setting budgets, and visualizing spending patterns.
 
 ## User Preferences
 

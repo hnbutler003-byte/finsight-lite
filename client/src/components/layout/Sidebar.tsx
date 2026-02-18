@@ -32,7 +32,7 @@ export function Sidebar() {
           <span className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center shrink-0 text-lg">
             $
           </span>
-          BlueLedger
+          Ledger One
         </h1>
         <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-widest mt-1">by FinSight Ltd.</p>
       </div>

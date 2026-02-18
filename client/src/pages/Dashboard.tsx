@@ -87,7 +87,7 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex flex-col mb-1">
-                <h2 className="text-primary font-bold tracking-tighter text-sm uppercase">BlueLedger</h2>
+                <h2 className="text-primary font-bold tracking-tighter text-sm uppercase">Ledger One</h2>
                 <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest -mt-1">by FinSight Ltd.</p>
               </div>
               <h1 className="text-3xl lg:text-4xl font-display font-bold text-foreground">
