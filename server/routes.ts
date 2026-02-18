@@ -53,7 +53,7 @@ export async function registerRoutes(
       
       For "newsClippings", provide 2-3 current financial news items from reputable sources strictly relevant to ${selectedCurrency}'s country.
       Sources by Currency:
-      - BSD: http://www.tribune242.com/news/business/, http://www.thenassauguardian.com/business/, https://ewnews.com/category/business, https://znsbahamas.com/category/business/
+      - BSD: http://www.tribune242.com/news/business/, http://www.thenassauguardian.com/business/, http://ewnews.com/category/business, http://znsbahamas.com/category/business/
       - JMD: http://jamaica-gleaner.com/business, http://www.jamaicaobserver.com/business/
       - TTD: http://newsday.co.tt/category/business/, http://trinidadexpress.com/business/
       - BBD: http://barbadostoday.bb/category/business/, http://www.nationnews.com/category/business/
@@ -62,7 +62,7 @@ export async function registerRoutes(
       - HTG: http://lenouvelliste.com/section/economie, http://juno7.ht/category/economie/
       - USD: http://www.caribbeanjournal.com/category/business/, http://www.cnbc.com/world-business/
       
-      IMPORTANT: Only use sources from the list above that match the ${selectedCurrency}. Ensure the "url" field is the EXACT URL of the section page provided above. Do not attempt to guess article sub-paths or use specific article dates. Always link directly to the main business section to ensure the link works.
+      IMPORTANT: Only use sources from the list above that match the ${selectedCurrency}. Ensure the "url" field is the EXACT URL of the section page provided above. For the "source" field, use clean names like "The Tribune", "The Nassau Guardian", "Eyewitness News", or "ZNS Bahamas". Always link directly to the main business section to ensure the link works.
       
       Keep the tone helpful and Caribbean-focused.`;
 
