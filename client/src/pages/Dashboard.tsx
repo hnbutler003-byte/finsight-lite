@@ -33,14 +33,14 @@ export default function Dashboard() {
   const [currency, setCurrency] = useState("BSD");
 
   const CURRENCIES = [
-    { code: "BSD", name: "Bahamian Dollar", symbol: "B$" },
-    { code: "JMD", name: "Jamaican Dollar", symbol: "J$" },
-    { code: "TTD", name: "Trinidad & Tobago Dollar", symbol: "TT$" },
     { code: "BBD", name: "Barbadian Dollar", symbol: "Bds$" },
-    { code: "XCD", name: "East Caribbean Dollar", symbol: "EC$" },
+    { code: "BSD", name: "Bahamian Dollar", symbol: "B$" },
     { code: "GYD", name: "Guyanese Dollar", symbol: "G$" },
     { code: "HTG", name: "Haitian Gourde", symbol: "G" },
+    { code: "JMD", name: "Jamaican Dollar", symbol: "J$" },
+    { code: "TTD", name: "Trinidad & Tobago Dollar", symbol: "TT$" },
     { code: "USD", name: "US Dollar", symbol: "$" },
+    { code: "XCD", name: "East Caribbean Dollar", symbol: "EC$" },
   ];
 
   if (authLoading || statsLoading) {

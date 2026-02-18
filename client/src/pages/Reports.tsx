@@ -10,14 +10,14 @@ export default function Reports() {
   const [currency, setCurrency] = useState("BSD");
 
   const CURRENCIES = [
-    { code: "BSD", name: "Bahamian Dollar" },
-    { code: "JMD", name: "Jamaican Dollar" },
-    { code: "TTD", name: "Trinidad & Tobago Dollar" },
     { code: "BBD", name: "Barbadian Dollar" },
-    { code: "XCD", name: "East Caribbean Dollar" },
+    { code: "BSD", name: "Bahamian Dollar" },
     { code: "GYD", name: "Guyanese Dollar" },
     { code: "HTG", name: "Haitian Gourde" },
+    { code: "JMD", name: "Jamaican Dollar" },
+    { code: "TTD", name: "Trinidad & Tobago Dollar" },
     { code: "USD", name: "US Dollar" },
+    { code: "XCD", name: "East Caribbean Dollar" },
   ];
 
   const { data: insights, isLoading } = useQuery({
