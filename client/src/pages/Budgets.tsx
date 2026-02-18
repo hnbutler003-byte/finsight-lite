@@ -1,5 +1,6 @@
 import { useBudgets, useCreateBudget, useDeleteBudget } from "@/hooks/use-budgets";
 import { useCategories } from "@/hooks/use-categories";
+import { useStats } from "@/hooks/use-stats";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -52,6 +53,12 @@ export default function Budgets() {
       }
     });
   };
+
+  const { data: stats } = useStats({ period: 'monthly' });
+
+  const totalBudgeted = budgets?.reduce((acc, b) => acc + Number(b.amount), 0) || 0;
+  const totalIncome = stats?.totalIncome || 0;
+  const allocationPercentage = totalIncome > 0 ? Math.min((totalBudgeted / totalIncome) * 100, 100) : 0;
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -138,57 +145,103 @@ export default function Budgets() {
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {budgets?.map((budget) => {
-                const spent = Number((budget as any).spent || 0);
-                const limit = Number(budget.amount);
-                const percentage = Math.min((spent / limit) * 100, 100);
-                
-                return (
-                  <TooltipProvider key={budget.id}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="bg-card rounded-2xl p-6 border border-border/50 shadow-sm hover:shadow-md transition-all cursor-help">
-                          <div className="flex justify-between items-start mb-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                                <Wallet className="w-5 h-5" />
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {budgets?.map((budget) => {
+                  const spent = Number((budget as any).spent || 0);
+                  const limit = Number(budget.amount);
+                  const percentage = Math.min((spent / limit) * 100, 100);
+                  
+                  return (
+                    <TooltipProvider key={budget.id}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="bg-card rounded-2xl p-6 border border-border/50 shadow-sm hover:shadow-md transition-all cursor-help">
+                            <div className="flex justify-between items-start mb-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                                  <Wallet className="w-5 h-5" />
+                                </div>
+                                <div>
+                                  <h3 className="font-bold text-lg">{budget.category?.name}</h3>
+                                  <p className="text-xs text-muted-foreground capitalize">{budget.period} Limit</p>
+                                </div>
                               </div>
-                              <div>
-                                <h3 className="font-bold text-lg">{budget.category?.name}</h3>
-                                <p className="text-xs text-muted-foreground capitalize">{budget.period} Limit</p>
-                              </div>
+                              <Button variant="ghost" size="icon" onClick={() => deleteBudget(budget.id)} className="text-muted-foreground hover:text-destructive">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             </div>
-                            <Button variant="ghost" size="icon" onClick={() => deleteBudget(budget.id)} className="text-muted-foreground hover:text-destructive">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
 
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm font-medium">
-                              <span className="text-muted-foreground">Spent: ${spent.toFixed(2)}</span>
-                              <span>Limit: ${limit.toFixed(2)}</span>
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm font-medium">
+                                <span className="text-muted-foreground">Spent: ${spent.toFixed(2)}</span>
+                                <span>Limit: ${limit.toFixed(2)}</span>
+                              </div>
+                              <Progress value={percentage} className="h-2" indicatorClassName={percentage > 90 ? "bg-destructive" : "bg-primary"} />
+                              <p className="text-xs text-right text-muted-foreground pt-1">
+                                {percentage.toFixed(0)}% used
+                              </p>
                             </div>
-                            <Progress value={percentage} className="h-2" indicatorClassName={percentage > 90 ? "bg-destructive" : "bg-primary"} />
-                            <p className="text-xs text-right text-muted-foreground pt-1">
-                              {percentage.toFixed(0)}% used
-                            </p>
                           </div>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Stay on track with your spending goals</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                );
-              })}
-              {budgets?.length === 0 && (
-                <div className="col-span-full text-center py-12 text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-border">
-                  <p>No budgets set up yet. Create one to start saving!</p>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Stay on track with your spending goals</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                })}
+                {budgets?.length === 0 && (
+                  <div className="col-span-full text-center py-12 text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-border">
+                    <p>No budgets set up yet. Create one to start saving!</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Budget Allocation Summary */}
+              {budgets && budgets.length > 0 && (
+                <div className="mt-12 bg-card rounded-2xl p-6 border border-border/50 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-display text-xl font-bold text-foreground">Budget Allocation</h3>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>How much of your monthly salary is allocated to budgets</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Total Budgeted: <span className="text-foreground font-bold">${totalBudgeted.toFixed(2)}</span>
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Income Allocation</span>
+                      <span className={allocationPercentage > 100 ? "text-destructive font-bold" : "text-primary font-bold"}>
+                        {allocationPercentage.toFixed(1)}% of Income
+                      </span>
+                    </div>
+                    <div className="relative h-4 w-full bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className={`absolute top-0 left-0 h-full transition-all duration-500 ${allocationPercentage > 90 ? "bg-destructive" : "bg-primary"}`}
+                        style={{ width: `${allocationPercentage}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground italic">
+                      {allocationPercentage > 100 
+                        ? "Warning: Your budgets exceed your total income!" 
+                        : "You've allocated this portion of your monthly income to these category limits."}
+                    </p>
+                  </div>
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
       </main>
