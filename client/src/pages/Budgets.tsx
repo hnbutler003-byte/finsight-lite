@@ -140,8 +140,9 @@ export default function Budgets() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {budgets?.map((budget) => {
-                const mockSpent = Math.random() * Number(budget.amount); 
-                const percentage = Math.min((mockSpent / Number(budget.amount)) * 100, 100);
+                const spent = Number((budget as any).spent || 0);
+                const limit = Number(budget.amount);
+                const percentage = Math.min((spent / limit) * 100, 100);
                 
                 return (
                   <TooltipProvider key={budget.id}>
@@ -165,8 +166,8 @@ export default function Budgets() {
 
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm font-medium">
-                              <span className="text-muted-foreground">Spent: ${mockSpent.toFixed(2)}</span>
-                              <span>Limit: ${Number(budget.amount).toFixed(2)}</span>
+                              <span className="text-muted-foreground">Spent: ${spent.toFixed(2)}</span>
+                              <span>Limit: ${limit.toFixed(2)}</span>
                             </div>
                             <Progress value={percentage} className="h-2" indicatorClassName={percentage > 90 ? "bg-destructive" : "bg-primary"} />
                             <p className="text-xs text-right text-muted-foreground pt-1">

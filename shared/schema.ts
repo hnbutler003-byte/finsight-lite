@@ -120,7 +120,10 @@ export type InsertLinkedCard = z.infer<typeof insertLinkedCardSchema>;
 
 // API Responses
 export type TransactionResponse = Transaction & { category?: Category };
-export type BudgetResponse = Budget & { category?: Category };
+export type BudgetResponse = Budget & { 
+  category?: Category | null;
+  spent?: number;
+};
 
 export type DashboardStats = {
   totalIncome: number;

@@ -141,15 +141,38 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(transactions.id, id), eq(transactions.userId, userId)));
   }
 
-  async getBudgets(userId: string): Promise<(Budget & { category: Category | null })[]> {
-    const results = await db.select({
+  async getBudgets(userId: string): Promise<(BudgetResponse)[]> {
+    const budgetList = await db.select({
       budget: budgets,
       category: categories
     })
     .from(budgets)
     .leftJoin(categories, eq(budgets.categoryId, categories.id))
     .where(eq(budgets.userId, userId));
-    return results.map(r => ({ ...r.budget, category: r.category }));
+
+    const results: BudgetResponse[] = [];
+
+    for (const b of budgetList) {
+      const [spentResult] = await db.select({
+        total: sql<number>`sum(${transactions.amount})`
+      })
+      .from(transactions)
+      .where(and(
+        eq(transactions.userId, userId),
+        eq(transactions.categoryId, b.budget.categoryId),
+        // Simple month-to-date calculation for "monthly" budgets
+        sql`extract(month from ${transactions.date}) = extract(month from now())`,
+        sql`extract(year from ${transactions.date}) = extract(year from now())`
+      ));
+
+      results.push({
+        ...b.budget,
+        category: b.category,
+        spent: Number(spentResult?.total || 0)
+      });
+    }
+
+    return results;
   }
 
   async createBudget(budget: InsertBudget): Promise<Budget> {
