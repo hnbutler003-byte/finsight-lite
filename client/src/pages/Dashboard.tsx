@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Wallet, TrendingUp, TrendingDown, Plus, Loader2, HelpCircle, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
 import { ComplianceConsentModal } from "@/components/compliance/ComplianceConsentModal";
 import { BankLinkModal } from "@/components/compliance/BankLinkModal";
@@ -29,6 +30,18 @@ export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useStats();
   const [showConsent, setShowConsent] = useState(false);
   const [showBankSelect, setShowBankSelect] = useState(false);
+  const [currency, setCurrency] = useState("BSD");
+
+  const CURRENCIES = [
+    { code: "BSD", name: "Bahamian Dollar", symbol: "B$" },
+    { code: "JMD", name: "Jamaican Dollar", symbol: "J$" },
+    { code: "TTD", name: "Trinidad & Tobago Dollar", symbol: "TT$" },
+    { code: "BBD", name: "Barbadian Dollar", symbol: "Bds$" },
+    { code: "XCD", name: "East Caribbean Dollar", symbol: "EC$" },
+    { code: "GYD", name: "Guyanese Dollar", symbol: "G$" },
+    { code: "HTG", name: "Haitian Gourde", symbol: "G" },
+    { code: "USD", name: "US Dollar", symbol: "$" },
+  ];
 
   if (authLoading || statsLoading) {
     return (
@@ -45,6 +58,8 @@ export default function Dashboard() {
     value: Number(item.amount)
   })) || [];
 
+  const selectedCurrency = CURRENCIES.find(c => c.code === currency) || CURRENCIES[0];
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
@@ -60,6 +75,18 @@ export default function Dashboard() {
               <p className="text-muted-foreground mt-1">Here's what your finances look like today.</p>
             </div>
             <div className="flex items-center gap-3">
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger className="w-[180px] bg-card border-primary/20">
+                  <SelectValue placeholder="Currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCIES.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      {c.code} - {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button 
                 variant="outline" 
                 onClick={() => setShowConsent(true)}
@@ -109,14 +136,14 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatCard 
               title="Total Balance" 
-              value={`$${stats?.balance.toFixed(2) || "0.00"}`} 
+              value={`${selectedCurrency.symbol}${stats?.balance.toFixed(2) || "0.00"}`} 
               icon={Wallet} 
               variant="primary"
-              description="Your current net worth in BSD"
+              description={`Your current net worth in ${currency}`}
             />
             <StatCard 
               title="Total Income" 
-              value={`$${stats?.totalIncome.toFixed(2) || "0.00"}`} 
+              value={`${selectedCurrency.symbol}${stats?.totalIncome.toFixed(2) || "0.00"}`} 
               icon={TrendingUp} 
               trend="+12%" 
               trendUp={true}
@@ -124,7 +151,7 @@ export default function Dashboard() {
             />
             <StatCard 
               title="Total Expenses" 
-              value={`$${stats?.totalExpenses.toFixed(2) || "0.00"}`} 
+              value={`${selectedCurrency.symbol}${stats?.totalExpenses.toFixed(2) || "0.00"}`} 
               icon={TrendingDown} 
               trend="-5%" 
               trendUp={true}
@@ -166,7 +193,7 @@ export default function Dashboard() {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <RechartsTooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
+                      <RechartsTooltip formatter={(value) => `${selectedCurrency.symbol}${Number(value).toFixed(2)}`} />
                       <Legend verticalAlign="bottom" height={36}/>
                     </PieChart>
                   </ResponsiveContainer>
@@ -198,7 +225,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <span className={`font-mono font-medium ${Number(tx.amount) > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                        {Number(tx.amount) > 0 ? '+' : ''}${Math.abs(Number(tx.amount)).toFixed(2)}
+                        {Number(tx.amount) > 0 ? '+' : ''}{tx.currency === currency ? selectedCurrency.symbol : '$'}{Math.abs(Number(tx.amount)).toFixed(2)}
                       </span>
                     </div>
                   ))
