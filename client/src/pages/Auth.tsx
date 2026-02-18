@@ -19,7 +19,10 @@ export default function AuthPage() {
             <span className="w-10 h-10 rounded-xl bg-white text-primary flex items-center justify-center text-2xl font-bold shadow-lg">
               $
             </span>
-            <span className="text-2xl font-bold font-display tracking-tight">FinSight</span>
+            <div className="flex flex-col">
+              <span className="text-2xl font-bold font-display tracking-tight leading-none">BlueLedger</span>
+              <span className="text-[10px] text-primary-foreground/60 uppercase font-bold tracking-widest mt-1">by FinSight Ltd.</span>
+            </div>
           </div>
           
           <h1 className="text-4xl lg:text-6xl font-display font-bold leading-tight mb-6">
