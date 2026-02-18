@@ -52,10 +52,26 @@ export default function Dashboard() {
   }
 
   // Calculate generic chart data from stats if available, else placeholders
-  const COLORS = ['#0891b2', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'];
-  const expenseData = stats?.expensesByCategory.map((item) => ({
+  const COLORS = [
+    '#0891b2', // Cyan
+    '#f59e0b', // Amber
+    '#10b981', // Emerald
+    '#ef4444', // Red
+    '#8b5cf6', // Violet
+    '#ec4899', // Pink
+    '#3b82f6', // Blue
+    '#f97316', // Orange
+    '#06b6d4', // Cyan
+    '#84cc16', // Lime
+    '#14b8a6', // Teal
+    '#a855f7', // Purple
+    '#6366f1', // Indigo
+    '#d946ef', // Fuchsia
+  ];
+  const expenseData = stats?.expensesByCategory.map((item, index) => ({
     name: item.category,
-    value: Number(item.amount)
+    value: Number(item.amount),
+    color: item.color || COLORS[index % COLORS.length]
   })) || [];
 
   const selectedCurrency = CURRENCIES.find(c => c.code === currency) || CURRENCIES[0];
@@ -200,8 +216,8 @@ export default function Dashboard() {
                         paddingAngle={5}
                         dataKey="value"
                       >
-                        {expenseData.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        {expenseData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
                       <RechartsTooltip formatter={(value) => `${selectedCurrency.symbol}${Number(value).toFixed(2)}`} />
