@@ -1,7 +1,7 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Lightbulb, Target, TrendingUp, Globe, ArrowRightLeft, Info } from "lucide-react";
+import { Loader2, Lightbulb, Target, TrendingUp, Globe, ArrowRightLeft, Info, Newspaper, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -60,7 +60,7 @@ export default function Reports() {
             </div>
           ) : (
             <Tabs defaultValue="spending" className="w-full">
-              <TabsList className="grid w-full max-w-md grid-cols-2 mb-8">
+              <TabsList className="grid w-full max-w-2xl grid-cols-3 mb-8">
                 <TabsTrigger value="spending" className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4" />
                   Spending Analysis
@@ -68,6 +68,10 @@ export default function Reports() {
                 <TabsTrigger value="currency" className="flex items-center gap-2">
                   <Globe className="w-4 h-4" />
                   Currency Insights
+                </TabsTrigger>
+                <TabsTrigger value="news" className="flex items-center gap-2">
+                  <Newspaper className="w-4 h-4" />
+                  Regional News
                 </TabsTrigger>
               </TabsList>
 
@@ -118,6 +122,31 @@ export default function Reports() {
                         <p className="text-sm text-muted-foreground leading-relaxed">
                           {insight.content}
                         </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="news" className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {(insights as any)?.newsClippings?.map((news: any, i: number) => (
+                    <Card key={i} className="hover-elevate overflow-hidden border-none shadow-md bg-card">
+                      <div className="bg-primary/5 px-4 py-2 border-b border-primary/10 flex justify-between items-center">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-primary/60">{news.source}</span>
+                        <ExternalLink className="w-3 h-3 text-primary/40" />
+                      </div>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg leading-tight">{news.headline}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground line-clamp-3">
+                          {news.summary}
+                        </p>
+                        <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">
+                          <span>Financial Briefing</span>
+                          <span>Regional Update</span>
+                        </div>
                       </CardContent>
                     </Card>
                   ))}

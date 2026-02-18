@@ -46,9 +46,12 @@ export async function registerRoutes(
          - Provide specific advice for users holding ${selectedCurrency} (e.g., inflation concerns, regional travel tips, or import costs).
          - Suggest how to optimize spending based on the ${selectedCurrency} value.
 
-      Format the response as a JSON object with two keys:
+      Format the response as a JSON object with three keys:
       - "spendingInsights": Array of { "title": string, "behavior": string, "suggestion": string }
       - "currencyInsights": Array of { "title": string, "content": string, "impact": "positive" | "neutral" | "negative" }
+      - "newsClippings": Array of { "source": string, "headline": string, "summary": string, "url": string }
+      
+      For "newsClippings", simulate 2-3 current financial news items from reputable sources in ${selectedCurrency}'s region (e.g., ZNS/Eyewitness for BSD, Gleaner for JMD).
       
       Keep the tone helpful and Caribbean-focused.`;
 
