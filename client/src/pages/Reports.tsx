@@ -108,15 +108,22 @@ export default function Reports() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {(insights as any)?.currencyInsights?.map((insight: any, i: number) => (
                     <Card key={i} className="hover-elevate">
-                      <CardHeader className="flex flex-row items-center gap-2">
-                        {insight.impact === 'positive' ? (
-                          <TrendingUp className="w-5 h-5 text-green-500" />
-                        ) : insight.impact === 'negative' ? (
-                          <ArrowRightLeft className="w-5 h-5 text-red-500" />
-                        ) : (
-                          <Info className="w-5 h-5 text-blue-500" />
+                      <CardHeader className="flex flex-row items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          {insight.impact === 'positive' ? (
+                            <TrendingUp className="w-5 h-5 text-green-500" />
+                          ) : insight.impact === 'negative' ? (
+                            <ArrowRightLeft className="w-5 h-5 text-red-500" />
+                          ) : (
+                            <Info className="w-5 h-5 text-blue-500" />
+                          )}
+                          <CardTitle className="text-lg">{insight.title}</CardTitle>
+                        </div>
+                        {insight.rate && (
+                          <div className="px-3 py-1 bg-primary/10 rounded-full">
+                            <span className="text-xs font-mono font-bold text-primary">{insight.rate}</span>
+                          </div>
                         )}
-                        <CardTitle className="text-lg">{insight.title}</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <p className="text-sm text-muted-foreground leading-relaxed">

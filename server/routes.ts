@@ -48,9 +48,10 @@ export async function registerRoutes(
 
       Format the response as a JSON object with three keys:
       - "spendingInsights": Array of { "title": string, "behavior": string, "suggestion": string }
-      - "currencyInsights": Array of { "title": string, "content": string, "impact": "positive" | "neutral" | "negative" }
+      - "currencyInsights": Array of { "title": string, "content": string, "impact": "positive" | "neutral" | "negative", "rate": string }
       - "newsClippings": Array of { "source": string, "headline": string, "summary": string, "url": string }
       
+      For "currencyInsights", the "rate" field should show the numerical exchange rate formatted like: "1 ${selectedCurrency} : X USD". Keep the "content" very brief.
       For "newsClippings", provide 2-3 current financial news items from reputable sources strictly relevant to ${selectedCurrency}'s country.
       Sources by Currency:
       - BSD: http://www.tribune242.com/, http://www.thenassauguardian.com/, http://ewnews.com/, http://znsbahamas.com/
