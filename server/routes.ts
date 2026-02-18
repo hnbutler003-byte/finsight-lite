@@ -53,16 +53,16 @@ export async function registerRoutes(
       
       For "newsClippings", provide 2-3 current financial news items from reputable sources strictly relevant to ${selectedCurrency}'s country.
       Sources by Currency:
-      - BSD: https://ewnews.com/category/business, https://www.tribune242.com/news/business/
-      - JMD: https://jamaica-gleaner.com/business, https://www.jamaicaobserver.com/category/business/
-      - TTD: https://newsday.co.tt/category/business/, https://trinidadexpress.com/business/
-      - BBD: https://barbadostoday.bb/category/business/, https://www.nationnews.com/category/business/
-      - XCD: https://oecsbusinessfocus.com/, https://caribbeannewsglobal.com/category/caribbean/
-      - GYD: https://guyanachronicle.com/category/business/, https://www.stabroeknews.com/category/news/guyana/business/
-      - HTG: https://lenouvelliste.com/section/economie, https://juno7.ht/category/economie/
-      - USD: https://www.caribbeanjournal.com/category/business/, https://www.cnbc.com/world-business/
+      - BSD: http://www.tribune242.com/news/business/, http://www.thenassauguardian.com/business/
+      - JMD: http://jamaica-gleaner.com/business, http://www.jamaicaobserver.com/business/
+      - TTD: http://newsday.co.tt/category/business/, http://trinidadexpress.com/business/
+      - BBD: http://barbadostoday.bb/category/business/, http://www.nationnews.com/category/business/
+      - XCD: http://oecsbusinessfocus.com/, http://caribbeannewsglobal.com/category/caribbean/
+      - GYD: http://guyanachronicle.com/category/business/, http://www.stabroeknews.com/category/news/guyana/business/
+      - HTG: http://lenouvelliste.com/section/economie, http://juno7.ht/category/economie/
+      - USD: http://www.caribbeanjournal.com/category/business/, http://www.cnbc.com/world-business/
       
-      IMPORTANT: Only use sources from the list above that match the ${selectedCurrency}. Ensure the "url" field is a valid, clickable link to a specific news article or the business section from the URLs provided. Do not invent URLs; ensure they point to real domains.
+      IMPORTANT: Only use sources from the list above that match the ${selectedCurrency}. Ensure the "url" field is the EXACT URL of the section page provided above. Do not attempt to guess article sub-paths or use specific article dates. Always link directly to the main business section to ensure the link works.
       
       Keep the tone helpful and Caribbean-focused.`;
 
