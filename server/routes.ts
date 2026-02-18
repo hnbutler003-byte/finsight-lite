@@ -53,7 +53,7 @@ export async function registerRoutes(
       
       For "newsClippings", provide 2-3 current financial news items from reputable sources strictly relevant to ${selectedCurrency}'s country.
       Sources by Currency:
-      - BSD: http://www.tribune242.com/news/business/, http://www.thenassauguardian.com/business/
+      - BSD: http://www.tribune242.com/news/business/, http://www.thenassauguardian.com/business/, https://ewnews.com/category/business, https://znsbahamas.com/category/business/
       - JMD: http://jamaica-gleaner.com/business, http://www.jamaicaobserver.com/business/
       - TTD: http://newsday.co.tt/category/business/, http://trinidadexpress.com/business/
       - BBD: http://barbadostoday.bb/category/business/, http://www.nationnews.com/category/business/

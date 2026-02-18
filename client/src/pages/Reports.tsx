@@ -146,7 +146,7 @@ export default function Reports() {
                           </p>
                           <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">
                             <span>Financial Briefing</span>
-                            <span className="text-primary/60">Read Full Story →</span>
+                            <span className="text-primary/60">Visit this site →</span>
                           </div>
                         </CardContent>
                       </Card>
