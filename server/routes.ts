@@ -230,6 +230,7 @@ export async function registerRoutes(
     const filters = {
       startDate: req.query.startDate as string,
       endDate: req.query.endDate as string,
+      period: req.query.period as 'monthly' | 'yearly',
     };
     const stats = await storage.getDashboardStats(userId, filters);
     res.json(stats);

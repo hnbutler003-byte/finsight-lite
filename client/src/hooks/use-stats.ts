@@ -3,7 +3,7 @@ import { api } from "@shared/routes";
 import { redirectToLogin } from "@/lib/auth-utils";
 import { useToast } from "@/hooks/use-toast";
 
-export function useStats(filters?: { startDate?: string; endDate?: string }) {
+export function useStats(filters?: { startDate?: string; endDate?: string; period?: 'monthly' | 'yearly' }) {
   const { toast } = useToast();
   
   return useQuery({
@@ -12,6 +12,7 @@ export function useStats(filters?: { startDate?: string; endDate?: string }) {
       const searchParams = new URLSearchParams();
       if (filters?.startDate) searchParams.append("startDate", filters.startDate);
       if (filters?.endDate) searchParams.append("endDate", filters.endDate);
+      if (filters?.period) searchParams.append("period", filters.period);
       
       const res = await fetch(`${api.stats.get.path}?${searchParams.toString()}`, { credentials: "include" });
       

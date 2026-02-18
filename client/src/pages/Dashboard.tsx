@@ -27,10 +27,11 @@ import { format } from "date-fns";
 
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
-  const { data: stats, isLoading: statsLoading } = useStats();
+  const [currency, setCurrency] = useState("BSD");
+  const [period, setPeriod] = useState<"monthly" | "yearly">("monthly");
+  const { data: stats, isLoading: statsLoading } = useStats({ period });
   const [showConsent, setShowConsent] = useState(false);
   const [showBankSelect, setShowBankSelect] = useState(false);
-  const [currency, setCurrency] = useState("BSD");
 
   const CURRENCIES = [
     { code: "BBD", name: "Barbadian Dollar", symbol: "Bds$" },
@@ -190,18 +191,29 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Expense Breakdown */}
             <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/50">
-              <div className="flex items-center gap-2 mb-6">
-                <h3 className="font-display text-xl font-bold">Expense Breakdown</h3>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>See where your money goes at a glance</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-display text-xl font-bold">Expense Breakdown</h3>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>See where your money goes at a glance</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <Select value={period} onValueChange={(val: any) => setPeriod(val)}>
+                  <SelectTrigger className="w-[120px] h-8 text-xs bg-muted/50 border-none">
+                    <SelectValue placeholder="Period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="yearly">Yearly</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="h-[300px] w-full">
                 {expenseData.length > 0 ? (

@@ -194,9 +194,18 @@ export class DatabaseStorage implements IStorage {
     return newCard;
   }
 
-  async getDashboardStats(userId: string, filters?: { startDate?: string, endDate?: string }): Promise<DashboardStats> {
+  async getDashboardStats(userId: string, filters?: { startDate?: string, endDate?: string, period?: 'monthly' | 'yearly' }): Promise<DashboardStats> {
     let dateCondition = sql`TRUE`;
-    if (filters?.startDate && filters?.endDate) {
+    let periodCondition = sql`TRUE`;
+
+    if (filters?.period === 'monthly') {
+      periodCondition = and(
+        sql`extract(month from ${transactions.date}) = extract(month from now())`,
+        sql`extract(year from ${transactions.date}) = extract(year from now())`
+      )!;
+    } else if (filters?.period === 'yearly') {
+      periodCondition = sql`extract(year from ${transactions.date}) = extract(year from now())`;
+    } else if (filters?.startDate && filters?.endDate) {
       dateCondition = and(
         gte(transactions.date, new Date(filters.startDate)),
         lte(transactions.date, new Date(filters.endDate))
@@ -209,7 +218,7 @@ export class DatabaseStorage implements IStorage {
     })
     .from(transactions)
     .leftJoin(categories, eq(transactions.categoryId, categories.id))
-    .where(and(eq(transactions.userId, userId), dateCondition))
+    .where(and(eq(transactions.userId, userId), dateCondition, periodCondition))
     .groupBy(categories.type);
 
     let totalIncome = 0;
@@ -230,7 +239,7 @@ export class DatabaseStorage implements IStorage {
     })
     .from(transactions)
     .leftJoin(categories, eq(transactions.categoryId, categories.id))
-    .where(and(eq(transactions.userId, userId), eq(categories.type, 'expense'), dateCondition))
+    .where(and(eq(transactions.userId, userId), eq(categories.type, 'expense'), dateCondition, periodCondition))
     .groupBy(categories.id, categories.name, categories.color);
     
     return {
