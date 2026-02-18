@@ -31,26 +31,35 @@ export async function registerRoutes(
       const userId = (req.user as any).claims.sub;
       const transactions = await storage.getTransactions(userId, { limit: 100 });
       const budgets = await storage.getBudgets(userId);
+      const selectedCurrency = req.query.currency as string || "BSD";
       
-      const prompt = `Analyze this user's spending data for the past 3 months. Identify unusual patterns, trends, or habits. For each insight, explain the behavior and suggest one actionable step. 
-      Also compare habits against budgets. 
-      Data: ${JSON.stringify({ transactions, budgets })}
-      Format as a list of insights with 'title', 'behavior', and 'suggestion'. 
-      Return the response as a JSON object.`;
+      const prompt = `Analyze this user's financial data.
+      Current Currency Context: ${selectedCurrency}
+      
+      Transactions: ${JSON.stringify(transactions.map(t => ({ amount: t.amount, currency: t.currency, category: t.category?.name })))}
+      Budgets: ${JSON.stringify(budgets.map(b => ({ amount: b.amount, category: b.category?.name })))}
+      
+      Please provide:
+      1. Smart Insights: Analyze spending patterns and budget adherence.
+      2. Currency Insights: 
+         - Mention the current approximate exchange rate of ${selectedCurrency} to USD (use your internal knowledge of typical regional rates).
+         - Provide specific advice for users holding ${selectedCurrency} (e.g., inflation concerns, regional travel tips, or import costs).
+         - Suggest how to optimize spending based on the ${selectedCurrency} value.
+
+      Format the response as a JSON object with two keys:
+      - "spendingInsights": Array of { "title": string, "behavior": string, "suggestion": string }
+      - "currencyInsights": Array of { "title": string, "content": string, "impact": "positive" | "neutral" | "negative" }
+      
+      Keep the tone helpful and Caribbean-focused.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
-        messages: [{ role: "system", content: "You are a financial advisor for FinSight users across the Caribbean." }, { role: "user", content: prompt }],
+        messages: [{ role: "system", content: "You are a senior financial advisor specializing in Caribbean economies and personal finance." }, { role: "user", content: prompt }],
         response_format: { type: "json_object" }
       });
 
       const content = response.choices[0].message.content || "{}";
-      const parsed = JSON.parse(content);
-      
-      // Ensure the response has the 'insights' field even if AI returns a different root
-      const result = parsed.insights ? parsed : { insights: Object.values(parsed).filter(v => Array.isArray(v))[0] || [] };
-      
-      res.json(result);
+      res.json(JSON.parse(content));
     } catch (err) {
       console.error("AI Insight error:", err);
       res.status(500).json({ message: "Failed to generate insights" });
