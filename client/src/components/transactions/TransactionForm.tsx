@@ -130,7 +130,7 @@ export function TransactionForm({ children, transaction }: { children: React.Rea
                     </FormControl>
                     <SelectContent>
                       {categories && categories.length > 0 ? (
-                        categories.map((cat) => (
+                        Array.from(new Map(categories.map(c => [c.name, c])).values()).map((cat) => (
                           <SelectItem key={cat.id} value={String(cat.id)}>
                             <span className="flex items-center gap-2">
                               {cat.icon ? (

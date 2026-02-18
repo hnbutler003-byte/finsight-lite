@@ -93,8 +93,12 @@ export default function Budgets() {
                                       </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                      {categories?.filter(c => c.type === 'expense').map((cat) => (
-                                        <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
+                                      {Array.from(new Map(categories?.filter(c => c.type === 'expense').map(c => [c.name, c])).values()).map((cat) => (
+                                        <SelectItem key={cat.id} value={String(cat.id)}>
+                                          <span className="flex items-center gap-2">
+                                            {cat.icon ? <span>{cat.icon}</span> : '💸'} {cat.name}
+                                          </span>
+                                        </SelectItem>
                                       ))}
                                     </SelectContent>
                                   </Select>
