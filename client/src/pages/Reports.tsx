@@ -74,22 +74,28 @@ export default function Reports() {
               <TabsContent value="spending" className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {(insights as any)?.spendingInsights?.map((insight: any, i: number) => (
-                    <Card key={i} className="hover-elevate">
-                      <CardHeader className="flex flex-row items-center gap-2">
-                        <Lightbulb className="w-5 h-5 text-yellow-500" />
-                        <CardTitle className="text-lg">{insight.title}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <p className="text-sm text-foreground">{insight.behavior}</p>
-                        <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
-                          <p className="text-sm font-medium text-primary flex items-center gap-2">
-                            <Target className="w-4 h-4" />
-                            Suggestion:
+                    <div key={i} className="animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both" style={{ animationDelay: `${i * 150}ms` }}>
+                      <Card className="hover-elevate border-none shadow-md bg-gradient-to-br from-card to-muted/30">
+                        <CardHeader className="flex flex-row items-center gap-3 pb-2">
+                          <div className="w-10 h-10 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center animate-pulse">
+                            <Lightbulb className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                          </div>
+                          <CardTitle className="text-lg font-display">{insight.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <p className="text-sm text-muted-foreground leading-relaxed italic">
+                            "{insight.behavior}"
                           </p>
-                          <p className="text-sm text-primary/80 mt-1">{insight.suggestion}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
+                          <div className="bg-primary/10 p-4 rounded-2xl border border-primary/20 shadow-inner">
+                            <p className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-2 mb-1">
+                              <Target className="w-3 h-3" />
+                              Friendly Tip
+                            </p>
+                            <p className="text-sm text-foreground font-medium">{insight.suggestion}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
                   ))}
                 </div>
               </TabsContent>
