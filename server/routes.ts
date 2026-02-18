@@ -53,16 +53,16 @@ export async function registerRoutes(
       
       For "newsClippings", provide 2-3 current financial news items from reputable sources strictly relevant to ${selectedCurrency}'s country.
       Sources by Currency:
-      - BSD: ZNS Bahamas, Eyewitness News, The Tribune
-      - JMD: Jamaica Gleaner, Jamaica Observer, Radio Jamaica
-      - TTD: Trinidad Newsday, Trinidad Express, Guardian
-      - BBD: Barbados Today, Nation News
-      - XCD: OECS Business Focus, Caribbean News Global
-      - GYD: Guyana Chronicle, Stabroek News
-      - HTG: Le Nouvelliste, Juno7
-      - USD: Caribbean Journal, CNBC Caribbean
+      - BSD: https://ewnews.com/category/business, https://www.tribune242.com/news/business/
+      - JMD: https://jamaica-gleaner.com/business, https://www.jamaicaobserver.com/category/business/
+      - TTD: https://newsday.co.tt/category/business/, https://trinidadexpress.com/business/
+      - BBD: https://barbadostoday.bb/category/business/, https://www.nationnews.com/category/business/
+      - XCD: https://oecsbusinessfocus.com/, https://caribbeannewsglobal.com/category/caribbean/
+      - GYD: https://guyanachronicle.com/category/business/, https://www.stabroeknews.com/category/news/guyana/business/
+      - HTG: https://lenouvelliste.com/section/economie, https://juno7.ht/category/economie/
+      - USD: https://www.caribbeanjournal.com/category/business/, https://www.cnbc.com/world-business/
       
-      IMPORTANT: Only use sources from the list above that match the ${selectedCurrency}. Ensure the "url" field is a valid, clickable link to the source's finance section or a relevant news article.
+      IMPORTANT: Only use sources from the list above that match the ${selectedCurrency}. Ensure the "url" field is a valid, clickable link to a specific news article or the business section from the URLs provided. Do not invent URLs; ensure they point to real domains.
       
       Keep the tone helpful and Caribbean-focused.`;
 
