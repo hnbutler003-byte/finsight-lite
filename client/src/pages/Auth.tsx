@@ -20,7 +20,7 @@ export default function AuthPage() {
               $
             </span>
             <div className="flex flex-col">
-              <span className="text-2xl font-bold font-display tracking-tight leading-none">Ledger One</span>
+              <span className="text-2xl font-bold font-display tracking-tight leading-none">FinSight 360</span>
               <span className="text-[10px] text-primary-foreground/60 uppercase font-bold tracking-widest mt-1">by FinSight Ltd.</span>
             </div>
           </div>
