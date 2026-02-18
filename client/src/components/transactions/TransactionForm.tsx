@@ -129,13 +129,19 @@ export function TransactionForm({ children, transaction }: { children: React.Rea
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {categories?.map((cat) => (
-                        <SelectItem key={cat.id} value={String(cat.id)}>
-                          <span className="flex items-center gap-2">
-                            {cat.type === 'income' ? '💰' : '💸'} {cat.name}
-                          </span>
-                        </SelectItem>
-                      ))}
+                      {categories && categories.length > 0 ? (
+                        categories.map((cat) => (
+                          <SelectItem key={cat.id} value={String(cat.id)}>
+                            <span className="flex items-center gap-2">
+                              {cat.type === 'income' ? '💰' : '💸'} {cat.name}
+                            </span>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-2 text-sm text-muted-foreground text-center">
+                          No categories found
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
