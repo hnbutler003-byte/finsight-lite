@@ -133,7 +133,12 @@ export function TransactionForm({ children, transaction }: { children: React.Rea
                         categories.map((cat) => (
                           <SelectItem key={cat.id} value={String(cat.id)}>
                             <span className="flex items-center gap-2">
-                              {cat.type === 'income' ? '💰' : '💸'} {cat.name}
+                              {cat.icon ? (
+                                <span className="w-4 h-4 flex items-center justify-center text-lg">{cat.icon}</span>
+                              ) : (
+                                <span>{cat.type === 'income' ? '💰' : '💸'}</span>
+                              )}
+                              {cat.name}
                             </span>
                           </SelectItem>
                         ))

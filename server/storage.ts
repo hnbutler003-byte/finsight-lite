@@ -84,7 +84,7 @@ export class DatabaseStorage implements IStorage {
 
   async getCategories(userId: string): Promise<Category[]> {
     return await db.select().from(categories)
-      .where(sql`${categories.userId} = ${userId} OR ${categories.userId} IS NULL`);
+      .where(sql`${categories.userId} = ${userId} OR ${categories.userId} IS NULL OR ${categories.isDefault} = true`);
   }
 
   async createCategory(category: InsertCategory): Promise<Category> {
