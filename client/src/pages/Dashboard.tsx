@@ -87,14 +87,25 @@ export default function Dashboard() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button 
-                variant="outline" 
-                onClick={() => setShowConsent(true)}
-                className="hidden sm:flex border-primary/20 hover:bg-primary/5 text-primary"
-              >
-                <LinkIcon className="mr-2 w-4 h-4" />
-                Link Bank
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="hidden sm:block">
+                      <Button 
+                        variant="outline" 
+                        disabled
+                        className="border-primary/20 bg-muted/50 text-muted-foreground cursor-not-allowed opacity-60"
+                      >
+                        <LinkIcon className="mr-2 w-4 h-4" />
+                        Link Bank
+                      </Button>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>This feature is not available in your region yet</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
