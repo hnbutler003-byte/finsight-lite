@@ -12,6 +12,8 @@ import Dashboard from "@/pages/Dashboard";
 import AuthPage from "@/pages/Auth";
 import Transactions from "@/pages/Transactions";
 import Budgets from "@/pages/Budgets";
+import Settings from "@/pages/Settings";
+import { ThemeProvider } from "@/components/theme/theme-provider";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
@@ -63,6 +65,7 @@ function Router() {
       <Route path="/transactions" component={Transactions} />
       <Route path="/budgets" component={Budgets} />
       <Route path="/reports" component={Reports} />
+      <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -70,12 +73,14 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Router />
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ThemeProvider defaultTheme="light" storageKey="finsight-theme">
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Router />
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 
