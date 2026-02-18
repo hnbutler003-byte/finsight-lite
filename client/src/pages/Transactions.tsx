@@ -27,7 +27,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -92,6 +93,28 @@ export default function Transactions() {
 
     doc.save(`FinSight_Transactions_${format(new Date(), 'yyyyMMdd')}.pdf`);
   };
+
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked && transactions) {
+      setSelectedIds(new Set(transactions.map(tx => tx.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectRow = (id: number, checked: boolean) => {
+    const newSelected = new Set(selectedIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const isAllSelected = transactions && transactions.length > 0 && selectedIds.size === transactions.length;
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -179,6 +202,13 @@ export default function Transactions() {
                 <table className="w-full text-sm text-left">
                   <thead className="bg-muted/30 text-muted-foreground font-medium uppercase text-xs">
                     <tr>
+                      <th className="px-6 py-4 w-10">
+                        <Checkbox 
+                          checked={isAllSelected}
+                          onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                          aria-label="Select all transactions"
+                        />
+                      </th>
                       <th className="px-6 py-4">Date</th>
                       <th className="px-6 py-4">Description</th>
                       <th className="px-6 py-4">Category</th>
@@ -188,7 +218,14 @@ export default function Transactions() {
                   </thead>
                   <tbody className="divide-y divide-border/50">
                     {transactions?.map((tx) => (
-                      <tr key={tx.id} className="hover:bg-muted/10 transition-colors">
+                      <tr key={tx.id} className={`hover:bg-muted/10 transition-colors ${selectedIds.has(tx.id) ? 'bg-primary/5' : ''}`}>
+                        <td className="px-6 py-4">
+                          <Checkbox 
+                            checked={selectedIds.has(tx.id)}
+                            onCheckedChange={(checked) => handleSelectRow(tx.id, !!checked)}
+                            aria-label={`Select transaction ${tx.id}`}
+                          />
+                        </td>
                         <td className="px-6 py-4 font-mono text-muted-foreground">
                           {format(new Date(tx.date), 'MMM d, yyyy')}
                         </td>
