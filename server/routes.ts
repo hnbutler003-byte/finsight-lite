@@ -53,16 +53,16 @@ export async function registerRoutes(
       
       For "newsClippings", provide 2-3 current financial news items from reputable sources strictly relevant to ${selectedCurrency}'s country.
       Sources by Currency:
-      - BSD: http://www.tribune242.com/news/business/, http://www.thenassauguardian.com/business/, http://ewnews.com/category/business, http://znsbahamas.com/category/business/
-      - JMD: http://jamaica-gleaner.com/business, http://www.jamaicaobserver.com/business/
-      - TTD: http://newsday.co.tt/category/business/, http://trinidadexpress.com/business/
-      - BBD: http://barbadostoday.bb/category/business/, http://www.nationnews.com/category/business/
-      - XCD: http://oecsbusinessfocus.com/, http://caribbeannewsglobal.com/category/caribbean/
-      - GYD: http://guyanachronicle.com/category/business/, http://www.stabroeknews.com/category/news/guyana/business/
-      - HTG: http://lenouvelliste.com/section/economie, http://juno7.ht/category/economie/
-      - USD: http://www.caribbeanjournal.com/category/business/, http://www.cnbc.com/world-business/
+      - BSD: http://www.tribune242.com/, http://www.thenassauguardian.com/, http://ewnews.com/, http://znsbahamas.com/
+      - JMD: http://jamaica-gleaner.com/, http://www.jamaicaobserver.com/
+      - TTD: http://newsday.co.tt/, http://trinidadexpress.com/
+      - BBD: http://barbadostoday.bb/, http://www.nationnews.com/
+      - XCD: http://oecsbusinessfocus.com/, http://caribbeannewsglobal.com/
+      - GYD: http://guyanachronicle.com/, http://www.stabroeknews.com/
+      - HTG: http://lenouvelliste.com/, http://juno7.ht/
+      - USD: http://www.caribbeanjournal.com/, http://www.cnbc.com/
       
-      IMPORTANT: Only use sources from the list above that match the ${selectedCurrency}. Ensure the "url" field is the EXACT URL of the section page provided above. For the "source" field, use clean names like "The Tribune", "The Nassau Guardian", "Eyewitness News", or "ZNS Bahamas". Always link directly to the main business section to ensure the link works.
+      IMPORTANT: Only use sources from the list above that match the ${selectedCurrency}. Ensure the "url" field is the EXACT home page URL provided above. For the "source" field, use clean names like "The Tribune", "The Nassau Guardian", "Eyewitness News", or "ZNS Bahamas". Always link directly to the main home page to ensure the link works.
       
       Keep the tone helpful and Caribbean-focused.`;
 
