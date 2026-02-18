@@ -51,7 +51,18 @@ export async function registerRoutes(
       - "currencyInsights": Array of { "title": string, "content": string, "impact": "positive" | "neutral" | "negative" }
       - "newsClippings": Array of { "source": string, "headline": string, "summary": string, "url": string }
       
-      For "newsClippings", simulate 2-3 current financial news items from reputable sources in ${selectedCurrency}'s region (e.g., ZNS/Eyewitness for BSD, Gleaner for JMD).
+      For "newsClippings", provide 2-3 current financial news items from reputable sources strictly relevant to ${selectedCurrency}'s country.
+      Sources by Currency:
+      - BSD: ZNS Bahamas, Eyewitness News, The Tribune
+      - JMD: Jamaica Gleaner, Jamaica Observer, Radio Jamaica
+      - TTD: Trinidad Newsday, Trinidad Express, Guardian
+      - BBD: Barbados Today, Nation News
+      - XCD: OECS Business Focus, Caribbean News Global
+      - GYD: Guyana Chronicle, Stabroek News
+      - HTG: Le Nouvelliste, Juno7
+      - USD: Caribbean Journal, CNBC Caribbean
+      
+      IMPORTANT: Only use sources from the list above that match the ${selectedCurrency}. Ensure the "url" field is a valid, clickable link to the source's finance section or a relevant news article.
       
       Keep the tone helpful and Caribbean-focused.`;
 

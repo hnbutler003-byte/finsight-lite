@@ -131,24 +131,26 @@ export default function Reports() {
               <TabsContent value="news" className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {(insights as any)?.newsClippings?.map((news: any, i: number) => (
-                    <Card key={i} className="hover-elevate overflow-hidden border-none shadow-md bg-card">
-                      <div className="bg-primary/5 px-4 py-2 border-b border-primary/10 flex justify-between items-center">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-primary/60">{news.source}</span>
-                        <ExternalLink className="w-3 h-3 text-primary/40" />
-                      </div>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg leading-tight">{news.headline}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground line-clamp-3">
-                          {news.summary}
-                        </p>
-                        <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">
-                          <span>Financial Briefing</span>
-                          <span>Regional Update</span>
+                    <a key={i} href={news.url} target="_blank" rel="noopener noreferrer" className="block group">
+                      <Card className="hover-elevate overflow-hidden border-none shadow-md bg-card transition-all group-hover:shadow-lg group-hover:ring-1 group-hover:ring-primary/20">
+                        <div className="bg-primary/5 px-4 py-2 border-b border-primary/10 flex justify-between items-center">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-primary/60">{news.source}</span>
+                          <ExternalLink className="w-3 h-3 text-primary/40 group-hover:text-primary transition-colors" />
                         </div>
-                      </CardContent>
-                    </Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg leading-tight group-hover:text-primary transition-colors">{news.headline}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-muted-foreground line-clamp-3 italic">
+                            {news.summary}
+                          </p>
+                          <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">
+                            <span>Financial Briefing</span>
+                            <span className="text-primary/60">Read Full Story →</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </a>
                   ))}
                 </div>
               </TabsContent>
