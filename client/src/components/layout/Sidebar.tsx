@@ -7,7 +7,6 @@ import {
   PieChart, 
   LogOut, 
   Menu,
-  Settings,
   Wallet
 } from "lucide-react";
 import { useState } from "react";
@@ -19,7 +18,6 @@ const NAV_ITEMS = [
   { label: "Transactions", href: "/transactions", icon: Receipt },
   { label: "Budgets", href: "/budgets", icon: Wallet },
   { label: "Financial Insights", href: "/reports", icon: PieChart },
-  { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {
