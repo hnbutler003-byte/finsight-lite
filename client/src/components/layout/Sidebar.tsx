@@ -28,13 +28,13 @@ export function Sidebar() {
   const NavContent = () => (
     <div className="flex flex-col h-full">
       <div className="p-6 border-b border-white/10">
-        <h1 className="font-display text-2xl font-bold text-primary flex items-center gap-2">
-          <span className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center">
+        <h1 className="font-display text-xl font-bold text-primary flex items-center gap-2">
+          <span className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center shrink-0 text-lg">
             $
           </span>
-          FinSight
+          FinSight Tracker & AI
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">Financial Wellness</p>
+        <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-widest mt-1">by FinSight Ltd.</p>
       </div>
 
       <nav className="flex-1 p-4 space-y-2">
