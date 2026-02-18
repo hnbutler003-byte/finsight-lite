@@ -12,7 +12,6 @@ import Dashboard from "@/pages/Dashboard";
 import AuthPage from "@/pages/Auth";
 import Transactions from "@/pages/Transactions";
 import Budgets from "@/pages/Budgets";
-import { ThemeProvider } from "@/components/theme/theme-provider";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
@@ -71,14 +70,12 @@ function Router() {
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="light" storageKey="finsight-theme">
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Router />
-          <Toaster />
-        </TooltipProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Router />
+        <Toaster />
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 }
 
