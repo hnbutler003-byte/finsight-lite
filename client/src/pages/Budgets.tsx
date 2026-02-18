@@ -200,44 +200,58 @@ export default function Budgets() {
 
               {/* Budget Allocation Summary */}
               {budgets && budgets.length > 0 && (
-                <div className="mt-12 bg-card rounded-2xl p-6 border border-border/50 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-display text-xl font-bold text-foreground">Budget Allocation</h3>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>How much of your monthly salary is allocated to budgets</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <span className="text-sm font-medium text-muted-foreground">
-                      Total Budgeted: <span className="text-foreground font-bold">${totalBudgeted.toFixed(2)}</span>
-                    </span>
+                <div className="mt-12 bg-primary/5 rounded-3xl p-8 border border-primary/10 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <Wallet className="w-24 h-24 rotate-12" />
                   </div>
                   
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Income Allocation</span>
-                      <span className={allocationPercentage > 100 ? "text-destructive font-bold" : "text-primary font-bold"}>
-                        {allocationPercentage.toFixed(1)}% of Income
-                      </span>
+                  <div className="relative z-10 space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <h3 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
+                          Monthly Overview
+                        </h3>
+                        <p className="text-sm text-muted-foreground italic max-w-md">
+                          {allocationPercentage > 100 
+                            ? "Your budgets exceed your total income. Consider adjusting your limits." 
+                            : "This shows how much of your monthly income is spoken for by your budget goals."}
+                        </p>
+                      </div>
+                      <div className="bg-background/50 backdrop-blur-sm px-4 py-2 rounded-xl border border-primary/20 self-start">
+                        <span className="text-sm font-medium text-muted-foreground block">Total Budgeted</span>
+                        <span className="text-xl font-bold text-primary">${totalBudgeted.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                      </div>
                     </div>
-                    <div className="relative h-4 w-full bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className={`absolute top-0 left-0 h-full transition-all duration-500 ${allocationPercentage > 90 ? "bg-destructive" : "bg-primary"}`}
-                        style={{ width: `${allocationPercentage}%` }}
-                      />
+                    
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-end">
+                        <div className="space-y-1">
+                          <span className="text-sm font-semibold uppercase tracking-wider text-primary/70">Income Allocation</span>
+                          <div className="flex items-baseline gap-2">
+                            <span className={`text-4xl font-bold ${allocationPercentage > 100 ? "text-destructive" : "text-foreground"}`}>
+                              {allocationPercentage.toFixed(0)}%
+                            </span>
+                            <span className="text-sm text-muted-foreground font-medium">of monthly salary</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="relative h-6 w-full bg-muted/50 rounded-full p-1 shadow-inner border border-primary/5">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-1000 ease-out shadow-sm ${
+                            allocationPercentage > 90 
+                              ? "bg-gradient-to-r from-destructive/80 to-destructive" 
+                              : "bg-gradient-to-r from-primary/80 to-primary"
+                          }`}
+                          style={{ width: `${Math.min(allocationPercentage, 100)}%` }}
+                        />
+                        {allocationPercentage > 100 && (
+                          <div className="absolute inset-0 flex items-center justify-end px-4">
+                            <span className="text-[10px] font-bold text-destructive uppercase tracking-tighter">Over Budget</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground italic">
-                      {allocationPercentage > 100 
-                        ? "Warning: Your budgets exceed your total income!" 
-                        : "You've allocated this portion of your monthly income to these category limits."}
-                    </p>
                   </div>
                 </div>
               )}
