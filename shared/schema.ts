@@ -48,6 +48,17 @@ export const linkedCards = pgTable("linked_cards", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const documentUploads = pgTable("document_uploads", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type").notNull(),
+  status: text("status", { enum: ["processing", "completed", "failed"] }).default("processing").notNull(),
+  transactionsCreated: integer("transactions_created").default(0),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // === RELATIONS ===
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -88,11 +99,19 @@ export const linkedCardsRelations = relations(linkedCards, ({ one }) => ({
   }),
 }));
 
+export const documentUploadsRelations = relations(documentUploads, ({ one }) => ({
+  user: one(users, {
+    fields: [documentUploads.userId],
+    references: [users.id],
+  }),
+}));
+
 export const usersRelations = relations(users, ({ many }) => ({
   transactions: many(transactions),
   budgets: many(budgets),
   customCategories: many(categories),
   linkedCards: many(linkedCards),
+  documentUploads: many(documentUploads),
 }));
 
 export * from "./models/chat";
@@ -103,6 +122,7 @@ export const insertCategorySchema = createInsertSchema(categories).omit({ id: tr
 export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true, createdAt: true });
 export const insertBudgetSchema = createInsertSchema(budgets).omit({ id: true, createdAt: true });
 export const insertLinkedCardSchema = createInsertSchema(linkedCards).omit({ id: true, createdAt: true });
+export const insertDocumentUploadSchema = createInsertSchema(documentUploads).omit({ id: true, createdAt: true });
 
 // === EXPLICIT API CONTRACT TYPES ===
 
@@ -112,11 +132,13 @@ export type Category = typeof categories.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
 export type Budget = typeof budgets.$inferSelect;
 export type LinkedCard = typeof linkedCards.$inferSelect;
+export type DocumentUpload = typeof documentUploads.$inferSelect;
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type InsertBudget = z.infer<typeof insertBudgetSchema>;
 export type InsertLinkedCard = z.infer<typeof insertLinkedCardSchema>;
+export type InsertDocumentUpload = z.infer<typeof insertDocumentUploadSchema>;
 
 // API Responses
 export type TransactionResponse = Transaction & { category?: Category };
