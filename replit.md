@@ -46,6 +46,14 @@ Core tables include:
 - **transactions**: Financial transactions with amount, date, category, and currency
 - **budgets**: User-defined spending limits per category
 - **linked_cards**: Optional card linking for future bank integration
+- **document_uploads**: Bank statement upload tracking (fileName, fileType, status, transactionsCreated)
+
+### Document Upload Feature
+- Users can upload bank statements (CSV, PDF, Excel) via drag-and-drop on the Dashboard
+- Backend uses multer for file handling and OpenAI (gpt-4o) to parse statement content
+- Parsed transactions are automatically created with `isAutoSynced: true`
+- Upload history shows status (processing/completed/failed) with transaction count
+- Supports all 8 regional currencies for imported transactions
 
 ## External Dependencies
 

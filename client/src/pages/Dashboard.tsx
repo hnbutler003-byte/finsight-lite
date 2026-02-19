@@ -2,6 +2,7 @@ import { useStats } from "@/hooks/use-stats";
 import { useAuth } from "@/hooks/use-auth";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { DocumentUploadSection } from "@/components/documents/DocumentUpload";
 import { Wallet, TrendingUp, TrendingDown, Plus, Loader2, HelpCircle, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -283,6 +284,9 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+
+          {/* Document Upload Portal */}
+          <DocumentUploadSection />
 
         </div>
       </main>

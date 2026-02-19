@@ -4,11 +4,28 @@ import { storage } from "./storage";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import multer from "multer";
+import path from "path";
+import * as XLSX from "xlsx";
 
 import { registerChatRoutes } from "./replit_integrations/chat";
 import { registerImageRoutes } from "./replit_integrations/image";
 import { registerAudioRoutes } from "./replit_integrations/audio";
 import { openai } from "./replit_integrations/chat/routes";
+
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['.csv', '.pdf', '.xlsx', '.xls'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only CSV, PDF, and Excel files are supported'));
+    }
+  }
+});
 
 export async function registerRoutes(
   httpServer: Server,
@@ -235,6 +252,160 @@ export async function registerRoutes(
     };
     const stats = await storage.getDashboardStats(userId, filters);
     res.json(stats);
+  });
+
+  // Document Uploads
+  app.get("/api/documents", isAuthenticated, async (req, res) => {
+    const userId = (req.user as any).claims.sub;
+    const uploads = await storage.getDocumentUploads(userId);
+    res.json(uploads);
+  });
+
+  app.post("/api/documents/upload", isAuthenticated, upload.single("file"), async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const allowedCurrencies = ["BSD", "JMD", "TTD", "BBD", "XCD", "GYD", "HTG", "USD"];
+      const currency = allowedCurrencies.includes(req.body.currency) ? req.body.currency : "BSD";
+      const ext = path.extname(file.originalname).toLowerCase();
+
+      const docUpload = await storage.createDocumentUpload({
+        userId,
+        fileName: file.originalname,
+        fileType: ext.replace('.', ''),
+        status: "processing",
+        transactionsCreated: 0,
+      });
+
+      let fileContent = "";
+      try {
+        if (ext === ".csv") {
+          fileContent = file.buffer.toString("utf-8");
+        } else if (ext === ".pdf") {
+          const pdfParseModule = await import("pdf-parse");
+          const pdfParseFn = (pdfParseModule as any).default || pdfParseModule;
+          const pdfData = await pdfParseFn(file.buffer);
+          fileContent = pdfData.text;
+        } else if (ext === ".xlsx" || ext === ".xls") {
+          const workbook = XLSX.read(file.buffer, { type: "buffer" });
+          const sheetNames = workbook.SheetNames;
+          for (const sheetName of sheetNames) {
+            const sheet = workbook.Sheets[sheetName];
+            fileContent += XLSX.utils.sheet_to_csv(sheet) + "\n";
+          }
+        }
+      } catch (parseErr) {
+        await storage.updateDocumentUpload(docUpload.id, {
+          status: "failed",
+          errorMessage: "Could not read the file. Please ensure it is a valid bank statement.",
+        });
+        return res.status(200).json({
+          upload: await storage.getDocumentUploads(userId).then(u => u.find(d => d.id === docUpload.id)),
+          transactions: [],
+          error: "Could not read the file contents"
+        });
+      }
+
+      if (!fileContent.trim()) {
+        await storage.updateDocumentUpload(docUpload.id, {
+          status: "failed",
+          errorMessage: "The file appears to be empty or could not be read.",
+        });
+        return res.status(200).json({
+          upload: await storage.getDocumentUploads(userId).then(u => u.find(d => d.id === docUpload.id)),
+          transactions: [],
+          error: "The file appears to be empty"
+        });
+      }
+
+      const truncatedContent = fileContent.substring(0, 20000);
+
+      const parsePrompt = `You are a bank statement parser. Parse the following bank statement content and extract all transactions.
+      
+The file is named "${file.originalname}" (originally ${ext} format, converted to text).
+The user's preferred currency is ${currency}.
+
+FILE CONTENT:
+${truncatedContent}
+
+Extract each transaction and return a JSON object with:
+{
+  "transactions": [
+    {
+      "date": "YYYY-MM-DD",
+      "description": "Description of the transaction",
+      "amount": number (positive for income/deposits, negative for expenses/withdrawals),
+      "type": "income" or "expense"
+    }
+  ]
+}
+
+Rules:
+- Parse dates into YYYY-MM-DD format
+- For debits/withdrawals/payments, make amount negative and type "expense"
+- For credits/deposits/income, make amount positive and type "income"
+- Use the description column for the transaction description
+- If the file appears to be in an unsupported format or is not a bank statement, return {"transactions": [], "error": "Could not parse this file as a bank statement"}
+- Return ONLY valid JSON, no other text`;
+
+      const aiResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: parsePrompt }],
+        response_format: { type: "json_object" }
+      });
+
+      const parsed = JSON.parse(aiResponse.choices[0].message.content || "{}");
+
+      if (parsed.error || !parsed.transactions || parsed.transactions.length === 0) {
+        await storage.updateDocumentUpload(docUpload.id, {
+          status: "failed",
+          errorMessage: parsed.error || "No transactions could be extracted from the file",
+        });
+        return res.status(200).json({
+          upload: await storage.getDocumentUploads(userId).then(u => u.find(d => d.id === docUpload.id)),
+          transactions: [],
+          error: parsed.error || "No transactions found in this file"
+        });
+      }
+
+      const userCategories = await storage.getCategories(userId);
+      let createdCount = 0;
+
+      for (const tx of parsed.transactions) {
+        try {
+          const txType = tx.type === "income" ? "income" : "expense";
+          const matchingCategory = userCategories.find(c => c.type === txType);
+          
+          await storage.createTransaction({
+            userId,
+            amount: Math.abs(tx.amount).toFixed(2),
+            currency,
+            categoryId: matchingCategory?.id || null,
+            date: new Date(tx.date),
+            description: tx.description || "Imported transaction",
+            isAutoSynced: true,
+          });
+          createdCount++;
+        } catch (txErr) {
+          console.error("Error creating transaction from upload:", txErr);
+        }
+      }
+
+      await storage.updateDocumentUpload(docUpload.id, {
+        status: "completed",
+        transactionsCreated: createdCount,
+      });
+
+      const updatedUpload = await storage.getDocumentUploads(userId).then(u => u.find(d => d.id === docUpload.id));
+      res.json({ upload: updatedUpload, transactionsCreated: createdCount });
+    } catch (err: any) {
+      console.error("Document upload error:", err);
+      res.status(500).json({ message: err.message || "Failed to process document" });
+    }
   });
 
   return httpServer;

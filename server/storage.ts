@@ -1,10 +1,11 @@
 import { 
-  users, categories, transactions, budgets, linkedCards,
+  users, categories, transactions, budgets, linkedCards, documentUploads,
   type User, type InsertUser,
   type Category, type InsertCategory,
   type Transaction, type InsertTransaction,
   type Budget, type InsertBudget,
   type LinkedCard, type InsertLinkedCard,
+  type DocumentUpload, type InsertDocumentUpload,
   type DashboardStats,
   type Conversation, type Message
 } from "@shared/schema";
@@ -33,6 +34,10 @@ export interface IStorage extends IAuthStorage {
 
   getLinkedCards(userId: string): Promise<LinkedCard[]>;
   linkCard(card: InsertLinkedCard): Promise<LinkedCard>;
+
+  getDocumentUploads(userId: string): Promise<DocumentUpload[]>;
+  createDocumentUpload(upload: InsertDocumentUpload): Promise<DocumentUpload>;
+  updateDocumentUpload(id: number, data: Partial<InsertDocumentUpload>): Promise<DocumentUpload>;
 
   getDashboardStats(userId: string, filters?: { startDate?: string, endDate?: string }): Promise<DashboardStats>;
 
@@ -192,6 +197,25 @@ export class DatabaseStorage implements IStorage {
   async linkCard(card: InsertLinkedCard): Promise<LinkedCard> {
     const [newCard] = await db.insert(linkedCards).values(card).returning();
     return newCard;
+  }
+
+  async getDocumentUploads(userId: string): Promise<DocumentUpload[]> {
+    return await db.select().from(documentUploads)
+      .where(eq(documentUploads.userId, userId))
+      .orderBy(desc(documentUploads.createdAt));
+  }
+
+  async createDocumentUpload(upload: InsertDocumentUpload): Promise<DocumentUpload> {
+    const [newUpload] = await db.insert(documentUploads).values(upload).returning();
+    return newUpload;
+  }
+
+  async updateDocumentUpload(id: number, data: Partial<InsertDocumentUpload>): Promise<DocumentUpload> {
+    const [updated] = await db.update(documentUploads)
+      .set(data)
+      .where(eq(documentUploads.id, id))
+      .returning();
+    return updated;
   }
 
   async getDashboardStats(userId: string, filters?: { startDate?: string, endDate?: string, period?: 'monthly' | 'yearly' }): Promise<DashboardStats> {
