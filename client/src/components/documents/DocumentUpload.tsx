@@ -90,7 +90,9 @@ export function DocumentUploadSection() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
-      toast({ title: "Upload removed", description: "The upload record has been deleted." });
+      queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({ title: "Upload removed", description: "The upload and its imported transactions have been deleted." });
     },
     onError: (error: Error) => {
       toast({ title: "Delete failed", description: error.message, variant: "destructive" });

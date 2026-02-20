@@ -28,6 +28,7 @@ export const transactions = pgTable("transactions", {
   date: timestamp("date").notNull(),
   description: text("description"),
   isAutoSynced: boolean("is_auto_synced").default(false),
+  documentUploadId: integer("document_upload_id").references(() => documentUploads.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

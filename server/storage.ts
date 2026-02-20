@@ -219,6 +219,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteDocumentUpload(id: number, userId: string): Promise<void> {
+    await db.delete(transactions)
+      .where(and(eq(transactions.documentUploadId, id), eq(transactions.userId, userId)));
     await db.delete(documentUploads)
       .where(and(eq(documentUploads.id, id), eq(documentUploads.userId, userId)));
   }

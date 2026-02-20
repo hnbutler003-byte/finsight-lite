@@ -407,6 +407,7 @@ Rules:
             date: new Date(tx.date),
             description: tx.description || "Imported transaction",
             isAutoSynced: true,
+            documentUploadId: docUpload.id,
           });
           createdCount++;
         } catch (txErr) {
