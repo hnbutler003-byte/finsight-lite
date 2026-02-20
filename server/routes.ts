@@ -349,7 +349,8 @@ Extract each transaction and return a JSON object with:
 
 Rules:
 - Parse dates into YYYY-MM-DD format
-- For debits/withdrawals/payments, make amount negative and type "expense"
+- For debits/withdrawals/payments/purchases, make amount negative and type "expense"
+- Any "POS purchase", "POS", "point of sale", "debit card purchase", or similar purchase transactions are ALWAYS expenses with negative amounts
 - For credits/deposits/income, make amount positive and type "income"
 - Use the description column for the transaction description
 - If the file appears to be in an unsupported format or is not a bank statement, return {"transactions": [], "error": "Could not parse this file as a bank statement"}
