@@ -54,6 +54,48 @@ Core tables include:
 - Parsed transactions are automatically created with `isAutoSynced: true`
 - Upload history shows status (processing/completed/failed) with transaction count
 - Supports all 8 regional currencies for imported transactions
+- AI auto-categorization matches transactions to appropriate categories with fallback logic
+- Duplicate detection skips transactions matching existing date, amount, and description
+
+### Multi-Currency Support
+- Dashboard converts all currencies to user-selected base currency using hardcoded pegged exchange rates to USD
+- Exchange rates stored in EXCHANGE_RATES_TO_USD constant (BSD 1:1, BBD 0.5, JMD 0.0064, TTD 0.147, XCD 0.37, GYD 0.0048, HTG 0.0076)
+- Currency breakdown panel shows per-currency totals when multiple currencies are in use
+
+### Spending Trends (client/src/pages/Trends.tsx)
+- Month-over-month spending comparison charts using Recharts
+- Spending alerts highlighting categories with 20%+ spending increases
+- Budget comparison with progress bars showing actual vs budgeted amounts
+- API endpoint: GET /api/spending-trends
+
+### Savings Goals (client/src/pages/SavingsGoals.tsx)
+- Users create savings targets with name, target amount, deadline, and currency
+- Add savings incrementally via deposit button
+- Visual progress bars and percentage tracking
+- Database table: savingsGoals (id, userId, name, targetAmount, currentAmount, currency, deadline, createdAt)
+- API endpoints: GET/POST /api/savings-goals, PATCH /api/savings-goals/:id/deposit, DELETE /api/savings-goals/:id
+
+### Bill Reminders (client/src/pages/BillReminders.tsx)
+- Manual bill entry with name, amount, due date, frequency, currency
+- Auto-detection of recurring bills from transaction patterns (weekly/monthly/quarterly/yearly)
+- Frequency detection analyzes transaction gaps: weekly (5-10 days), monthly (25-35), quarterly (80-100), yearly (340-380)
+- Database table: billReminders (id, userId, name, amount, currency, dueDate, frequency, isAutoDetected, isActive, createdAt)
+- API endpoints: GET/POST /api/bill-reminders, PATCH /api/bill-reminders/:id, DELETE /api/bill-reminders/:id, POST /api/bill-reminders/auto-detect
+
+### Financial Health Score
+- 100-point scoring system displayed on Dashboard
+- Breakdown: 25pts savings rate, 25pts budget adherence, 15pts spending diversity, 20pts goals progress, 15pts income consistency
+- Rating tiers: Excellent (80+), Good (60-79), Fair (40-59), Needs Improvement (<40)
+- Tips generated based on score components
+- API endpoint: GET /api/health-score
+
+### Export & Reports (client/src/pages/Reports.tsx)
+- Financial summary with income, expenses, net savings, savings rate, top categories, budget status
+- CSV export of all transactions (date, description, amount, type, currency, category)
+- JSON export for developer/integration use
+- AI-powered spending insights, currency insights, and regional news
+- Period filtering: This Month, Last 3 Months, This Year, All Time
+- API endpoints: GET /api/export/transactions (CSV/JSON), GET /api/export/summary, GET /api/ai/insights
 
 ## External Dependencies
 

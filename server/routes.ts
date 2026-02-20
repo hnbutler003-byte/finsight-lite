@@ -859,5 +859,131 @@ Rules:
     }
   });
 
+  // Export transactions as CSV
+  app.get("/api/export/transactions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const { startDate, endDate, format } = req.query as { startDate?: string; endDate?: string; format?: string };
+
+      const transactions = await storage.getTransactions(userId);
+      const categories = await storage.getCategories(userId);
+      const categoryMap = new Map(categories.map(c => [c.id, c.name]));
+
+      const toDateStr = (d: Date | string) => {
+        if (d instanceof Date) return d.toISOString().split("T")[0];
+        return String(d).split("T")[0];
+      };
+
+      let filtered = transactions;
+      if (startDate) {
+        const start = new Date(startDate);
+        filtered = filtered.filter(t => new Date(t.date) >= start);
+      }
+      if (endDate) {
+        const end = new Date(endDate + "T23:59:59");
+        filtered = filtered.filter(t => new Date(t.date) <= end);
+      }
+
+      filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      if (format === "json") {
+        const data = filtered.map(t => ({
+          date: toDateStr(t.date),
+          description: t.description,
+          amount: t.amount,
+          type: t.type,
+          currency: t.currency,
+          category: categoryMap.get(t.categoryId!) || "Uncategorized",
+        }));
+        res.json(data);
+        return;
+      }
+
+      const header = "Date,Description,Amount,Type,Currency,Category\n";
+      const rows = filtered.map(t => {
+        const desc = (t.description || "").replace(/"/g, '""');
+        const cat = categoryMap.get(t.categoryId!) || "Uncategorized";
+        return `${toDateStr(t.date)},"${desc}",${t.amount},${t.type},${t.currency},"${cat}"`;
+      }).join("\n");
+
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename="finsight360-transactions-${new Date().toISOString().split('T')[0]}.csv"`);
+      res.send(header + rows);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Export failed" });
+    }
+  });
+
+  // Export financial summary report
+  app.get("/api/export/summary", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const { startDate, endDate, currency: baseCurrency } = req.query as { startDate?: string; endDate?: string; currency?: string };
+      const base = baseCurrency || "BSD";
+
+      const transactions = await storage.getTransactions(userId);
+      const categories = await storage.getCategories(userId);
+      const budgets = await storage.getBudgets(userId);
+      const categoryMap = new Map(categories.map(c => [c.id, c.name]));
+
+      let filtered = transactions;
+      if (startDate) {
+        const start = new Date(startDate);
+        filtered = filtered.filter(t => new Date(t.date) >= start);
+      }
+      if (endDate) {
+        const end = new Date(endDate + "T23:59:59");
+        filtered = filtered.filter(t => new Date(t.date) <= end);
+      }
+
+      const toUSD = (amount: number, curr: string) => amount * (EXCHANGE_RATES_TO_USD[curr] || 1);
+      const fromUSD = (usdAmount: number, toCurr: string) => usdAmount / (EXCHANGE_RATES_TO_USD[toCurr] || 1);
+      const convert = (amount: number, from: string) => fromUSD(toUSD(amount, from), base);
+
+      let totalIncome = 0;
+      let totalExpenses = 0;
+      const categoryTotals: Record<string, number> = {};
+
+      for (const t of filtered) {
+        const converted = convert(Number(t.amount), t.currency);
+        if (t.type === "income") {
+          totalIncome += converted;
+        } else {
+          totalExpenses += converted;
+          const catName = categoryMap.get(t.categoryId!) || "Uncategorized";
+          categoryTotals[catName] = (categoryTotals[catName] || 0) + converted;
+        }
+      }
+
+      const summary = {
+        period: { startDate: startDate || "All time", endDate: endDate || "Present" },
+        currency: base,
+        totalIncome: Math.round(totalIncome * 100) / 100,
+        totalExpenses: Math.round(totalExpenses * 100) / 100,
+        netSavings: Math.round((totalIncome - totalExpenses) * 100) / 100,
+        savingsRate: totalIncome > 0 ? Math.round(((totalIncome - totalExpenses) / totalIncome) * 100) : 0,
+        transactionCount: filtered.length,
+        topCategories: Object.entries(categoryTotals)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, 10)
+          .map(([name, total]) => ({
+            category: name,
+            amount: Math.round(total * 100) / 100,
+            percentage: totalExpenses > 0 ? Math.round((total / totalExpenses) * 100) : 0,
+          })),
+        budgetStatus: budgets.map(b => ({
+          category: categoryMap.get(b.categoryId!) || "Unknown",
+          limit: Number(b.amount),
+          spent: Math.round((categoryTotals[categoryMap.get(b.categoryId!) || ""] || 0) * 100) / 100,
+          currency: b.currency,
+        })),
+      };
+
+      res.json(summary);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Summary export failed" });
+    }
+  });
+
   return httpServer;
 }
