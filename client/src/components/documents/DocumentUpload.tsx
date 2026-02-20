@@ -61,9 +61,10 @@ export function DocumentUploadSection() {
           variant: "destructive",
         });
       } else {
+        const dupeMsg = data.duplicatesSkipped > 0 ? ` (${data.duplicatesSkipped} duplicates skipped)` : "";
         toast({
           title: "Statement processed",
-          description: `${data.transactionsCreated} transactions imported successfully.`,
+          description: `${data.transactionsCreated} transactions imported successfully.${dupeMsg}`,
         });
       }
     },

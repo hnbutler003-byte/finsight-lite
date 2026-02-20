@@ -41,7 +41,267 @@ export async function registerRoutes(
   registerAudioRoutes(app);
 
   // Protected API routes
-  
+
+  // Currency exchange rates (Caribbean pegged rates to USD)
+  const EXCHANGE_RATES_TO_USD: Record<string, number> = {
+    USD: 1,
+    BSD: 1,        // Bahamian Dollar pegged 1:1 to USD
+    BBD: 0.50,     // Barbadian Dollar pegged 2:1 to USD
+    JMD: 0.0064,   // Jamaican Dollar ~156 JMD = 1 USD
+    TTD: 0.147,    // Trinidad & Tobago Dollar ~6.8 TTD = 1 USD
+    XCD: 0.37,     // East Caribbean Dollar pegged 2.70 XCD = 1 USD
+    GYD: 0.0048,   // Guyanese Dollar ~209 GYD = 1 USD
+    HTG: 0.0075,   // Haitian Gourde ~133 HTG = 1 USD
+  };
+
+  app.get("/api/currency/rates", isAuthenticated, (_req, res) => {
+    res.json({ rates: EXCHANGE_RATES_TO_USD });
+  });
+
+  app.get("/api/stats/converted", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const baseCurrency = (req.query.baseCurrency as string) || "BSD";
+      const filters = {
+        startDate: req.query.startDate as string,
+        endDate: req.query.endDate as string,
+        period: req.query.period as 'monthly' | 'yearly',
+      };
+
+      const transactions = await storage.getTransactions(userId);
+      const baseRate = EXCHANGE_RATES_TO_USD[baseCurrency] || 1;
+
+      let totalIncome = 0;
+      let totalExpenses = 0;
+      const currencyBreakdown: Record<string, { income: number; expenses: number; count: number }> = {};
+
+      for (const tx of transactions) {
+        if (filters.startDate && new Date(tx.date) < new Date(filters.startDate)) continue;
+        if (filters.endDate && new Date(tx.date) > new Date(filters.endDate)) continue;
+
+        const txCurrency = tx.currency || "BSD";
+        const txRate = EXCHANGE_RATES_TO_USD[txCurrency] || 1;
+        const convertedAmount = (parseFloat(tx.amount) * txRate) / baseRate;
+
+        if (!currencyBreakdown[txCurrency]) {
+          currencyBreakdown[txCurrency] = { income: 0, expenses: 0, count: 0 };
+        }
+        currencyBreakdown[txCurrency].count++;
+
+        if (tx.type === "income") {
+          totalIncome += convertedAmount;
+          currencyBreakdown[txCurrency].income += parseFloat(tx.amount);
+        } else {
+          totalExpenses += Math.abs(convertedAmount);
+          currencyBreakdown[txCurrency].expenses += Math.abs(parseFloat(tx.amount));
+        }
+      }
+
+      res.json({
+        baseCurrency,
+        balance: totalIncome - totalExpenses,
+        totalIncome,
+        totalExpenses,
+        currencyBreakdown,
+        rates: EXCHANGE_RATES_TO_USD,
+      });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  // Spending Trends - monthly comparison
+  app.get("/api/trends", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const transactions = await storage.getTransactions(userId);
+      const budgets = await storage.getBudgets(userId);
+      const months = parseInt(req.query.months as string) || 6;
+
+      const now = new Date();
+      const monthlyData: Record<string, { income: number; expenses: number; categories: Record<string, number> }> = {};
+
+      for (let i = 0; i < months; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        monthlyData[key] = { income: 0, expenses: 0, categories: {} };
+      }
+
+      for (const tx of transactions) {
+        const txDate = new Date(tx.date);
+        const key = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
+        if (!monthlyData[key]) continue;
+
+        const amount = Math.abs(parseFloat(tx.amount));
+        if (tx.type === "income") {
+          monthlyData[key].income += amount;
+        } else {
+          monthlyData[key].expenses += amount;
+          const catName = tx.category?.name || "Uncategorized";
+          monthlyData[key].categories[catName] = (monthlyData[key].categories[catName] || 0) + amount;
+        }
+      }
+
+      const sortedMonths = Object.entries(monthlyData)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([month, data]) => ({ month, ...data }));
+
+      const currentMonth = sortedMonths[sortedMonths.length - 1];
+      const previousMonth = sortedMonths[sortedMonths.length - 2];
+
+      const alerts: { category: string; change: number; current: number; previous: number; overBudget?: boolean }[] = [];
+
+      if (currentMonth && previousMonth) {
+        const allCategories = new Set([
+          ...Object.keys(currentMonth.categories),
+          ...Object.keys(previousMonth.categories),
+        ]);
+
+        for (const cat of allCategories) {
+          const current = currentMonth.categories[cat] || 0;
+          const previous = previousMonth.categories[cat] || 0;
+          if (previous > 0 && current > previous * 1.2) {
+            const change = ((current - previous) / previous) * 100;
+            const budget = budgets.find(b => b.category?.name === cat);
+            alerts.push({
+              category: cat,
+              change: Math.round(change),
+              current,
+              previous,
+              overBudget: budget ? current > parseFloat(budget.amount) : undefined,
+            });
+          }
+        }
+      }
+
+      const budgetComparison = budgets.map(b => {
+        const catName = b.category?.name || "Unknown";
+        const spent = currentMonth?.categories[catName] || 0;
+        const limit = parseFloat(b.amount);
+        return {
+          category: catName,
+          budgeted: limit,
+          spent,
+          remaining: limit - spent,
+          percentUsed: limit > 0 ? Math.round((spent / limit) * 100) : 0,
+        };
+      });
+
+      res.json({ months: sortedMonths, alerts, budgetComparison });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  // Financial Health Score
+  app.get("/api/health-score", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const transactions = await storage.getTransactions(userId);
+      const budgets = await storage.getBudgets(userId);
+      const goals = await storage.getSavingsGoals(userId);
+
+      let savingsRateScore = 0;
+      let budgetAdherenceScore = 0;
+      let diversityScore = 0;
+      let goalsScore = 0;
+      let consistencyScore = 0;
+
+      const last3Months = new Date();
+      last3Months.setMonth(last3Months.getMonth() - 3);
+      const recentTx = transactions.filter(tx => new Date(tx.date) >= last3Months);
+
+      let totalIncome = 0;
+      let totalExpenses = 0;
+      for (const tx of recentTx) {
+        const amt = Math.abs(parseFloat(tx.amount));
+        if (tx.type === "income") totalIncome += amt;
+        else totalExpenses += amt;
+      }
+
+      if (totalIncome > 0) {
+        const savingsRate = (totalIncome - totalExpenses) / totalIncome;
+        if (savingsRate >= 0.2) savingsRateScore = 25;
+        else if (savingsRate >= 0.1) savingsRateScore = 18;
+        else if (savingsRate >= 0.05) savingsRateScore = 12;
+        else if (savingsRate > 0) savingsRateScore = 6;
+      }
+
+      if (budgets.length > 0) {
+        let withinBudget = 0;
+        for (const b of budgets) {
+          const spent = b.spent || 0;
+          if (spent <= parseFloat(b.amount)) withinBudget++;
+        }
+        budgetAdherenceScore = Math.round((withinBudget / budgets.length) * 25);
+      } else {
+        budgetAdherenceScore = 5;
+      }
+
+      const expenseCategories = new Set(recentTx.filter(t => t.type === "expense").map(t => t.categoryId).filter(Boolean));
+      if (expenseCategories.size >= 5) diversityScore = 15;
+      else if (expenseCategories.size >= 3) diversityScore = 10;
+      else if (expenseCategories.size >= 1) diversityScore = 5;
+
+      if (goals.length > 0) {
+        let progressSum = 0;
+        for (const g of goals) {
+          const progress = parseFloat(g.currentAmount) / parseFloat(g.targetAmount);
+          progressSum += Math.min(progress, 1);
+        }
+        goalsScore = Math.round((progressSum / goals.length) * 20);
+      }
+
+      const monthlyTotals: Record<string, number> = {};
+      for (const tx of transactions) {
+        if (tx.type !== "income") continue;
+        const key = `${new Date(tx.date).getFullYear()}-${new Date(tx.date).getMonth()}`;
+        monthlyTotals[key] = (monthlyTotals[key] || 0) + Math.abs(parseFloat(tx.amount));
+      }
+      const monthKeys = Object.keys(monthlyTotals);
+      if (monthKeys.length >= 3) {
+        const values = Object.values(monthlyTotals);
+        const avg = values.reduce((a, b) => a + b, 0) / values.length;
+        const variance = values.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / values.length;
+        const cv = avg > 0 ? Math.sqrt(variance) / avg : 1;
+        if (cv < 0.2) consistencyScore = 15;
+        else if (cv < 0.4) consistencyScore = 10;
+        else if (cv < 0.6) consistencyScore = 5;
+      } else {
+        consistencyScore = 5;
+      }
+
+      const totalScore = savingsRateScore + budgetAdherenceScore + diversityScore + goalsScore + consistencyScore;
+
+      let rating = "Needs Improvement";
+      if (totalScore >= 80) rating = "Excellent";
+      else if (totalScore >= 60) rating = "Good";
+      else if (totalScore >= 40) rating = "Fair";
+
+      const tips: string[] = [];
+      if (savingsRateScore < 15) tips.push("Try to save at least 20% of your income each month");
+      if (budgetAdherenceScore < 15) tips.push("Set budgets for your main spending categories and stick to them");
+      if (goalsScore < 10) tips.push("Create savings goals to stay motivated and build wealth");
+      if (diversityScore < 10) tips.push("Categorize your expenses to better understand your spending");
+      if (consistencyScore < 10) tips.push("Work towards more consistent income streams");
+
+      res.json({
+        score: totalScore,
+        rating,
+        breakdown: {
+          savingsRate: { score: savingsRateScore, max: 25, label: "Savings Rate" },
+          budgetAdherence: { score: budgetAdherenceScore, max: 25, label: "Budget Adherence" },
+          diversity: { score: diversityScore, max: 15, label: "Spending Diversity" },
+          goals: { score: goalsScore, max: 20, label: "Savings Goals" },
+          consistency: { score: consistencyScore, max: 15, label: "Income Consistency" },
+        },
+        tips,
+      });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
   // AI Insights
   app.get("/api/ai/insights", isAuthenticated, async (req, res) => {
     try {
@@ -242,6 +502,138 @@ export async function registerRoutes(
     res.status(201).json(card);
   });
 
+  // Savings Goals
+  app.get("/api/savings-goals", isAuthenticated, async (req, res) => {
+    const userId = (req.user as any).claims.sub;
+    const goals = await storage.getSavingsGoals(userId);
+    res.json(goals);
+  });
+
+  app.post("/api/savings-goals", isAuthenticated, async (req, res) => {
+    const userId = (req.user as any).claims.sub;
+    const { name, targetAmount, currency, deadline, icon, color } = req.body;
+    const goal = await storage.createSavingsGoal({
+      userId,
+      name,
+      targetAmount: String(targetAmount),
+      currentAmount: "0",
+      currency: currency || "BSD",
+      deadline: deadline ? new Date(deadline) : null,
+      icon: icon || null,
+      color: color || null,
+    });
+    res.status(201).json(goal);
+  });
+
+  app.patch("/api/savings-goals/:id", isAuthenticated, async (req, res) => {
+    const userId = (req.user as any).claims.sub;
+    const id = Number(req.params.id);
+    const data: any = {};
+    if (req.body.name !== undefined) data.name = req.body.name;
+    if (req.body.targetAmount !== undefined) data.targetAmount = String(req.body.targetAmount);
+    if (req.body.currentAmount !== undefined) data.currentAmount = String(req.body.currentAmount);
+    if (req.body.deadline !== undefined) data.deadline = req.body.deadline ? new Date(req.body.deadline) : null;
+    const goal = await storage.updateSavingsGoal(id, userId, data);
+    res.json(goal);
+  });
+
+  app.delete("/api/savings-goals/:id", isAuthenticated, async (req, res) => {
+    const userId = (req.user as any).claims.sub;
+    const id = Number(req.params.id);
+    await storage.deleteSavingsGoal(id, userId);
+    res.status(204).end();
+  });
+
+  // Bill Reminders
+  app.get("/api/bill-reminders", isAuthenticated, async (req, res) => {
+    const userId = (req.user as any).claims.sub;
+    const reminders = await storage.getBillReminders(userId);
+    res.json(reminders);
+  });
+
+  app.post("/api/bill-reminders", isAuthenticated, async (req, res) => {
+    const userId = (req.user as any).claims.sub;
+    const { name, amount, currency, frequency, nextDueDate, categoryId } = req.body;
+    const reminder = await storage.createBillReminder({
+      userId,
+      name,
+      amount: String(amount),
+      currency: currency || "BSD",
+      frequency: frequency || "monthly",
+      nextDueDate: new Date(nextDueDate),
+      categoryId: categoryId || null,
+      isAutoDetected: false,
+    });
+    res.status(201).json(reminder);
+  });
+
+  app.delete("/api/bill-reminders/:id", isAuthenticated, async (req, res) => {
+    const userId = (req.user as any).claims.sub;
+    const id = Number(req.params.id);
+    await storage.deleteBillReminder(id, userId);
+    res.status(204).end();
+  });
+
+  // Auto-detect recurring bills from transaction history
+  app.post("/api/bill-reminders/auto-detect", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const transactions = await storage.getTransactions(userId);
+      
+      const descriptionMap: Record<string, { dates: Date[]; amounts: number[]; categoryId: number | null }> = {};
+      for (const tx of transactions) {
+        if (tx.type !== "expense") continue;
+        const key = tx.description?.trim().toLowerCase() || "";
+        if (!key) continue;
+        if (!descriptionMap[key]) {
+          descriptionMap[key] = { dates: [], amounts: [], categoryId: tx.categoryId };
+        }
+        descriptionMap[key].dates.push(new Date(tx.date));
+        descriptionMap[key].amounts.push(Math.abs(parseFloat(tx.amount)));
+      }
+
+      const detected: { name: string; amount: number; frequency: string; nextDueDate: string; categoryId: number | null }[] = [];
+
+      for (const [desc, data] of Object.entries(descriptionMap)) {
+        if (data.dates.length < 2) continue;
+        
+        data.dates.sort((a, b) => a.getTime() - b.getTime());
+        const gaps: number[] = [];
+        for (let i = 1; i < data.dates.length; i++) {
+          gaps.push((data.dates[i].getTime() - data.dates[i - 1].getTime()) / (1000 * 60 * 60 * 24));
+        }
+        const avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+        
+        let frequency = "";
+        if (avgGap >= 5 && avgGap <= 10) frequency = "weekly";
+        else if (avgGap >= 25 && avgGap <= 35) frequency = "monthly";
+        else if (avgGap >= 80 && avgGap <= 100) frequency = "quarterly";
+        else if (avgGap >= 340 && avgGap <= 380) frequency = "yearly";
+        else continue;
+
+        const avgAmount = data.amounts.reduce((a, b) => a + b, 0) / data.amounts.length;
+        const lastDate = data.dates[data.dates.length - 1];
+        const nextDate = new Date(lastDate);
+        if (frequency === "weekly") nextDate.setDate(nextDate.getDate() + 7);
+        else if (frequency === "monthly") nextDate.setMonth(nextDate.getMonth() + 1);
+        else if (frequency === "quarterly") nextDate.setMonth(nextDate.getMonth() + 3);
+        else if (frequency === "yearly") nextDate.setFullYear(nextDate.getFullYear() + 1);
+
+        detected.push({
+          name: desc.charAt(0).toUpperCase() + desc.slice(1),
+          amount: Math.round(avgAmount * 100) / 100,
+          frequency,
+          nextDueDate: nextDate.toISOString(),
+          categoryId: data.categoryId,
+        });
+      }
+
+      res.json({ detected });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
   // Dashboard Stats
   app.get(api.stats.get.path, isAuthenticated, async (req, res) => {
     const userId = (req.user as any).claims.sub;
@@ -342,10 +734,16 @@ export async function registerRoutes(
 
       const truncatedContent = fileContent.substring(0, 20000);
 
+      const userCategories = await storage.getCategories(userId);
+      const categoryList = userCategories.map(c => `- "${c.name}" (type: ${c.type}, id: ${c.id})`).join("\n");
+
       const parsePrompt = `You are a bank statement parser. Parse the following bank statement content and extract all transactions.
       
 The file is named "${file.originalname}" (originally ${ext} format, converted to text).
 The user's preferred currency is ${currency}.
+
+AVAILABLE CATEGORIES:
+${categoryList}
 
 FILE CONTENT:
 ${truncatedContent}
@@ -357,7 +755,8 @@ Extract each transaction and return a JSON object with:
       "date": "YYYY-MM-DD",
       "description": "Description of the transaction",
       "amount": number (positive for income/deposits, negative for expenses/withdrawals),
-      "type": "income" or "expense"
+      "type": "income" or "expense",
+      "categoryId": number (the id of the best matching category from the list above)
     }
   ]
 }
@@ -367,6 +766,17 @@ Rules:
 - For debits/withdrawals/payments/purchases, make amount negative and type "expense"
 - Any "POS purchase", "POS", "point of sale", "debit card purchase", or similar purchase transactions are ALWAYS expenses with negative amounts
 - For credits/deposits/income, make amount positive and type "income"
+- CATEGORIZATION: Match each transaction to the most appropriate category based on the merchant/description:
+  * Uber, taxi, gas stations, MTA, transit → Transportation
+  * McDonald's, restaurants, food delivery, grocery → Food & Dining
+  * Amazon, retail stores, CVS → Shopping
+  * Netflix, movies, concerts → Entertainment
+  * Electric, water, phone, internet bills → Bills & Utilities
+  * Rent, mortgage → Housing
+  * Pharmacy, doctor, hospital → Health
+  * Salon, spa, barber → Beauty/Maintenance
+  * Salary, wages, direct deposit, transfers received → Salary (income)
+  * Use your best judgment for others based on the merchant name
 - Use the description column for the transaction description
 - If the file appears to be in an unsupported format or is not a bank statement, return {"transactions": [], "error": "Could not parse this file as a bank statement"}
 - Return ONLY valid JSON, no other text`;
@@ -391,21 +801,42 @@ Rules:
         });
       }
 
-      const userCategories = await storage.getCategories(userId);
+      const existingTransactions = await storage.getTransactions(userId);
       let createdCount = 0;
+      let skippedCount = 0;
 
       for (const tx of parsed.transactions) {
         try {
+          const txDate = new Date(tx.date);
+          const txAmount = Math.abs(tx.amount).toFixed(2);
+          const txDesc = (tx.description || "Imported transaction").trim();
+
+          const isDuplicate = existingTransactions.some(existing => {
+            const existingDate = new Date(existing.date);
+            return (
+              existing.amount === txAmount &&
+              existingDate.toISOString().slice(0, 10) === txDate.toISOString().slice(0, 10) &&
+              existing.description?.trim() === txDesc
+            );
+          });
+
+          if (isDuplicate) {
+            skippedCount++;
+            continue;
+          }
+
           const txType = tx.type === "income" ? "income" : "expense";
-          const matchingCategory = userCategories.find(c => c.type === txType);
+          const aiCategoryId = tx.categoryId ? Number(tx.categoryId) : null;
+          const validCategory = aiCategoryId && userCategories.find(c => c.id === aiCategoryId);
+          const fallbackCategory = userCategories.find(c => c.type === txType);
           
           await storage.createTransaction({
             userId,
-            amount: Math.abs(tx.amount).toFixed(2),
+            amount: txAmount,
             currency,
-            categoryId: matchingCategory?.id || null,
-            date: new Date(tx.date),
-            description: tx.description || "Imported transaction",
+            categoryId: validCategory ? aiCategoryId : (fallbackCategory?.id || null),
+            date: txDate,
+            description: txDesc,
             isAutoSynced: true,
             documentUploadId: docUpload.id,
           });
@@ -421,7 +852,7 @@ Rules:
       });
 
       const updatedUpload = await storage.getDocumentUploads(userId).then(u => u.find(d => d.id === docUpload.id));
-      res.json({ upload: updatedUpload, transactionsCreated: createdCount });
+      res.json({ upload: updatedUpload, transactionsCreated: createdCount, duplicatesSkipped: skippedCount });
     } catch (err: any) {
       console.error("Document upload error:", err);
       res.status(500).json({ message: err.message || "Failed to process document" });

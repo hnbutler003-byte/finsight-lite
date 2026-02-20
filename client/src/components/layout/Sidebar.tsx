@@ -7,7 +7,10 @@ import {
   PieChart, 
   LogOut, 
   Menu,
-  Wallet
+  Wallet,
+  TrendingUp,
+  PiggyBank,
+  Bell,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +20,9 @@ const NAV_ITEMS = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Transactions", href: "/transactions", icon: Receipt },
   { label: "Budgets", href: "/budgets", icon: Wallet },
+  { label: "Spending Trends", href: "/trends", icon: TrendingUp },
+  { label: "Savings Goals", href: "/savings", icon: PiggyBank },
+  { label: "Bill Reminders", href: "/bills", icon: Bell },
   { label: "Financial Insights", href: "/reports", icon: PieChart },
 ];
 

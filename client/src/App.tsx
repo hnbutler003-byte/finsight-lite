@@ -12,6 +12,9 @@ import Dashboard from "@/pages/Dashboard";
 import AuthPage from "@/pages/Auth";
 import Transactions from "@/pages/Transactions";
 import Budgets from "@/pages/Budgets";
+import Trends from "@/pages/Trends";
+import SavingsGoals from "@/pages/SavingsGoals";
+import BillReminders from "@/pages/BillReminders";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
@@ -62,6 +65,9 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/transactions" component={Transactions} />
       <Route path="/budgets" component={Budgets} />
+      <Route path="/trends" component={Trends} />
+      <Route path="/savings" component={SavingsGoals} />
+      <Route path="/bills" component={BillReminders} />
       <Route path="/reports" component={Reports} />
       <Route component={NotFound} />
     </Switch>

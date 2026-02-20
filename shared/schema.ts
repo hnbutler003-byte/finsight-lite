@@ -60,6 +60,32 @@ export const documentUploads = pgTable("document_uploads", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const savingsGoals = pgTable("savings_goals", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  targetAmount: numeric("target_amount", { precision: 10, scale: 2 }).notNull(),
+  currentAmount: numeric("current_amount", { precision: 10, scale: 2 }).default("0").notNull(),
+  currency: text("currency").default("BSD").notNull(),
+  deadline: timestamp("deadline"),
+  icon: text("icon"),
+  color: text("color"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const billReminders = pgTable("bill_reminders", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").default("BSD").notNull(),
+  frequency: text("frequency", { enum: ["weekly", "monthly", "quarterly", "yearly"] }).default("monthly").notNull(),
+  nextDueDate: timestamp("next_due_date").notNull(),
+  categoryId: integer("category_id").references(() => categories.id),
+  isAutoDetected: boolean("is_auto_detected").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // === RELATIONS ===
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -107,12 +133,32 @@ export const documentUploadsRelations = relations(documentUploads, ({ one }) => 
   }),
 }));
 
+export const savingsGoalsRelations = relations(savingsGoals, ({ one }) => ({
+  user: one(users, {
+    fields: [savingsGoals.userId],
+    references: [users.id],
+  }),
+}));
+
+export const billRemindersRelations = relations(billReminders, ({ one }) => ({
+  user: one(users, {
+    fields: [billReminders.userId],
+    references: [users.id],
+  }),
+  category: one(categories, {
+    fields: [billReminders.categoryId],
+    references: [categories.id],
+  }),
+}));
+
 export const usersRelations = relations(users, ({ many }) => ({
   transactions: many(transactions),
   budgets: many(budgets),
   customCategories: many(categories),
   linkedCards: many(linkedCards),
   documentUploads: many(documentUploads),
+  savingsGoals: many(savingsGoals),
+  billReminders: many(billReminders),
 }));
 
 export * from "./models/chat";
@@ -124,6 +170,8 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({ i
 export const insertBudgetSchema = createInsertSchema(budgets).omit({ id: true, createdAt: true });
 export const insertLinkedCardSchema = createInsertSchema(linkedCards).omit({ id: true, createdAt: true });
 export const insertDocumentUploadSchema = createInsertSchema(documentUploads).omit({ id: true, createdAt: true });
+export const insertSavingsGoalSchema = createInsertSchema(savingsGoals).omit({ id: true, createdAt: true });
+export const insertBillReminderSchema = createInsertSchema(billReminders).omit({ id: true, createdAt: true });
 
 // === EXPLICIT API CONTRACT TYPES ===
 
@@ -134,12 +182,16 @@ export type Transaction = typeof transactions.$inferSelect;
 export type Budget = typeof budgets.$inferSelect;
 export type LinkedCard = typeof linkedCards.$inferSelect;
 export type DocumentUpload = typeof documentUploads.$inferSelect;
+export type SavingsGoal = typeof savingsGoals.$inferSelect;
+export type BillReminder = typeof billReminders.$inferSelect;
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type InsertBudget = z.infer<typeof insertBudgetSchema>;
 export type InsertLinkedCard = z.infer<typeof insertLinkedCardSchema>;
 export type InsertDocumentUpload = z.infer<typeof insertDocumentUploadSchema>;
+export type InsertSavingsGoal = z.infer<typeof insertSavingsGoalSchema>;
+export type InsertBillReminder = z.infer<typeof insertBillReminderSchema>;
 
 // API Responses
 export type TransactionResponse = Transaction & { category?: Category };

@@ -1,11 +1,13 @@
 import { 
-  users, categories, transactions, budgets, linkedCards, documentUploads,
-  type User, type InsertUser,
+  users, categories, transactions, budgets, linkedCards, documentUploads, savingsGoals, billReminders,
+  type User, type UpsertUser,
   type Category, type InsertCategory,
   type Transaction, type InsertTransaction,
   type Budget, type InsertBudget,
   type LinkedCard, type InsertLinkedCard,
   type DocumentUpload, type InsertDocumentUpload,
+  type SavingsGoal, type InsertSavingsGoal,
+  type BillReminder, type InsertBillReminder,
   type DashboardStats,
   type Conversation, type Message
 } from "@shared/schema";
@@ -40,6 +42,16 @@ export interface IStorage extends IAuthStorage {
   updateDocumentUpload(id: number, data: Partial<InsertDocumentUpload>): Promise<DocumentUpload>;
 
   getDashboardStats(userId: string, filters?: { startDate?: string, endDate?: string }): Promise<DashboardStats>;
+
+  getSavingsGoals(userId: string): Promise<SavingsGoal[]>;
+  createSavingsGoal(goal: InsertSavingsGoal): Promise<SavingsGoal>;
+  updateSavingsGoal(id: number, userId: string, data: Partial<InsertSavingsGoal>): Promise<SavingsGoal>;
+  deleteSavingsGoal(id: number, userId: string): Promise<void>;
+
+  getBillReminders(userId: string): Promise<(BillReminder & { category?: Category | null })[]>;
+  createBillReminder(reminder: InsertBillReminder): Promise<BillReminder>;
+  updateBillReminder(id: number, userId: string, data: Partial<InsertBillReminder>): Promise<BillReminder>;
+  deleteBillReminder(id: number, userId: string): Promise<void>;
 
   // Chat integration
   getConversation(id: number): Promise<Conversation | undefined>;
@@ -223,6 +235,62 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(transactions.documentUploadId, id), eq(transactions.userId, userId)));
     await db.delete(documentUploads)
       .where(and(eq(documentUploads.id, id), eq(documentUploads.userId, userId)));
+  }
+
+  async getSavingsGoals(userId: string): Promise<SavingsGoal[]> {
+    return await db.select().from(savingsGoals)
+      .where(eq(savingsGoals.userId, userId))
+      .orderBy(desc(savingsGoals.createdAt));
+  }
+
+  async createSavingsGoal(goal: InsertSavingsGoal): Promise<SavingsGoal> {
+    const [newGoal] = await db.insert(savingsGoals).values(goal).returning();
+    return newGoal;
+  }
+
+  async updateSavingsGoal(id: number, userId: string, data: Partial<InsertSavingsGoal>): Promise<SavingsGoal> {
+    const [updated] = await db.update(savingsGoals)
+      .set(data)
+      .where(and(eq(savingsGoals.id, id), eq(savingsGoals.userId, userId)))
+      .returning();
+    if (!updated) throw new Error("Savings goal not found");
+    return updated;
+  }
+
+  async deleteSavingsGoal(id: number, userId: string): Promise<void> {
+    await db.delete(savingsGoals)
+      .where(and(eq(savingsGoals.id, id), eq(savingsGoals.userId, userId)));
+  }
+
+  async getBillReminders(userId: string): Promise<(BillReminder & { category?: Category | null })[]> {
+    const results = await db.select({
+      reminder: billReminders,
+      category: categories,
+    })
+    .from(billReminders)
+    .leftJoin(categories, eq(billReminders.categoryId, categories.id))
+    .where(eq(billReminders.userId, userId))
+    .orderBy(billReminders.nextDueDate);
+    return results.map(r => ({ ...r.reminder, category: r.category }));
+  }
+
+  async createBillReminder(reminder: InsertBillReminder): Promise<BillReminder> {
+    const [newReminder] = await db.insert(billReminders).values(reminder).returning();
+    return newReminder;
+  }
+
+  async updateBillReminder(id: number, userId: string, data: Partial<InsertBillReminder>): Promise<BillReminder> {
+    const [updated] = await db.update(billReminders)
+      .set(data)
+      .where(and(eq(billReminders.id, id), eq(billReminders.userId, userId)))
+      .returning();
+    if (!updated) throw new Error("Bill reminder not found");
+    return updated;
+  }
+
+  async deleteBillReminder(id: number, userId: string): Promise<void> {
+    await db.delete(billReminders)
+      .where(and(eq(billReminders.id, id), eq(billReminders.userId, userId)));
   }
 
   async getDashboardStats(userId: string, filters?: { startDate?: string, endDate?: string, period?: 'monthly' | 'yearly' }): Promise<DashboardStats> {

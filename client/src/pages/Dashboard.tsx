@@ -1,9 +1,10 @@
-import { useStats } from "@/hooks/use-stats";
+import { useStats, useConvertedStats } from "@/hooks/use-stats";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DocumentUploadSection } from "@/components/documents/DocumentUpload";
-import { Wallet, TrendingUp, TrendingDown, Plus, Loader2, HelpCircle, Link as LinkIcon } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Plus, Loader2, HelpCircle, Link as LinkIcon, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
@@ -31,6 +32,15 @@ export default function Dashboard() {
   const [currency, setCurrency] = useState("BSD");
   const [period, setPeriod] = useState<"monthly" | "yearly" | "all">("all");
   const { data: stats, isLoading: statsLoading } = useStats({ period });
+  const { data: convertedStats } = useConvertedStats({ baseCurrency: currency, period });
+  const { data: healthScore } = useQuery<{ score: number; rating: string; tips: string[] } | null>({
+    queryKey: ["/api/health-score"],
+    queryFn: async () => {
+      const res = await fetch("/api/health-score", { credentials: "include" });
+      if (!res.ok) return null;
+      return res.json();
+    },
+  });
   const [showConsent, setShowConsent] = useState(false);
   const [showBankSelect, setShowBankSelect] = useState(false);
 
@@ -44,6 +54,10 @@ export default function Dashboard() {
     { code: "USD", name: "US Dollar", symbol: "$" },
     { code: "XCD", name: "East Caribbean Dollar", symbol: "EC$" },
   ];
+
+  const hasMultipleCurrencies = convertedStats?.currencyBreakdown 
+    ? Object.keys(convertedStats.currencyBreakdown).length > 1 
+    : false;
 
   if (authLoading || statsLoading) {
     return (
@@ -169,28 +183,96 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatCard 
               title="Total Balance" 
-              value={`${selectedCurrency.symbol}${stats?.balance.toFixed(2) || "0.00"}`} 
+              value={`${selectedCurrency.symbol}${(convertedStats?.balance ?? stats?.balance ?? 0).toFixed(2)}`} 
               icon={Wallet} 
               variant="primary"
-              description={`Your current net worth in ${currency}`}
+              description={hasMultipleCurrencies ? `Converted to ${currency}` : `Your current net worth in ${currency}`}
             />
             <StatCard 
               title="Total Income" 
-              value={`${selectedCurrency.symbol}${stats?.totalIncome.toFixed(2) || "0.00"}`} 
+              value={`${selectedCurrency.symbol}${(convertedStats?.totalIncome ?? stats?.totalIncome ?? 0).toFixed(2)}`} 
               icon={TrendingUp} 
               trend="+12%" 
               trendUp={true}
-              description="Total money received this period"
+              description={hasMultipleCurrencies ? `All income converted to ${currency}` : "Total money received this period"}
             />
             <StatCard 
               title="Total Expenses" 
-              value={`${selectedCurrency.symbol}${stats?.totalExpenses.toFixed(2) || "0.00"}`} 
+              value={`${selectedCurrency.symbol}${(convertedStats?.totalExpenses ?? stats?.totalExpenses ?? 0).toFixed(2)}`} 
               icon={TrendingDown} 
               trend="-5%" 
               trendUp={true}
-              description="Total money spent this period"
+              description={hasMultipleCurrencies ? `All expenses converted to ${currency}` : "Total money spent this period"}
             />
           </div>
+
+          {/* Multi-Currency Breakdown */}
+          {hasMultipleCurrencies && convertedStats?.currencyBreakdown && (
+            <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/50">
+              <h3 className="font-display text-lg font-bold mb-4">Currency Breakdown</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Object.entries(convertedStats.currencyBreakdown).map(([code, data]) => {
+                  const curr = CURRENCIES.find(c => c.code === code);
+                  return (
+                    <div key={code} className="rounded-xl border border-border/50 p-4 bg-muted/30" data-testid={`currency-breakdown-${code}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold text-sm">{curr?.symbol || code} {code}</span>
+                        <span className="text-xs text-muted-foreground">{data.count} transactions</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-green-600 dark:text-green-400">+{curr?.symbol}{data.income.toFixed(2)}</span>
+                        <span className="text-red-600 dark:text-red-400">-{curr?.symbol}{data.expenses.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Financial Health Score */}
+          {healthScore && (
+            <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/50" data-testid="section-health-score">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  healthScore.score >= 80 ? "bg-green-100 dark:bg-green-900/30" :
+                  healthScore.score >= 60 ? "bg-blue-100 dark:bg-blue-900/30" :
+                  healthScore.score >= 40 ? "bg-amber-100 dark:bg-amber-900/30" :
+                  "bg-red-100 dark:bg-red-900/30"
+                }`}>
+                  <Heart className={`w-5 h-5 ${
+                    healthScore.score >= 80 ? "text-green-600" :
+                    healthScore.score >= 60 ? "text-blue-600" :
+                    healthScore.score >= 40 ? "text-amber-600" :
+                    "text-red-600"
+                  }`} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-display text-lg font-bold">Financial Health Score</h3>
+                  <p className="text-sm text-muted-foreground">{healthScore.rating}</p>
+                </div>
+                <div className={`text-4xl font-bold ${
+                  healthScore.score >= 80 ? "text-green-600" :
+                  healthScore.score >= 60 ? "text-blue-600" :
+                  healthScore.score >= 40 ? "text-amber-600" :
+                  "text-red-600"
+                }`} data-testid="text-health-score">
+                  {healthScore.score}
+                  <span className="text-lg text-muted-foreground">/100</span>
+                </div>
+              </div>
+              {healthScore.tips.length > 0 && (
+                <div className="space-y-2">
+                  {healthScore.tips.slice(0, 3).map((tip, i) => (
+                    <p key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                      <span className="text-primary mt-0.5">&#8226;</span>
+                      {tip}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
