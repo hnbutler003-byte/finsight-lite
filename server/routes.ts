@@ -286,10 +286,12 @@ export async function registerRoutes(
         if (ext === ".csv") {
           fileContent = file.buffer.toString("utf-8");
         } else if (ext === ".pdf") {
-          const pdfParseModule = await import("pdf-parse");
-          const pdfParseFn = (pdfParseModule as any).default || pdfParseModule;
-          const pdfData = await pdfParseFn(file.buffer);
-          fileContent = pdfData.text;
+          const { PDFParse } = await import("pdf-parse");
+          const uint8 = new Uint8Array(file.buffer);
+          const parser = new PDFParse(uint8) as any;
+          await parser.load();
+          const result = await parser.getText();
+          fileContent = result.text || "";
         } else if (ext === ".xlsx" || ext === ".xls") {
           const workbook = XLSX.read(file.buffer, { type: "buffer" });
           const sheetNames = workbook.SheetNames;
@@ -298,10 +300,11 @@ export async function registerRoutes(
             fileContent += XLSX.utils.sheet_to_csv(sheet) + "\n";
           }
         }
-      } catch (parseErr) {
+      } catch (parseErr: any) {
+        console.error("File parsing error:", parseErr?.message || parseErr);
         await storage.updateDocumentUpload(docUpload.id, {
           status: "failed",
-          errorMessage: "Could not read the file. Please ensure it is a valid bank statement.",
+          errorMessage: `Could not read the file: ${parseErr?.message || "Unknown error"}. Please ensure it is a valid bank statement.`,
         });
         return res.status(200).json({
           upload: await storage.getDocumentUploads(userId).then(u => u.find(d => d.id === docUpload.id)),
