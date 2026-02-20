@@ -29,7 +29,7 @@ import { format } from "date-fns";
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const [currency, setCurrency] = useState("BSD");
-  const [period, setPeriod] = useState<"monthly" | "yearly">("monthly");
+  const [period, setPeriod] = useState<"monthly" | "yearly" | "all">("all");
   const { data: stats, isLoading: statsLoading } = useStats({ period });
   const [showConsent, setShowConsent] = useState(false);
   const [showBankSelect, setShowBankSelect] = useState(false);
@@ -215,6 +215,7 @@ export default function Dashboard() {
                     <SelectValue placeholder="Period" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="all">All Time</SelectItem>
                     <SelectItem value="monthly">Monthly</SelectItem>
                     <SelectItem value="yearly">Yearly</SelectItem>
                   </SelectContent>
