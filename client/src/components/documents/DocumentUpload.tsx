@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, FileText, CheckCircle2, XCircle, Loader2, FileUp } from "lucide-react";
+import { Upload, FileText, CheckCircle2, XCircle, Loader2, FileUp, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import type { DocumentUpload as DocUploadType } from "@shared/schema";
@@ -73,6 +73,27 @@ export function DocumentUploadSection() {
         description: err.message,
         variant: "destructive",
       });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/documents/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({ message: "Delete failed" }));
+        throw new Error(errData.message);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+      toast({ title: "Upload removed", description: "The upload record has been deleted." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
     },
   });
 
@@ -233,12 +254,10 @@ export function DocumentUploadSection() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {doc.status === "completed" && (
-                    <>
-                      <Badge variant="secondary" className="text-xs" data-testid={`badge-status-${doc.id}`}>
-                        <CheckCircle2 className="w-3 h-3 mr-1 text-green-600" />
-                        {doc.transactionsCreated} imported
-                      </Badge>
-                    </>
+                    <Badge variant="secondary" className="text-xs" data-testid={`badge-status-${doc.id}`}>
+                      <CheckCircle2 className="w-3 h-3 mr-1 text-green-600" />
+                      {doc.transactionsCreated} imported
+                    </Badge>
                   )}
                   {doc.status === "processing" && (
                     <Badge variant="secondary" className="text-xs" data-testid={`badge-status-${doc.id}`}>
@@ -252,6 +271,16 @@ export function DocumentUploadSection() {
                       Failed
                     </Badge>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                    onClick={() => deleteMutation.mutate(doc.id)}
+                    disabled={deleteMutation.isPending}
+                    data-testid={`button-delete-upload-${doc.id}`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
               </div>
             ))}

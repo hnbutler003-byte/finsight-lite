@@ -218,6 +218,11 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async deleteDocumentUpload(id: number, userId: string): Promise<void> {
+    await db.delete(documentUploads)
+      .where(and(eq(documentUploads.id, id), eq(documentUploads.userId, userId)));
+  }
+
   async getDashboardStats(userId: string, filters?: { startDate?: string, endDate?: string, period?: 'monthly' | 'yearly' }): Promise<DashboardStats> {
     let dateCondition = sql`TRUE`;
     let periodCondition = sql`TRUE`;

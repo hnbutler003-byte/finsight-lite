@@ -261,6 +261,21 @@ export async function registerRoutes(
     res.json(uploads);
   });
 
+  app.delete("/api/documents/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid document ID" });
+      }
+      await storage.deleteDocumentUpload(id, userId);
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error("Document delete error:", err);
+      res.status(500).json({ message: err.message || "Failed to delete document" });
+    }
+  });
+
   app.post("/api/documents/upload", isAuthenticated, upload.single("file"), async (req, res) => {
     try {
       const userId = (req.user as any).claims.sub;
