@@ -312,13 +312,12 @@ export class DatabaseStorage implements IStorage {
     }
 
     const totals = await db.select({
-      type: categories.type,
+      type: transactions.type,
       total: sql<number>`sum(${transactions.amount})`
     })
     .from(transactions)
-    .leftJoin(categories, eq(transactions.categoryId, categories.id))
     .where(and(eq(transactions.userId, userId), dateCondition, periodCondition))
-    .groupBy(categories.type);
+    .groupBy(transactions.type);
 
     let totalIncome = 0;
     let totalExpenses = 0;

@@ -62,6 +62,8 @@ export function useCreateTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.transactions.list.path] });
       queryClient.invalidateQueries({ queryKey: [api.stats.get.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats/converted"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/health-score"] });
       toast({ title: "Success", description: "Transaction recorded successfully" });
     },
     onError: (error) => {
@@ -101,6 +103,8 @@ export function useUpdateTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.transactions.list.path] });
       queryClient.invalidateQueries({ queryKey: [api.stats.get.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats/converted"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/health-score"] });
       toast({ title: "Success", description: "Transaction updated" });
     },
     onError: (error) => {
@@ -133,6 +137,8 @@ export function useDeleteTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.transactions.list.path] });
       queryClient.invalidateQueries({ queryKey: [api.stats.get.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats/converted"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/health-score"] });
       toast({ title: "Success", description: "Transaction deleted" });
     },
   });

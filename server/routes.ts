@@ -833,6 +833,7 @@ Rules:
           await storage.createTransaction({
             userId,
             amount: txAmount,
+            type: txType,
             currency,
             categoryId: validCategory ? aiCategoryId : (fallbackCategory?.id || null),
             date: txDate,

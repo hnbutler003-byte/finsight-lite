@@ -33,6 +33,7 @@ export function TransactionForm({ children, transaction }: { children: React.Rea
       description: transaction?.description || "",
       date: transaction ? new Date(transaction.date) : new Date(),
       currency: transaction?.currency || "BSD",
+      type: transaction?.type || "expense",
       userId: transaction?.userId || "current", 
       categoryId: transaction?.categoryId || undefined,
     },
@@ -45,6 +46,7 @@ export function TransactionForm({ children, transaction }: { children: React.Rea
         description: transaction.description || "",
         date: new Date(transaction.date),
         currency: transaction.currency,
+        type: transaction.type || "expense",
         categoryId: transaction.categoryId || undefined,
         userId: transaction.userId,
       });
@@ -54,14 +56,15 @@ export function TransactionForm({ children, transaction }: { children: React.Rea
   const isPending = isCreating || isUpdating;
   
   const onSubmit = (data: FormValues) => {
+    const payload = { ...data, amount: String(data.amount) };
     if (transaction) {
-      updateTx({ id: transaction.id, data }, {
+      updateTx({ id: transaction.id, data: payload }, {
         onSuccess: () => {
           setOpen(false);
         },
       });
     } else {
-      createTx(data, {
+      createTx(payload, {
         onSuccess: () => {
           setOpen(false);
           form.reset();
@@ -83,6 +86,31 @@ export function TransactionForm({ children, transaction }: { children: React.Rea
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type</FormLabel>
+                  <Select onValueChange={(val) => {
+                    field.onChange(val);
+                    form.setValue("categoryId", undefined);
+                  }} value={field.value || "expense"}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-type">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="income">💰 Income</SelectItem>
+                      <SelectItem value="expense">💸 Expense</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -91,7 +119,7 @@ export function TransactionForm({ children, transaction }: { children: React.Rea
                   <FormItem>
                     <FormLabel>Amount ($)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" placeholder="0.00" {...field} className="font-mono text-lg" />
+                      <Input type="number" step="0.01" placeholder="0.00" {...field} className="font-mono text-lg" data-testid="input-amount" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -106,8 +134,18 @@ export function TransactionForm({ children, transaction }: { children: React.Rea
                     <FormControl>
                       <Input 
                         type="date" 
-                        value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                        onChange={(e) => field.onChange(new Date(e.target.value))}
+                        value={(() => {
+                          try {
+                            if (!field.value) return '';
+                            const d = new Date(field.value);
+                            return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
+                          } catch { return ''; }
+                        })()}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val) field.onChange(new Date(val + 'T12:00:00'));
+                        }}
+                        data-testid="input-date"
                       />
                     </FormControl>
                     <FormMessage />
@@ -119,39 +157,43 @@ export function TransactionForm({ children, transaction }: { children: React.Rea
             <FormField
               control={form.control}
               name="categoryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={(val) => field.onChange(Number(val))} value={field.value ? String(field.value) : undefined}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categories && categories.length > 0 ? (
-                        Array.from(new Map(categories.map(c => [c.name, c])).values()).map((cat) => (
-                          <SelectItem key={cat.id} value={String(cat.id)}>
-                            <span className="flex items-center gap-2">
-                              {cat.icon ? (
-                                <span className="w-4 h-4 flex items-center justify-center text-lg">{cat.icon}</span>
-                              ) : (
-                                <span>{cat.type === 'income' ? '💰' : '💸'}</span>
-                              )}
-                              {cat.name}
-                            </span>
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <div className="p-2 text-sm text-muted-foreground text-center">
-                          No categories found
-                        </div>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const selectedType = form.watch("type") || "expense";
+                const filteredCategories = categories?.filter(c => c.type === selectedType) || [];
+                return (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select onValueChange={(val) => field.onChange(Number(val))} value={field.value ? String(field.value) : undefined}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-category">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {filteredCategories.length > 0 ? (
+                          Array.from(new Map(filteredCategories.map(c => [c.name, c])).values()).map((cat) => (
+                            <SelectItem key={cat.id} value={String(cat.id)}>
+                              <span className="flex items-center gap-2">
+                                {cat.icon ? (
+                                  <span className="w-4 h-4 flex items-center justify-center text-lg">{cat.icon}</span>
+                                ) : (
+                                  <span>{cat.type === 'income' ? '💰' : '💸'}</span>
+                                )}
+                                {cat.name}
+                              </span>
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <div className="p-2 text-sm text-muted-foreground text-center">
+                            No categories found
+                          </div>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <FormField

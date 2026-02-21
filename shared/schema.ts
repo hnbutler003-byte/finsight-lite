@@ -23,6 +23,7 @@ export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
   amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  type: text("type", { enum: ["income", "expense"] }).notNull().default("expense"),
   currency: text("currency").default("BSD").notNull(),
   categoryId: integer("category_id").references(() => categories.id),
   date: timestamp("date").notNull(),
