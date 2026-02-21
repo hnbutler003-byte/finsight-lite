@@ -82,13 +82,6 @@ Core tables include:
 - Database table: billReminders (id, userId, name, amount, currency, dueDate, frequency, isAutoDetected, isActive, createdAt)
 - API endpoints: GET/POST /api/bill-reminders, PATCH /api/bill-reminders/:id, DELETE /api/bill-reminders/:id, POST /api/bill-reminders/auto-detect
 
-### Financial Health Score
-- 100-point scoring system displayed on Dashboard
-- Breakdown: 25pts savings rate, 25pts budget adherence, 15pts spending diversity, 20pts goals progress, 15pts income consistency
-- Rating tiers: Excellent (80+), Good (60-79), Fair (40-59), Needs Improvement (<40)
-- Tips generated based on score components
-- API endpoint: GET /api/health-score
-
 ### Export & Reports (client/src/pages/Reports.tsx)
 - Financial summary with income, expenses, net savings, savings rate, top categories, budget status
 - CSV export of all transactions (date, description, amount, type, currency, category)

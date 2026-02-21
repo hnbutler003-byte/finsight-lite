@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DocumentUploadSection } from "@/components/documents/DocumentUpload";
-import { Wallet, TrendingUp, TrendingDown, Plus, Loader2, HelpCircle, Link as LinkIcon, Heart } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Plus, Loader2, HelpCircle, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
@@ -33,14 +33,6 @@ export default function Dashboard() {
   const [period, setPeriod] = useState<"monthly" | "yearly" | "all">("all");
   const { data: stats, isLoading: statsLoading } = useStats({ period });
   const { data: convertedStats } = useConvertedStats({ baseCurrency: currency, period });
-  const { data: healthScore } = useQuery<{ score: number; rating: string; tips: string[] } | null>({
-    queryKey: ["/api/health-score"],
-    queryFn: async () => {
-      const res = await fetch("/api/health-score", { credentials: "include" });
-      if (!res.ok) return null;
-      return res.json();
-    },
-  });
   const [showConsent, setShowConsent] = useState(false);
   const [showBankSelect, setShowBankSelect] = useState(false);
 
@@ -230,49 +222,6 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Financial Health Score */}
-          {healthScore && (
-            <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/50" data-testid="section-health-score">
-              <div className="flex items-center gap-3 mb-4">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  healthScore.score >= 80 ? "bg-green-100 dark:bg-green-900/30" :
-                  healthScore.score >= 60 ? "bg-blue-100 dark:bg-blue-900/30" :
-                  healthScore.score >= 40 ? "bg-amber-100 dark:bg-amber-900/30" :
-                  "bg-red-100 dark:bg-red-900/30"
-                }`}>
-                  <Heart className={`w-5 h-5 ${
-                    healthScore.score >= 80 ? "text-green-600" :
-                    healthScore.score >= 60 ? "text-blue-600" :
-                    healthScore.score >= 40 ? "text-amber-600" :
-                    "text-red-600"
-                  }`} />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-display text-lg font-bold">Financial Health Score</h3>
-                  <p className="text-sm text-muted-foreground">{healthScore.rating}</p>
-                </div>
-                <div className={`text-4xl font-bold ${
-                  healthScore.score >= 80 ? "text-green-600" :
-                  healthScore.score >= 60 ? "text-blue-600" :
-                  healthScore.score >= 40 ? "text-amber-600" :
-                  "text-red-600"
-                }`} data-testid="text-health-score">
-                  {healthScore.score}
-                  <span className="text-lg text-muted-foreground">/100</span>
-                </div>
-              </div>
-              {healthScore.tips.length > 0 && (
-                <div className="space-y-2">
-                  {healthScore.tips.slice(0, 3).map((tip, i) => (
-                    <p key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                      <span className="text-primary mt-0.5">&#8226;</span>
-                      {tip}
-                    </p>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
