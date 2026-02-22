@@ -13,8 +13,6 @@ import {
   ResponsiveContainer,
   Tooltip,
   Legend,
-  LineChart,
-  Line,
 } from "recharts";
 import { Progress } from "@/components/ui/progress";
 
@@ -82,7 +80,6 @@ export default function Trends() {
     name: formatMonth(m.month),
     Income: Math.round(m.income * 100) / 100,
     Expenses: Math.round(m.expenses * 100) / 100,
-    Net: Math.round((m.income - m.expenses) * 100) / 100,
   })) || [];
 
   const topCategories = new Set<string>();
@@ -176,30 +173,6 @@ export default function Trends() {
                   <Bar dataKey="Income" fill="#10b981" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Expenses" fill="#ef4444" radius={[4, 4, 0, 0]} />
                 </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-center text-muted-foreground py-12">No transaction data yet</p>
-            )}
-          </div>
-
-          {/* Net Cash Flow Line Chart */}
-          <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/50">
-            <h2 className="font-display text-lg font-bold mb-4">Net Cash Flow</h2>
-            {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                  />
-                  <Line type="monotone" dataKey="Net" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 4 }} />
-                </LineChart>
               </ResponsiveContainer>
             ) : (
               <p className="text-center text-muted-foreground py-12">No transaction data yet</p>
