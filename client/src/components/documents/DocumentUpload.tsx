@@ -53,6 +53,7 @@ export function DocumentUploadSection() {
       queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
       queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats/converted"] });
       
       if (data.error) {
         toast({
@@ -93,6 +94,7 @@ export function DocumentUploadSection() {
       queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
       queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats/converted"] });
       toast({ title: "Upload removed", description: "The upload and its imported transactions have been deleted." });
     },
     onError: (error: Error) => {
