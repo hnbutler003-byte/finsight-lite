@@ -50,7 +50,10 @@ Core tables include:
 
 ### Document Upload Feature
 - Users can upload bank statements (CSV, PDF, Excel) via drag-and-drop on the Dashboard
-- Backend uses multer for file handling and OpenAI (gpt-4o) to parse statement content
+- Backend uses multer for file handling
+- **Veryfi API integration** (primary): Sends bank statements to Veryfi's bank-statement parsing API for transaction extraction; requires VERYFI_CLIENT_ID, VERYFI_USERNAME, VERYFI_API_KEY secrets
+- **OpenAI fallback**: If Veryfi keys are not configured or Veryfi returns no results, falls back to OpenAI (gpt-4o) to parse statement content
+- Veryfi module: server/veryfi.ts (isVeryfiConfigured, parseWithVeryfi)
 - Parsed transactions are automatically created with `isAutoSynced: true`
 - Upload history shows status (processing/completed/failed) with transaction count
 - Supports all 8 regional currencies for imported transactions

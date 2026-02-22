@@ -12,6 +12,7 @@ import { registerChatRoutes } from "./replit_integrations/chat";
 import { registerImageRoutes } from "./replit_integrations/image";
 import { registerAudioRoutes } from "./replit_integrations/audio";
 import { openai } from "./replit_integrations/chat/routes";
+import { isVeryfiConfigured, parseWithVeryfi } from "./veryfi";
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -581,56 +582,96 @@ export async function registerRoutes(
         transactionsCreated: 0,
       });
 
-      let fileContent = "";
-      try {
-        if (ext === ".csv") {
-          fileContent = file.buffer.toString("utf-8");
-        } else if (ext === ".pdf") {
-          const { PDFParse } = await import("pdf-parse");
-          const uint8 = new Uint8Array(file.buffer);
-          const parser = new PDFParse(uint8) as any;
-          await parser.load();
-          const result = await parser.getText();
-          fileContent = result.text || "";
-        } else if (ext === ".xlsx" || ext === ".xls") {
-          const workbook = XLSX.read(file.buffer, { type: "buffer" });
-          const sheetNames = workbook.SheetNames;
-          for (const sheetName of sheetNames) {
-            const sheet = workbook.Sheets[sheetName];
-            fileContent += XLSX.utils.sheet_to_csv(sheet) + "\n";
-          }
-        }
-      } catch (parseErr: any) {
-        console.error("File parsing error:", parseErr?.message || parseErr);
-        await storage.updateDocumentUpload(docUpload.id, {
-          status: "failed",
-          errorMessage: `Could not read the file: ${parseErr?.message || "Unknown error"}. Please ensure it is a valid bank statement.`,
-        });
-        return res.status(200).json({
-          upload: await storage.getDocumentUploads(userId).then(u => u.find(d => d.id === docUpload.id)),
-          transactions: [],
-          error: "Could not read the file contents"
-        });
-      }
-
-      if (!fileContent.trim()) {
-        await storage.updateDocumentUpload(docUpload.id, {
-          status: "failed",
-          errorMessage: "The file appears to be empty or could not be read.",
-        });
-        return res.status(200).json({
-          upload: await storage.getDocumentUploads(userId).then(u => u.find(d => d.id === docUpload.id)),
-          transactions: [],
-          error: "The file appears to be empty"
-        });
-      }
-
-      const truncatedContent = fileContent.substring(0, 20000);
-
       const userCategories = await storage.getCategories(userId);
-      const categoryList = userCategories.map(c => `- "${c.name}" (type: ${c.type}, id: ${c.id})`).join("\n");
 
-      const parsePrompt = `You are a bank statement parser. Parse the following bank statement content and extract all transactions.
+      let parsedTransactions: Array<{ date: string; description: string; amount: number; type: string; categoryId?: number }> = [];
+      let parsingMethod = "openai";
+
+      if (isVeryfiConfigured()) {
+        console.log("Attempting Veryfi parsing for:", file.originalname);
+        const veryfiResult = await parseWithVeryfi(file.buffer, file.originalname);
+        if (veryfiResult.transactions.length > 0) {
+          parsedTransactions = veryfiResult.transactions.map(tx => {
+            const desc = tx.description.toLowerCase();
+            let categoryId: number | undefined;
+            const matchCategory = (keywords: string[], categoryName: string) => {
+              if (categoryId) return;
+              if (keywords.some(k => desc.includes(k))) {
+                const cat = userCategories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
+                if (cat) categoryId = cat.id;
+              }
+            };
+            matchCategory(["uber", "taxi", "gas", "fuel", "transit", "mta", "lyft", "bus", "train"], "Transportation");
+            matchCategory(["mcdonald", "restaurant", "food", "grocery", "pizza", "cafe", "coffee", "dining", "eat", "burger", "kfc", "wendy"], "Food & Dining");
+            matchCategory(["amazon", "retail", "store", "cvs", "walmart", "target", "shop", "purchase", "buy"], "Shopping");
+            matchCategory(["netflix", "movie", "concert", "spotify", "hulu", "disney", "entertainment", "gaming"], "Entertainment");
+            matchCategory(["electric", "water", "phone", "internet", "bill", "utility", "cable", "telecom", "mobile"], "Bills & Utilities");
+            matchCategory(["rent", "mortgage", "housing", "lease", "apartment"], "Housing");
+            matchCategory(["pharmacy", "doctor", "hospital", "medical", "health", "clinic", "dental"], "Health");
+            matchCategory(["salon", "spa", "barber", "beauty", "hair", "nail", "maintenance"], "Beauty/Maintenance");
+            matchCategory(["salary", "wage", "payroll", "deposit", "paycheck", "income"], "Salary");
+            if (!categoryId) {
+              const fallback = userCategories.find(c => c.type === tx.type);
+              if (fallback) categoryId = fallback.id;
+            }
+            return { ...tx, categoryId };
+          });
+          parsingMethod = "veryfi";
+          console.log(`Veryfi parsed ${parsedTransactions.length} transactions`);
+        } else {
+          console.log("Veryfi returned no transactions, falling back to OpenAI:", veryfiResult.error);
+        }
+      }
+
+      if (parsedTransactions.length === 0) {
+        let fileContent = "";
+        try {
+          if (ext === ".csv") {
+            fileContent = file.buffer.toString("utf-8");
+          } else if (ext === ".pdf") {
+            const { PDFParse } = await import("pdf-parse");
+            const uint8 = new Uint8Array(file.buffer);
+            const parser = new PDFParse(uint8) as any;
+            await parser.load();
+            const result = await parser.getText();
+            fileContent = result.text || "";
+          } else if (ext === ".xlsx" || ext === ".xls") {
+            const workbook = XLSX.read(file.buffer, { type: "buffer" });
+            const sheetNames = workbook.SheetNames;
+            for (const sheetName of sheetNames) {
+              const sheet = workbook.Sheets[sheetName];
+              fileContent += XLSX.utils.sheet_to_csv(sheet) + "\n";
+            }
+          }
+        } catch (parseErr: any) {
+          console.error("File parsing error:", parseErr?.message || parseErr);
+          await storage.updateDocumentUpload(docUpload.id, {
+            status: "failed",
+            errorMessage: `Could not read the file: ${parseErr?.message || "Unknown error"}. Please ensure it is a valid bank statement.`,
+          });
+          return res.status(200).json({
+            upload: await storage.getDocumentUploads(userId).then(u => u.find(d => d.id === docUpload.id)),
+            transactions: [],
+            error: "Could not read the file contents"
+          });
+        }
+
+        if (!fileContent.trim()) {
+          await storage.updateDocumentUpload(docUpload.id, {
+            status: "failed",
+            errorMessage: "The file appears to be empty or could not be read.",
+          });
+          return res.status(200).json({
+            upload: await storage.getDocumentUploads(userId).then(u => u.find(d => d.id === docUpload.id)),
+            transactions: [],
+            error: "The file appears to be empty"
+          });
+        }
+
+        const truncatedContent = fileContent.substring(0, 20000);
+        const categoryList = userCategories.map(c => `- "${c.name}" (type: ${c.type}, id: ${c.id})`).join("\n");
+
+        const parsePrompt = `You are a bank statement parser. Parse the following bank statement content and extract all transactions.
       
 The file is named "${file.originalname}" (originally ${ext} format, converted to text).
 The user's preferred currency is ${currency}.
@@ -674,31 +715,35 @@ Rules:
 - If the file appears to be in an unsupported format or is not a bank statement, return {"transactions": [], "error": "Could not parse this file as a bank statement"}
 - Return ONLY valid JSON, no other text`;
 
-      const aiResponse = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{ role: "user", content: parsePrompt }],
-        response_format: { type: "json_object" }
-      });
-
-      const parsed = JSON.parse(aiResponse.choices[0].message.content || "{}");
-
-      if (parsed.error || !parsed.transactions || parsed.transactions.length === 0) {
-        await storage.updateDocumentUpload(docUpload.id, {
-          status: "failed",
-          errorMessage: parsed.error || "No transactions could be extracted from the file",
+        const aiResponse = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [{ role: "user", content: parsePrompt }],
+          response_format: { type: "json_object" }
         });
-        return res.status(200).json({
-          upload: await storage.getDocumentUploads(userId).then(u => u.find(d => d.id === docUpload.id)),
-          transactions: [],
-          error: parsed.error || "No transactions found in this file"
-        });
+
+        const parsed = JSON.parse(aiResponse.choices[0].message.content || "{}");
+
+        if (parsed.error || !parsed.transactions || parsed.transactions.length === 0) {
+          await storage.updateDocumentUpload(docUpload.id, {
+            status: "failed",
+            errorMessage: parsed.error || "No transactions could be extracted from the file",
+          });
+          return res.status(200).json({
+            upload: await storage.getDocumentUploads(userId).then(u => u.find(d => d.id === docUpload.id)),
+            transactions: [],
+            error: parsed.error || "No transactions found in this file"
+          });
+        }
+
+        parsedTransactions = parsed.transactions;
+        parsingMethod = "openai";
       }
 
       const existingTransactions = await storage.getTransactions(userId);
       let createdCount = 0;
       let skippedCount = 0;
 
-      for (const tx of parsed.transactions) {
+      for (const tx of parsedTransactions) {
         try {
           const txDate = new Date(tx.date);
           const txAmount = Math.abs(tx.amount).toFixed(2);
@@ -746,7 +791,7 @@ Rules:
       });
 
       const updatedUpload = await storage.getDocumentUploads(userId).then(u => u.find(d => d.id === docUpload.id));
-      res.json({ upload: updatedUpload, transactionsCreated: createdCount, duplicatesSkipped: skippedCount });
+      res.json({ upload: updatedUpload, transactionsCreated: createdCount, duplicatesSkipped: skippedCount, parsingMethod });
     } catch (err: any) {
       console.error("Document upload error:", err);
       res.status(500).json({ message: err.message || "Failed to process document" });
