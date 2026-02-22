@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, FileText, CheckCircle2, XCircle, Loader2, FileUp, Trash2 } from "lucide-react";
+import { Upload, FileText, CheckCircle2, XCircle, Loader2, FileUp, Trash2, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import type { DocumentUpload as DocUploadType } from "@shared/schema";
@@ -216,6 +216,13 @@ export function DocumentUploadSection() {
             </Button>
           </div>
         )}
+      </div>
+
+      <div className="flex items-start gap-2 mt-3 p-3 rounded-lg bg-muted/40 border border-border/30" data-testid="privacy-disclaimer">
+        <ShieldCheck className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          All uploaded financial data is encrypted in transit and processed securely. We do not store your raw statements.
+        </p>
       </div>
 
       {uploadsLoading && (

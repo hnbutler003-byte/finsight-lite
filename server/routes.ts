@@ -246,8 +246,8 @@ export async function registerRoutes(
 
       const content = response.choices[0].message.content || "{}";
       res.json(JSON.parse(content));
-    } catch (err) {
-      console.error("AI Insight error:", err);
+    } catch (err: any) {
+      console.error("AI Insight error:", err?.message || "Unknown error");
       res.status(500).json({ message: "Failed to generate insights" });
     }
   });
@@ -557,8 +557,8 @@ export async function registerRoutes(
       await storage.deleteDocumentUpload(id, userId);
       res.json({ success: true });
     } catch (err: any) {
-      console.error("Document delete error:", err);
-      res.status(500).json({ message: err.message || "Failed to delete document" });
+      console.error("Document delete error:", err?.message || "Unknown error");
+      res.status(500).json({ message: "Failed to delete document" });
     }
   });
 
@@ -644,7 +644,7 @@ export async function registerRoutes(
             }
           }
         } catch (parseErr: any) {
-          console.error("File parsing error:", parseErr?.message || parseErr);
+          console.error("File parsing error:", parseErr?.message || "Unknown error");
           await storage.updateDocumentUpload(docUpload.id, {
             status: "failed",
             errorMessage: `Could not read the file: ${parseErr?.message || "Unknown error"}. Please ensure it is a valid bank statement.`,
@@ -781,7 +781,7 @@ Rules:
           });
           createdCount++;
         } catch (txErr) {
-          console.error("Error creating transaction from upload:", txErr);
+          console.error("Error creating transaction from upload:", (txErr as any)?.message || "Unknown error");
         }
       }
 
@@ -790,11 +790,18 @@ Rules:
         transactionsCreated: createdCount,
       });
 
+      if (file.buffer) {
+        file.buffer = Buffer.alloc(0);
+      }
+
       const updatedUpload = await storage.getDocumentUploads(userId).then(u => u.find(d => d.id === docUpload.id));
       res.json({ upload: updatedUpload, transactionsCreated: createdCount, duplicatesSkipped: skippedCount, parsingMethod });
     } catch (err: any) {
-      console.error("Document upload error:", err);
-      res.status(500).json({ message: err.message || "Failed to process document" });
+      if (req.file?.buffer) {
+        req.file.buffer = Buffer.alloc(0);
+      }
+      console.error("Document upload error:", err?.message || "Unknown error");
+      res.status(500).json({ message: "Failed to process document" });
     }
   });
 
