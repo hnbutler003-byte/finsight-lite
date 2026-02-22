@@ -608,11 +608,21 @@ export async function registerRoutes(
             matchCategory(["electric", "water", "phone", "internet", "bill", "utility", "cable", "telecom", "mobile"], "Bills & Utilities");
             matchCategory(["rent", "mortgage", "housing", "lease", "apartment"], "Housing");
             matchCategory(["pharmacy", "doctor", "hospital", "medical", "health", "clinic", "dental"], "Health");
-            matchCategory(["salon", "spa", "barber", "beauty", "hair", "nail", "maintenance"], "Beauty/Maintenance");
+            matchCategory(["salon", "spa", "barber", "beauty", "hair", "nail", "grooming", "skincare"], "Personal Care");
+            matchCategory(["tuition", "school", "university", "college", "course", "training", "books", "education", "student"], "Education");
+            matchCategory(["insurance", "premium", "policy", "coverage", "life insurance", "auto insurance"], "Insurance");
+            matchCategory(["flight", "hotel", "airbnb", "vacation", "travel", "trip", "booking", "resort", "airline"], "Travel");
+            matchCategory(["gift", "donation", "charity", "tithe", "offering", "church", "nonprofit"], "Gifts & Donations");
             matchCategory(["salary", "wage", "payroll", "deposit", "paycheck", "income"], "Salary");
+            matchCategory(["freelance", "contract", "gig", "consulting", "commission", "client payment"], "Freelance");
+            matchCategory(["dividend", "interest", "investment", "stock", "bond", "capital gain", "return"], "Investments");
             if (!categoryId) {
-              const fallback = userCategories.find(c => c.type === tx.type);
-              if (fallback) categoryId = fallback.id;
+              const other = userCategories.find(c => c.name === "Other");
+              if (other) categoryId = other.id;
+              else {
+                const fallback = userCategories.find(c => c.type === tx.type);
+                if (fallback) categoryId = fallback.id;
+              }
             }
             return { ...tx, categoryId };
           });
@@ -704,13 +714,19 @@ Rules:
   * Uber, taxi, gas stations, MTA, transit → Transportation
   * McDonald's, restaurants, food delivery, grocery → Food & Dining
   * Amazon, retail stores, CVS → Shopping
-  * Netflix, movies, concerts → Entertainment
+  * Netflix, movies, concerts, gaming → Entertainment
   * Electric, water, phone, internet bills → Bills & Utilities
   * Rent, mortgage → Housing
   * Pharmacy, doctor, hospital → Health
-  * Salon, spa, barber → Beauty/Maintenance
-  * Salary, wages, direct deposit, transfers received → Salary (income)
-  * Use your best judgment for others based on the merchant name
+  * Salon, spa, barber, beauty → Personal Care
+  * Tuition, school, university, courses, books → Education
+  * Insurance premiums, policies → Insurance
+  * Flights, hotels, vacation, airbnb → Travel
+  * Gifts, donations, charity, tithe → Gifts & Donations
+  * Salary, wages, direct deposit, payroll → Salary (income)
+  * Freelance, consulting, contract, gig work → Freelance (income)
+  * Dividends, interest, investment returns → Investments (income)
+  * If no category fits well, use Other
 - Use the description column for the transaction description
 - If the file appears to be in an unsupported format or is not a bank statement, return {"transactions": [], "error": "Could not parse this file as a bank statement"}
 - Return ONLY valid JSON, no other text`;
