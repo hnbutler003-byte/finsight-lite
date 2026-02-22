@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { format, differenceInDays, isPast } from "date-fns";
+import { format, differenceInCalendarDays, startOfDay, parseISO } from "date-fns";
 
 interface BillReminder {
   id: number;
@@ -117,12 +117,16 @@ export default function BillReminders() {
   const getSymbol = (code: string) => CURRENCIES.find(c => c.code === code)?.symbol || code;
 
   const getDueStatus = (dateStr: string) => {
-    const date = new Date(dateStr);
-    if (isPast(date)) return { label: "Overdue", color: "text-red-600 bg-red-50 dark:bg-red-950/30" };
-    const days = differenceInDays(date, new Date());
-    if (days <= 3) return { label: `Due in ${days} day${days !== 1 ? "s" : ""}`, color: "text-amber-600 bg-amber-50 dark:bg-amber-950/30" };
-    if (days <= 7) return { label: `Due in ${days} days`, color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30" };
-    return { label: format(date, "MMM d, yyyy"), color: "text-muted-foreground bg-muted/30" };
+    const dateParts = dateStr.split("T")[0].split("-");
+    const dueDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+    const today = startOfDay(new Date());
+    const days = differenceInCalendarDays(dueDate, today);
+    if (days < 0) return { label: `Overdue by ${Math.abs(days)} day${Math.abs(days) !== 1 ? "s" : ""}`, color: "text-red-600 bg-red-50 dark:bg-red-950/30" };
+    if (days === 0) return { label: "Due today", color: "text-red-600 bg-red-50 dark:bg-red-950/30" };
+    if (days === 1) return { label: "Due tomorrow", color: "text-amber-600 bg-amber-50 dark:bg-amber-950/30" };
+    if (days <= 7) return { label: `Due in ${days} days`, color: "text-amber-600 bg-amber-50 dark:bg-amber-950/30" };
+    if (days <= 30) return { label: `Due in ${days} days (${format(dueDate, "MMM d")})`, color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30" };
+    return { label: `Due ${format(dueDate, "MMM d, yyyy")}`, color: "text-muted-foreground bg-muted/30" };
   };
 
   return (
