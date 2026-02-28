@@ -94,10 +94,14 @@ Core tables include:
 - Simplified teen-friendly language throughout
 
 ### Money Games (client/src/pages/MoneyGames.tsx)
-- Three interactive financial literacy games for kids:
+- Seven interactive financial literacy games for kids:
   1. **Budget Grocery Challenge** (Easy): Given a random budget, pick grocery items from a virtual Caribbean store. Score based on how efficiently you use your budget.
-  2. **Speed Investor** (Hard): 10 rapid-fire rounds. A stock and news headline appear, you have 10 seconds to Buy/Hold/Sell. Points for correct decisions.
+  2. **Speed Investor** (Hard): 10 rounds with countdown intro. A stock and news headline appear, decide to Buy/Hold/Sell at your own pace. Points for correct decisions.
   3. **Savings Goal Planner** (Medium): Pick a savings goal, set a timeframe, then take a trade-off quiz to see if your daily choices can get you there.
+  4. **Beat the Budget** (Medium): $100 weekly allowance, 6 spending options (needs/wants), surprise expense after shopping. Future Self Score 0-100 with feedback.
+  5. **Compound It** (Easy): Visual compound interest simulator with weekly savings and years sliders, animated growth chart, shows contributed vs earned.
+  6. **Needs vs Wants Speed Round** (Easy): 20 items flash on screen, 3 seconds to categorize as Need or Want, accuracy score and reflection questions at end.
+  7. **Future Me** (Medium): 5 rounds of "money now vs more money later" decisions, teaches delayed gratification with explanations after each choice.
 - All games are frontend-only (no backend needed), use the selected currency symbol
 - Currency selector shared across all games
 

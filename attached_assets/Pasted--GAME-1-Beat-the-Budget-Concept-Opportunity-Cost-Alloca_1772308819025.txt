@@ -1,0 +1,167 @@
+🎮 GAME 1: Beat the Budget
+
+Concept: Opportunity Cost + Allocation
+
+Prompt for Replit AI Agent
+
+Build a compact interactive budgeting game called “Beat the Budget.”
+
+Target age: 10–16
+Time to complete: 5–7 minutes
+
+Core mechanic:
+
+User starts with $100 weekly allowance.
+
+Show 6 spending options (3 wants, 2 needs, 1 surprise expense).
+
+User must allocate funds by selecting items.
+
+Include at least 1 unexpected expense after 2–3 selections.
+
+Technical Requirements:
+
+Use a simple card selection UI.
+
+Deduct funds in real time.
+
+Display remaining balance dynamically.
+
+Add a “Future Self Score” at the end (0–100).
+
+Scoring Logic:
+
+Reward savings
+
+Reward covering needs first
+
+Penalize running out of money
+
+Penalize not preparing for surprise expense
+
+End screen must show:
+
+What they did well
+
+What they could improve
+
+A short 2–3 sentence educational takeaway
+
+Keep UI colorful but clean. No advanced analytics. Keep logic simple and easy to modify.
+
+📈 GAME 2: Compound It
+
+Concept: Compound Interest Visualization
+
+Prompt for Replit AI Agent
+
+Build a visual compound interest simulator called “Compound It.”
+
+Target age: 10–16
+Completion time: 3–5 minutes
+
+Core interaction:
+
+Slider for weekly savings ($5–$50)
+
+Slider for years (1–20)
+
+Fixed 7% simulated annual return
+
+Requirements:
+
+Show animated growth chart
+
+Show total contributed vs total earned
+
+Make growth visually accelerate over time
+
+Add satisfying visual feedback when time slider increases
+
+At the bottom:
+
+Display a simple explanation of why growth speeds up
+
+Show “You earned $X without working more”
+
+No advanced finance math explanation.
+Focus on visual emotional impact.
+
+⚡ GAME 3: Needs vs Wants Speed Round
+
+Concept: Spending Awareness
+
+Prompt for Replit AI Agent
+
+Build a rapid categorization game called “Needs vs Wants Speed Round.”
+
+Target age: 8–14
+Completion time: 2–4 minutes
+
+Gameplay:
+
+Show 20 items one at a time.
+
+User must click “Need” or “Want” within 3 seconds.
+
+Show immediate correct/incorrect feedback.
+
+Add:
+
+Countdown timer
+
+Score counter
+
+Final accuracy percentage
+
+After completion:
+
+Show 2–3 reflection questions:
+
+“Why is this a need?”
+
+“Would this change if you were older?”
+
+Keep visuals playful.
+No heavy explanations.
+Make it feel energetic.
+
+💰 GAME 4: Future Me
+
+Concept: Delayed Gratification
+
+Prompt for Replit AI Agent
+
+Build a decision game called “Future Me.”
+
+Target age: 10–16
+Completion time: 3–5 minutes
+
+Core mechanic:
+
+Present 5 rounds of choices:
+
+Example: $50 today vs $200 in 1 year
+
+$10 now vs $30 next month
+
+User chooses one per round.
+
+After all rounds:
+
+Show total short-term gains
+
+Show total long-term gains
+
+Show comparison difference
+
+Add:
+
+Visual timeline for delayed rewards
+
+Simple explanation of patience and growth
+
+Do not shame short-term decisions.
+Instead, explain trade-offs clearly.
+
+Keep UI clean and intuitive.

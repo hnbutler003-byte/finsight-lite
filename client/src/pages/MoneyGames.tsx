@@ -8,7 +8,7 @@ import {
   ArrowLeft, ShoppingCart, Zap, Target, Plus, Minus, CheckCircle2,
   XCircle, TrendingUp, TrendingDown, Minus as FlatIcon,
   Trophy, Star, Sparkles, RotateCcw, ShoppingBag, PiggyBank,
-  Gamepad2, ArrowRight
+  Gamepad2, ArrowRight, Wallet, BarChart3, Clock, Timer, Hourglass
 } from "lucide-react";
 
 const CURRENCIES = [
@@ -51,6 +51,42 @@ const GAMES = [
     difficulty: "Medium",
     color: "from-blue-400 to-violet-500",
     badgeColor: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  },
+  {
+    id: "beatbudget",
+    title: "Beat the Budget",
+    description: "You have $100 for the week. Choose wisely between needs, wants, and surprise expenses!",
+    icon: Wallet,
+    difficulty: "Medium",
+    color: "from-amber-400 to-yellow-500",
+    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+  },
+  {
+    id: "compound",
+    title: "Compound It",
+    description: "Watch your money grow over time! See the magic of compound interest in action.",
+    icon: BarChart3,
+    difficulty: "Easy",
+    color: "from-teal-400 to-cyan-500",
+    badgeColor: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300",
+  },
+  {
+    id: "needswants",
+    title: "Needs vs Wants",
+    description: "Can you tell the difference between what you need and what you want? Race the clock!",
+    icon: Timer,
+    difficulty: "Easy",
+    color: "from-purple-400 to-fuchsia-500",
+    badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
+  },
+  {
+    id: "futureme",
+    title: "Future Me",
+    description: "Would you take the money now or wait for more later? Test your patience!",
+    icon: Hourglass,
+    difficulty: "Medium",
+    color: "from-indigo-400 to-blue-500",
+    badgeColor: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300",
   },
 ];
 
@@ -899,6 +935,804 @@ function SavingsGoalGame({ currency }: { currency: string }) {
   );
 }
 
+const BUDGET_ITEMS = [
+  { name: "School lunch for the week", price: 25, type: "need" as const, emoji: "🥪" },
+  { name: "Bus fare to school", price: 15, type: "need" as const, emoji: "🚌" },
+  { name: "New video game", price: 40, type: "want" as const, emoji: "🎮" },
+  { name: "Movie night with friends", price: 20, type: "want" as const, emoji: "🎬" },
+  { name: "Trendy sneakers", price: 55, type: "want" as const, emoji: "👟" },
+  { name: "School supplies", price: 12, type: "need" as const, emoji: "📝" },
+];
+
+const SURPRISE_EXPENSES = [
+  { name: "Your phone screen cracked!", cost: 30, emoji: "📱" },
+  { name: "School field trip fee due tomorrow!", cost: 25, emoji: "🏫" },
+  { name: "You need medicine from the pharmacy.", cost: 20, emoji: "💊" },
+  { name: "Your backpack strap broke — need a new one!", cost: 18, emoji: "🎒" },
+];
+
+function BeatTheBudgetGame({ currency }: { currency: string }) {
+  const sym = getSymbol(currency);
+  const [balance, setBalance] = useState(100);
+  const [selected, setSelected] = useState<number[]>([]);
+  const [phase, setPhase] = useState<"shopping" | "surprise" | "result">("shopping");
+  const [surprise, setSurprise] = useState(SURPRISE_EXPENSES[0]);
+  const [paidSurprise, setPaidSurprise] = useState(false);
+  const [skippedSurprise, setSkippedSurprise] = useState(false);
+
+  const reset = () => {
+    setBalance(100);
+    setSelected([]);
+    setPhase("shopping");
+    setPaidSurprise(false);
+    setSkippedSurprise(false);
+    setSurprise(SURPRISE_EXPENSES[Math.floor(Math.random() * SURPRISE_EXPENSES.length)]);
+  };
+
+  useEffect(() => { reset(); }, []);
+
+  const toggleItem = (idx: number) => {
+    if (phase !== "shopping") return;
+    const item = BUDGET_ITEMS[idx];
+    if (selected.includes(idx)) {
+      setSelected(s => s.filter(i => i !== idx));
+      setBalance(b => b + item.price);
+    } else {
+      if (balance >= item.price) {
+        setSelected(s => [...s, idx]);
+        setBalance(b => b - item.price);
+      }
+    }
+  };
+
+  const finishShopping = () => {
+    if (selected.length >= 2) setPhase("surprise");
+  };
+
+  const handleSurprise = (pay: boolean) => {
+    if (pay && balance >= surprise.cost) {
+      setBalance(b => b - surprise.cost);
+      setPaidSurprise(true);
+    } else {
+      setSkippedSurprise(true);
+    }
+    setPhase("result");
+  };
+
+  const needsCovered = selected.filter(i => BUDGET_ITEMS[i].type === "need").length;
+  const totalNeeds = BUDGET_ITEMS.filter(i => i.type === "need").length;
+  const wantsBought = selected.filter(i => BUDGET_ITEMS[i].type === "want").length;
+
+  const calcScore = () => {
+    let score = 0;
+    score += Math.min(needsCovered * 20, 40);
+    score += Math.min(balance, 30);
+    if (paidSurprise) score += 20;
+    if (balance < 0) score -= 20;
+    if (wantsBought > needsCovered && needsCovered < totalNeeds) score -= 10;
+    return Math.max(0, Math.min(100, Math.round(score)));
+  };
+
+  const futureScore = calcScore();
+
+  const getFeedback = () => {
+    const good: string[] = [];
+    const improve: string[] = [];
+    if (needsCovered === totalNeeds) good.push("You covered all your needs first — smart!");
+    else improve.push("Try covering all your needs before spending on wants.");
+    if (balance >= 10) good.push("You kept some money saved — nice cushion!");
+    else if (balance >= 0) improve.push("Try to save a bit more for unexpected costs.");
+    else improve.push("You ran out of money! Always keep a buffer.");
+    if (paidSurprise) good.push("You handled the surprise expense like a pro!");
+    if (skippedSurprise) improve.push("Surprise expenses happen in real life — try to keep money aside for them.");
+    return { good, improve };
+  };
+
+  const feedback = getFeedback();
+
+  if (phase === "result") {
+    return (
+      <Card className="border-2 border-dashed border-amber-300 dark:border-amber-700 rounded-3xl">
+        <CardContent className="p-8 space-y-6">
+          <div className="text-center space-y-2">
+            <div className="text-6xl">{futureScore >= 70 ? "🌟" : futureScore >= 40 ? "💪" : "📚"}</div>
+            <h3 className="font-display text-2xl font-bold">Your Future Self Score</h3>
+            <div className="relative w-32 h-32 mx-auto">
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" strokeWidth="10" className="text-muted" />
+                <circle cx="60" cy="60" r="50" fill="none" strokeWidth="10" strokeLinecap="round"
+                  className={futureScore >= 70 ? "text-green-500" : futureScore >= 40 ? "text-amber-500" : "text-red-400"}
+                  strokeDasharray={`${(futureScore / 100) * 314} 314`}
+                  style={{ transition: "stroke-dasharray 1s ease" }}
+                />
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center font-display text-3xl font-bold" data-testid="text-future-score">
+                {futureScore}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {feedback.good.length > 0 && (
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-2xl p-4 border-2 border-green-200 dark:border-green-800">
+                <p className="font-bold text-green-700 dark:text-green-300 text-sm mb-2 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" /> What you did well
+                </p>
+                <ul className="space-y-1">
+                  {feedback.good.map((g, i) => <li key={i} className="text-sm text-green-600 dark:text-green-400">{g}</li>)}
+                </ul>
+              </div>
+            )}
+            {feedback.improve.length > 0 && (
+              <div className="bg-orange-50 dark:bg-orange-900/20 rounded-2xl p-4 border-2 border-orange-200 dark:border-orange-800">
+                <p className="font-bold text-orange-700 dark:text-orange-300 text-sm mb-2 flex items-center gap-2">
+                  <Star className="w-4 h-4" /> Room to grow
+                </p>
+                <ul className="space-y-1">
+                  {feedback.improve.map((g, i) => <li key={i} className="text-sm text-orange-600 dark:text-orange-400">{g}</li>)}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-violet-50 dark:bg-violet-900/20 rounded-2xl p-4 border-2 border-dashed border-violet-200 dark:border-violet-800 text-center">
+            <p className="text-sm">
+              <strong>Takeaway:</strong> In real life, covering your needs first and saving a little for surprises
+              is the smartest way to handle money. Wants are great — but only after your needs and savings are sorted!
+            </p>
+          </div>
+
+          <div className="flex justify-center">
+            <Button onClick={reset} className="rounded-2xl gap-2" data-testid="button-play-again-beatbudget">
+              <RotateCcw className="w-4 h-4" /> Play Again
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (phase === "surprise") {
+    return (
+      <Card className="border-2 border-dashed border-red-300 dark:border-red-700 rounded-3xl animate-in fade-in zoom-in-95 duration-500">
+        <CardContent className="p-8 text-center space-y-6">
+          <div className="text-6xl">{surprise.emoji}</div>
+          <h3 className="font-display text-2xl font-bold text-red-600 dark:text-red-400">Surprise Expense!</h3>
+          <p className="text-lg">{surprise.name}</p>
+          <p className="text-2xl font-bold">{sym}{surprise.cost.toFixed(2)}</p>
+          <p className="text-sm text-muted-foreground">
+            You have <strong>{sym}{balance.toFixed(2)}</strong> left. What will you do?
+          </p>
+          <div className="flex justify-center gap-4">
+            <Button
+              size="lg"
+              className="rounded-2xl gap-2 bg-green-500 text-white px-6"
+              disabled={balance < surprise.cost}
+              onClick={() => handleSurprise(true)}
+              data-testid="button-pay-surprise"
+            >
+              <CheckCircle2 className="w-5 h-5" /> Pay It
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="rounded-2xl gap-2 border-2 px-6"
+              onClick={() => handleSurprise(false)}
+              data-testid="button-skip-surprise"
+            >
+              <XCircle className="w-5 h-5" /> Skip It
+            </Button>
+          </div>
+          {balance < surprise.cost && (
+            <p className="text-sm text-red-500 font-semibold">You don't have enough to cover this!</p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap gap-4 items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-white text-2xl shadow-lg">
+            💰
+          </div>
+          <div>
+            <h3 className="font-display text-xl font-bold">Weekly Allowance: {sym}100</h3>
+            <p className="text-sm text-muted-foreground">Choose what to spend on — but watch out for surprises!</p>
+          </div>
+        </div>
+        <Badge variant="outline" className={`text-lg px-4 py-2 rounded-2xl font-bold ${balance < 20 ? "border-red-400 text-red-500" : "border-green-400 text-green-600"}`} data-testid="text-beat-balance">
+          {sym}{balance.toFixed(2)} left
+        </Badge>
+      </div>
+
+      <div className="w-full bg-muted rounded-full h-4 overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${balance < 20 ? "bg-red-500" : balance < 50 ? "bg-amber-500" : "bg-green-500"}`}
+          style={{ width: `${balance}%` }}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {BUDGET_ITEMS.map((item, idx) => {
+          const isSelected = selected.includes(idx);
+          const canAfford = balance >= item.price;
+          return (
+            <Card
+              key={idx}
+              className={`rounded-2xl border-2 cursor-pointer transition-all ${isSelected ? "border-green-400 bg-green-50 dark:bg-green-900/20" : canAfford ? "hover:border-violet-300 dark:hover:border-violet-700" : "opacity-50"}`}
+              onClick={() => (isSelected || canAfford) ? toggleItem(idx) : undefined}
+              data-testid={`card-budget-item-${idx}`}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{item.emoji}</span>
+                  <div className="flex-1">
+                    <p className="font-semibold text-sm">{item.name}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="font-bold">{sym}{item.price.toFixed(2)}</span>
+                      <Badge className={`text-[10px] rounded-lg border-0 ${item.type === "need" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" : "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300"}`}>
+                        {item.type === "need" ? "Need" : "Want"}
+                      </Badge>
+                    </div>
+                  </div>
+                  {isSelected && <CheckCircle2 className="w-6 h-6 text-green-500" />}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <div className="flex justify-center">
+        <Button
+          size="lg"
+          className="rounded-2xl gap-2 px-8"
+          disabled={selected.length < 2}
+          onClick={finishShopping}
+          data-testid="button-done-shopping"
+        >
+          <ArrowRight className="w-5 h-5" /> Done Shopping
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function CompoundItGame({ currency }: { currency: string }) {
+  const sym = getSymbol(currency);
+  const [weeklySavings, setWeeklySavings] = useState(20);
+  const [years, setYears] = useState(5);
+
+  const annualRate = 0.07;
+  const weeksPerYear = 52;
+  const totalWeeks = years * weeksPerYear;
+  const totalContributed = weeklySavings * totalWeeks;
+
+  const yearlyData = [];
+  let runningBalance = 0;
+  for (let y = 1; y <= years; y++) {
+    for (let w = 0; w < weeksPerYear; w++) {
+      runningBalance += weeklySavings;
+      runningBalance *= (1 + annualRate / weeksPerYear);
+    }
+    yearlyData.push({ year: y, balance: runningBalance, contributed: weeklySavings * weeksPerYear * y });
+  }
+
+  const totalEarned = runningBalance - totalContributed;
+  const maxBar = runningBalance || 1;
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center space-y-2">
+        <div className="text-5xl">📈</div>
+        <h3 className="font-display text-2xl font-bold">Compound It!</h3>
+        <p className="text-sm text-muted-foreground">See how your savings grow with 7% annual compound interest</p>
+      </div>
+
+      <Card className="rounded-2xl border-2">
+        <CardContent className="p-6 space-y-6">
+          <div>
+            <div className="flex justify-between mb-2">
+              <label className="text-sm font-semibold">Save per week</label>
+              <Badge variant="outline" className="rounded-xl px-3 py-1 font-bold text-lg">{sym}{weeklySavings}</Badge>
+            </div>
+            <input
+              type="range" min={5} max={50} step={5} value={weeklySavings}
+              onChange={e => setWeeklySavings(Number(e.target.value))}
+              className="w-full accent-primary"
+              data-testid="slider-weekly-savings"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{sym}5</span><span>{sym}50</span>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex justify-between mb-2">
+              <label className="text-sm font-semibold">For how many years?</label>
+              <Badge variant="outline" className="rounded-xl px-3 py-1 font-bold text-lg">{years} yr{years > 1 ? "s" : ""}</Badge>
+            </div>
+            <input
+              type="range" min={1} max={20} value={years}
+              onChange={e => setYears(Number(e.target.value))}
+              className="w-full accent-primary"
+              data-testid="slider-years"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>1 year</span><span>20 years</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-2">
+        <p className="text-sm font-semibold text-center">Your money growing over time</p>
+        <div className="flex items-end gap-1 h-48 bg-muted/30 rounded-2xl p-4 border-2 overflow-hidden">
+          {yearlyData.map((d, i) => {
+            const height = (d.balance / maxBar) * 100;
+            const contribHeight = (d.contributed / maxBar) * 100;
+            return (
+              <div key={i} className="flex-1 flex flex-col items-center justify-end h-full gap-0.5 group relative">
+                <div className="absolute -top-1 opacity-0 group-hover:opacity-100 transition-opacity bg-foreground text-background text-[10px] rounded-lg px-2 py-1 whitespace-nowrap z-10 font-bold">
+                  {sym}{Math.round(d.balance).toLocaleString()}
+                </div>
+                <div className="w-full rounded-t-lg relative overflow-hidden" style={{ height: `${height}%`, transition: `height 0.5s ease ${i * 50}ms` }}>
+                  <div className="absolute bottom-0 w-full bg-teal-300 dark:bg-teal-700" style={{ height: `${contribHeight > 0 ? (d.contributed / d.balance) * 100 : 0}%` }} />
+                  <div className="absolute top-0 w-full h-full bg-teal-500 dark:bg-teal-400" style={{ clipPath: `inset(${(d.contributed / d.balance) * 100}% 0 0 0)` }} />
+                </div>
+                {(i === 0 || i === yearlyData.length - 1 || (i + 1) % 5 === 0) && (
+                  <span className="text-[9px] text-muted-foreground font-bold mt-1">Y{d.year}</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex justify-center gap-6 text-xs">
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-teal-300 dark:bg-teal-700" /> What you put in</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-teal-500 dark:bg-teal-400" /> Interest earned</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        <Card className="rounded-2xl border-2 bg-teal-50 dark:bg-teal-900/20">
+          <CardContent className="p-4 text-center">
+            <p className="text-xs text-muted-foreground font-bold uppercase">You Put In</p>
+            <p className="text-lg font-bold text-teal-700 dark:text-teal-300" data-testid="text-contributed">{sym}{totalContributed.toLocaleString()}</p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-2xl border-2 bg-green-50 dark:bg-green-900/20">
+          <CardContent className="p-4 text-center">
+            <p className="text-xs text-muted-foreground font-bold uppercase">Interest Earned</p>
+            <p className="text-lg font-bold text-green-700 dark:text-green-300" data-testid="text-earned">{sym}{Math.round(totalEarned).toLocaleString()}</p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-2xl border-2 bg-violet-50 dark:bg-violet-900/20">
+          <CardContent className="p-4 text-center">
+            <p className="text-xs text-muted-foreground font-bold uppercase">Total Value</p>
+            <p className="text-lg font-bold text-violet-700 dark:text-violet-300" data-testid="text-total-compound">{sym}{Math.round(runningBalance).toLocaleString()}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="rounded-2xl border-2 border-dashed border-teal-300 dark:border-teal-700">
+        <CardContent className="p-4 text-center space-y-2">
+          <p className="font-bold text-teal-700 dark:text-teal-300 flex items-center justify-center gap-2">
+            <Sparkles className="w-4 h-4" />
+            You earned {sym}{Math.round(totalEarned).toLocaleString()} without working extra!
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Compound interest means your money earns money, and then <em>that</em> money earns money too.
+            The longer you wait, the faster it grows — that's why starting early is a superpower!
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+const NEEDS_WANTS_ITEMS = [
+  { name: "Drinking water", answer: "need" as const, emoji: "💧" },
+  { name: "Latest iPhone", answer: "want" as const, emoji: "📱" },
+  { name: "School textbooks", answer: "need" as const, emoji: "📚" },
+  { name: "Designer sunglasses", answer: "want" as const, emoji: "🕶️" },
+  { name: "Healthy breakfast", answer: "need" as const, emoji: "🥣" },
+  { name: "Concert tickets", answer: "want" as const, emoji: "🎶" },
+  { name: "Winter jacket", answer: "need" as const, emoji: "🧥" },
+  { name: "Gaming headset", answer: "want" as const, emoji: "🎧" },
+  { name: "Toothbrush & toothpaste", answer: "need" as const, emoji: "🪥" },
+  { name: "Candy from the store", answer: "want" as const, emoji: "🍬" },
+  { name: "Bus fare to school", answer: "need" as const, emoji: "🚌" },
+  { name: "Streaming subscription", answer: "want" as const, emoji: "📺" },
+  { name: "Soap & shampoo", answer: "need" as const, emoji: "🧴" },
+  { name: "Stuffed animal toy", answer: "want" as const, emoji: "🧸" },
+  { name: "Electricity for your home", answer: "need" as const, emoji: "⚡" },
+  { name: "Brand-name sneakers", answer: "want" as const, emoji: "👟" },
+  { name: "Medicine when you're sick", answer: "need" as const, emoji: "💊" },
+  { name: "Fancy smoothie", answer: "want" as const, emoji: "🥤" },
+  { name: "Rain boots in hurricane season", answer: "need" as const, emoji: "🥾" },
+  { name: "Amusement park visit", answer: "want" as const, emoji: "🎢" },
+];
+
+function NeedsVsWantsGame() {
+  const [gameState, setGameState] = useState<"start" | "playing" | "result">("start");
+  const [items, setItems] = useState<typeof NEEDS_WANTS_ITEMS>([]);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [score, setScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(3);
+  const [answers, setAnswers] = useState<Array<{ item: typeof NEEDS_WANTS_ITEMS[0]; chosen: string; correct: boolean }>>([]);
+  const [showFeedback, setShowFeedback] = useState<"correct" | "wrong" | null>(null);
+
+  const startGame = () => {
+    const shuffled = [...NEEDS_WANTS_ITEMS].sort(() => Math.random() - 0.5);
+    setItems(shuffled);
+    setCurrentIdx(0);
+    setScore(0);
+    setTimeLeft(3);
+    setAnswers([]);
+    setShowFeedback(null);
+    setGameState("playing");
+  };
+
+  useEffect(() => {
+    if (gameState !== "playing" || showFeedback) return;
+    if (timeLeft <= 0) {
+      handleAnswer("skip");
+      return;
+    }
+    const timer = setTimeout(() => setTimeLeft(t => t - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [timeLeft, gameState, showFeedback]);
+
+  const handleAnswer = (choice: string) => {
+    if (gameState !== "playing" || showFeedback) return;
+    const item = items[currentIdx];
+    if (!item) return;
+    const correct = choice === item.answer;
+    if (correct) setScore(s => s + 1);
+
+    setAnswers(a => [...a, { item, chosen: choice, correct }]);
+    setShowFeedback(correct ? "correct" : "wrong");
+
+    setTimeout(() => {
+      setShowFeedback(null);
+      if (currentIdx + 1 >= items.length) {
+        setGameState("result");
+      } else {
+        setCurrentIdx(i => i + 1);
+        setTimeLeft(3);
+      }
+    }, 600);
+  };
+
+  const accuracy = items.length > 0 ? Math.round((score / items.length) * 100) : 0;
+
+  if (gameState === "start") {
+    return (
+      <Card className="border-2 border-dashed border-purple-300 dark:border-purple-700 rounded-3xl">
+        <CardContent className="p-8 text-center space-y-6">
+          <div className="text-6xl">⚡</div>
+          <h3 className="font-display text-2xl font-bold">Needs vs Wants Speed Round</h3>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            20 items will flash on screen one at a time. You have <strong>3 seconds</strong> to decide:
+            is it a <strong>Need</strong> (something you must have) or a <strong>Want</strong> (something nice to have)?
+          </p>
+          <div className="flex justify-center gap-4 text-sm">
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-3 text-center">
+              <p className="font-bold text-blue-600">Need</p>
+              <p className="text-xs text-muted-foreground">Essential for life</p>
+            </div>
+            <div className="bg-pink-50 dark:bg-pink-900/20 rounded-2xl p-3 text-center">
+              <p className="font-bold text-pink-600">Want</p>
+              <p className="text-xs text-muted-foreground">Nice but optional</p>
+            </div>
+          </div>
+          <Button size="lg" className="rounded-2xl gap-2 px-8 text-lg" onClick={startGame} data-testid="button-start-needswants">
+            <Zap className="w-5 h-5" /> Let's Go!
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (gameState === "result") {
+    return (
+      <Card className="border-2 border-dashed border-purple-300 dark:border-purple-700 rounded-3xl">
+        <CardContent className="p-8 space-y-6">
+          <div className="text-center space-y-2">
+            <div className="text-6xl">{accuracy >= 80 ? "🏆" : accuracy >= 60 ? "💡" : "📚"}</div>
+            <h3 className="font-display text-2xl font-bold" data-testid="text-nw-result">
+              {accuracy >= 80 ? "Amazing!" : accuracy >= 60 ? "Good job!" : "Keep learning!"}
+            </h3>
+            <p className="text-lg">{score} / {items.length} correct — <strong>{accuracy}% accuracy</strong></p>
+          </div>
+
+          <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 max-w-lg mx-auto">
+            {answers.map((a, i) => (
+              <div key={i} className={`rounded-lg p-1.5 text-center ${a.correct ? "bg-green-100 dark:bg-green-900/40" : "bg-red-100 dark:bg-red-900/40"}`}>
+                <span className="text-lg">{a.item.emoji}</span>
+                <p className="text-[9px] font-bold truncate">{a.correct ? "✓" : "✗"}</p>
+              </div>
+            ))}
+          </div>
+
+          <Card className="rounded-2xl border-2 border-dashed">
+            <CardContent className="p-4 space-y-3">
+              <p className="font-bold text-sm text-center">Think about it...</p>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>🤔 <strong>Why is water a need but a smoothie a want?</strong> Because you need water to survive, but a smoothie is just a tasty treat.</p>
+                <p>🤔 <strong>Could a "want" ever become a "need"?</strong> Sometimes! If you move somewhere cold, a warm jacket goes from "nice to have" to "must have."</p>
+                <p>🤔 <strong>Does your age change the answer?</strong> A car might be a want for you now, but could become a need when you're an adult going to work.</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-center">
+            <Button onClick={startGame} className="rounded-2xl gap-2" data-testid="button-play-again-needswants">
+              <RotateCcw className="w-4 h-4" /> Play Again
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const currentItem = items[currentIdx];
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap gap-4 items-center justify-between">
+        <Badge variant="outline" className="rounded-2xl px-4 py-2 text-sm font-bold">
+          {currentIdx + 1} / {items.length}
+        </Badge>
+        <Badge variant="outline" className="rounded-2xl px-4 py-2 text-sm font-bold">
+          <Star className="w-3 h-3 mr-1" /> {score} correct
+        </Badge>
+        <div className="flex items-center gap-2">
+          <Clock className={`w-5 h-5 ${timeLeft <= 1 ? "text-red-500 animate-pulse" : "text-muted-foreground"}`} />
+          <span className={`font-bold text-lg ${timeLeft <= 1 ? "text-red-500" : ""}`}>{timeLeft}s</span>
+        </div>
+      </div>
+
+      <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+        <div className="h-full rounded-full bg-purple-500 transition-all duration-300" style={{ width: `${((currentIdx + 1) / items.length) * 100}%` }} />
+      </div>
+
+      <Card className={`rounded-3xl border-2 transition-all duration-200 ${showFeedback === "correct" ? "border-green-400 bg-green-50/50 dark:bg-green-900/10" : showFeedback === "wrong" ? "border-red-400 bg-red-50/50 dark:bg-red-900/10" : "border-purple-200 dark:border-purple-800"}`}>
+        <CardContent className="p-8 text-center space-y-6">
+          <div className="text-7xl">{currentItem?.emoji}</div>
+          <h3 className="font-display text-2xl font-bold">{currentItem?.name}</h3>
+          {showFeedback ? (
+            <div className={`text-xl font-bold ${showFeedback === "correct" ? "text-green-600" : "text-red-500"}`}>
+              {showFeedback === "correct" ? "Correct! ✓" : `Nope! It's a ${currentItem?.answer} ✗`}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto">
+              <Button
+                size="lg"
+                className="rounded-2xl gap-2 bg-blue-500 text-white text-lg py-6"
+                onClick={() => handleAnswer("need")}
+                data-testid="button-need"
+              >
+                Need
+              </Button>
+              <Button
+                size="lg"
+                className="rounded-2xl gap-2 bg-pink-500 text-white text-lg py-6"
+                onClick={() => handleAnswer("want")}
+                data-testid="button-want"
+              >
+                Want
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+const FUTURE_ME_ROUNDS = [
+  { nowAmount: 50, laterAmount: 200, laterTime: "1 year", explanation: "Waiting a year could quadruple your money. That's like turning one video game into four!" },
+  { nowAmount: 10, laterAmount: 30, laterTime: "1 month", explanation: "In just one month, your $10 could become $30. Short waits can still pay off nicely." },
+  { nowAmount: 100, laterAmount: 250, laterTime: "6 months", explanation: "Half a year of patience turns $100 into $250. That's a 150% gain!" },
+  { nowAmount: 25, laterAmount: 40, laterTime: "2 weeks", explanation: "Even two weeks of waiting can grow your money by 60%. Small patience, real reward." },
+  { nowAmount: 75, laterAmount: 500, laterTime: "2 years", explanation: "Two years is a long wait, but your money would grow almost 7 times. Big patience, big payoff!" },
+];
+
+function FutureMeGame({ currency }: { currency: string }) {
+  const sym = getSymbol(currency);
+  const [currentRound, setCurrentRound] = useState(0);
+  const [choices, setChoices] = useState<Array<{ round: typeof FUTURE_ME_ROUNDS[0]; chose: "now" | "later" }>>([]);
+  const [gameState, setGameState] = useState<"playing" | "result">("playing");
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [lastChoice, setLastChoice] = useState<"now" | "later" | null>(null);
+
+  const makeChoice = (choice: "now" | "later") => {
+    const round = FUTURE_ME_ROUNDS[currentRound];
+    setChoices(c => [...c, { round, chose: choice }]);
+    setLastChoice(choice);
+    setShowExplanation(true);
+  };
+
+  const nextRound = () => {
+    setShowExplanation(false);
+    setLastChoice(null);
+    if (currentRound + 1 >= FUTURE_ME_ROUNDS.length) {
+      setGameState("result");
+    } else {
+      setCurrentRound(r => r + 1);
+    }
+  };
+
+  const reset = () => {
+    setCurrentRound(0);
+    setChoices([]);
+    setGameState("playing");
+    setShowExplanation(false);
+    setLastChoice(null);
+  };
+
+  const totalNow = choices.filter(c => c.chose === "now").reduce((s, c) => s + c.round.nowAmount, 0);
+  const totalLater = choices.filter(c => c.chose === "later").reduce((s, c) => s + c.round.laterAmount, 0);
+  const totalIfAllLater = FUTURE_ME_ROUNDS.reduce((s, r) => s + r.laterAmount, 0);
+  const totalIfAllNow = FUTURE_ME_ROUNDS.reduce((s, r) => s + r.nowAmount, 0);
+  const playerTotal = totalNow + totalLater;
+  const laterCount = choices.filter(c => c.chose === "later").length;
+
+  if (gameState === "result") {
+    return (
+      <Card className="border-2 border-dashed border-indigo-300 dark:border-indigo-700 rounded-3xl">
+        <CardContent className="p-8 space-y-6">
+          <div className="text-center space-y-2">
+            <div className="text-6xl">{laterCount >= 4 ? "🏆" : laterCount >= 2 ? "💡" : "🎯"}</div>
+            <h3 className="font-display text-2xl font-bold" data-testid="text-futureme-result">
+              {laterCount >= 4 ? "Patient Investor!" : laterCount >= 2 ? "Balanced Thinker!" : "Live in the Moment!"}
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="rounded-2xl border-2 bg-orange-50 dark:bg-orange-900/20">
+              <CardContent className="p-4 text-center">
+                <p className="text-xs text-muted-foreground font-bold uppercase">Money Now</p>
+                <p className="text-xl font-bold text-orange-600">{sym}{totalNow}</p>
+                <p className="text-xs text-muted-foreground">(instant)</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-2xl border-2 bg-indigo-50 dark:bg-indigo-900/20">
+              <CardContent className="p-4 text-center">
+                <p className="text-xs text-muted-foreground font-bold uppercase">Money Later</p>
+                <p className="text-xl font-bold text-indigo-600">{sym}{totalLater}</p>
+                <p className="text-xs text-muted-foreground">(with patience)</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="rounded-2xl border-2">
+            <CardContent className="p-4 text-center space-y-2">
+              <p className="font-bold">Your total: <span className="text-xl">{sym}{playerTotal}</span></p>
+              <p className="text-sm text-muted-foreground">
+                If you chose "Now" every time: {sym}{totalIfAllNow}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                If you chose "Later" every time: {sym}{totalIfAllLater}
+              </p>
+              <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                Difference: {sym}{totalIfAllLater - totalIfAllNow} more by being patient!
+              </p>
+            </CardContent>
+          </Card>
+
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-center">Your choices</p>
+            <div className="space-y-2">
+              {choices.map((c, i) => (
+                <div key={i} className="flex items-center gap-3 bg-muted/30 rounded-xl p-3">
+                  <Badge className={`rounded-lg border-0 ${c.chose === "later" ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300" : "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300"}`}>
+                    R{i + 1}
+                  </Badge>
+                  <span className="text-sm flex-1">
+                    {c.chose === "now" ? `Took ${sym}${c.round.nowAmount} now` : `Waited for ${sym}${c.round.laterAmount} (${c.round.laterTime})`}
+                  </span>
+                  <span className="text-sm font-bold">
+                    {c.chose === "later" ? `+${sym}${c.round.laterAmount - c.round.nowAmount}` : "—"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Card className="rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-800">
+            <CardContent className="p-4 text-center space-y-2">
+              <p className="text-sm">
+                <strong>The lesson:</strong> Waiting for a reward isn't always easy, but it often pays off.
+                In real investing, this is how compound interest works — your money grows more the longer you leave it alone.
+                Neither choice is "wrong," but understanding the trade-off helps you make smarter decisions!
+              </p>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-center">
+            <Button onClick={reset} className="rounded-2xl gap-2" data-testid="button-play-again-futureme">
+              <RotateCcw className="w-4 h-4" /> Play Again
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const round = FUTURE_ME_ROUNDS[currentRound];
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap gap-4 items-center justify-between">
+        <Badge variant="outline" className="rounded-2xl px-4 py-2 text-sm font-bold">
+          Round {currentRound + 1} / {FUTURE_ME_ROUNDS.length}
+        </Badge>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Hourglass className="w-4 h-4" /> Take your time to decide
+        </div>
+      </div>
+
+      <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+        <div className="h-full rounded-full bg-indigo-500 transition-all duration-500" style={{ width: `${((currentRound + 1) / FUTURE_ME_ROUNDS.length) * 100}%` }} />
+      </div>
+
+      <Card className="rounded-3xl border-2 border-indigo-200 dark:border-indigo-800">
+        <CardContent className="p-6 space-y-6">
+          <h3 className="font-display text-xl font-bold text-center">Would you rather...</h3>
+
+          {showExplanation ? (
+            <div className="space-y-4">
+              <div className={`rounded-2xl p-4 text-center ${lastChoice === "later" ? "bg-indigo-50 dark:bg-indigo-900/20 border-2 border-indigo-200 dark:border-indigo-700" : "bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-700"}`}>
+                <p className="font-bold mb-1">
+                  You chose: {lastChoice === "now" ? `${sym}${round.nowAmount} now` : `${sym}${round.laterAmount} in ${round.laterTime}`}
+                </p>
+                <p className="text-sm text-muted-foreground">{round.explanation}</p>
+              </div>
+              <div className="flex justify-center">
+                <Button onClick={nextRound} className="rounded-2xl gap-2" data-testid="button-next-futureme">
+                  {currentRound + 1 >= FUTURE_ME_ROUNDS.length ? "See Results" : "Next Round"} <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <Card
+                className="rounded-2xl border-2 border-orange-200 dark:border-orange-700 cursor-pointer transition-all hover:shadow-lg hover:border-orange-400 group"
+                onClick={() => makeChoice("now")}
+                data-testid="button-choose-now"
+              >
+                <CardContent className="p-6 text-center space-y-3">
+                  <div className="text-4xl">💵</div>
+                  <p className="text-3xl font-bold text-orange-600">{sym}{round.nowAmount}</p>
+                  <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300 border-0 rounded-lg">
+                    Right now
+                  </Badge>
+                </CardContent>
+              </Card>
+              <Card
+                className="rounded-2xl border-2 border-indigo-200 dark:border-indigo-700 cursor-pointer transition-all hover:shadow-lg hover:border-indigo-400 group"
+                onClick={() => makeChoice("later")}
+                data-testid="button-choose-later"
+              >
+                <CardContent className="p-6 text-center space-y-3">
+                  <div className="text-4xl">🌱</div>
+                  <p className="text-3xl font-bold text-indigo-600">{sym}{round.laterAmount}</p>
+                  <Badge className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 border-0 rounded-lg">
+                    In {round.laterTime}
+                  </Badge>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function MoneyGames() {
   const [activeGame, setActiveGame] = useState<string | null>(null);
   const [currency, setCurrency] = useState("BSD");
@@ -947,7 +1781,7 @@ export default function MoneyGames() {
           </div>
 
           {!activeGame ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {GAMES.map((game) => (
                 <Card
                   key={game.id}
@@ -980,6 +1814,14 @@ export default function MoneyGames() {
             <SpeedInvestorGame currency={currency} />
           ) : activeGame === "savings" ? (
             <SavingsGoalGame currency={currency} />
+          ) : activeGame === "beatbudget" ? (
+            <BeatTheBudgetGame currency={currency} />
+          ) : activeGame === "compound" ? (
+            <CompoundItGame currency={currency} />
+          ) : activeGame === "needswants" ? (
+            <NeedsVsWantsGame />
+          ) : activeGame === "futureme" ? (
+            <FutureMeGame currency={currency} />
           ) : null}
         </div>
       </main>
