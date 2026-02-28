@@ -1,5 +1,6 @@
 import { 
   users, categories, transactions, budgets, linkedCards, documentUploads, savingsGoals, billReminders,
+  simulatedStocks, portfolioHoldings, portfolioTransactions, learningModules, userLearningProgress, userVirtualBalance,
   type User, type UpsertUser,
   type Category, type InsertCategory,
   type Transaction, type InsertTransaction,
@@ -8,11 +9,17 @@ import {
   type DocumentUpload, type InsertDocumentUpload,
   type SavingsGoal, type InsertSavingsGoal,
   type BillReminder, type InsertBillReminder,
+  type SimulatedStock, type InsertSimulatedStock,
+  type PortfolioHolding, type InsertPortfolioHolding,
+  type PortfolioTransaction, type InsertPortfolioTransaction,
+  type LearningModule,
+  type UserLearningProgress,
+  type UserVirtualBalance,
   type DashboardStats,
   type Conversation, type Message
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql, gte, lte } from "drizzle-orm";
+import { eq, and, desc, asc, sql, gte, lte } from "drizzle-orm";
 import { authStorage, type IAuthStorage } from "./replit_integrations/auth/storage";
 import { conversations, messages } from "@shared/models/chat";
 
@@ -60,6 +67,25 @@ export interface IStorage extends IAuthStorage {
   deleteConversation(id: number): Promise<void>;
   getMessagesByConversation(conversationId: number): Promise<Message[]>;
   createMessage(conversationId: number, role: string, content: string): Promise<Message>;
+
+  // Investment simulation
+  getMarketStocks(currency?: string): Promise<SimulatedStock[]>;
+  getStockById(id: number): Promise<SimulatedStock | undefined>;
+  getPortfolioHoldings(userId: string): Promise<(PortfolioHolding & { stock: SimulatedStock })[]>;
+  getPortfolioHolding(userId: string, stockId: number): Promise<PortfolioHolding | undefined>;
+  upsertPortfolioHolding(userId: string, stockId: number, quantity: number, avgPrice: number): Promise<PortfolioHolding>;
+  deletePortfolioHolding(id: number, userId: string): Promise<void>;
+  createPortfolioTransaction(tx: InsertPortfolioTransaction): Promise<PortfolioTransaction>;
+  getPortfolioTransactions(userId: string): Promise<(PortfolioTransaction & { stock: SimulatedStock })[]>;
+  getVirtualBalance(userId: string): Promise<UserVirtualBalance>;
+  updateVirtualBalance(userId: string, newBalance: number): Promise<UserVirtualBalance>;
+
+  // Learning modules
+  getLearningModules(): Promise<LearningModule[]>;
+  getUserLearningProgress(userId: string): Promise<UserLearningProgress[]>;
+  completeModule(userId: string, moduleId: number): Promise<UserLearningProgress>;
+  seedMarketData(): Promise<void>;
+  seedLearningModules(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -291,6 +317,204 @@ export class DatabaseStorage implements IStorage {
   async deleteBillReminder(id: number, userId: string): Promise<void> {
     await db.delete(billReminders)
       .where(and(eq(billReminders.id, id), eq(billReminders.userId, userId)));
+  }
+
+  // === INVESTMENT SIMULATION ===
+
+  async getMarketStocks(currency?: string): Promise<SimulatedStock[]> {
+    if (currency) {
+      return await db.select().from(simulatedStocks).where(eq(simulatedStocks.currency, currency));
+    }
+    return await db.select().from(simulatedStocks);
+  }
+
+  async getStockById(id: number): Promise<SimulatedStock | undefined> {
+    const [stock] = await db.select().from(simulatedStocks).where(eq(simulatedStocks.id, id));
+    return stock;
+  }
+
+  async getPortfolioHoldings(userId: string): Promise<(PortfolioHolding & { stock: SimulatedStock })[]> {
+    const results = await db.select({
+      holding: portfolioHoldings,
+      stock: simulatedStocks,
+    })
+    .from(portfolioHoldings)
+    .innerJoin(simulatedStocks, eq(portfolioHoldings.stockId, simulatedStocks.id))
+    .where(eq(portfolioHoldings.userId, userId));
+    return results.map(r => ({ ...r.holding, stock: r.stock }));
+  }
+
+  async getPortfolioHolding(userId: string, stockId: number): Promise<PortfolioHolding | undefined> {
+    const [holding] = await db.select().from(portfolioHoldings)
+      .where(and(eq(portfolioHoldings.userId, userId), eq(portfolioHoldings.stockId, stockId)));
+    return holding;
+  }
+
+  async upsertPortfolioHolding(userId: string, stockId: number, quantity: number, avgPrice: number): Promise<PortfolioHolding> {
+    const existing = await this.getPortfolioHolding(userId, stockId);
+    if (existing) {
+      if (quantity <= 0) {
+        await db.delete(portfolioHoldings).where(eq(portfolioHoldings.id, existing.id));
+        return { ...existing, quantity: 0 };
+      }
+      const [updated] = await db.update(portfolioHoldings)
+        .set({ quantity, avgPurchasePrice: avgPrice.toFixed(2) })
+        .where(eq(portfolioHoldings.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(portfolioHoldings)
+      .values({ userId, stockId, quantity, avgPurchasePrice: avgPrice.toFixed(2) })
+      .returning();
+    return created;
+  }
+
+  async deletePortfolioHolding(id: number, userId: string): Promise<void> {
+    await db.delete(portfolioHoldings)
+      .where(and(eq(portfolioHoldings.id, id), eq(portfolioHoldings.userId, userId)));
+  }
+
+  async createPortfolioTransaction(tx: InsertPortfolioTransaction): Promise<PortfolioTransaction> {
+    const [created] = await db.insert(portfolioTransactions).values(tx).returning();
+    return created;
+  }
+
+  async getPortfolioTransactions(userId: string): Promise<(PortfolioTransaction & { stock: SimulatedStock })[]> {
+    const results = await db.select({
+      tx: portfolioTransactions,
+      stock: simulatedStocks,
+    })
+    .from(portfolioTransactions)
+    .innerJoin(simulatedStocks, eq(portfolioTransactions.stockId, simulatedStocks.id))
+    .where(eq(portfolioTransactions.userId, userId))
+    .orderBy(desc(portfolioTransactions.executedAt));
+    return results.map(r => ({ ...r.tx, stock: r.stock }));
+  }
+
+  async getVirtualBalance(userId: string): Promise<UserVirtualBalance> {
+    const [existing] = await db.select().from(userVirtualBalance)
+      .where(eq(userVirtualBalance.userId, userId));
+    if (existing) return existing;
+    const [created] = await db.insert(userVirtualBalance)
+      .values({ userId, balance: "10000", currency: "BSD" })
+      .returning();
+    return created;
+  }
+
+  async updateVirtualBalance(userId: string, newBalance: number): Promise<UserVirtualBalance> {
+    const existing = await this.getVirtualBalance(userId);
+    const [updated] = await db.update(userVirtualBalance)
+      .set({ balance: newBalance.toFixed(2) })
+      .where(eq(userVirtualBalance.userId, userId))
+      .returning();
+    return updated;
+  }
+
+  // === LEARNING MODULES ===
+
+  async getLearningModules(): Promise<LearningModule[]> {
+    return await db.select().from(learningModules).orderBy(asc(learningModules.order));
+  }
+
+  async getUserLearningProgress(userId: string): Promise<UserLearningProgress[]> {
+    return await db.select().from(userLearningProgress)
+      .where(eq(userLearningProgress.userId, userId));
+  }
+
+  async completeModule(userId: string, moduleId: number): Promise<UserLearningProgress> {
+    const [existing] = await db.select().from(userLearningProgress)
+      .where(and(eq(userLearningProgress.userId, userId), eq(userLearningProgress.moduleId, moduleId)));
+    if (existing) {
+      const [updated] = await db.update(userLearningProgress)
+        .set({ completed: true, completedAt: new Date() })
+        .where(eq(userLearningProgress.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(userLearningProgress)
+      .values({ userId, moduleId, completed: true, completedAt: new Date() })
+      .returning();
+    return created;
+  }
+
+  async seedMarketData(): Promise<void> {
+    const existing = await db.select().from(simulatedStocks).limit(1);
+    if (existing.length > 0) return;
+
+    await db.insert(simulatedStocks).values([
+      { name: "Bahamas Telecommunications Company", ticker: "BTC-BS", type: "stock", description: "The national telecom provider of The Bahamas. Owning this stock means you own a small piece of the company that keeps Bahamians connected.", currentPrice: "5.50", currency: "BSD", issuer: "BTC Ltd.", region: "Bahamas", riskLevel: "medium", annualReturnPct: "4.20" },
+      { name: "Commonwealth Bank", ticker: "CBL-BS", type: "stock", description: "One of the largest banks in The Bahamas. Banks make money by lending and investing, and shareholders benefit when the bank does well.", currentPrice: "8.25", currency: "BSD", issuer: "Commonwealth Bank Ltd.", region: "Bahamas", riskLevel: "medium", annualReturnPct: "5.10" },
+      { name: "Focol Holdings", ticker: "FCL-BS", type: "stock", description: "A Bahamian energy company that distributes fuel. Energy companies tend to be stable because people always need electricity and gas.", currentPrice: "3.80", currency: "BSD", issuer: "Focol Holdings Ltd.", region: "Bahamas", riskLevel: "medium", annualReturnPct: "3.50" },
+      { name: "Cable Bahamas", ticker: "CAB-BS", type: "stock", description: "Provides cable TV, internet, and phone services across The Bahamas. Tech and media companies can grow fast but also face competition.", currentPrice: "4.10", currency: "BSD", issuer: "Cable Bahamas Ltd.", region: "Bahamas", riskLevel: "medium", annualReturnPct: "3.80" },
+      { name: "Bahamas Government Registered Stock (5-Year)", ticker: "BGRS-5Y", type: "bond", description: "A bond issued by the Central Bank of The Bahamas. When you buy this, you are lending money to the government, and they pay you back with interest. Government bonds are considered very safe.", currentPrice: "100.00", currency: "BSD", issuer: "Central Bank of The Bahamas", region: "Bahamas", riskLevel: "low", annualReturnPct: "4.50" },
+      { name: "Bahamas Treasury Bill (91-Day)", ticker: "BTB-91", type: "bond", description: "A short-term bond from the Bahamas government lasting about 3 months. T-Bills are one of the safest investments because the government backs them.", currentPrice: "99.00", currency: "BSD", issuer: "Central Bank of The Bahamas", region: "Bahamas", riskLevel: "low", annualReturnPct: "3.25" },
+      { name: "Jamaica National Building Society", ticker: "JNBS-JM", type: "stock", description: "A major financial institution in Jamaica that helps people save money and buy homes through mortgages.", currentPrice: "125.00", currency: "JMD", issuer: "JN Group", region: "Jamaica", riskLevel: "medium", annualReturnPct: "6.00" },
+      { name: "GraceKennedy Limited", ticker: "GK-JM", type: "stock", description: "A large Jamaican company that makes and sells food products across the Caribbean. You might recognize their brands in your local supermarket!", currentPrice: "95.50", currency: "JMD", issuer: "GraceKennedy Ltd.", region: "Jamaica", riskLevel: "medium", annualReturnPct: "5.50" },
+      { name: "Bank of Jamaica Investment Note", ticker: "BOJ-IN", type: "bond", description: "An investment note issued by the Bank of Jamaica. Similar to a savings bond — you lend money to Jamaica's central bank and earn interest.", currentPrice: "100.00", currency: "JMD", issuer: "Bank of Jamaica", region: "Jamaica", riskLevel: "low", annualReturnPct: "7.00" },
+      { name: "Republic Financial Holdings", ticker: "RFHL-TT", type: "stock", description: "One of the biggest banking groups in Trinidad & Tobago. They operate banks across the Caribbean.", currentPrice: "145.00", currency: "TTD", issuer: "Republic Financial Holdings", region: "Trinidad & Tobago", riskLevel: "medium", annualReturnPct: "5.80" },
+      { name: "Trinidad Cement Limited", ticker: "TCL-TT", type: "stock", description: "A company that makes building materials. When new buildings go up in the Caribbean, companies like this do well.", currentPrice: "12.50", currency: "TTD", issuer: "TCL Group", region: "Trinidad & Tobago", riskLevel: "high", annualReturnPct: "4.00" },
+      { name: "Government of T&T Bond (10-Year)", ticker: "GOTT-10Y", type: "bond", description: "A 10-year bond from the Trinidad & Tobago government. Longer bonds usually pay more interest because your money is locked up for longer.", currentPrice: "100.00", currency: "TTD", issuer: "Central Bank of Trinidad and Tobago", region: "Trinidad & Tobago", riskLevel: "low", annualReturnPct: "5.25" },
+      { name: "Sagicor Financial", ticker: "SFC-BB", type: "stock", description: "A major insurance and investment company based in Barbados. Insurance companies collect premiums and invest them to grow.", currentPrice: "4.50", currency: "BBD", issuer: "Sagicor Financial Corporation", region: "Barbados", riskLevel: "medium", annualReturnPct: "4.80" },
+      { name: "Barbados Government Debenture", ticker: "BGD-BB", type: "bond", description: "A bond issued by the Government of Barbados. Debentures are unsecured bonds backed by the government's reputation and ability to collect taxes.", currentPrice: "100.00", currency: "BBD", issuer: "Central Bank of Barbados", region: "Barbados", riskLevel: "low", annualReturnPct: "5.00" },
+      { name: "East Caribbean Home Mortgage Bank", ticker: "ECHMB-XC", type: "bond", description: "A bond from the EC Home Mortgage Bank that helps people in Eastern Caribbean countries buy homes. Your investment helps fund housing!", currentPrice: "100.00", currency: "XCD", issuer: "ECHMB", region: "Eastern Caribbean", riskLevel: "low", annualReturnPct: "4.75" },
+      { name: "Demerara Bank", ticker: "DBL-GY", type: "stock", description: "A leading commercial bank in Guyana. With Guyana's growing oil economy, banks there are handling more business than ever.", currentPrice: "250.00", currency: "GYD", issuer: "Demerara Bank Ltd.", region: "Guyana", riskLevel: "high", annualReturnPct: "7.50" },
+    ]);
+  }
+
+  async seedLearningModules(): Promise<void> {
+    const existing = await db.select().from(learningModules).limit(1);
+    if (existing.length > 0) return;
+
+    await db.insert(learningModules).values([
+      {
+        title: "What is Money?",
+        slug: "what-is-money",
+        description: "Learn why different countries have different currencies and how money works.",
+        content: `Money is anything that people agree to use to buy and sell things. In The Bahamas, we use the Bahamian Dollar (BSD), which is worth the same as one US Dollar. Jamaica uses the Jamaican Dollar (JMD), Trinidad uses the Trinidad & Tobago Dollar (TTD), and many Eastern Caribbean islands share the East Caribbean Dollar (XCD).\n\nWhy do different countries have different currencies? Each country's government prints its own money and controls how much exists. This helps them manage their economy. Some currencies are "pegged" (locked) to the US Dollar — like the Bahamian Dollar — which means the exchange rate stays the same. Others, like the Jamaican Dollar, "float" freely and change value based on supply and demand.\n\nKey takeaway: Money is a tool. Understanding how it works in your country is the first step to using it wisely!`,
+        order: 1,
+        icon: "Coins",
+      },
+      {
+        title: "Saving vs. Spending",
+        slug: "saving-vs-spending",
+        description: "Discover the power of saving and how to make smart spending choices.",
+        content: `Every time you get money — whether it's an allowance, a gift, or pay from a part-time job — you have a choice: spend it now or save it for later.\n\nSpending gives you something right away (a snack, a game, new clothes). Saving means you wait, but your money can grow. If you put money in a savings account at a bank like Commonwealth Bank in The Bahamas, they'll pay you interest — a small reward for letting them use your money.\n\nThe 50/30/20 Rule is a simple guide:\n• 50% for needs (school supplies, lunch)\n• 30% for wants (entertainment, treats)\n• 20% for savings (your future self will thank you!)\n\nBudgeting is just making a plan for your money before you spend it. Even small amounts saved regularly can add up to something big over time!`,
+        order: 2,
+        icon: "PiggyBank",
+      },
+      {
+        title: "What is a Stock?",
+        slug: "what-is-a-stock",
+        description: "Learn what it means to own a piece of a company.",
+        content: `A stock (also called a "share") is a tiny piece of ownership in a company. When a company wants to raise money to grow, it can sell shares to the public. If you buy one share of Commonwealth Bank (CBL) on the Bahamas International Securities Exchange (BISX), you literally own a small piece of that bank!\n\nWhy would you buy a stock?\n1. Growth: If the company does well, its stock price goes up. You could sell your share for more than you paid.\n2. Dividends: Some companies share their profits with stockholders by paying dividends — regular cash payments just for owning the stock.\n\nBut there's risk: if the company does poorly, the stock price can go down, and you could lose money. That's why stocks are considered riskier than savings accounts.\n\nReal example: Focol Holdings (FCL) in The Bahamas distributes fuel. If more people buy gas, Focol earns more money, and its stock might go up. But if a hurricane disrupts operations, the stock might drop temporarily.\n\nKey takeaway: Stocks let you share in a company's success (and risk). They're best for money you won't need for a long time.`,
+        order: 3,
+        icon: "TrendingUp",
+      },
+      {
+        title: "What is a Bond?",
+        slug: "what-is-a-bond",
+        description: "Understand how bonds work and why governments issue them.",
+        content: `A bond is like an IOU. When you buy a bond, you're lending money to a government or company. They promise to pay you back the full amount (called the "face value") on a set date, plus regular interest payments along the way.\n\nThe Central Bank of The Bahamas issues bonds called "Government Registered Stock." For example, a 5-year Government Registered Stock might pay 4.5% interest per year. If you invest B$1,000, you'd earn about B$45 every year for 5 years, then get your B$1,000 back.\n\nWhy are bonds considered safer than stocks?\n• You know exactly how much interest you'll earn\n• The government is very unlikely to fail to pay you back\n• Your original investment is returned at the end\n\nBut there's a trade-off: bonds usually earn less than stocks over time. A stock might gain 8-10% in a great year, but a bond gives you a steady, predictable 4-5%.\n\nOther Caribbean bonds:\n• Bank of Jamaica Investment Notes — Jamaica's central bank bonds\n• Trinidad & Tobago Government Bonds — longer-term bonds from T&T\n• EC Home Mortgage Bank bonds — help fund housing in the Eastern Caribbean\n\nKey takeaway: Bonds are a safer way to earn steady returns. They're great for money you want to protect while still earning more than a savings account.`,
+        order: 4,
+        icon: "Shield",
+      },
+      {
+        title: "Risk and Reward",
+        slug: "risk-and-reward",
+        description: "Learn why higher returns come with higher risk.",
+        content: `In investing, risk and reward go hand in hand. The more risk you take, the more you might earn — but you also might lose more.\n\nThink of it like this:\n🏦 Savings Account (Low Risk, Low Reward): Your money is safe, but earns maybe 1-2% per year.\n📄 Government Bonds (Low-Medium Risk, Medium Reward): Very safe, earns 3-5% per year. Example: Bahamas Government Registered Stock pays about 4.5%.\n📈 Stocks (Medium-High Risk, Higher Reward): Can earn 5-10%+ per year on average, but prices go up AND down. Example: GraceKennedy (GK) stock in Jamaica has seen good years and tough years.\n🎲 Speculative Investments (High Risk, Highest Potential Reward): New companies or volatile markets. You could double your money — or lose most of it.\n\nThe key concept is "diversification" — don't put all your eggs in one basket! If you spread your money across different types of investments (some stocks, some bonds, some savings), a loss in one area won't wipe out everything.\n\nYour age matters too! As a teenager, you have decades ahead of you. That means you can afford to take more risk because you have time to recover from losses. An adult nearing retirement would want to play it safer.\n\nKey takeaway: There's no such thing as a guaranteed high return. Always understand the risk before you invest!`,
+        order: 5,
+        icon: "Scale",
+      },
+      {
+        title: "Building a Portfolio",
+        slug: "building-a-portfolio",
+        description: "Learn how to combine different investments for a balanced approach.",
+        content: `A portfolio is simply the collection of all your investments put together. Building a good portfolio means mixing different types of investments so that your money is balanced and protected.\n\nA simple starter portfolio for a young investor might look like:\n• 50% Stocks — for growth (e.g., Commonwealth Bank, GraceKennedy)\n• 30% Bonds — for stability (e.g., Bahamas Government Registered Stock)\n• 20% Savings — for emergencies and short-term needs\n\nThis is called "asset allocation." The idea is:\n• Stocks grow your money over time\n• Bonds provide steady income and protect against stock market drops\n• Savings give you quick access to cash when you need it\n\nRebalancing: Over time, if your stocks do really well, they might become 70% of your portfolio. That means more risk than you planned! Rebalancing means selling some stocks and buying more bonds to get back to your target mix.\n\nDollar-Cost Averaging: Instead of investing all your money at once, invest a small amount regularly (like B$50 every month). This way, you buy more shares when prices are low and fewer when prices are high, which averages out your cost over time.\n\nReal-world tip: In The Bahamas, you can invest through BISX (Bahamas International Securities Exchange). In Jamaica, the Jamaica Stock Exchange (JSE) is one of the best-performing stock markets in the world. The Trinidad & Tobago Stock Exchange offers access to energy and finance companies.\n\nKey takeaway: A good portfolio is diversified. Start small, stay consistent, and let time work in your favor!`,
+        order: 6,
+        icon: "Briefcase",
+      },
+    ]);
   }
 
   async getDashboardStats(userId: string, filters?: { startDate?: string, endDate?: string, period?: 'monthly' | 'yearly' }): Promise<DashboardStats> {

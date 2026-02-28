@@ -3,13 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { DocumentUploadSection } from "@/components/documents/DocumentUpload";
-import { Wallet, TrendingUp, TrendingDown, Plus, Loader2, HelpCircle, Link as LinkIcon } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Plus, Loader2, HelpCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
-import { ComplianceConsentModal } from "@/components/compliance/ComplianceConsentModal";
-import { BankLinkModal } from "@/components/compliance/BankLinkModal";
+import { Link } from "wouter";
 import { useState } from "react";
 import {
   Tooltip,
@@ -33,8 +32,6 @@ export default function Dashboard() {
   const [period, setPeriod] = useState<"monthly" | "yearly" | "all">("all");
   const { data: stats, isLoading: statsLoading } = useStats({ period });
   const { data: convertedStats } = useConvertedStats({ baseCurrency: currency, period });
-  const [showConsent, setShowConsent] = useState(false);
-  const [showBankSelect, setShowBankSelect] = useState(false);
 
   const CURRENCIES = [
     { code: "BBD", name: "Barbadian Dollar", symbol: "Bds$" },
@@ -59,22 +56,10 @@ export default function Dashboard() {
     );
   }
 
-  // Calculate generic chart data from stats if available, else placeholders
   const COLORS = [
-    '#0891b2', // Cyan
-    '#f59e0b', // Amber
-    '#10b981', // Emerald
-    '#ef4444', // Red
-    '#8b5cf6', // Violet
-    '#ec4899', // Pink
-    '#3b82f6', // Blue
-    '#f97316', // Orange
-    '#06b6d4', // Cyan
-    '#84cc16', // Lime
-    '#14b8a6', // Teal
-    '#a855f7', // Purple
-    '#6366f1', // Indigo
-    '#d946ef', // Fuchsia
+    '#0891b2', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6',
+    '#ec4899', '#3b82f6', '#f97316', '#06b6d4', '#84cc16',
+    '#14b8a6', '#a855f7', '#6366f1', '#d946ef',
   ];
   const expenseData = stats?.expensesByCategory.map((item, index) => ({
     name: item.category,
@@ -90,21 +75,18 @@ export default function Dashboard() {
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto space-y-8">
           
-          {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="flex flex-col mb-1">
-                <h2 className="text-primary font-bold tracking-tighter text-sm uppercase">FinSight 360</h2>
-                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest -mt-1">by FinSight Ltd.</p>
-              </div>
-              <h1 className="text-3xl lg:text-4xl font-display font-bold text-foreground">
-                Welcome back, {user?.firstName || "Friend"}! 👋
+              <h1 className="text-3xl lg:text-4xl font-display font-bold text-foreground" data-testid="text-dashboard-title">
+                Your Money Dashboard
               </h1>
-              <p className="text-muted-foreground mt-1">Here's what your finances look like today.</p>
+              <p className="text-muted-foreground mt-1" data-testid="text-dashboard-greeting">
+                Hey {user?.firstName || "there"}! Here's how your money is doing.
+              </p>
             </div>
             <div className="flex items-center gap-3">
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="w-[180px] bg-card border-primary/20">
+                <SelectTrigger className="w-[180px] bg-card border-primary/20" data-testid="select-currency">
                   <SelectValue placeholder="Currency" />
                 </SelectTrigger>
                 <SelectContent>
@@ -118,87 +100,49 @@ export default function Dashboard() {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="hidden sm:block">
-                      <Button 
-                        variant="outline" 
-                        disabled
-                        className="border-primary/20 bg-muted/50 text-muted-foreground cursor-not-allowed opacity-60"
-                      >
-                        <LinkIcon className="mr-2 w-4 h-4" />
-                        Link Bank
-                      </Button>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>This feature is not available in your region yet</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
                     <div>
                       <TransactionForm>
-                        <Button size="lg" className="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
+                        <Button size="lg" className="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all" data-testid="button-new-transaction">
                           <Plus className="mr-2 w-5 h-5" />
-                          New Transaction
+                          Add Transaction
                         </Button>
                       </TransactionForm>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Manually log cash income or expenses</p>
+                    <p>Log your spending or income</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
           </div>
 
-          <ComplianceConsentModal 
-            isOpen={showConsent} 
-            onOpenChange={setShowConsent}
-            onAccept={() => {
-              setShowConsent(false);
-              setShowBankSelect(true);
-            }}
-          />
-
-          <BankLinkModal
-            isOpen={showBankSelect}
-            onOpenChange={setShowBankSelect}
-            onSuccess={() => {
-              setShowBankSelect(false);
-            }}
-          />
-
-          {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatCard 
-              title="Total Balance" 
+              title="Your Balance" 
               value={`${selectedCurrency.symbol}${(convertedStats?.balance ?? stats?.balance ?? 0).toFixed(2)}`} 
               icon={Wallet} 
               variant="primary"
-              description={hasMultipleCurrencies ? `Converted to ${currency}` : `Your current net worth in ${currency}`}
+              description={hasMultipleCurrencies ? `Converted to ${currency}` : `How much you have in ${currency}`}
             />
             <StatCard 
-              title="Total Income" 
+              title="Money In" 
               value={`${selectedCurrency.symbol}${(convertedStats?.totalIncome ?? stats?.totalIncome ?? 0).toFixed(2)}`} 
               icon={TrendingUp} 
               trend="+12%" 
               trendUp={true}
-              description={hasMultipleCurrencies ? `All income converted to ${currency}` : "Total money received this period"}
+              description={hasMultipleCurrencies ? `All income converted to ${currency}` : "Money you've earned"}
             />
             <StatCard 
-              title="Total Expenses" 
+              title="Money Out" 
               value={`${selectedCurrency.symbol}${(convertedStats?.totalExpenses ?? stats?.totalExpenses ?? 0).toFixed(2)}`} 
               icon={TrendingDown} 
               trend="-5%" 
               trendUp={true}
-              description={hasMultipleCurrencies ? `All expenses converted to ${currency}` : "Total money spent this period"}
+              description={hasMultipleCurrencies ? `All expenses converted to ${currency}` : "Money you've spent"}
             />
           </div>
 
-          {/* Multi-Currency Breakdown */}
           {hasMultipleCurrencies && convertedStats?.currencyBreakdown && (
             <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/50">
               <h3 className="font-display text-lg font-bold mb-4">Currency Breakdown</h3>
@@ -222,14 +166,11 @@ export default function Dashboard() {
             </div>
           )}
 
-
-          {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Expense Breakdown */}
             <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/50">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between gap-2 mb-6">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-display text-xl font-bold">Expense Breakdown</h3>
+                  <h3 className="font-display text-xl font-bold">Where Your Money Goes</h3>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
@@ -242,7 +183,7 @@ export default function Dashboard() {
                   </TooltipProvider>
                 </div>
                 <Select value={period} onValueChange={(val: any) => setPeriod(val)}>
-                  <SelectTrigger className="w-[120px] h-8 text-xs bg-muted/50 border-none">
+                  <SelectTrigger className="w-[120px] h-8 text-xs bg-muted/50 border-none" data-testid="select-period">
                     <SelectValue placeholder="Period" />
                   </SelectTrigger>
                   <SelectContent>
@@ -275,22 +216,21 @@ export default function Dashboard() {
                   </ResponsiveContainer>
                 ) : (
                   <div className="h-full flex items-center justify-center text-muted-foreground bg-muted/20 rounded-xl border border-dashed border-muted">
-                    No expense data yet
+                    No spending data yet
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Recent Activity List (Simplified for dashboard) */}
             <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/50 flex flex-col">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between gap-2 mb-6">
                 <h3 className="font-display text-xl font-bold">Recent Activity</h3>
-                <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80">View All</Button>
+                <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80" data-testid="button-view-all">View All</Button>
               </div>
               <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
                 {stats?.recentTransactions && stats.recentTransactions.length > 0 ? (
                   stats.recentTransactions.map((tx) => (
-                    <div key={tx.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/30 transition-colors group">
+                    <div key={tx.id} className="flex items-center justify-between gap-2 p-3 rounded-xl hover:bg-muted/30 transition-colors group" data-testid={`transaction-item-${tx.id}`}>
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-full bg-secondary/20 text-secondary-foreground flex items-center justify-center text-lg">
                           {tx.category?.icon ? <span dangerouslySetInnerHTML={{__html: tx.category.icon}}/> : (Number(tx.amount) > 0 ? '💰' : '💸')}
@@ -309,7 +249,7 @@ export default function Dashboard() {
                   <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground text-center py-8">
                     <p>No recent activity.</p>
                     <TransactionForm>
-                      <Button variant="ghost" className="mt-2 text-primary p-0 h-auto font-medium hover:bg-transparent">Create your first transaction</Button>
+                      <Button variant="ghost" className="mt-2 text-primary p-0 h-auto font-medium hover:bg-transparent" data-testid="button-first-transaction">Create your first transaction</Button>
                     </TransactionForm>
                   </div>
                 )}
@@ -317,8 +257,27 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Document Upload Portal */}
-          <DocumentUploadSection />
+          <Card className="p-6" data-testid="card-learning-progress">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-display text-xl font-bold text-foreground" data-testid="text-learning-title">Learning Progress</h3>
+                  <p className="text-muted-foreground mt-1" data-testid="text-learning-description">
+                    Ready to grow your money skills? Try our investment simulator to learn how investing works — no real money needed!
+                  </p>
+                </div>
+              </div>
+              <Link href="/invest" data-testid="link-invest">
+                <Button size="lg">
+                  <Sparkles className="mr-2 w-4 h-4" />
+                  Start Learning
+                </Button>
+              </Link>
+            </div>
+          </Card>
 
         </div>
       </main>

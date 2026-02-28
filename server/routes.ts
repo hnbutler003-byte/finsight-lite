@@ -947,5 +947,169 @@ Rules:
     }
   });
 
+  // === INVESTMENT SIMULATION ROUTES ===
+
+  // Seed market data on startup
+  await storage.seedMarketData();
+  await storage.seedLearningModules();
+
+  app.get("/api/investments/market", isAuthenticated, async (req, res) => {
+    try {
+      const currency = req.query.currency as string | undefined;
+      const stocks = await storage.getMarketStocks(currency);
+      res.json(stocks);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/investments/portfolio", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const holdings = await storage.getPortfolioHoldings(userId);
+      const balance = await storage.getVirtualBalance(userId);
+      res.json({ holdings, virtualBalance: balance });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.post("/api/investments/buy", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const { stockId, quantity } = z.object({
+        stockId: z.coerce.number(),
+        quantity: z.coerce.number().int().positive(),
+      }).parse(req.body);
+
+      const stock = await storage.getStockById(stockId);
+      if (!stock) return res.status(404).json({ message: "Stock not found" });
+
+      const totalCost = parseFloat(stock.currentPrice) * quantity;
+      const balance = await storage.getVirtualBalance(userId);
+      const currentBalance = parseFloat(balance.balance);
+
+      if (totalCost > currentBalance) {
+        return res.status(400).json({ message: "Not enough virtual cash for this purchase" });
+      }
+
+      const existingHolding = await storage.getPortfolioHolding(userId, stockId);
+      let newAvgPrice = parseFloat(stock.currentPrice);
+      let newQuantity = quantity;
+
+      if (existingHolding) {
+        const oldTotal = existingHolding.quantity * parseFloat(existingHolding.avgPurchasePrice);
+        const newTotal = quantity * parseFloat(stock.currentPrice);
+        newQuantity = existingHolding.quantity + quantity;
+        newAvgPrice = (oldTotal + newTotal) / newQuantity;
+      }
+
+      await storage.upsertPortfolioHolding(userId, stockId, newQuantity, newAvgPrice);
+      await storage.updateVirtualBalance(userId, currentBalance - totalCost);
+      await storage.createPortfolioTransaction({
+        userId,
+        stockId,
+        type: "buy",
+        quantity,
+        pricePerUnit: stock.currentPrice,
+        currency: stock.currency,
+      });
+
+      res.json({ message: "Purchase successful", spent: totalCost });
+    } catch (err: any) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.post("/api/investments/sell", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const { stockId, quantity } = z.object({
+        stockId: z.coerce.number(),
+        quantity: z.coerce.number().int().positive(),
+      }).parse(req.body);
+
+      const stock = await storage.getStockById(stockId);
+      if (!stock) return res.status(404).json({ message: "Stock not found" });
+
+      const holding = await storage.getPortfolioHolding(userId, stockId);
+      if (!holding || holding.quantity < quantity) {
+        return res.status(400).json({ message: "You don't own enough shares to sell that many" });
+      }
+
+      const saleAmount = parseFloat(stock.currentPrice) * quantity;
+      const newQuantity = holding.quantity - quantity;
+      const balance = await storage.getVirtualBalance(userId);
+
+      if (newQuantity > 0) {
+        await storage.upsertPortfolioHolding(userId, stockId, newQuantity, parseFloat(holding.avgPurchasePrice));
+      } else {
+        await storage.deletePortfolioHolding(holding.id, userId);
+      }
+
+      await storage.updateVirtualBalance(userId, parseFloat(balance.balance) + saleAmount);
+      await storage.createPortfolioTransaction({
+        userId,
+        stockId,
+        type: "sell",
+        quantity,
+        pricePerUnit: stock.currentPrice,
+        currency: stock.currency,
+      });
+
+      res.json({ message: "Sale successful", earned: saleAmount });
+    } catch (err: any) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/investments/history", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const history = await storage.getPortfolioTransactions(userId);
+      res.json(history);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  // === LEARNING MODULES ROUTES ===
+
+  app.get("/api/learn/modules", isAuthenticated, async (_req, res) => {
+    try {
+      const modules = await storage.getLearningModules();
+      res.json(modules);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/learn/progress", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const progress = await storage.getUserLearningProgress(userId);
+      res.json(progress);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.post("/api/learn/complete/:moduleId", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const moduleId = Number(req.params.moduleId);
+      const progress = await storage.completeModule(userId, moduleId);
+      res.json(progress);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
   return httpServer;
 }

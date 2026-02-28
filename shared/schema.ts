@@ -87,6 +87,67 @@ export const billReminders = pgTable("bill_reminders", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// === INVESTMENT SIMULATION TABLES ===
+
+export const simulatedStocks = pgTable("simulated_stocks", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  ticker: text("ticker").notNull(),
+  type: text("type", { enum: ["stock", "bond"] }).notNull(),
+  description: text("description").notNull(),
+  currentPrice: numeric("current_price", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").default("BSD").notNull(),
+  issuer: text("issuer"),
+  region: text("region"),
+  riskLevel: text("risk_level", { enum: ["low", "medium", "high"] }).default("medium").notNull(),
+  annualReturnPct: numeric("annual_return_pct", { precision: 5, scale: 2 }),
+});
+
+export const portfolioHoldings = pgTable("portfolio_holdings", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  stockId: integer("stock_id").notNull().references(() => simulatedStocks.id),
+  quantity: integer("quantity").notNull(),
+  avgPurchasePrice: numeric("avg_purchase_price", { precision: 10, scale: 2 }).notNull(),
+  purchasedAt: timestamp("purchased_at").defaultNow(),
+});
+
+export const portfolioTransactions = pgTable("portfolio_transactions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  stockId: integer("stock_id").notNull().references(() => simulatedStocks.id),
+  type: text("type", { enum: ["buy", "sell"] }).notNull(),
+  quantity: integer("quantity").notNull(),
+  pricePerUnit: numeric("price_per_unit", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").default("BSD").notNull(),
+  executedAt: timestamp("executed_at").defaultNow(),
+});
+
+export const learningModules = pgTable("learning_modules", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description").notNull(),
+  content: text("content").notNull(),
+  order: integer("order").notNull(),
+  icon: text("icon"),
+});
+
+export const userLearningProgress = pgTable("user_learning_progress", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  moduleId: integer("module_id").notNull().references(() => learningModules.id),
+  completed: boolean("completed").default(false).notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const userVirtualBalance = pgTable("user_virtual_balance", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id).unique(),
+  balance: numeric("balance", { precision: 12, scale: 2 }).default("10000").notNull(),
+  currency: text("currency").default("BSD").notNull(),
+});
+
 // === RELATIONS ===
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -152,7 +213,35 @@ export const billRemindersRelations = relations(billReminders, ({ one }) => ({
   }),
 }));
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const simulatedStocksRelations = relations(simulatedStocks, ({ many }) => ({
+  holdings: many(portfolioHoldings),
+  transactions: many(portfolioTransactions),
+}));
+
+export const portfolioHoldingsRelations = relations(portfolioHoldings, ({ one }) => ({
+  user: one(users, { fields: [portfolioHoldings.userId], references: [users.id] }),
+  stock: one(simulatedStocks, { fields: [portfolioHoldings.stockId], references: [simulatedStocks.id] }),
+}));
+
+export const portfolioTransactionsRelations = relations(portfolioTransactions, ({ one }) => ({
+  user: one(users, { fields: [portfolioTransactions.userId], references: [users.id] }),
+  stock: one(simulatedStocks, { fields: [portfolioTransactions.stockId], references: [simulatedStocks.id] }),
+}));
+
+export const learningModulesRelations = relations(learningModules, ({ many }) => ({
+  progress: many(userLearningProgress),
+}));
+
+export const userLearningProgressRelations = relations(userLearningProgress, ({ one }) => ({
+  user: one(users, { fields: [userLearningProgress.userId], references: [users.id] }),
+  module: one(learningModules, { fields: [userLearningProgress.moduleId], references: [learningModules.id] }),
+}));
+
+export const userVirtualBalanceRelations = relations(userVirtualBalance, ({ one }) => ({
+  user: one(users, { fields: [userVirtualBalance.userId], references: [users.id] }),
+}));
+
+export const usersRelations = relations(users, ({ many, one }) => ({
   transactions: many(transactions),
   budgets: many(budgets),
   customCategories: many(categories),
@@ -160,6 +249,10 @@ export const usersRelations = relations(users, ({ many }) => ({
   documentUploads: many(documentUploads),
   savingsGoals: many(savingsGoals),
   billReminders: many(billReminders),
+  portfolioHoldings: many(portfolioHoldings),
+  portfolioTransactions: many(portfolioTransactions),
+  learningProgress: many(userLearningProgress),
+  virtualBalance: one(userVirtualBalance),
 }));
 
 export * from "./models/chat";
@@ -173,6 +266,11 @@ export const insertLinkedCardSchema = createInsertSchema(linkedCards).omit({ id:
 export const insertDocumentUploadSchema = createInsertSchema(documentUploads).omit({ id: true, createdAt: true });
 export const insertSavingsGoalSchema = createInsertSchema(savingsGoals).omit({ id: true, createdAt: true });
 export const insertBillReminderSchema = createInsertSchema(billReminders).omit({ id: true, createdAt: true });
+export const insertSimulatedStockSchema = createInsertSchema(simulatedStocks).omit({ id: true });
+export const insertPortfolioHoldingSchema = createInsertSchema(portfolioHoldings).omit({ id: true, purchasedAt: true });
+export const insertPortfolioTransactionSchema = createInsertSchema(portfolioTransactions).omit({ id: true, executedAt: true });
+export const insertLearningModuleSchema = createInsertSchema(learningModules).omit({ id: true });
+export const insertUserLearningProgressSchema = createInsertSchema(userLearningProgress).omit({ id: true, completedAt: true });
 
 // === EXPLICIT API CONTRACT TYPES ===
 
@@ -185,6 +283,12 @@ export type LinkedCard = typeof linkedCards.$inferSelect;
 export type DocumentUpload = typeof documentUploads.$inferSelect;
 export type SavingsGoal = typeof savingsGoals.$inferSelect;
 export type BillReminder = typeof billReminders.$inferSelect;
+export type SimulatedStock = typeof simulatedStocks.$inferSelect;
+export type PortfolioHolding = typeof portfolioHoldings.$inferSelect;
+export type PortfolioTransaction = typeof portfolioTransactions.$inferSelect;
+export type LearningModule = typeof learningModules.$inferSelect;
+export type UserLearningProgress = typeof userLearningProgress.$inferSelect;
+export type UserVirtualBalance = typeof userVirtualBalance.$inferSelect;
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
@@ -193,6 +297,10 @@ export type InsertLinkedCard = z.infer<typeof insertLinkedCardSchema>;
 export type InsertDocumentUpload = z.infer<typeof insertDocumentUploadSchema>;
 export type InsertSavingsGoal = z.infer<typeof insertSavingsGoalSchema>;
 export type InsertBillReminder = z.infer<typeof insertBillReminderSchema>;
+export type InsertSimulatedStock = z.infer<typeof insertSimulatedStockSchema>;
+export type InsertPortfolioHolding = z.infer<typeof insertPortfolioHoldingSchema>;
+export type InsertPortfolioTransaction = z.infer<typeof insertPortfolioTransactionSchema>;
+export type InsertLearningModule = z.infer<typeof insertLearningModuleSchema>;
 
 // API Responses
 export type TransactionResponse = Transaction & { category?: Category };

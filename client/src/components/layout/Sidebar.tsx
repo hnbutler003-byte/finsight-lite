@@ -10,7 +10,7 @@ import {
   Wallet,
   TrendingUp,
   PiggyBank,
-  Bell,
+  GraduationCap,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ const NAV_ITEMS = [
   { label: "Budgets", href: "/budgets", icon: Wallet },
   { label: "Spending Trends", href: "/trends", icon: TrendingUp },
   { label: "Savings Goals", href: "/savings", icon: PiggyBank },
-  { label: "Bill Reminders", href: "/bills", icon: Bell },
+  { label: "Investment Simulator", href: "/invest", icon: GraduationCap },
   { label: "Financial Insights", href: "/reports", icon: PieChart },
 ];
 

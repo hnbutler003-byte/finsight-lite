@@ -1,17 +1,14 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Loader2, Lightbulb, Target, TrendingUp, Globe, ArrowRightLeft, Info, Newspaper, ExternalLink, Download, FileText, FileSpreadsheet, BarChart3, DollarSign, PieChart as PieChartIcon, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Loader2, Lightbulb, Target, TrendingUp, Globe, ArrowRightLeft, Info, Newspaper, ExternalLink, BarChart3, DollarSign, PieChart as PieChartIcon, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
 
 export default function Reports() {
   const [currency, setCurrency] = useState("BSD");
   const [exportPeriod, setExportPeriod] = useState("all");
-  const { toast } = useToast();
 
   const CURRENCIES = [
     { code: "BBD", name: "Barbadian Dollar", symbol: "Bds$" },
@@ -64,32 +61,6 @@ export default function Reports() {
     }
   });
 
-  const handleExportCSV = () => {
-    const params = new URLSearchParams();
-    if (startDate) params.set("startDate", startDate);
-    if (endDate) params.set("endDate", endDate);
-    window.open(`/api/export/transactions?${params}`, "_blank");
-    toast({ title: "Export started", description: "Your CSV file will download shortly." });
-  };
-
-  const handleExportJSON = () => {
-    const params = new URLSearchParams({ format: "json" });
-    if (startDate) params.set("startDate", startDate);
-    if (endDate) params.set("endDate", endDate);
-    fetch(`/api/export/transactions?${params}`, { credentials: "include" })
-      .then(res => res.json())
-      .then(data => {
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `finsight360-transactions-${new Date().toISOString().split("T")[0]}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast({ title: "Export started", description: "Your JSON file will download shortly." });
-      });
-  };
-
   const currSymbol = CURRENCIES.find(c => c.code === currency)?.symbol || "$";
 
   return (
@@ -99,8 +70,8 @@ export default function Reports() {
         <div className="max-w-7xl mx-auto space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-display font-bold" data-testid="text-reports-title">Reports & Insights</h1>
-              <p className="text-muted-foreground">Financial summaries, exports, and AI-powered analysis.</p>
+              <h1 className="text-3xl font-display font-bold" data-testid="text-reports-title">Money Insights</h1>
+              <p className="text-muted-foreground">See how your money moves and get smart tips.</p>
             </div>
             <div className="flex gap-3">
               <Select value={exportPeriod} onValueChange={setExportPeriod}>
@@ -130,14 +101,10 @@ export default function Reports() {
           </div>
 
           <Tabs defaultValue="summary" className="w-full">
-            <TabsList className="grid w-full max-w-3xl grid-cols-4 mb-8">
+            <TabsList className="grid w-full max-w-3xl grid-cols-3 mb-8">
               <TabsTrigger value="summary" className="flex items-center gap-2" data-testid="tab-summary">
                 <BarChart3 className="w-4 h-4" />
                 Summary
-              </TabsTrigger>
-              <TabsTrigger value="export" className="flex items-center gap-2" data-testid="tab-export">
-                <Download className="w-4 h-4" />
-                Export
               </TabsTrigger>
               <TabsTrigger value="spending" className="flex items-center gap-2" data-testid="tab-spending">
                 <TrendingUp className="w-4 h-4" />
@@ -292,53 +259,6 @@ export default function Reports() {
                   No data available for the selected period.
                 </div>
               )}
-            </TabsContent>
-
-            {/* Export Tab */}
-            <TabsContent value="export" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="hover-elevate border-none shadow-md">
-                  <CardHeader className="flex flex-row items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                      <FileSpreadsheet className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">Export as CSV</CardTitle>
-                      <p className="text-sm text-muted-foreground">Spreadsheet format, works with Excel & Google Sheets</p>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Downloads all your transactions with date, description, amount, type, currency, and category columns.
-                    </p>
-                    <Button onClick={handleExportCSV} className="w-full" data-testid="button-export-csv">
-                      <Download className="w-4 h-4 mr-2" />
-                      Download CSV
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover-elevate border-none shadow-md">
-                  <CardHeader className="flex flex-row items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">Export as JSON</CardTitle>
-                      <p className="text-sm text-muted-foreground">Structured data format for developers</p>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Downloads your transactions in JSON format, suitable for importing into other financial tools.
-                    </p>
-                    <Button onClick={handleExportJSON} variant="outline" className="w-full" data-testid="button-export-json">
-                      <Download className="w-4 h-4 mr-2" />
-                      Download JSON
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
             </TabsContent>
 
             {/* AI Insights Tab */}

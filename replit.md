@@ -1,8 +1,10 @@
-# FinSight 360
+# FinSight 360 — Financial Literacy Learning Simulator
 
 ## Overview
 
-FinSight 360 is a personal finance management application developed by FinSight Ltd. for users in The Bahamas and the wider Caribbean. It enables tracking of income and expenses, budget management, and financial insights through a modern web interface. The application supports BSD (Bahamian Dollar), USD, and other regional currencies, with features for categorizing transactions, setting budgets, and visualizing spending patterns.
+FinSight 360 is a **financial literacy learning simulation** developed by FinSight Ltd. for school-aged users (12-17) in The Bahamas and the wider Caribbean. It combines practical money management tools (transactions, budgets, savings) with an **investment simulator** and structured **learning modules** to teach young people about money, saving, investing in stocks and bonds, and building a portfolio — all using virtual money with no real risk.
+
+The app supports Caribbean currencies (BSD, JMD, TTD, BBD, XCD, GYD) with real-life regional examples such as Central Bank of The Bahamas Government Registered Stock, Bank of Jamaica Investment Notes, and Caribbean company stocks.
 
 ## User Preferences
 
@@ -46,52 +48,59 @@ Core tables include:
 - **transactions**: Financial transactions with amount, date, category, and currency
 - **budgets**: User-defined spending limits per category
 - **linked_cards**: Optional card linking for future bank integration
-- **document_uploads**: Bank statement upload tracking (fileName, fileType, status, transactionsCreated)
+- **document_uploads**: Bank statement upload tracking
+- **savings_goals**: Savings targets with progress tracking
+- **simulated_stocks**: Pre-seeded stocks and bonds for the investment simulator (name, ticker, type, description, price, currency, issuer, region, risk level, annual return)
+- **portfolio_holdings**: User's simulated investment holdings (stockId, quantity, avgPurchasePrice)
+- **portfolio_transactions**: Buy/sell history for simulated trades
+- **learning_modules**: Educational content modules (title, slug, description, content, order)
+- **user_learning_progress**: Tracks which modules each user has completed
+- **user_virtual_balance**: Virtual cash balance for investment simulation (starts at $10,000)
 
-### Document Upload Feature
-- Users can upload bank statements (CSV, PDF, Excel) via drag-and-drop on the Dashboard
-- Backend uses multer for file handling
-- **Veryfi API integration** (primary): Sends bank statements to Veryfi's bank-statement parsing API for transaction extraction; requires VERYFI_CLIENT_ID, VERYFI_USERNAME, VERYFI_API_KEY secrets
-- **OpenAI fallback**: If Veryfi keys are not configured or Veryfi returns no results, falls back to OpenAI (gpt-4o) to parse statement content
-- Veryfi module: server/veryfi.ts (isVeryfiConfigured, parseWithVeryfi)
-- Parsed transactions are automatically created with `isAutoSynced: true`
-- Upload history shows status (processing/completed/failed) with transaction count
-- Supports all 8 regional currencies for imported transactions
-- AI auto-categorization matches transactions to appropriate categories with fallback logic
-- Duplicate detection skips transactions matching existing date, amount, and description
+### Investment Simulator (client/src/pages/InvestmentSimulator.tsx)
+- Three-tab layout: Learn, Market, My Portfolio
+- **Learn tab**: 6 educational modules covering money basics, saving, stocks, bonds, risk/reward, and portfolio building
+  - Each module has detailed, kid-friendly content with real Caribbean examples
+  - Progress tracking with completion marking
+- **Market tab**: Browse simulated stocks and bonds filtered by currency
+  - Stocks: Caribbean companies (Commonwealth Bank, GraceKennedy, Focol Holdings, etc.)
+  - Bonds: Government bonds (Central Bank of Bahamas Registered Stock, Bank of Jamaica Notes, T&T Government Bonds, etc.)
+  - Buy dialog with quantity selector and balance check
+  - Risk level badges (low/medium/high) and expected annual returns
+- **My Portfolio tab**: View holdings with gain/loss tracking, sell functionality, trade history
+- Virtual cash balance displayed prominently (starts at $10,000 in selected currency)
+- API endpoints: GET /api/investments/market, GET /api/investments/portfolio, POST /api/investments/buy, POST /api/investments/sell, GET /api/investments/history
+- Learning API: GET /api/learn/modules, GET /api/learn/progress, POST /api/learn/complete/:moduleId
 
 ### Multi-Currency Support
 - Dashboard converts all currencies to user-selected base currency using hardcoded pegged exchange rates to USD
 - Exchange rates stored in EXCHANGE_RATES_TO_USD constant (BSD 1:1, BBD 0.5, JMD 0.0064, TTD 0.147, XCD 0.37, GYD 0.0048, HTG 0.0076)
-- Currency breakdown panel shows per-currency totals when multiple currencies are in use
+- Investment simulator shows market data filtered by selected currency
 
 ### Spending Trends (client/src/pages/Trends.tsx)
 - Month-over-month spending comparison charts using Recharts
 - Spending alerts highlighting categories with 20%+ spending increases
 - Budget comparison with progress bars showing actual vs budgeted amounts
-- API endpoint: GET /api/spending-trends
 
 ### Savings Goals (client/src/pages/SavingsGoals.tsx)
 - Users create savings targets with name, target amount, deadline, and currency
 - Add savings incrementally via deposit button
 - Visual progress bars and percentage tracking
-- Database table: savingsGoals (id, userId, name, targetAmount, currentAmount, currency, deadline, createdAt)
-- API endpoints: GET/POST /api/savings-goals, PATCH /api/savings-goals/:id/deposit, DELETE /api/savings-goals/:id
 
-### Bill Reminders (client/src/pages/BillReminders.tsx)
-- Manual bill entry with name, amount, due date, frequency, currency
-- Auto-detection of recurring bills from transaction patterns (weekly/monthly/quarterly/yearly)
-- Frequency detection analyzes transaction gaps: weekly (5-10 days), monthly (25-35), quarterly (80-100), yearly (340-380)
-- Database table: billReminders (id, userId, name, amount, currency, dueDate, frequency, isAutoDetected, isActive, createdAt)
-- API endpoints: GET/POST /api/bill-reminders, PATCH /api/bill-reminders/:id, DELETE /api/bill-reminders/:id, POST /api/bill-reminders/auto-detect
-
-### Export & Reports (client/src/pages/Reports.tsx)
+### Money Insights (client/src/pages/Reports.tsx)
 - Financial summary with income, expenses, net savings, savings rate, top categories, budget status
-- CSV export of all transactions (date, description, amount, type, currency, category)
-- JSON export for developer/integration use
 - AI-powered spending insights, currency insights, and regional news
 - Period filtering: This Month, Last 3 Months, This Year, All Time
-- API endpoints: GET /api/export/transactions (CSV/JSON), GET /api/export/summary, GET /api/ai/insights
+- Simplified teen-friendly language throughout
+
+### Pages & Navigation
+- `/` — Dashboard (Your Money Dashboard)
+- `/transactions` — Transactions
+- `/budgets` — Budgets
+- `/trends` — Spending Trends
+- `/savings` — Savings Goals
+- `/invest` — Investment Simulator (Learn, Market, Portfolio)
+- `/reports` — Money Insights
 
 ## External Dependencies
 
