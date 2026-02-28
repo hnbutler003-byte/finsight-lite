@@ -1,8 +1,8 @@
-# FinSight 360 — Financial Literacy Learning Simulator
+# FinSight Lite — Financial Literacy Learning Simulator
 
 ## Overview
 
-FinSight 360 is a **financial literacy learning simulation** developed by FinSight Ltd. for school-aged users (12-17) in The Bahamas and the wider Caribbean. It combines practical money management tools (transactions, budgets, savings) with an **investment simulator** and structured **learning modules** to teach young people about money, saving, investing in stocks and bonds, and building a portfolio — all using virtual money with no real risk.
+FinSight Lite is a **financial literacy learning simulation** developed by FinSight Ltd. for school-aged users (12-17) in The Bahamas and the wider Caribbean. It combines practical money management tools (transactions, budgets, savings) with an **investment simulator** and structured **learning modules** to teach young people about money, saving, investing in stocks and bonds, and building a portfolio — all using virtual money with no real risk.
 
 The app supports Caribbean currencies (BSD, JMD, TTD, BBD, XCD, GYD) with real-life regional examples such as Central Bank of The Bahamas Government Registered Stock, Bank of Jamaica Investment Notes, and Caribbean company stocks.
 
