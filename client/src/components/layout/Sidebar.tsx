@@ -3,8 +3,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, 
-  Receipt, 
-  PieChart, 
   LogOut, 
   Menu,
   Wallet,
@@ -19,14 +17,12 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const NAV_ITEMS = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard, color: "text-violet-500", bg: "bg-violet-100 dark:bg-violet-900/30" },
-  { label: "Transactions", href: "/transactions", icon: Receipt, color: "text-pink-500", bg: "bg-pink-100 dark:bg-pink-900/30" },
+  { label: "My Money", href: "/", icon: LayoutDashboard, color: "text-violet-500", bg: "bg-violet-100 dark:bg-violet-900/30" },
   { label: "Budgets", href: "/budgets", icon: Wallet, color: "text-amber-500", bg: "bg-amber-100 dark:bg-amber-900/30" },
   { label: "Spending Trends", href: "/trends", icon: TrendingUp, color: "text-cyan-500", bg: "bg-cyan-100 dark:bg-cyan-900/30" },
   { label: "Savings Goals", href: "/savings", icon: PiggyBank, color: "text-green-500", bg: "bg-green-100 dark:bg-green-900/30" },
   { label: "Investment Simulator", href: "/invest", icon: GraduationCap, color: "text-orange-500", bg: "bg-orange-100 dark:bg-orange-900/30" },
   { label: "Money Games", href: "/games", icon: Gamepad2, color: "text-rose-500", bg: "bg-rose-100 dark:bg-rose-900/30" },
-  { label: "Money Insights", href: "/reports", icon: PieChart, color: "text-blue-500", bg: "bg-blue-100 dark:bg-blue-900/30" },
 ];
 
 export function Sidebar() {

@@ -106,14 +106,12 @@ Core tables include:
 - Currency selector shared across all games
 
 ### Pages & Navigation
-- `/` — Dashboard (Your Money Dashboard)
-- `/transactions` — Transactions
+- `/` — My Money (unified dashboard: balance stats, spending chart, transactions list, AI tips, learning CTA)
 - `/budgets` — Budgets
 - `/trends` — Spending Trends
 - `/savings` — Savings Goals
 - `/invest` — Investment Simulator (Learn, Market, Portfolio)
-- `/games` — Money Games (Grocery Challenge, Speed Investor, Savings Planner)
-- `/reports` — Money Insights
+- `/games` — Money Games (7 games)
 
 ## External Dependencies
 
