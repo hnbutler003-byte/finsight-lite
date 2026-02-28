@@ -93,6 +93,14 @@ Core tables include:
 - Period filtering: This Month, Last 3 Months, This Year, All Time
 - Simplified teen-friendly language throughout
 
+### Money Games (client/src/pages/MoneyGames.tsx)
+- Three interactive financial literacy games for kids:
+  1. **Budget Grocery Challenge** (Easy): Given a random budget, pick grocery items from a virtual Caribbean store. Score based on how efficiently you use your budget.
+  2. **Speed Investor** (Hard): 10 rapid-fire rounds. A stock and news headline appear, you have 10 seconds to Buy/Hold/Sell. Points for correct decisions.
+  3. **Savings Goal Planner** (Medium): Pick a savings goal, set a timeframe, then take a trade-off quiz to see if your daily choices can get you there.
+- All games are frontend-only (no backend needed), use the selected currency symbol
+- Currency selector shared across all games
+
 ### Pages & Navigation
 - `/` — Dashboard (Your Money Dashboard)
 - `/transactions` — Transactions
@@ -100,6 +108,7 @@ Core tables include:
 - `/trends` — Spending Trends
 - `/savings` — Savings Goals
 - `/invest` — Investment Simulator (Learn, Market, Portfolio)
+- `/games` — Money Games (Grocery Challenge, Speed Investor, Savings Planner)
 - `/reports` — Money Insights
 
 ## External Dependencies

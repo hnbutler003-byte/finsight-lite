@@ -12,6 +12,7 @@ import {
   PiggyBank,
   GraduationCap,
   Sparkles,
+  Gamepad2,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { label: "Spending Trends", href: "/trends", icon: TrendingUp, color: "text-cyan-500", bg: "bg-cyan-100 dark:bg-cyan-900/30" },
   { label: "Savings Goals", href: "/savings", icon: PiggyBank, color: "text-green-500", bg: "bg-green-100 dark:bg-green-900/30" },
   { label: "Investment Simulator", href: "/invest", icon: GraduationCap, color: "text-orange-500", bg: "bg-orange-100 dark:bg-orange-900/30" },
+  { label: "Money Games", href: "/games", icon: Gamepad2, color: "text-rose-500", bg: "bg-rose-100 dark:bg-rose-900/30" },
   { label: "Money Insights", href: "/reports", icon: PieChart, color: "text-blue-500", bg: "bg-blue-100 dark:bg-blue-900/30" },
 ];
 
