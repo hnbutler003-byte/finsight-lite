@@ -1,7 +1,7 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Lightbulb, Target, TrendingUp, Globe, ArrowRightLeft, Info, Newspaper, ExternalLink, BarChart3, DollarSign, PieChart as PieChartIcon, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Loader2, Lightbulb, Target, TrendingUp, ArrowRightLeft, Info, BarChart3, DollarSign, PieChart as PieChartIcon, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -101,7 +101,7 @@ export default function Reports() {
           </div>
 
           <Tabs defaultValue="summary" className="w-full">
-            <TabsList className="grid w-full max-w-3xl grid-cols-3 mb-8">
+            <TabsList className="grid w-full max-w-2xl grid-cols-2 mb-8">
               <TabsTrigger value="summary" className="flex items-center gap-2" data-testid="tab-summary">
                 <BarChart3 className="w-4 h-4" />
                 Summary
@@ -109,10 +109,6 @@ export default function Reports() {
               <TabsTrigger value="spending" className="flex items-center gap-2" data-testid="tab-spending">
                 <TrendingUp className="w-4 h-4" />
                 AI Insights
-              </TabsTrigger>
-              <TabsTrigger value="news" className="flex items-center gap-2" data-testid="tab-news">
-                <Newspaper className="w-4 h-4" />
-                News
               </TabsTrigger>
             </TabsList>
 
@@ -334,40 +330,6 @@ export default function Reports() {
               )}
             </TabsContent>
 
-            {/* News Tab */}
-            <TabsContent value="news" className="space-y-6">
-              {insightsLoading ? (
-                <div className="flex flex-col items-center justify-center p-12 space-y-4">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                  <p className="text-muted-foreground animate-pulse">Fetching regional news...</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {(insights as any)?.newsClippings?.map((news: any, i: number) => (
-                    <a key={i} href={news.url} target="_blank" rel="noopener noreferrer" className="block group">
-                      <Card className="hover-elevate overflow-hidden border-none shadow-md bg-card transition-all group-hover:shadow-lg group-hover:ring-1 group-hover:ring-primary/20">
-                        <div className="bg-primary/5 px-4 py-2 border-b border-primary/10 flex justify-between items-center">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-primary/60">{news.source}</span>
-                          <ExternalLink className="w-3 h-3 text-primary/40 group-hover:text-primary transition-colors" />
-                        </div>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg leading-tight group-hover:text-primary transition-colors">{news.headline}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm text-muted-foreground line-clamp-3 italic">
-                            {news.summary}
-                          </p>
-                          <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">
-                            <span>Financial Briefing</span>
-                            <span className="text-primary/60">Visit this site &rarr;</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </a>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
           </Tabs>
         </div>
       </main>
