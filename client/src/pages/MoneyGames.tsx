@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState, useEffect, useCallback } from "react";
 import {
   ArrowLeft, ShoppingCart, Zap, Target, Plus, Minus, CheckCircle2,
-  XCircle, Timer, TrendingUp, TrendingDown, Minus as FlatIcon,
+  XCircle, TrendingUp, TrendingDown, Minus as FlatIcon,
   Trophy, Star, Sparkles, RotateCcw, ShoppingBag, PiggyBank,
   Gamepad2, ArrowRight
 } from "lucide-react";
@@ -290,17 +290,17 @@ function GroceryGame({ currency }: { currency: string }) {
 
 function SpeedInvestorGame({ currency }: { currency: string }) {
   const sym = getSymbol(currency);
-  const [gameState, setGameState] = useState<"start" | "playing" | "reveal" | "end">("start");
+  const [gameState, setGameState] = useState<"instructions" | "countdown" | "playing" | "reveal" | "end">("instructions");
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
   const [balance, setBalance] = useState(1000);
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [countdownNum, setCountdownNum] = useState(3);
   const [rounds, setRounds] = useState<Array<{ stock: typeof SPEED_STOCKS[0]; news: typeof SPEED_NEWS[0]; price: number; actualTrend: "up" | "down"; choice?: "buy" | "hold" | "sell"; correct?: boolean }>>([]);
   const [currentChoice, setCurrentChoice] = useState<"buy" | "hold" | "sell" | null>(null);
 
   const generateRounds = useCallback(() => {
     const shuffledStocks = [...SPEED_STOCKS].sort(() => Math.random() - 0.5);
-    const newRounds = shuffledStocks.map((stock, i) => {
+    const newRounds = shuffledStocks.map((stock) => {
       const newsItem = SPEED_NEWS[Math.floor(Math.random() * SPEED_NEWS.length)];
       const price = Math.floor(Math.random() * 900) + 100;
       const actualTrend = newsItem.trend === "up" ? (Math.random() > 0.2 ? "up" : "down") as const : (Math.random() > 0.2 ? "down" : "up") as const;
@@ -309,25 +309,25 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
     return newRounds;
   }, []);
 
-  const startGame = () => {
+  const startCountdown = () => {
     setRounds(generateRounds());
     setRound(0);
     setScore(0);
     setBalance(1000);
-    setTimeLeft(10);
     setCurrentChoice(null);
-    setGameState("playing");
+    setCountdownNum(3);
+    setGameState("countdown");
   };
 
   useEffect(() => {
-    if (gameState !== "playing") return;
-    if (timeLeft <= 0) {
-      makeChoice("hold");
+    if (gameState !== "countdown") return;
+    if (countdownNum <= 0) {
+      setGameState("playing");
       return;
     }
-    const timer = setTimeout(() => setTimeLeft(t => t - 1), 1000);
+    const timer = setTimeout(() => setCountdownNum(n => n - 1), 800);
     return () => clearTimeout(timer);
-  }, [timeLeft, gameState]);
+  }, [countdownNum, gameState]);
 
   const makeChoice = (choice: "buy" | "hold" | "sell") => {
     if (gameState !== "playing" || currentChoice) return;
@@ -358,7 +358,6 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
       setGameState("end");
     } else {
       setRound(r => r + 1);
-      setTimeLeft(10);
       setCurrentChoice(null);
       setGameState("playing");
     }
@@ -373,27 +372,107 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
 
   const currentRound = rounds[round];
 
-  if (gameState === "start") {
+  if (gameState === "instructions") {
     return (
       <Card className="border-2 border-dashed border-orange-300 dark:border-orange-700 rounded-3xl">
-        <CardContent className="p-8 text-center space-y-6">
-          <div className="text-6xl">⚡</div>
-          <h3 className="font-display text-2xl font-bold">Speed Investor</h3>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            You start with {sym}1,000. Each round, a stock appears with a news headline.
-            You have <strong>10 seconds</strong> to decide: Buy, Hold, or Sell.
-            Make smart choices to grow your money!
-          </p>
-          <ul className="text-sm text-left max-w-sm mx-auto space-y-2 text-muted-foreground">
-            <li className="flex items-center gap-2"><TrendingUp className="w-4 h-4 text-green-500" /> Buy if you think the price will go UP</li>
-            <li className="flex items-center gap-2"><FlatIcon className="w-4 h-4 text-gray-400" /> Hold to play it safe (no gain, no loss)</li>
-            <li className="flex items-center gap-2"><TrendingDown className="w-4 h-4 text-red-500" /> Sell if you think the price will go DOWN</li>
-          </ul>
-          <Button size="lg" className="rounded-2xl gap-2 px-8 text-lg" onClick={startGame} data-testid="button-start-speed">
-            <Zap className="w-5 h-5" /> Start Game
-          </Button>
+        <CardContent className="p-8 space-y-8">
+          <div className="text-center space-y-2">
+            <div className="text-6xl">⚡</div>
+            <h3 className="font-display text-2xl font-bold">Speed Investor</h3>
+            <p className="text-muted-foreground">Learn to make smart investment decisions!</p>
+          </div>
+
+          <div className="max-w-lg mx-auto space-y-6">
+            <div className="space-y-4">
+              <h4 className="font-display text-lg font-bold flex items-center gap-2">
+                <span className="w-7 h-7 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-sm font-bold text-orange-600">1</span>
+                How It Works
+              </h4>
+              <p className="text-sm text-muted-foreground ml-9">
+                You start with {sym}1,000 in virtual cash. Over 10 rounds, you'll see different Caribbean stocks
+                along with a news headline that gives you a hint about what might happen next.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-display text-lg font-bold flex items-center gap-2">
+                <span className="w-7 h-7 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-sm font-bold text-orange-600">2</span>
+                Your Choices
+              </h4>
+              <div className="ml-9 space-y-2">
+                <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 rounded-2xl p-3">
+                  <TrendingUp className="w-5 h-5 text-green-500 shrink-0" />
+                  <div>
+                    <p className="font-semibold text-sm">Buy</p>
+                    <p className="text-xs text-muted-foreground">Choose this if the news sounds good and you think the price will go UP</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/40 rounded-2xl p-3">
+                  <FlatIcon className="w-5 h-5 text-gray-400 shrink-0" />
+                  <div>
+                    <p className="font-semibold text-sm">Hold</p>
+                    <p className="text-xs text-muted-foreground">Not sure? Play it safe — you won't gain or lose anything</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 rounded-2xl p-3">
+                  <TrendingDown className="w-5 h-5 text-red-500 shrink-0" />
+                  <div>
+                    <p className="font-semibold text-sm">Sell</p>
+                    <p className="text-xs text-muted-foreground">Choose this if the news sounds bad and you think the price will go DOWN</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-display text-lg font-bold flex items-center gap-2">
+                <span className="w-7 h-7 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-sm font-bold text-orange-600">3</span>
+                Scoring
+              </h4>
+              <div className="ml-9 text-sm text-muted-foreground space-y-1">
+                <p>Correct call (Buy when price goes up, Sell when it goes down): <strong className="text-green-600">+100 pts</strong></p>
+                <p>Wrong call: <strong className="text-red-500">-50 pts</strong></p>
+                <p>Hold (safe play): <strong>0 pts</strong></p>
+              </div>
+            </div>
+
+            <div className="bg-orange-50 dark:bg-orange-900/20 rounded-2xl p-4 border-2 border-dashed border-orange-200 dark:border-orange-800">
+              <p className="text-sm text-center">
+                <strong>Tip:</strong> Read the news headline carefully — it usually hints at whether the stock will go up or down! Take your time, there's no rush.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-center">
+            <Button size="lg" className="rounded-2xl gap-2 px-8 text-lg" onClick={startCountdown} data-testid="button-start-speed">
+              <Zap className="w-5 h-5" /> I'm Ready!
+            </Button>
+          </div>
         </CardContent>
       </Card>
+    );
+  }
+
+  if (gameState === "countdown") {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          {countdownNum > 0 ? (
+            <>
+              <div className="text-8xl font-display font-bold text-orange-500 animate-bounce" key={countdownNum}>
+                {countdownNum}
+              </div>
+              <p className="text-muted-foreground font-semibold text-lg">Get ready...</p>
+            </>
+          ) : (
+            <>
+              <div className="text-6xl font-display font-bold text-green-500 animate-bounce">
+                GO!
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     );
   }
 
@@ -425,7 +504,7 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
               </div>
             ))}
           </div>
-          <Button onClick={startGame} className="rounded-2xl gap-2 mt-4" data-testid="button-play-again-speed">
+          <Button onClick={startCountdown} className="rounded-2xl gap-2 mt-4" data-testid="button-play-again-speed">
             <RotateCcw className="w-4 h-4" /> Play Again
           </Button>
         </CardContent>
@@ -447,16 +526,13 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
             {sym}{balance.toFixed(2)}
           </Badge>
         </div>
-        <div className="flex items-center gap-2">
-          <Timer className={`w-5 h-5 ${timeLeft <= 3 ? "text-red-500 animate-pulse" : "text-muted-foreground"}`} />
-          <span className={`font-bold text-lg ${timeLeft <= 3 ? "text-red-500" : ""}`}>{timeLeft}s</span>
-        </div>
+        <p className="text-sm text-muted-foreground">Take your time — read the news and decide!</p>
       </div>
 
       <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all duration-1000 ${timeLeft <= 3 ? "bg-red-500" : "bg-orange-400"}`}
-          style={{ width: `${(timeLeft / 10) * 100}%` }}
+          className="h-full rounded-full transition-all duration-500 bg-orange-400"
+          style={{ width: `${((round + 1) / 10) * 100}%` }}
         />
       </div>
 
@@ -496,32 +572,35 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-3">
-                <Button
-                  size="lg"
-                  className="rounded-2xl gap-2 bg-green-500 text-white"
-                  onClick={() => makeChoice("buy")}
-                  data-testid="button-buy"
-                >
-                  <TrendingUp className="w-5 h-5" /> Buy
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="rounded-2xl gap-2 border-2"
-                  onClick={() => makeChoice("hold")}
-                  data-testid="button-hold"
-                >
-                  <FlatIcon className="w-5 h-5" /> Hold
-                </Button>
-                <Button
-                  size="lg"
-                  className="rounded-2xl gap-2 bg-red-500 text-white"
-                  onClick={() => makeChoice("sell")}
-                  data-testid="button-sell"
-                >
-                  <TrendingDown className="w-5 h-5" /> Sell
-                </Button>
+              <div className="space-y-3">
+                <p className="text-center text-xs text-muted-foreground font-semibold">What's your move?</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <Button
+                    size="lg"
+                    className="rounded-2xl gap-2 bg-green-500 text-white"
+                    onClick={() => makeChoice("buy")}
+                    data-testid="button-buy"
+                  >
+                    <TrendingUp className="w-5 h-5" /> Buy
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="rounded-2xl gap-2 border-2"
+                    onClick={() => makeChoice("hold")}
+                    data-testid="button-hold"
+                  >
+                    <FlatIcon className="w-5 h-5" /> Hold
+                  </Button>
+                  <Button
+                    size="lg"
+                    className="rounded-2xl gap-2 bg-red-500 text-white"
+                    onClick={() => makeChoice("sell")}
+                    data-testid="button-sell"
+                  >
+                    <TrendingDown className="w-5 h-5" /> Sell
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
