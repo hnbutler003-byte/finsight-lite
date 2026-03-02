@@ -61,6 +61,8 @@ Core tables include:
 - Three-tab layout: Learn, Market, My Portfolio
 - **Learn tab**: 6 educational modules covering money basics, saving, stocks, bonds, risk/reward, and portfolio building
   - Each module has detailed, kid-friendly content with real Caribbean examples
+  - Content is **localized per currency** — switching currency changes all examples (banks, exchanges, companies, bonds) to match that region (client/src/data/learning-content.ts)
+  - Supported regions: BSD (Bahamas), BBD (Barbados), JMD (Jamaica), TTD (Trinidad & Tobago), XCD (Eastern Caribbean), GYD (Guyana)
   - Progress tracking with completion marking
 - **Market tab**: Browse simulated stocks and bonds filtered by currency
   - Stocks: Caribbean companies (Commonwealth Bank, GraceKennedy, Focol Holdings, etc.)

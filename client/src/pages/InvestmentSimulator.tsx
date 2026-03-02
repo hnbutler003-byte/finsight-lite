@@ -15,6 +15,7 @@ import {
   ChevronRight, Wallet, History, AlertTriangle
 } from "lucide-react";
 import type { SimulatedStock, LearningModule, UserLearningProgress, PortfolioHolding, PortfolioTransaction, UserVirtualBalance } from "@shared/schema";
+import { getLocalizedModuleContent } from "@/data/learning-content";
 
 const CURRENCIES = [
   { code: "BSD", name: "Bahamian Dollar", symbol: "B$" },
@@ -219,11 +220,14 @@ export default function InvestmentSimulator() {
                       &larr; Back to all lessons
                     </Button>
                     <CardTitle className="text-2xl font-display">{selectedModule.title}</CardTitle>
-                    <p className="text-muted-foreground">{selectedModule.description}</p>
+                    <p className="text-muted-foreground">
+                      {getLocalizedModuleContent(selectedModule.slug, currency)?.description || selectedModule.description}
+                    </p>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="prose prose-sm dark:prose-invert max-w-none">
-                      {selectedModule.content.split("\n\n").map((paragraph, i) => (
+                      {(getLocalizedModuleContent(selectedModule.slug, currency)?.content || selectedModule.content)
+                        .split("\n\n").map((paragraph, i) => (
                         <p key={i} className="text-foreground leading-relaxed mb-4">{paragraph}</p>
                       ))}
                     </div>
@@ -277,7 +281,9 @@ export default function InvestmentSimulator() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-base">{mod.title}</h3>
-                            <p className="text-sm text-muted-foreground line-clamp-1">{mod.description}</p>
+                            <p className="text-sm text-muted-foreground line-clamp-1">
+                              {getLocalizedModuleContent(mod.slug, currency)?.description || mod.description}
+                            </p>
                           </div>
                           <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
                         </CardContent>
