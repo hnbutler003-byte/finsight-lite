@@ -25,7 +25,7 @@ Preferred communication style: Simple, everyday language.
 - **Runtime**: Node.js with Express.js
 - **Language**: TypeScript (ESM modules)
 - **API Design**: RESTful endpoints defined in shared/routes.ts with Zod schemas for type-safe contracts
-- **Authentication**: Custom email/password auth with Passport.js (Local Strategy) and bcryptjs password hashing
+- **Authentication**: Passwordless avatar-based auth with express-session (no passwords, no email — kids enter name + pick avatar, get auto-generated username)
 - **Session Management**: Express sessions stored in PostgreSQL via connect-pg-simple
 
 ### Data Storage
@@ -42,7 +42,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Database Schema
 Core tables include:
-- **users**: User accounts (email/password auth with bcrypt hashing)
+- **users**: User accounts (username + avatar, no passwords)
 - **sessions**: Session storage for authentication
 - **categories**: Transaction categories (system-wide or user-specific)
 - **transactions**: Financial transactions with amount, date, category, and currency
@@ -118,11 +118,12 @@ Core tables include:
 ## External Dependencies
 
 ### Authentication
-- **Custom Auth**: Email/password authentication (server/replit_integrations/auth/)
-  - Registration: POST /api/auth/register (email, password, optional firstName/lastName)
-  - Login: POST /api/auth/login (email, password)
-  - Logout: POST /api/auth/logout
+- **Passwordless Auth**: Avatar-based registration (server/replit_integrations/auth/)
+  - Registration: POST /api/auth/register `{ name, avatar }` → auto-generates username like `Name_XXXX`
   - Current user: GET /api/auth/user
+  - Logout: POST /api/auth/logout
+  - No login endpoint (sessions keep users logged in)
+  - 12 avatar options: lion, dolphin, parrot, turtle, star, butterfly, octopus, artist, rocket, wave, palm, gamer
 - Requires SESSION_SECRET environment variable (optional, has fallback)
 
 ### Database

@@ -1,31 +1,58 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Rocket, Coins, GraduationCap, TrendingUp, Loader2 } from "lucide-react";
+import { Sparkles, Rocket, Coins, GraduationCap, TrendingUp, Loader2, ArrowRight, ArrowLeft, PartyPopper } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 
+const AVATARS = [
+  { id: "lion", emoji: "🦁", label: "Lion" },
+  { id: "dolphin", emoji: "🐬", label: "Dolphin" },
+  { id: "parrot", emoji: "🦜", label: "Parrot" },
+  { id: "turtle", emoji: "🐢", label: "Turtle" },
+  { id: "star", emoji: "🌟", label: "Star" },
+  { id: "butterfly", emoji: "🦋", label: "Butterfly" },
+  { id: "octopus", emoji: "🐙", label: "Octopus" },
+  { id: "artist", emoji: "🎨", label: "Artist" },
+  { id: "rocket", emoji: "🚀", label: "Rocket" },
+  { id: "wave", emoji: "🌊", label: "Wave" },
+  { id: "palm", emoji: "🌴", label: "Palm Tree" },
+  { id: "gamer", emoji: "🎮", label: "Gamer" },
+];
+
 export default function AuthPage() {
-  const [mode, setMode] = useState<"login" | "register">("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [step, setStep] = useState<"name" | "avatar" | "welcome">("name");
+  const [name, setName] = useState("");
+  const [selectedAvatar, setSelectedAvatar] = useState("");
   const [error, setError] = useState("");
+  const [createdUser, setCreatedUser] = useState<any>(null);
 
-  const { login, register, isLoggingIn, isRegistering } = useAuth();
-  const isPending = isLoggingIn || isRegistering;
+  const { register, isRegistering } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleNameNext = () => {
+    if (!name.trim()) {
+      setError("Please enter your name!");
+      return;
+    }
+    if (name.trim().length > 30) {
+      setError("Name must be 30 characters or less.");
+      return;
+    }
+    setError("");
+    setStep("avatar");
+  };
+
+  const handleRegister = async () => {
+    if (!selectedAvatar) {
+      setError("Pick an avatar to represent you!");
+      return;
+    }
     setError("");
 
     try {
-      if (mode === "login") {
-        await login({ email, password });
-      } else {
-        await register({ email, password, firstName: firstName || undefined, lastName: lastName || undefined });
-      }
+      const user = await register({ name: name.trim(), avatar: selectedAvatar });
+      setCreatedUser(user);
+      setStep("welcome");
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
     }
@@ -84,126 +111,154 @@ export default function AuthPage() {
 
       <div className="lg:w-1/2 flex items-center justify-center p-8 bg-gradient-to-b from-violet-50 to-background dark:from-violet-950/20 dark:to-background">
         <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-purple-300/50 dark:shadow-purple-900/50 animate-float">
-              <span className="text-4xl">&#x1F44B;</span>
-            </div>
-            <h2 className="text-3xl font-bold font-display bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-pink-500">
-              {mode === "login" ? "Welcome back!" : "Create your account"}
-            </h2>
-            <p className="mt-2 text-muted-foreground font-medium">
-              {mode === "login" ? "Sign in to continue your money journey." : "Start your money learning adventure!"}
-            </p>
-          </div>
-
-          <div className="bg-card border-2 border-dashed border-violet-200 dark:border-violet-800 shadow-xl rounded-3xl p-8">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {mode === "register" && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="firstName" className="text-sm font-semibold">First Name</Label>
-                    <Input
-                      id="firstName"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Alex"
-                      className="rounded-xl h-11"
-                      data-testid="input-first-name"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="lastName" className="text-sm font-semibold">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Smith"
-                      className="rounded-xl h-11"
-                      data-testid="input-last-name"
-                    />
-                  </div>
+          {step === "name" && (
+            <>
+              <div className="text-center">
+                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-purple-300/50 dark:shadow-purple-900/50 animate-float">
+                  <span className="text-4xl">&#x1F44B;</span>
                 </div>
-              )}
-
-              <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-sm font-semibold">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                  className="rounded-xl h-11"
-                  data-testid="input-email"
-                />
+                <h2 className="text-3xl font-bold font-display bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-pink-500">
+                  What's your name?
+                </h2>
+                <p className="mt-2 text-muted-foreground font-medium">
+                  Tell us what to call you!
+                </p>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-sm font-semibold">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={mode === "register" ? "At least 6 characters" : "Your password"}
-                  required
-                  minLength={mode === "register" ? 6 : undefined}
-                  className="rounded-xl h-11"
-                  data-testid="input-password"
-                />
+              <div className="bg-card border-2 border-dashed border-violet-200 dark:border-violet-800 shadow-xl rounded-3xl p-8">
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name" className="text-sm font-semibold">Your Name</Label>
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleNameNext()}
+                      placeholder="e.g. Alex, Keisha, Jamal..."
+                      className="rounded-xl h-12 text-lg"
+                      autoFocus
+                      data-testid="input-name"
+                    />
+                  </div>
+
+                  {error && (
+                    <div className="bg-destructive/10 text-destructive text-sm font-medium rounded-xl p-3 border border-destructive/20" data-testid="text-auth-error">
+                      {error}
+                    </div>
+                  )}
+
+                  <Button
+                    onClick={handleNameNext}
+                    className="w-full h-12 text-lg font-bold shadow-lg shadow-violet-300/50 dark:shadow-violet-900/50 rounded-2xl bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 hover:from-violet-600 hover:via-purple-600 hover:to-pink-600 transition-all hover:scale-[1.02] hover:shadow-xl"
+                    data-testid="button-next"
+                  >
+                    Next — Pick Your Avatar
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {step === "avatar" && (
+            <>
+              <div className="text-center">
+                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-orange-300/50 dark:shadow-orange-900/50 animate-float">
+                  <span className="text-4xl">🎭</span>
+                </div>
+                <h2 className="text-3xl font-bold font-display bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-pink-500">
+                  Pick your avatar!
+                </h2>
+                <p className="mt-2 text-muted-foreground font-medium">
+                  Choose one that represents you, <strong className="text-foreground">{name.trim()}</strong>!
+                </p>
               </div>
 
-              {error && (
-                <div className="bg-destructive/10 text-destructive text-sm font-medium rounded-xl p-3 border border-destructive/20" data-testid="text-auth-error">
-                  {error}
+              <div className="bg-card border-2 border-dashed border-violet-200 dark:border-violet-800 shadow-xl rounded-3xl p-6">
+                <div className="grid grid-cols-4 gap-3 mb-6">
+                  {AVATARS.map((av) => (
+                    <button
+                      key={av.id}
+                      onClick={() => { setSelectedAvatar(av.id); setError(""); }}
+                      className={`flex flex-col items-center gap-1 p-3 rounded-2xl border-2 transition-all duration-200 hover:scale-105 ${
+                        selectedAvatar === av.id
+                          ? "border-violet-500 bg-violet-50 dark:bg-violet-900/30 shadow-lg scale-105 ring-2 ring-violet-300 dark:ring-violet-700"
+                          : "border-muted hover:border-violet-300 dark:hover:border-violet-700"
+                      }`}
+                      data-testid={`button-avatar-${av.id}`}
+                    >
+                      <span className="text-3xl">{av.emoji}</span>
+                      <span className="text-[10px] font-bold text-muted-foreground">{av.label}</span>
+                    </button>
+                  ))}
                 </div>
-              )}
 
-              <Button
-                type="submit"
-                disabled={isPending}
-                className="w-full h-12 text-lg font-bold shadow-lg shadow-violet-300/50 dark:shadow-violet-900/50 rounded-2xl bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 hover:from-violet-600 hover:via-purple-600 hover:to-pink-600 transition-all hover:scale-[1.02] hover:shadow-xl"
-                data-testid="button-submit"
-              >
-                {isPending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : mode === "login" ? (
-                  <>
-                    Sign In
-                    <Rocket className="ml-2 w-5 h-5" />
-                  </>
-                ) : (
-                  <>
-                    Create Account
-                    <Rocket className="ml-2 w-5 h-5" />
-                  </>
+                {error && (
+                  <div className="bg-destructive/10 text-destructive text-sm font-medium rounded-xl p-3 border border-destructive/20 mb-4" data-testid="text-auth-error">
+                    {error}
+                  </div>
                 )}
-              </Button>
-            </form>
 
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t-2 border-dashed border-violet-100 dark:border-violet-800" />
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => { setStep("name"); setError(""); }}
+                    className="rounded-2xl border-2 font-semibold"
+                    data-testid="button-back"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-1" />
+                    Back
+                  </Button>
+                  <Button
+                    onClick={handleRegister}
+                    disabled={isRegistering || !selectedAvatar}
+                    className="flex-1 h-12 text-lg font-bold shadow-lg shadow-violet-300/50 dark:shadow-violet-900/50 rounded-2xl bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 hover:from-violet-600 hover:via-purple-600 hover:to-pink-600 transition-all hover:scale-[1.02] hover:shadow-xl"
+                    data-testid="button-start"
+                  >
+                    {isRegistering ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <>
+                        Start My Adventure!
+                        <Rocket className="ml-2 w-5 h-5" />
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-3 text-muted-foreground font-bold flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-amber-400" />
-                  {mode === "login" ? "New here?" : "Already have an account?"}
-                </span>
-              </div>
-            </div>
+            </>
+          )}
 
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full rounded-2xl border-2 font-semibold"
-              onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}
-              data-testid="button-toggle-mode"
-            >
-              {mode === "login" ? "Create an Account" : "Sign In Instead"}
-            </Button>
-          </div>
+          {step === "welcome" && createdUser && (
+            <>
+              <div className="text-center">
+                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-green-400 via-emerald-500 to-teal-500 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-300/50 dark:shadow-green-900/50 animate-float">
+                  <span className="text-5xl">{AVATARS.find(a => a.id === createdUser.avatar)?.emoji || "🌟"}</span>
+                </div>
+                <h2 className="text-3xl font-bold font-display bg-clip-text text-transparent bg-gradient-to-r from-green-500 to-emerald-500">
+                  Welcome aboard!
+                </h2>
+                <p className="mt-2 text-muted-foreground font-medium">
+                  Your money adventure starts now!
+                </p>
+              </div>
+
+              <div className="bg-card border-2 border-dashed border-green-200 dark:border-green-800 shadow-xl rounded-3xl p-8 text-center space-y-4">
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <PartyPopper className="w-4 h-4 text-amber-500" />
+                  Your username is
+                </div>
+                <div className="bg-gradient-to-r from-violet-50 to-pink-50 dark:from-violet-950/30 dark:to-pink-950/30 rounded-2xl p-4 border-2 border-violet-200 dark:border-violet-800">
+                  <p className="text-2xl font-display font-bold text-violet-600 dark:text-violet-400" data-testid="text-username">
+                    {createdUser.username}
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  This is your unique ID — you'll stay logged in automatically!
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -16,6 +16,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
+const AVATAR_EMOJIS: Record<string, string> = {
+  lion: "🦁", dolphin: "🐬", parrot: "🦜", turtle: "🐢",
+  star: "🌟", butterfly: "🦋", octopus: "🐙", artist: "🎨",
+  rocket: "🚀", wave: "🌊", palm: "🌴", gamer: "🎮",
+};
+
 const NAV_ITEMS = [
   { label: "My Money", href: "/", icon: LayoutDashboard, color: "text-violet-500", bg: "bg-violet-100 dark:bg-violet-900/30" },
   { label: "Budgets", href: "/budgets", icon: Wallet, color: "text-amber-500", bg: "bg-amber-100 dark:bg-amber-900/30" },
@@ -71,16 +77,12 @@ export function Sidebar() {
 
       <div className="p-4 border-t-2 border-dashed border-violet-200 dark:border-violet-800 mt-auto">
         <div className="flex items-center gap-3 mb-4 px-2">
-          {user?.profileImageUrl ? (
-            <img src={user.profileImageUrl} alt={user.firstName || "User"} className="w-11 h-11 rounded-2xl border-3 border-violet-200 dark:border-violet-700 shadow-md" />
-          ) : (
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
-              {user?.firstName?.[0] || "U"}
-            </div>
-          )}
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-xl shadow-md">
+            {AVATAR_EMOJIS[(user as any)?.avatar] || "🌟"}
+          </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold truncate">{user?.firstName || "User"}</p>
-            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+            <p className="text-sm font-bold truncate">{user?.firstName || "Player"}</p>
+            <p className="text-xs text-muted-foreground truncate">{(user as any)?.username}</p>
           </div>
         </div>
         <Button 

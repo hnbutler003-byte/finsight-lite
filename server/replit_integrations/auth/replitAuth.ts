@@ -1,10 +1,13 @@
-import passport from "passport";
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
 import connectPg from "connect-pg-simple";
-import { Strategy as LocalStrategy } from "passport-local";
-import bcrypt from "bcryptjs";
 import { authStorage } from "./storage";
+
+declare module "express-session" {
+  interface SessionData {
+    userId: string;
+  }
+}
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000;
@@ -22,8 +25,9 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === "production",
       maxAge: sessionTtl,
+      sameSite: "lax",
     },
   });
 }
@@ -31,47 +35,15 @@ export function getSession() {
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
-  app.use(passport.initialize());
-  app.use(passport.session());
-
-  passport.use(
-    new LocalStrategy(
-      { usernameField: "email" },
-      async (email, password, done) => {
-        try {
-          const user = await authStorage.getUserByEmail(email);
-          if (!user) {
-            return done(null, false, { message: "No account found with that email." });
-          }
-          if (!user.password) {
-            return done(null, false, { message: "This account has no password set." });
-          }
-          const isValid = await bcrypt.compare(password, user.password);
-          if (!isValid) {
-            return done(null, false, { message: "Incorrect password." });
-          }
-          return done(null, user);
-        } catch (err) {
-          return done(err);
-        }
-      }
-    )
-  );
-
-  passport.serializeUser((user: any, cb) => cb(null, user.id));
-  passport.deserializeUser(async (id: string, cb) => {
-    try {
-      const user = await authStorage.getUser(id);
-      cb(null, user || null);
-    } catch (err) {
-      cb(err);
-    }
-  });
 }
 
-export const isAuthenticated: RequestHandler = (req, res, next) => {
-  if (req.isAuthenticated()) {
-    return next();
+export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  if (req.session.userId) {
+    const user = await authStorage.getUser(req.session.userId);
+    if (user) {
+      (req as any).user = user;
+      return next();
+    }
   }
   return res.status(401).json({ message: "Unauthorized" });
 };

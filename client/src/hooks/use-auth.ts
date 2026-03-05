@@ -26,27 +26,8 @@ export function useAuth() {
     staleTime: 1000 * 60 * 5,
   });
 
-  const loginMutation = useMutation({
-    mutationFn: async (data: { email: string; password: string }) => {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-        credentials: "include",
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || "Login failed");
-      }
-      return res.json();
-    },
-    onSuccess: (user) => {
-      queryClient.setQueryData(["/api/auth/user"], user);
-    },
-  });
-
   const registerMutation = useMutation({
-    mutationFn: async (data: { email: string; password: string; firstName?: string; lastName?: string }) => {
+    mutationFn: async (data: { name: string; avatar: string }) => {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -77,12 +58,9 @@ export function useAuth() {
     user,
     isLoading,
     isAuthenticated: !!user,
-    login: loginMutation.mutateAsync,
     register: registerMutation.mutateAsync,
     logout: logoutMutation.mutate,
-    loginError: loginMutation.error?.message,
     registerError: registerMutation.error?.message,
-    isLoggingIn: loginMutation.isPending,
     isRegistering: registerMutation.isPending,
     isLoggingOut: logoutMutation.isPending,
   };
