@@ -25,7 +25,7 @@ Preferred communication style: Simple, everyday language.
 - **Runtime**: Node.js with Express.js
 - **Language**: TypeScript (ESM modules)
 - **API Design**: RESTful endpoints defined in shared/routes.ts with Zod schemas for type-safe contracts
-- **Authentication**: Replit Auth integration using OpenID Connect (OIDC) with Passport.js
+- **Authentication**: Custom email/password auth with Passport.js (Local Strategy) and bcryptjs password hashing
 - **Session Management**: Express sessions stored in PostgreSQL via connect-pg-simple
 
 ### Data Storage
@@ -42,7 +42,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Database Schema
 Core tables include:
-- **users**: User accounts (managed by Replit Auth)
+- **users**: User accounts (email/password auth with bcrypt hashing)
 - **sessions**: Session storage for authentication
 - **categories**: Transaction categories (system-wide or user-specific)
 - **transactions**: Financial transactions with amount, date, category, and currency
@@ -98,7 +98,7 @@ Core tables include:
 ### Money Games (client/src/pages/MoneyGames.tsx)
 - Seven interactive financial literacy games for kids:
   1. **Budget Grocery Challenge** (Easy): Given a random budget, pick grocery items from a virtual Caribbean store. Score based on how efficiently you use your budget.
-  2. **Speed Investor** (Hard): 10 rounds with countdown intro. A stock and news headline appear, decide to Buy/Hold/Sell at your own pace. Points for correct decisions.
+  2. **Speed Investor** (Hard): 10 rounds with 10-second countdown timer per round. A stock and news headline appear, decide to Buy/Hold/Sell before time runs out (auto-Hold on timeout). Visual timer bar, points for correct decisions.
   3. **Savings Goal Planner** (Medium): Pick a savings goal, set a timeframe, then take a trade-off quiz to see if your daily choices can get you there.
   4. **Beat the Budget** (Medium): $100 weekly allowance, 6 spending options (needs/wants), surprise expense after shopping. Future Self Score 0-100 with feedback.
   5. **Compound It** (Easy): Visual compound interest simulator with weekly savings and years sliders, animated growth chart, shows contributed vs earned.
@@ -118,8 +118,12 @@ Core tables include:
 ## External Dependencies
 
 ### Authentication
-- **Replit Auth**: OpenID Connect-based authentication system (server/replit_integrations/auth/)
-- Requires REPL_ID and SESSION_SECRET environment variables
+- **Custom Auth**: Email/password authentication (server/replit_integrations/auth/)
+  - Registration: POST /api/auth/register (email, password, optional firstName/lastName)
+  - Login: POST /api/auth/login (email, password)
+  - Logout: POST /api/auth/logout
+  - Current user: GET /api/auth/user
+- Requires SESSION_SECRET environment variable (optional, has fallback)
 
 ### Database
 - **PostgreSQL**: Primary data store

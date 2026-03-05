@@ -61,7 +61,7 @@ export async function registerRoutes(
 
   app.get("/api/stats/converted", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       const baseCurrency = (req.query.baseCurrency as string) || "BSD";
       const filters = {
         startDate: req.query.startDate as string,
@@ -114,7 +114,7 @@ export async function registerRoutes(
   // Spending Trends - monthly comparison
   app.get("/api/trends", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       const transactions = await storage.getTransactions(userId);
       const budgets = await storage.getBudgets(userId);
       const months = parseInt(req.query.months as string) || 6;
@@ -199,7 +199,7 @@ export async function registerRoutes(
   // AI Insights
   app.get("/api/ai/insights", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       const transactions = await storage.getTransactions(userId, { limit: 100 });
       const budgets = await storage.getBudgets(userId);
       const selectedCurrency = req.query.currency as string || "BSD";
@@ -254,7 +254,7 @@ export async function registerRoutes(
 
   // Transactions
   app.get(api.transactions.list.path, isAuthenticated, async (req, res) => {
-    const userId = (req.user as any).claims.sub;
+    const userId = (req.user as any).id;
     const filters = {
       startDate: req.query.startDate as string,
       endDate: req.query.endDate as string,
@@ -267,7 +267,7 @@ export async function registerRoutes(
 
   app.post(api.transactions.create.path, isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       // Coerce numeric fields and date for robustness
       const bodySchema = api.transactions.create.input.extend({
         amount: z.coerce.string(),
@@ -290,7 +290,7 @@ export async function registerRoutes(
 
   app.patch(api.transactions.update.path, isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       const id = Number(req.params.id);
       
       const bodySchema = api.transactions.update.input.partial().extend({
@@ -314,7 +314,7 @@ export async function registerRoutes(
   });
 
   app.delete(api.transactions.delete.path, isAuthenticated, async (req, res) => {
-    const userId = (req.user as any).claims.sub;
+    const userId = (req.user as any).id;
     const id = Number(req.params.id);
     await storage.deleteTransaction(id, userId);
     res.status(204).end();
@@ -322,14 +322,14 @@ export async function registerRoutes(
 
   // Categories
   app.get(api.categories.list.path, isAuthenticated, async (req, res) => {
-    const userId = (req.user as any).claims.sub;
+    const userId = (req.user as any).id;
     const categories = await storage.getCategories(userId);
     res.json(categories);
   });
 
   app.post(api.categories.create.path, isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       const input = api.categories.create.input.parse(req.body);
       const category = await storage.createCategory({ ...input, userId });
       res.status(201).json(category);
@@ -346,14 +346,14 @@ export async function registerRoutes(
 
   // Budgets
   app.get(api.budgets.list.path, isAuthenticated, async (req, res) => {
-    const userId = (req.user as any).claims.sub;
+    const userId = (req.user as any).id;
     const budgets = await storage.getBudgets(userId);
     res.json(budgets);
   });
 
   app.post(api.budgets.create.path, isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       const bodySchema = api.budgets.create.input.extend({
         amount: z.coerce.string(),
         categoryId: z.coerce.number(),
@@ -373,7 +373,7 @@ export async function registerRoutes(
   });
 
   app.delete(api.budgets.delete.path, isAuthenticated, async (req, res) => {
-    const userId = (req.user as any).claims.sub;
+    const userId = (req.user as any).id;
     const id = Number(req.params.id);
     await storage.deleteBudget(id, userId);
     res.status(204).end();
@@ -381,13 +381,13 @@ export async function registerRoutes(
 
   // Cards
   app.get(api.cards.list.path, isAuthenticated, async (req, res) => {
-    const userId = (req.user as any).claims.sub;
+    const userId = (req.user as any).id;
     const cards = await storage.getLinkedCards(userId);
     res.json(cards);
   });
 
   app.post(api.cards.link.path, isAuthenticated, async (req, res) => {
-    const userId = (req.user as any).claims.sub;
+    const userId = (req.user as any).id;
     const { cardNumber, bankName } = api.cards.link.input.parse(req.body);
     const lastFour = cardNumber.slice(-4);
     
@@ -398,13 +398,13 @@ export async function registerRoutes(
 
   // Savings Goals
   app.get("/api/savings-goals", isAuthenticated, async (req, res) => {
-    const userId = (req.user as any).claims.sub;
+    const userId = (req.user as any).id;
     const goals = await storage.getSavingsGoals(userId);
     res.json(goals);
   });
 
   app.post("/api/savings-goals", isAuthenticated, async (req, res) => {
-    const userId = (req.user as any).claims.sub;
+    const userId = (req.user as any).id;
     const { name, targetAmount, currency, deadline, icon, color } = req.body;
     const goal = await storage.createSavingsGoal({
       userId,
@@ -420,7 +420,7 @@ export async function registerRoutes(
   });
 
   app.patch("/api/savings-goals/:id", isAuthenticated, async (req, res) => {
-    const userId = (req.user as any).claims.sub;
+    const userId = (req.user as any).id;
     const id = Number(req.params.id);
     const data: any = {};
     if (req.body.name !== undefined) data.name = req.body.name;
@@ -432,7 +432,7 @@ export async function registerRoutes(
   });
 
   app.delete("/api/savings-goals/:id", isAuthenticated, async (req, res) => {
-    const userId = (req.user as any).claims.sub;
+    const userId = (req.user as any).id;
     const id = Number(req.params.id);
     await storage.deleteSavingsGoal(id, userId);
     res.status(204).end();
@@ -440,13 +440,13 @@ export async function registerRoutes(
 
   // Bill Reminders
   app.get("/api/bill-reminders", isAuthenticated, async (req, res) => {
-    const userId = (req.user as any).claims.sub;
+    const userId = (req.user as any).id;
     const reminders = await storage.getBillReminders(userId);
     res.json(reminders);
   });
 
   app.post("/api/bill-reminders", isAuthenticated, async (req, res) => {
-    const userId = (req.user as any).claims.sub;
+    const userId = (req.user as any).id;
     const { name, amount, currency, frequency, nextDueDate, categoryId } = req.body;
     const reminder = await storage.createBillReminder({
       userId,
@@ -462,7 +462,7 @@ export async function registerRoutes(
   });
 
   app.delete("/api/bill-reminders/:id", isAuthenticated, async (req, res) => {
-    const userId = (req.user as any).claims.sub;
+    const userId = (req.user as any).id;
     const id = Number(req.params.id);
     await storage.deleteBillReminder(id, userId);
     res.status(204).end();
@@ -471,7 +471,7 @@ export async function registerRoutes(
   // Auto-detect recurring bills from transaction history
   app.post("/api/bill-reminders/auto-detect", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       const transactions = await storage.getTransactions(userId);
       
       const descriptionMap: Record<string, { dates: Date[]; amounts: number[]; categoryId: number | null }> = {};
@@ -530,7 +530,7 @@ export async function registerRoutes(
 
   // Dashboard Stats
   app.get(api.stats.get.path, isAuthenticated, async (req, res) => {
-    const userId = (req.user as any).claims.sub;
+    const userId = (req.user as any).id;
     const filters = {
       startDate: req.query.startDate as string,
       endDate: req.query.endDate as string,
@@ -542,14 +542,14 @@ export async function registerRoutes(
 
   // Document Uploads
   app.get("/api/documents", isAuthenticated, async (req, res) => {
-    const userId = (req.user as any).claims.sub;
+    const userId = (req.user as any).id;
     const uploads = await storage.getDocumentUploads(userId);
     res.json(uploads);
   });
 
   app.delete("/api/documents/:id", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid document ID" });
@@ -564,7 +564,7 @@ export async function registerRoutes(
 
   app.post("/api/documents/upload", isAuthenticated, upload.single("file"), async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       const file = req.file;
       if (!file) {
         return res.status(400).json({ message: "No file uploaded" });
@@ -824,7 +824,7 @@ Rules:
   // Export transactions as CSV
   app.get("/api/export/transactions", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       const { startDate, endDate, format } = req.query as { startDate?: string; endDate?: string; format?: string };
 
       const transactions = await storage.getTransactions(userId);
@@ -879,7 +879,7 @@ Rules:
   // Export financial summary report
   app.get("/api/export/summary", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       const { startDate, endDate, currency: baseCurrency } = req.query as { startDate?: string; endDate?: string; currency?: string };
       const base = baseCurrency || "BSD";
 
@@ -965,7 +965,7 @@ Rules:
 
   app.get("/api/investments/portfolio", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       const holdings = await storage.getPortfolioHoldings(userId);
       const balance = await storage.getVirtualBalance(userId);
       res.json({ holdings, virtualBalance: balance });
@@ -976,7 +976,7 @@ Rules:
 
   app.post("/api/investments/buy", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       const { stockId, quantity } = z.object({
         stockId: z.coerce.number(),
         quantity: z.coerce.number().int().positive(),
@@ -1026,7 +1026,7 @@ Rules:
 
   app.post("/api/investments/sell", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       const { stockId, quantity } = z.object({
         stockId: z.coerce.number(),
         quantity: z.coerce.number().int().positive(),
@@ -1071,7 +1071,7 @@ Rules:
 
   app.get("/api/investments/history", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       const history = await storage.getPortfolioTransactions(userId);
       res.json(history);
     } catch (err: any) {
@@ -1092,7 +1092,7 @@ Rules:
 
   app.get("/api/learn/progress", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       const progress = await storage.getUserLearningProgress(userId);
       res.json(progress);
     } catch (err: any) {
@@ -1102,7 +1102,7 @@ Rules:
 
   app.post("/api/learn/complete/:moduleId", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any).claims.sub;
+      const userId = (req.user as any).id;
       const moduleId = Number(req.params.moduleId);
       const progress = await storage.completeModule(userId, moduleId);
       res.json(progress);

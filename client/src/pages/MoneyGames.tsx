@@ -333,6 +333,7 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
   const [countdownNum, setCountdownNum] = useState(3);
   const [rounds, setRounds] = useState<Array<{ stock: typeof SPEED_STOCKS[0]; news: typeof SPEED_NEWS[0]; price: number; actualTrend: "up" | "down"; choice?: "buy" | "hold" | "sell"; correct?: boolean }>>([]);
   const [currentChoice, setCurrentChoice] = useState<"buy" | "hold" | "sell" | null>(null);
+  const [roundTimer, setRoundTimer] = useState(10);
 
   const generateRounds = useCallback(() => {
     const shuffledStocks = [...SPEED_STOCKS].sort(() => Math.random() - 0.5);
@@ -358,12 +359,23 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
   useEffect(() => {
     if (gameState !== "countdown") return;
     if (countdownNum <= 0) {
+      setRoundTimer(10);
       setGameState("playing");
       return;
     }
     const timer = setTimeout(() => setCountdownNum(n => n - 1), 800);
     return () => clearTimeout(timer);
   }, [countdownNum, gameState]);
+
+  useEffect(() => {
+    if (gameState !== "playing" || currentChoice) return;
+    if (roundTimer <= 0) {
+      makeChoice("hold");
+      return;
+    }
+    const timer = setTimeout(() => setRoundTimer(t => t - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [roundTimer, gameState, currentChoice]);
 
   const makeChoice = (choice: "buy" | "hold" | "sell") => {
     if (gameState !== "playing" || currentChoice) return;
@@ -395,6 +407,7 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
     } else {
       setRound(r => r + 1);
       setCurrentChoice(null);
+      setRoundTimer(10);
       setGameState("playing");
     }
   };
@@ -426,7 +439,7 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
               </h4>
               <p className="text-sm text-muted-foreground ml-9">
                 You start with {sym}1,000 in virtual cash. Over 10 rounds, you'll see different Caribbean stocks
-                along with a news headline that gives you a hint about what might happen next.
+                along with a news headline that gives you a hint about what might happen next. You have <strong>10 seconds</strong> per round to decide!
               </p>
             </div>
 
@@ -474,7 +487,7 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
 
             <div className="bg-orange-50 dark:bg-orange-900/20 rounded-2xl p-4 border-2 border-dashed border-orange-200 dark:border-orange-800">
               <p className="text-sm text-center">
-                <strong>Tip:</strong> Read the news headline carefully — it usually hints at whether the stock will go up or down! Take your time, there's no rush.
+                <strong>Tip:</strong> Read the news headline carefully — it usually hints at whether the stock will go up or down! If time runs out, you'll automatically Hold.
               </p>
             </div>
           </div>
@@ -562,10 +575,22 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
             {sym}{balance.toFixed(2)}
           </Badge>
         </div>
-        <p className="text-sm text-muted-foreground">Take your time — read the news and decide!</p>
+        {gameState === "playing" && (
+          <Badge variant="outline" className={`rounded-2xl px-4 py-2 text-sm font-bold ${roundTimer <= 3 ? "border-red-400 text-red-500 animate-pulse" : "border-orange-400 text-orange-600"}`} data-testid="text-round-timer">
+            <Clock className="w-3 h-3 mr-1" /> {roundTimer}s
+          </Badge>
+        )}
       </div>
 
-      <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+      {gameState === "playing" && (
+        <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-1000 ease-linear ${roundTimer <= 3 ? "bg-red-500" : roundTimer <= 6 ? "bg-amber-500" : "bg-green-500"}`}
+            style={{ width: `${(roundTimer / 10) * 100}%` }}
+          />
+        </div>
+      )}
+      <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-500 bg-orange-400"
           style={{ width: `${((round + 1) / 10) * 100}%` }}
