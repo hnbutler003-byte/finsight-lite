@@ -115,6 +115,23 @@ Core tables include:
 - `/invest` — Investment Simulator (Learn, Market, Portfolio)
 - `/games` — Money Games (7 games)
 - `/guide` — Money Guide (AI-powered financial mentor chatbot)
+- `/moneylab` — MoneyLab hub (exam game platform)
+- `/moneylab/upload` — Upload past exam papers (PDF/JPG/PNG)
+- `/moneylab/play` — Play exam games (Quiz, Timed, Challenge modes)
+- `/moneylab/tutor` — AI Tutor (streaming explanations for questions)
+- `/moneylab/leaderboard` — Player leaderboard (all-time & weekly)
+
+### MoneyLab (client/src/pages/MoneyLab*.tsx)
+- Exam paper upload → AI extracts MCQ questions using GPT-4o (PDF via pdf-parse, images via GPT-4o vision)
+- 3 game modes: Quiz (untimed), Timed Exam (30s/question), Challenge (streak+speed scoring)
+- AI Tutor explains any question in simple, kid-friendly language (SSE streaming)
+- XP system: base 10 XP per correct answer, mode multipliers, accuracy bonus
+- Levels: every 100 XP = 1 level
+- Streaks: daily play tracking, longest streak
+- 11 achievement badges (first_game, ten_games, perfect_score, streak_3, streak_7, level_5, level_10, xp_500, xp_1000, challenge_win, speed_demon)
+- Leaderboard: aggregate scores across all games, filterable by period (all-time, weekly)
+- DB tables: exam_papers, extracted_questions, game_sessions, user_xp, user_badges
+- Backend routes: POST /api/moneylab/upload, GET /api/moneylab/papers, GET /api/moneylab/papers/all, GET /api/moneylab/papers/:id, DELETE /api/moneylab/papers/:id, POST /api/moneylab/games/submit, GET /api/moneylab/xp, GET /api/moneylab/leaderboard, POST /api/moneylab/tutor/explain, GET /api/moneylab/history
 
 ### Money Guide AI (client/src/pages/MoneyGuide.tsx)
 - AI-powered chat interface acting as a fun, Caribbean-infused financial mentor for kids 10-17

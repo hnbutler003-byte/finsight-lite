@@ -1,6 +1,7 @@
 import { 
   users, categories, transactions, budgets, linkedCards, documentUploads, savingsGoals, billReminders,
   simulatedStocks, portfolioHoldings, portfolioTransactions, learningModules, userLearningProgress, userVirtualBalance,
+  examPapers, extractedQuestions, gameSessions, userXp, userBadges,
   type User, type UpsertUser,
   type Category, type InsertCategory,
   type Transaction, type InsertTransaction,
@@ -16,7 +17,12 @@ import {
   type UserLearningProgress,
   type UserVirtualBalance,
   type DashboardStats,
-  type Conversation, type Message
+  type Conversation, type Message,
+  type ExamPaper, type InsertExamPaper,
+  type ExtractedQuestion, type InsertExtractedQuestion,
+  type GameSession, type InsertGameSession,
+  type UserXp,
+  type UserBadge, type InsertUserBadge,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, sql, gte, lte } from "drizzle-orm";
@@ -86,6 +92,23 @@ export interface IStorage extends IAuthStorage {
   completeModule(userId: string, moduleId: number): Promise<UserLearningProgress>;
   seedMarketData(): Promise<void>;
   seedLearningModules(): Promise<void>;
+
+  // MoneyLab
+  createExamPaper(paper: InsertExamPaper): Promise<ExamPaper>;
+  updateExamPaper(id: number, data: Partial<ExamPaper>): Promise<ExamPaper>;
+  getExamPapers(userId: string): Promise<ExamPaper[]>;
+  getExamPaper(id: number): Promise<ExamPaper | undefined>;
+  deleteExamPaper(id: number, userId: string): Promise<void>;
+  createExtractedQuestion(question: InsertExtractedQuestion): Promise<ExtractedQuestion>;
+  getQuestionsByPaper(paperId: number): Promise<ExtractedQuestion[]>;
+  getAllQuestions(filters?: { subject?: string }): Promise<(ExtractedQuestion & { paper?: ExamPaper })[]>;
+  createGameSession(session: InsertGameSession): Promise<GameSession>;
+  getGameSessions(userId: string): Promise<GameSession[]>;
+  getLeaderboard(filters?: { subject?: string; period?: string; limit?: number }): Promise<{ userId: string; userName: string; avatar: string; totalScore: number; gamesPlayed: number }[]>;
+  getUserXp(userId: string): Promise<UserXp>;
+  updateUserXp(userId: string, data: Partial<UserXp>): Promise<UserXp>;
+  getUserBadges(userId: string): Promise<UserBadge[]>;
+  addUserBadge(badge: InsertUserBadge): Promise<UserBadge>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -515,6 +538,115 @@ export class DatabaseStorage implements IStorage {
         icon: "Briefcase",
       },
     ]);
+  }
+
+  // === MONEYLAB ===
+
+  async createExamPaper(paper: InsertExamPaper): Promise<ExamPaper> {
+    const [created] = await db.insert(examPapers).values(paper).returning();
+    return created;
+  }
+
+  async updateExamPaper(id: number, data: Partial<ExamPaper>): Promise<ExamPaper> {
+    const [updated] = await db.update(examPapers).set(data).where(eq(examPapers.id, id)).returning();
+    return updated;
+  }
+
+  async getExamPapers(userId: string): Promise<ExamPaper[]> {
+    return await db.select().from(examPapers).where(eq(examPapers.userId, userId)).orderBy(desc(examPapers.createdAt));
+  }
+
+  async getExamPaper(id: number): Promise<ExamPaper | undefined> {
+    const [paper] = await db.select().from(examPapers).where(eq(examPapers.id, id));
+    return paper;
+  }
+
+  async deleteExamPaper(id: number, userId: string): Promise<void> {
+    await db.delete(examPapers).where(and(eq(examPapers.id, id), eq(examPapers.userId, userId)));
+  }
+
+  async createExtractedQuestion(question: InsertExtractedQuestion): Promise<ExtractedQuestion> {
+    const [created] = await db.insert(extractedQuestions).values(question).returning();
+    return created;
+  }
+
+  async getQuestionsByPaper(paperId: number): Promise<ExtractedQuestion[]> {
+    return await db.select().from(extractedQuestions).where(eq(extractedQuestions.paperId, paperId)).orderBy(extractedQuestions.order);
+  }
+
+  async getAllQuestions(filters?: { subject?: string }): Promise<(ExtractedQuestion & { paper?: ExamPaper })[]> {
+    let conditions = [];
+    if (filters?.subject) {
+      conditions.push(eq(extractedQuestions.subject, filters.subject));
+    }
+    const results = await db.select({ question: extractedQuestions, paper: examPapers })
+      .from(extractedQuestions)
+      .innerJoin(examPapers, eq(extractedQuestions.paperId, examPapers.id))
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+    return results.map(r => ({ ...r.question, paper: r.paper }));
+  }
+
+  async createGameSession(session: InsertGameSession): Promise<GameSession> {
+    const [created] = await db.insert(gameSessions).values(session).returning();
+    return created;
+  }
+
+  async getGameSessions(userId: string): Promise<GameSession[]> {
+    return await db.select().from(gameSessions).where(eq(gameSessions.userId, userId)).orderBy(desc(gameSessions.completedAt));
+  }
+
+  async getLeaderboard(filters?: { subject?: string; period?: string; limit?: number }): Promise<{ userId: string; userName: string; avatar: string; totalScore: number; gamesPlayed: number }[]> {
+    let conditions: any[] = [];
+
+    if (filters?.period === "weekly") {
+      conditions.push(sql`${gameSessions.completedAt} >= now() - interval '7 days'`);
+    }
+
+    const results = await db.select({
+      userId: gameSessions.userId,
+      userName: users.firstName,
+      avatar: users.avatar,
+      totalScore: sql<number>`sum(${gameSessions.score})`,
+      gamesPlayed: sql<number>`count(*)`,
+    })
+    .from(gameSessions)
+    .innerJoin(users, eq(gameSessions.userId, users.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .groupBy(gameSessions.userId, users.firstName, users.avatar)
+    .orderBy(sql`sum(${gameSessions.score}) desc`)
+    .limit(filters?.limit || 20);
+
+    return results.map(r => ({
+      userId: r.userId,
+      userName: r.userName || "Unknown",
+      avatar: r.avatar,
+      totalScore: Number(r.totalScore),
+      gamesPlayed: Number(r.gamesPlayed),
+    }));
+  }
+
+  async getUserXp(userId: string): Promise<UserXp> {
+    const [existing] = await db.select().from(userXp).where(eq(userXp.userId, userId));
+    if (existing) return existing;
+    const [created] = await db.insert(userXp).values({ userId, totalXp: 0, level: 1, currentStreak: 0, longestStreak: 0 }).returning();
+    return created;
+  }
+
+  async updateUserXp(userId: string, data: Partial<UserXp>): Promise<UserXp> {
+    await this.getUserXp(userId);
+    const [updated] = await db.update(userXp).set(data).where(eq(userXp.userId, userId)).returning();
+    return updated;
+  }
+
+  async getUserBadges(userId: string): Promise<UserBadge[]> {
+    return await db.select().from(userBadges).where(eq(userBadges.userId, userId)).orderBy(desc(userBadges.earnedAt));
+  }
+
+  async addUserBadge(badge: InsertUserBadge): Promise<UserBadge> {
+    const existing = await db.select().from(userBadges).where(and(eq(userBadges.userId, badge.userId), eq(userBadges.badgeId, badge.badgeId)));
+    if (existing.length > 0) return existing[0];
+    const [created] = await db.insert(userBadges).values(badge).returning();
+    return created;
   }
 
   async getDashboardStats(userId: string, filters?: { startDate?: string, endDate?: string, period?: 'monthly' | 'yearly' }): Promise<DashboardStats> {

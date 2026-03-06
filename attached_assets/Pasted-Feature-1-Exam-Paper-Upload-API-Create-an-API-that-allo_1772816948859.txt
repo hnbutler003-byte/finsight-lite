@@ -1,0 +1,238 @@
+Feature 1: Exam Paper Upload API
+
+Create an API that allows students or teachers to upload past exam papers.
+
+Supported formats:
+
+PDF
+
+JPG
+
+PNG
+
+Example endpoint:
+
+POST /api/upload-paper
+
+Requirements:
+
+Store uploaded files
+
+Extract text from PDFs and images
+
+Use OCR if necessary
+
+Automatically detect questions from the exam paper
+
+Suggested tools:
+
+OCR engine
+
+PDF parser
+
+LLM API for question extraction
+
+Feature 2: Question Extraction Engine
+
+After upload, automatically extract questions and convert them into structured data.
+
+The system should detect:
+
+Question text
+
+Multiple choice answers
+
+Subject category
+
+Correct answer (if possible)
+
+Example structured output:
+
+{
+  "subject": "Accounting",
+  "questions": [
+    {
+      "question": "What is a balance sheet?",
+      "options": [
+        "A financial statement",
+        "A marketing report",
+        "A sales document",
+        "A cash receipt"
+      ],
+      "answer": "A financial statement"
+    }
+  ]
+}
+
+Store all parsed questions in a database so they can be reused.
+
+Feature 3: Game Generation Engine
+
+Build an API that converts extracted questions into game modes.
+
+Example endpoint:
+
+POST /api/generate-game
+
+Game modes should include:
+
+Quiz Mode
+
+Multiple choice questions
+
+Scoring system
+
+Instant feedback
+
+Timed Exam Mode
+
+Simulated exam environment
+
+Countdown timer
+
+Final score summary
+
+Challenge Mode
+
+Streak-based gameplay
+
+XP rewards
+
+Speed scoring
+
+Feature 4: AI Tutor Mode
+
+Create an AI tutoring feature that explains questions in simple terms for high school students.
+
+Example endpoint:
+
+POST /api/explain-question
+
+Example response:
+
+Question: What is a balance sheet?
+
+Explanation:
+A balance sheet shows the financial position of a company at a specific moment in time. It lists assets, liabilities, and equity.
+
+The AI tutor should:
+
+simplify explanations
+
+give examples
+
+connect concepts to real-world finance
+
+Feature 5: Leaderboards
+
+Create a leaderboard system to increase competition and engagement.
+
+Leaderboard categories:
+
+by school
+
+by subject
+
+national leaderboard
+
+weekly leaderboard
+
+Example:
+
+Top Commerce Students – Bahamas
+
+Queen's College – 9420 pts
+
+St Augustine’s – 8880 pts
+
+SAC – 8221 pts
+
+Feature 6: Teacher Tools
+
+Allow teachers to upload exam papers and automatically generate shareable game links for students.
+
+Teachers should be able to:
+
+upload past papers
+
+auto-generate quiz games
+
+share links with classes
+
+track student performance
+
+Feature 7: Gamification System
+
+Add a gamification layer including:
+
+XP points
+
+achievement badges
+
+streak rewards
+
+daily challenges
+
+progress tracking
+
+Example badges:
+
+Accounting Apprentice
+
+Budget Boss
+
+Commerce Champion
+
+Feature 8: User Interface
+
+MoneyLab should appear as a separate section inside the FinSight platform.
+
+Navigation example:
+
+FinSight
+├ FinSight Lite (financial literacy game)
+└ MoneyLab
+  ├ Upload Past Paper
+  ├ Play Exam Game
+  ├ AI Tutor
+  └ Leaderboards
+
+UI design requirements:
+
+mobile friendly
+
+colorful and gamified
+
+simple for Caribbean high school students
+
+optimized for low-bandwidth devices
+
+Future Scalability
+
+The system should be designed to support:
+
+multiple Caribbean countries
+
+additional subjects
+
+teacher dashboards
+
+school analytics
+
+Ministry of Education partnerships
+
+national exam preparation platforms
+
+Core Principle
+
+The platform should transform studying into an engaging interactive experience rather than a static exam preparation tool.
+
+Students should feel like they are playing a game while learning real financial and commerce concepts.
+
+Bonus Feature
+
+If possible, implement a game link generator so teachers can upload an exam paper and immediately generate a shareable link students can play.
+
+Example:
+
+finsight.app/moneylab/play/commerce-quiz-1023

@@ -1,0 +1,219 @@
+import { Sidebar } from "@/components/layout/Sidebar";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
+import {
+  ArrowLeft, GraduationCap, Loader2, BookOpen, Sparkles, ChevronRight
+} from "lucide-react";
+
+export default function MoneyLabTutor() {
+  const [selectedPaperId, setSelectedPaperId] = useState<number | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<any>(null);
+  const [explanation, setExplanation] = useState("");
+  const [isExplaining, setIsExplaining] = useState(false);
+
+  const { data: papers, isLoading: papersLoading } = useQuery<any[]>({
+    queryKey: ["/api/moneylab/papers/all"],
+  });
+
+  const { data: paperData } = useQuery<{ paper: any; questions: any[] }>({
+    queryKey: ["/api/moneylab/papers", selectedPaperId],
+    enabled: !!selectedPaperId,
+  });
+
+  const explainQuestion = async (question: any) => {
+    setSelectedQuestion(question);
+    setExplanation("");
+    setIsExplaining(true);
+
+    try {
+      const response = await fetch("/api/moneylab/tutor/explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          questionText: question.questionText,
+          options: question.options,
+          correctAnswer: question.correctAnswer,
+          subject: question.subject,
+        }),
+        credentials: "include",
+      });
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = "";
+      let buffer = "";
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop() || "";
+          for (const part of parts) {
+            const lines = part.split("\n");
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+                  if (data.content) {
+                    fullContent += data.content;
+                    setExplanation(fullContent);
+                  }
+                } catch (e) {
+                  if (!(e instanceof SyntaxError)) throw e;
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      setExplanation("Oops! Could not get an explanation right now. Try again!");
+    } finally {
+      setIsExplaining(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen bg-background">
+      <Sidebar />
+      <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <div className="flex items-center gap-3">
+            <Link href="/moneylab">
+              <Button variant="outline" size="icon" className="rounded-2xl border-2" data-testid="button-back">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+            <div>
+              <h1 className="font-display text-2xl font-bold" data-testid="text-tutor-title">AI Tutor</h1>
+              <p className="text-sm text-muted-foreground">Get simple explanations for any question</p>
+            </div>
+          </div>
+
+          {!selectedPaperId ? (
+            <div className="space-y-3">
+              <h2 className="font-bold text-lg">Choose a paper</h2>
+              {papersLoading ? (
+                <div className="text-center py-8"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>
+              ) : !papers?.length ? (
+                <Card className="rounded-3xl border-2 border-dashed">
+                  <CardContent className="p-8 text-center text-muted-foreground">
+                    No papers available. Upload one first!
+                  </CardContent>
+                </Card>
+              ) : (
+                papers.map((paper: any) => (
+                  <Card
+                    key={paper.id}
+                    className="rounded-2xl border-2 cursor-pointer hover:border-violet-200 dark:hover:border-violet-800 transition-all"
+                    onClick={() => setSelectedPaperId(paper.id)}
+                    data-testid={`tutor-paper-${paper.id}`}
+                  >
+                    <CardContent className="p-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                        <BookOpen className="w-5 h-5 text-violet-500" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-bold text-sm">{paper.title}</p>
+                        <p className="text-xs text-muted-foreground">{paper.subject} · {paper.questionCount} questions</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          ) : !selectedQuestion ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setSelectedPaperId(null); }} className="rounded-2xl border-2 text-xs font-bold">
+                  <ArrowLeft className="w-3 h-3 mr-1" /> Back to Papers
+                </Button>
+              </div>
+              <h2 className="font-bold text-lg">Select a question to explain</h2>
+              {!paperData?.questions?.length ? (
+                <div className="text-center py-8"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>
+              ) : (
+                paperData.questions.map((q: any, i: number) => (
+                  <Card
+                    key={q.id}
+                    className="rounded-2xl border-2 cursor-pointer hover:border-violet-200 dark:hover:border-violet-800 transition-all"
+                    onClick={() => explainQuestion(q)}
+                    data-testid={`tutor-question-${q.id}`}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <span className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-xs font-bold text-violet-600 shrink-0 mt-0.5">
+                          {i + 1}
+                        </span>
+                        <div>
+                          <p className="font-medium text-sm">{q.questionText}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {q.options.join(" · ")}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setSelectedQuestion(null); setExplanation(""); }}
+                className="rounded-2xl border-2 text-xs font-bold"
+              >
+                <ArrowLeft className="w-3 h-3 mr-1" /> Back to Questions
+              </Button>
+
+              <Card className="rounded-3xl border-2 border-violet-200 dark:border-violet-800">
+                <CardContent className="p-6">
+                  <h3 className="font-bold text-lg mb-2">{selectedQuestion.questionText}</h3>
+                  <div className="space-y-1.5 mb-3">
+                    {selectedQuestion.options.map((opt: string, i: number) => (
+                      <div key={i} className={`flex items-center gap-2 text-sm ${opt === selectedQuestion.correctAnswer ? "font-bold text-green-600" : "text-muted-foreground"}`}>
+                        <span className="font-mono text-xs">{String.fromCharCode(65 + i)}.</span>
+                        {opt}
+                        {opt === selectedQuestion.correctAnswer && " ✓"}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-3xl border-2 border-dashed border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/10">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
+                      <GraduationCap className="w-4 h-4 text-white" />
+                    </div>
+                    <h3 className="font-bold flex items-center gap-1">
+                      AI Tutor Explanation
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    </h3>
+                  </div>
+                  {isExplaining && !explanation ? (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-sm font-medium">Thinking...</span>
+                    </div>
+                  ) : (
+                    <div className="text-sm leading-relaxed whitespace-pre-wrap">{explanation}</div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}

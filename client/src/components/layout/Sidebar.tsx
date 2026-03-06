@@ -12,6 +12,7 @@ import {
   Sparkles,
   Gamepad2,
   Bot,
+  FlaskConical,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ const NAV_ITEMS = [
   { label: "Investment Simulator", href: "/invest", icon: GraduationCap, color: "text-orange-500", bg: "bg-orange-100 dark:bg-orange-900/30" },
   { label: "Money Games", href: "/games", icon: Gamepad2, color: "text-rose-500", bg: "bg-rose-100 dark:bg-rose-900/30" },
   { label: "Money Guide", href: "/guide", icon: Bot, color: "text-purple-500", bg: "bg-purple-100 dark:bg-purple-900/30" },
+  { label: "MoneyLab", href: "/moneylab", icon: FlaskConical, color: "text-teal-500", bg: "bg-teal-100 dark:bg-teal-900/30" },
 ];
 
 export function Sidebar() {
@@ -57,7 +59,7 @@ export function Sidebar() {
 
       <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
         {NAV_ITEMS.map((item) => {
-          const isActive = location === item.href;
+          const isActive = item.href === "/" ? location === "/" : location.startsWith(item.href);
           return (
             <Link key={item.href} href={item.href} className={cn(
               "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 border-2",

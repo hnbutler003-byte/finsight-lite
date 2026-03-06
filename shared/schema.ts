@@ -148,6 +148,61 @@ export const userVirtualBalance = pgTable("user_virtual_balance", {
   currency: text("currency").default("BSD").notNull(),
 });
 
+// === MONEYLAB TABLES ===
+
+export const examPapers = pgTable("exam_papers", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  subject: text("subject").notNull(),
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type").notNull(),
+  status: text("status", { enum: ["processing", "completed", "failed"] }).default("processing").notNull(),
+  questionCount: integer("question_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const extractedQuestions = pgTable("extracted_questions", {
+  id: serial("id").primaryKey(),
+  paperId: integer("paper_id").notNull().references(() => examPapers.id, { onDelete: "cascade" }),
+  questionText: text("question_text").notNull(),
+  options: text("options").array().notNull(),
+  correctAnswer: text("correct_answer").notNull(),
+  subject: text("subject"),
+  difficulty: text("difficulty", { enum: ["easy", "medium", "hard"] }).default("medium"),
+  order: integer("order").default(0),
+});
+
+export const gameSessions = pgTable("game_sessions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  paperId: integer("paper_id").references(() => examPapers.id),
+  mode: text("mode", { enum: ["quiz", "timed", "challenge"] }).notNull(),
+  score: integer("score").notNull(),
+  totalQuestions: integer("total_questions").notNull(),
+  correctAnswers: integer("correct_answers").notNull(),
+  timeSpent: integer("time_spent"),
+  xpEarned: integer("xp_earned").default(0),
+  completedAt: timestamp("completed_at").defaultNow(),
+});
+
+export const userXp = pgTable("user_xp", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id).unique(),
+  totalXp: integer("total_xp").default(0).notNull(),
+  level: integer("level").default(1).notNull(),
+  currentStreak: integer("current_streak").default(0).notNull(),
+  longestStreak: integer("longest_streak").default(0).notNull(),
+  lastPlayedAt: timestamp("last_played_at"),
+});
+
+export const userBadges = pgTable("user_badges", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  badgeId: text("badge_id").notNull(),
+  earnedAt: timestamp("earned_at").defaultNow(),
+});
+
 // === RELATIONS ===
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -241,6 +296,28 @@ export const userVirtualBalanceRelations = relations(userVirtualBalance, ({ one 
   user: one(users, { fields: [userVirtualBalance.userId], references: [users.id] }),
 }));
 
+export const examPapersRelations = relations(examPapers, ({ one, many }) => ({
+  user: one(users, { fields: [examPapers.userId], references: [users.id] }),
+  questions: many(extractedQuestions),
+}));
+
+export const extractedQuestionsRelations = relations(extractedQuestions, ({ one }) => ({
+  paper: one(examPapers, { fields: [extractedQuestions.paperId], references: [examPapers.id] }),
+}));
+
+export const gameSessionsRelations = relations(gameSessions, ({ one }) => ({
+  user: one(users, { fields: [gameSessions.userId], references: [users.id] }),
+  paper: one(examPapers, { fields: [gameSessions.paperId], references: [examPapers.id] }),
+}));
+
+export const userXpRelations = relations(userXp, ({ one }) => ({
+  user: one(users, { fields: [userXp.userId], references: [users.id] }),
+}));
+
+export const userBadgesRelations = relations(userBadges, ({ one }) => ({
+  user: one(users, { fields: [userBadges.userId], references: [users.id] }),
+}));
+
 export const usersRelations = relations(users, ({ many, one }) => ({
   transactions: many(transactions),
   budgets: many(budgets),
@@ -253,6 +330,10 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   portfolioTransactions: many(portfolioTransactions),
   learningProgress: many(userLearningProgress),
   virtualBalance: one(userVirtualBalance),
+  examPapers: many(examPapers),
+  gameSessions: many(gameSessions),
+  xp: one(userXp),
+  badges: many(userBadges),
 }));
 
 export * from "./models/chat";
@@ -271,6 +352,11 @@ export const insertPortfolioHoldingSchema = createInsertSchema(portfolioHoldings
 export const insertPortfolioTransactionSchema = createInsertSchema(portfolioTransactions).omit({ id: true, executedAt: true });
 export const insertLearningModuleSchema = createInsertSchema(learningModules).omit({ id: true });
 export const insertUserLearningProgressSchema = createInsertSchema(userLearningProgress).omit({ id: true, completedAt: true });
+export const insertExamPaperSchema = createInsertSchema(examPapers).omit({ id: true, createdAt: true, questionCount: true, status: true });
+export const insertExtractedQuestionSchema = createInsertSchema(extractedQuestions).omit({ id: true });
+export const insertGameSessionSchema = createInsertSchema(gameSessions).omit({ id: true, completedAt: true });
+export const insertUserXpSchema = createInsertSchema(userXp).omit({ id: true });
+export const insertUserBadgeSchema = createInsertSchema(userBadges).omit({ id: true, earnedAt: true });
 
 // === EXPLICIT API CONTRACT TYPES ===
 
@@ -301,6 +387,15 @@ export type InsertSimulatedStock = z.infer<typeof insertSimulatedStockSchema>;
 export type InsertPortfolioHolding = z.infer<typeof insertPortfolioHoldingSchema>;
 export type InsertPortfolioTransaction = z.infer<typeof insertPortfolioTransactionSchema>;
 export type InsertLearningModule = z.infer<typeof insertLearningModuleSchema>;
+export type ExamPaper = typeof examPapers.$inferSelect;
+export type ExtractedQuestion = typeof extractedQuestions.$inferSelect;
+export type GameSession = typeof gameSessions.$inferSelect;
+export type UserXp = typeof userXp.$inferSelect;
+export type UserBadge = typeof userBadges.$inferSelect;
+export type InsertExamPaper = z.infer<typeof insertExamPaperSchema>;
+export type InsertExtractedQuestion = z.infer<typeof insertExtractedQuestionSchema>;
+export type InsertGameSession = z.infer<typeof insertGameSessionSchema>;
+export type InsertUserBadge = z.infer<typeof insertUserBadgeSchema>;
 
 // API Responses
 export type TransactionResponse = Transaction & { category?: Category };

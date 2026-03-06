@@ -28,6 +28,20 @@ const upload = multer({
   }
 });
 
+const examUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['.pdf', '.jpg', '.jpeg', '.png'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF, JPG, and PNG files are supported'));
+    }
+  }
+});
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -1106,6 +1120,389 @@ Rules:
       const moduleId = Number(req.params.moduleId);
       const progress = await storage.completeModule(userId, moduleId);
       res.json(progress);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  // === MONEYLAB ROUTES ===
+
+  // Upload exam paper and extract questions with AI
+  app.post("/api/moneylab/upload", isAuthenticated, examUpload.single("file"), async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const title = req.body.title || file.originalname.replace(/\.[^/.]+$/, "");
+      const subject = req.body.subject || "General";
+      const ext = path.extname(file.originalname).toLowerCase();
+
+      const paper = await storage.createExamPaper({
+        userId,
+        title,
+        subject,
+        fileName: file.originalname,
+        fileType: ext.replace(".", ""),
+      });
+
+      res.json({ paper, message: "Processing..." });
+
+      // Background: extract questions
+      (async () => {
+        try {
+          let extractedText = "";
+
+          if (ext === ".pdf") {
+            const pdfParse = (await import("pdf-parse")).default;
+            const pdfData = await pdfParse(file.buffer);
+            extractedText = pdfData.text.slice(0, 30000);
+          } else {
+            // Image — use GPT-4o vision
+            const base64 = file.buffer.toString("base64");
+            const mimeType = ext === ".png" ? "image/png" : "image/jpeg";
+            const visionResponse = await openai.chat.completions.create({
+              model: "gpt-4o",
+              messages: [{
+                role: "user",
+                content: [
+                  { type: "text", text: "Extract all the text from this exam paper image. Include all questions, answer choices, and any other relevant text exactly as written." },
+                  { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64}` } },
+                ],
+              }],
+              max_completion_tokens: 4096,
+            });
+            extractedText = visionResponse.choices[0]?.message?.content || "";
+          }
+
+          if (!extractedText.trim()) {
+            await storage.updateExamPaper(paper.id, { status: "failed" } as any);
+            return;
+          }
+
+          // Use AI to extract structured questions
+          const extractionResponse = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+              {
+                role: "system",
+                content: `You are an exam question extractor. Extract multiple choice questions from exam paper text.
+Return ONLY valid JSON in this exact format:
+{
+  "subject": "detected subject name",
+  "questions": [
+    {
+      "question": "The question text",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "answer": "The correct answer text (must match one of the options exactly)",
+      "difficulty": "easy" | "medium" | "hard"
+    }
+  ]
+}
+Rules:
+- Extract ALL questions found in the text
+- Each question MUST have exactly 4 options
+- If the correct answer is not obvious, use your best judgment based on the subject matter
+- Detect the subject from context (Accounting, Commerce, Economics, Business Studies, etc.)
+- If a question is not multiple choice, convert it into a reasonable MCQ format
+- difficulty: easy = basic recall, medium = application, hard = analysis/evaluation`
+              },
+              { role: "user", content: extractedText }
+            ],
+            max_completion_tokens: 4096,
+            temperature: 0.3,
+            response_format: { type: "json_object" },
+          });
+
+          const parsed = JSON.parse(extractionResponse.choices[0]?.message?.content || "{}");
+          const questions = parsed.questions || [];
+          const detectedSubject = parsed.subject || subject;
+
+          for (let i = 0; i < questions.length; i++) {
+            const q = questions[i];
+            if (q.question && Array.isArray(q.options) && q.options.length >= 2 && q.answer) {
+              await storage.createExtractedQuestion({
+                paperId: paper.id,
+                questionText: q.question,
+                options: q.options.slice(0, 4),
+                correctAnswer: q.answer,
+                subject: detectedSubject,
+                difficulty: q.difficulty || "medium",
+                order: i + 1,
+              });
+            }
+          }
+
+          await storage.updateExamPaper(paper.id, {
+            status: "completed",
+            subject: detectedSubject,
+            questionCount: questions.length,
+          } as any);
+        } catch (err) {
+          console.error("Question extraction error:", err);
+          await storage.updateExamPaper(paper.id, { status: "failed" } as any);
+        }
+      })();
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  // List uploaded papers
+  app.get("/api/moneylab/papers", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const papers = await storage.getExamPapers(userId);
+      res.json(papers);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  // Get all papers (for game selection — completed papers from all users)
+  app.get("/api/moneylab/papers/all", isAuthenticated, async (req, res) => {
+    try {
+      const { examPapers } = await import("@shared/schema");
+      const { db } = await import("./db");
+      const { eq, desc } = await import("drizzle-orm");
+      const allPapers = await db.select().from(examPapers).where(eq(examPapers.status, "completed")).orderBy(desc(examPapers.createdAt));
+      res.json(allPapers);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  // Get paper details with questions
+  app.get("/api/moneylab/papers/:id", isAuthenticated, async (req, res) => {
+    try {
+      const paper = await storage.getExamPaper(parseInt(req.params.id));
+      if (!paper) return res.status(404).json({ message: "Paper not found" });
+      const questions = await storage.getQuestionsByPaper(paper.id);
+      res.json({ paper, questions });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  // Delete paper
+  app.delete("/api/moneylab/papers/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      await storage.deleteExamPaper(parseInt(req.params.id), userId);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  // Submit game results
+  app.post("/api/moneylab/games/submit", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { paperId, mode, score, totalQuestions, correctAnswers, timeSpent } = req.body;
+
+      if (!mode || score === undefined || !totalQuestions || correctAnswers === undefined) {
+        return res.status(400).json({ message: "Missing required game data" });
+      }
+
+      // XP calculation
+      const baseXp = correctAnswers * 10;
+      const modeBonus = mode === "challenge" ? 1.5 : mode === "timed" ? 1.25 : 1;
+      const accuracyBonus = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 20) : 0;
+      const xpEarned = Math.round(baseXp * modeBonus + accuracyBonus);
+
+      const session = await storage.createGameSession({
+        userId,
+        paperId: paperId || null,
+        mode,
+        score,
+        totalQuestions,
+        correctAnswers,
+        timeSpent: timeSpent || null,
+        xpEarned,
+      });
+
+      // Update XP
+      const currentXp = await storage.getUserXp(userId);
+      const newTotalXp = currentXp.totalXp + xpEarned;
+      const newLevel = Math.floor(newTotalXp / 100) + 1;
+
+      // Streak: check if last played was yesterday (not same day)
+      const now = new Date();
+      const lastPlayed = currentXp.lastPlayedAt ? new Date(currentXp.lastPlayedAt) : null;
+      let newStreak = currentXp.currentStreak;
+      if (lastPlayed) {
+        const todayStr = now.toISOString().slice(0, 10);
+        const lastStr = lastPlayed.toISOString().slice(0, 10);
+        if (todayStr === lastStr) {
+          // Same day — keep streak unchanged
+          newStreak = currentXp.currentStreak;
+        } else {
+          const lastDate = new Date(lastStr);
+          const todayDate = new Date(todayStr);
+          const diffDays = Math.round((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+          if (diffDays === 1) {
+            newStreak = currentXp.currentStreak + 1;
+          } else {
+            newStreak = 1;
+          }
+        }
+      } else {
+        newStreak = 1;
+      }
+      const longestStreak = Math.max(currentXp.longestStreak, newStreak);
+
+      await storage.updateUserXp(userId, {
+        totalXp: newTotalXp,
+        level: newLevel,
+        currentStreak: newStreak,
+        longestStreak,
+        lastPlayedAt: now,
+      });
+
+      // Check badges
+      const earnedBadges: string[] = [];
+      const allSessions = await storage.getGameSessions(userId);
+      const existingBadges = await storage.getUserBadges(userId);
+      const hasBadge = (id: string) => existingBadges.some(b => b.badgeId === id);
+
+      const badgeChecks = [
+        { id: "first_game", condition: allSessions.length >= 1, label: "First Steps" },
+        { id: "ten_games", condition: allSessions.length >= 10, label: "Game Veteran" },
+        { id: "perfect_score", condition: correctAnswers === totalQuestions && totalQuestions >= 5, label: "Perfect Score" },
+        { id: "streak_3", condition: newStreak >= 3, label: "On Fire" },
+        { id: "streak_7", condition: newStreak >= 7, label: "Week Warrior" },
+        { id: "level_5", condition: newLevel >= 5, label: "Rising Star" },
+        { id: "level_10", condition: newLevel >= 10, label: "Money Master" },
+        { id: "xp_500", condition: newTotalXp >= 500, label: "XP Hunter" },
+        { id: "xp_1000", condition: newTotalXp >= 1000, label: "XP Legend" },
+        { id: "challenge_win", condition: mode === "challenge" && correctAnswers >= totalQuestions * 0.8, label: "Challenge Champion" },
+        { id: "speed_demon", condition: mode === "timed" && timeSpent && timeSpent < totalQuestions * 10, label: "Speed Demon" },
+      ];
+
+      for (const check of badgeChecks) {
+        if (check.condition && !hasBadge(check.id)) {
+          await storage.addUserBadge({ userId, badgeId: check.id });
+          earnedBadges.push(check.id);
+        }
+      }
+
+      res.json({
+        session,
+        xpEarned,
+        totalXp: newTotalXp,
+        level: newLevel,
+        streak: newStreak,
+        newBadges: earnedBadges,
+      });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  // Get user XP and stats
+  app.get("/api/moneylab/xp", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const xp = await storage.getUserXp(userId);
+      const badges = await storage.getUserBadges(userId);
+      const sessions = await storage.getGameSessions(userId);
+      res.json({ xp, badges, totalGames: sessions.length });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  // Leaderboard
+  app.get("/api/moneylab/leaderboard", isAuthenticated, async (req, res) => {
+    try {
+      const period = (req.query.period as string) || "all";
+      const limit = parseInt(req.query.limit as string) || 20;
+      const leaderboard = await storage.getLeaderboard({ period, limit });
+      res.json(leaderboard);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  // AI Tutor — explain a question
+  app.post("/api/moneylab/tutor/explain", isAuthenticated, async (req, res) => {
+    try {
+      const { questionText, options, correctAnswer, subject } = req.body;
+      const userName = (req.user as any).firstName || "friend";
+
+      if (!questionText) {
+        return res.status(400).json({ message: "Question text is required" });
+      }
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const systemPrompt = `You are an AI Tutor for Caribbean high school students (ages 14-18). 
+You explain exam questions in simple, friendly language.
+The student's name is "${userName}".
+
+Your style:
+- Warm, encouraging, like a helpful older sibling
+- Use simple language, avoid jargon
+- Give real-world Caribbean examples when possible
+- Break complex concepts into digestible pieces
+- Use analogies kids can relate to (food, sports, social media, gaming)
+- Keep it concise (3-5 paragraphs max)
+- End with a "Quick Tip" for remembering the concept
+
+Format:
+1. Start with "Hey ${userName}!" or similar greeting
+2. Explain what the question is asking
+3. Walk through why the correct answer is right
+4. Briefly mention why other options are wrong
+5. Give a real-world example
+6. End with a memorable tip`;
+
+      const questionContext = `Subject: ${subject || "General"}
+Question: ${questionText}
+${options ? `Options: ${options.join(", ")}` : ""}
+${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
+
+      const stream = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Please explain this exam question to me:\n\n${questionContext}` },
+        ],
+        stream: true,
+        max_completion_tokens: 1024,
+        temperature: 0.7,
+      });
+
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) {
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
+      }
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+    } catch (err: any) {
+      console.error("Tutor explain error:", err);
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ error: "Something went wrong" })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ message: err.message });
+      }
+    }
+  });
+
+  // Game history
+  app.get("/api/moneylab/history", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const sessions = await storage.getGameSessions(userId);
+      res.json(sessions);
     } catch (err: any) {
       res.status(500).json({ message: err.message });
     }
