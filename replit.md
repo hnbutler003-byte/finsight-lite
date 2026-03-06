@@ -114,6 +114,16 @@ Core tables include:
 - `/savings` — Savings Goals
 - `/invest` — Investment Simulator (Learn, Market, Portfolio)
 - `/games` — Money Games (7 games)
+- `/guide` — Money Guide (AI-powered financial mentor chatbot)
+
+### Money Guide AI (client/src/pages/MoneyGuide.tsx)
+- AI-powered chat interface acting as a fun, Caribbean-infused financial mentor for kids 10-17
+- Streams responses via SSE from POST /api/guide/chat endpoint
+- System prompt creates a "fun older cousin" personality that teaches saving, budgeting, investing concepts
+- Quick prompt buttons for common questions (saving, stocks, compound interest, needs vs wants, challenges)
+- Chat history maintained in-session (not persisted to DB)
+- Uses gpt-4o model via the existing OpenAI integration
+- Disclaimer footer: "educational info only — not real financial advice"
 
 ## External Dependencies
 

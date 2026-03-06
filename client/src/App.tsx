@@ -15,6 +15,7 @@ import Trends from "@/pages/Trends";
 import SavingsGoals from "@/pages/SavingsGoals";
 import InvestmentSimulator from "@/pages/InvestmentSimulator";
 import MoneyGames from "@/pages/MoneyGames";
+import MoneyGuide from "@/pages/MoneyGuide";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
@@ -66,6 +67,7 @@ function Router() {
       <Route path="/savings" component={SavingsGoals} />
       <Route path="/invest" component={InvestmentSimulator} />
       <Route path="/games" component={MoneyGames} />
+      <Route path="/guide" component={MoneyGuide} />
       <Route path="/transactions">{() => <Redirect to="/" />}</Route>
       <Route path="/reports">{() => <Redirect to="/" />}</Route>
       <Route component={NotFound} />
