@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import {
-  ArrowLeft, GraduationCap, Loader2, BookOpen, Sparkles, ChevronRight
+  ArrowLeft, GraduationCap, Loader2, BookOpen, Sparkles, ChevronRight, Info
 } from "lucide-react";
 
 export default function MoneyLabTutor() {
@@ -210,6 +210,25 @@ export default function MoneyLabTutor() {
                   )}
                 </CardContent>
               </Card>
+
+              <div className="rounded-2xl border-2 border-amber-200 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-950/20 p-4" data-testid="disclaimer-tutor">
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1.5">
+                    <p className="text-sm font-bold text-amber-800 dark:text-amber-300">Where does this explanation come from?</p>
+                    <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                      The AI Tutor is powered by <span className="font-bold">OpenAI's GPT-4o</span>, a large language model. 
+                      It generates explanations based on the question text, answer choices, and its general knowledge of the subject matter. 
+                      The AI does <span className="font-bold">not</span> pull from any official textbook, syllabus, or exam board database.
+                    </p>
+                    <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                      While explanations are designed to be helpful and educational, they <span className="font-bold">may contain errors or inaccuracies</span>. 
+                      Always verify important information with your teacher, textbook, or official study materials. 
+                      This tool is meant to <span className="font-bold">supplement</span> your learning — not replace your teacher or curriculum.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
