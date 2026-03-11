@@ -64,7 +64,7 @@ export default function Reports() {
   const currSymbol = CURRENCIES.find(c => c.code === currency)?.symbol || "$";
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen caribbean-bg">
       <Sidebar />
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto space-y-8">
@@ -75,7 +75,7 @@ export default function Reports() {
             </div>
             <div className="flex gap-3">
               <Select value={exportPeriod} onValueChange={setExportPeriod}>
-                <SelectTrigger className="w-[160px] bg-card border-primary/20" data-testid="select-period">
+                <SelectTrigger className="w-[160px] bg-white border-primary/20 text-gray-800 rounded-2xl font-medium" data-testid="select-period">
                   <SelectValue placeholder="Period" />
                 </SelectTrigger>
                 <SelectContent>
@@ -86,7 +86,7 @@ export default function Reports() {
                 </SelectContent>
               </Select>
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="w-[200px] bg-card border-primary/20" data-testid="select-currency">
+                <SelectTrigger className="w-[200px] bg-white border-primary/20 text-gray-800 rounded-2xl font-medium" data-testid="select-currency">
                   <SelectValue placeholder="Select Currency" />
                 </SelectTrigger>
                 <SelectContent>

@@ -80,7 +80,7 @@ export default function MoneyLabTutor() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen caribbean-bg">
       <Sidebar />
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-3xl mx-auto space-y-6">

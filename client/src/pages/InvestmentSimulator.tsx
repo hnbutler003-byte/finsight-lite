@@ -135,7 +135,7 @@ export default function InvestmentSimulator() {
   const currSymbol = getSymbol(currency);
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen caribbean-bg">
       <Sidebar />
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto space-y-8">
@@ -155,7 +155,7 @@ export default function InvestmentSimulator() {
                 </span>
               </div>
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="w-[200px] bg-card border-primary/20" data-testid="select-currency">
+                <SelectTrigger className="w-[200px] bg-white border-primary/20 text-gray-800 rounded-2xl font-medium" data-testid="select-currency">
                   <SelectValue placeholder="Filter by Currency" />
                 </SelectTrigger>
                 <SelectContent>

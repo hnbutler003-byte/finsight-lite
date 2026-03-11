@@ -101,7 +101,7 @@ export default function BillReminders() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
+      <div className="flex h-screen w-full items-center justify-center caribbean-bg">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
       </div>
     );
@@ -130,7 +130,7 @@ export default function BillReminders() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen caribbean-bg">
       <Sidebar />
       <main className="flex-1 lg:ml-0">
         <div className="max-w-6xl mx-auto p-6 lg:p-10 space-y-8">

@@ -1763,7 +1763,7 @@ export default function MoneyGames() {
   const [currency, setCurrency] = useState("BSD");
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen caribbean-bg">
       <Sidebar />
       <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto space-y-8">
@@ -1791,7 +1791,7 @@ export default function MoneyGames() {
             </div>
             <div className="w-48">
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="rounded-2xl border-2" data-testid="select-currency-games">
+                <SelectTrigger className="rounded-2xl border-2 bg-white text-gray-800 font-medium" data-testid="select-currency-games">
                   <SelectValue placeholder="Currency" />
                 </SelectTrigger>
                 <SelectContent>

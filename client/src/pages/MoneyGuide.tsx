@@ -128,7 +128,7 @@ export default function MoneyGuide() {
   const userName = user?.firstName || "friend";
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen caribbean-bg">
       <Sidebar />
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
         <div className="border-b-2 border-dashed border-violet-200 dark:border-violet-800 p-4 lg:p-6 flex items-center justify-between bg-gradient-to-r from-violet-50 via-pink-50 to-amber-50 dark:from-violet-950/20 dark:via-pink-950/10 dark:to-amber-950/10">

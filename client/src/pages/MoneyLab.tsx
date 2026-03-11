@@ -77,7 +77,7 @@ export default function MoneyLab() {
   const xpProgress = xp ? (xp.totalXp % 100) : 0;
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen caribbean-bg">
       <Sidebar />
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto space-y-8">
