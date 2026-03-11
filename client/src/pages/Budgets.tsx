@@ -95,7 +95,7 @@ export default function Budgets() {
                                   <FormLabel>Category</FormLabel>
                                   <Select onValueChange={(val) => field.onChange(Number(val))} value={field.value ? String(field.value) : undefined}>
                                     <FormControl>
-                                      <SelectTrigger>
+                                      <SelectTrigger className="bg-white/70 backdrop-blur-sm border-gray-200/60 rounded-xl focus:ring-2 focus:ring-violet-400">
                                         <SelectValue placeholder="Select category" />
                                       </SelectTrigger>
                                     </FormControl>
@@ -119,7 +119,7 @@ export default function Budgets() {
                                 <FormItem>
                                   <FormLabel>Limit Amount ($)</FormLabel>
                                   <FormControl>
-                                    <Input type="number" {...field} />
+                                    <Input type="number" {...field} className="bg-white/70 backdrop-blur-sm border-gray-200/60 rounded-xl focus:ring-2 focus:ring-violet-400" />
                                   </FormControl>
                                 </FormItem>
                               )}
