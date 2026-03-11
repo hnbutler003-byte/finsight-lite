@@ -143,7 +143,7 @@ export function Sidebar() {
               "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 border",
               isActive 
                 ? "bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 text-white shadow-lg shadow-purple-900/50 border-transparent scale-[1.02]" 
-                : "text-white/80 hover:bg-white/10 hover:text-white hover:scale-[1.02] border-transparent hover:border-white/10"
+                : "glass-inset text-white/80 hover:bg-white/10 hover:text-white hover:scale-[1.02] border-transparent hover:border-white/10"
             )} onClick={() => setOpen(false)}>
               <div className={cn(
                 "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all",
@@ -157,7 +157,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-white/10 mt-auto space-y-2">
+      <div className="p-4 border-t border-white/10 mt-auto space-y-2 glass-inset rounded-t-2xl">
         <div className="flex items-center gap-3 mb-2 px-2">
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-xl shadow-md">
             {AVATAR_EMOJIS[(user as any)?.avatar] || "🌟"}

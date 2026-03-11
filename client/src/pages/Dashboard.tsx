@@ -65,8 +65,8 @@ export default function Dashboard() {
 
   if (authLoading || statsLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      <div className="flex h-screen w-full items-center justify-center caribbean-bg">
+        <Loader2 className="w-10 h-10 animate-spin text-white" />
       </div>
     );
   }
@@ -82,23 +82,23 @@ export default function Dashboard() {
     : transactions?.slice(0, 8);
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen caribbean-bg">
       <Sidebar />
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto space-y-6">
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl lg:text-4xl font-display font-bold text-foreground" data-testid="text-dashboard-title">
+              <h1 className="text-3xl lg:text-4xl font-display font-bold text-white" data-testid="text-dashboard-title">
                 My Money
               </h1>
-              <p className="text-muted-foreground mt-1" data-testid="text-dashboard-greeting">
+              <p className="text-white/70 mt-1" data-testid="text-dashboard-greeting">
                 Hey {user?.firstName || "there"}! Here's your money at a glance.
               </p>
             </div>
             <div className="flex items-center gap-3">
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="w-[160px] bg-card border-primary/20 rounded-2xl" data-testid="select-currency">
+                <SelectTrigger className="w-[160px] glass-card border-white/20 rounded-2xl text-white" data-testid="select-currency">
                   <SelectValue placeholder="Currency" />
                 </SelectTrigger>
                 <SelectContent>

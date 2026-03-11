@@ -146,7 +146,7 @@ export default function AuthPage() {
                 </p>
               </div>
 
-              <div className="bg-card border-2 border-dashed border-violet-200 dark:border-violet-800 shadow-xl rounded-3xl p-8">
+              <div className="glass-card-heavy rounded-glass p-8">
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="name" className="text-sm font-semibold">Your Name</Label>
@@ -195,7 +195,7 @@ export default function AuthPage() {
                 </p>
               </div>
 
-              <div className="bg-card border-2 border-dashed border-violet-200 dark:border-violet-800 shadow-xl rounded-3xl p-6">
+              <div className="glass-card-heavy rounded-glass p-6">
                 <div className="grid grid-cols-4 gap-3 mb-6">
                   {AVATARS.map((av) => (
                     <button
@@ -264,7 +264,7 @@ export default function AuthPage() {
                 </p>
               </div>
 
-              <div className="bg-card border-2 border-dashed border-green-200 dark:border-green-800 shadow-xl rounded-3xl p-8 text-center space-y-4">
+              <div className="glass-card-heavy rounded-glass p-8 text-center space-y-4">
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                   <PartyPopper className="w-4 h-4 text-amber-500" />
                   Your username is
