@@ -192,7 +192,7 @@ export default function Budgets() {
                   );
                 })}
                 {budgets?.length === 0 && (
-                  <div className="col-span-full text-center py-12 text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-border">
+                  <div className="col-span-full text-center py-12 text-white/80 bg-white/5 rounded-xl border border-dashed border-white/30">
                     <p>No budgets set up yet. Create one to start saving!</p>
                   </div>
                 )}
