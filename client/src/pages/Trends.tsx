@@ -109,8 +109,8 @@ export default function Trends() {
       <main className="flex-1 lg:ml-0">
         <div className="max-w-6xl mx-auto p-6 lg:p-10 space-y-8">
           <div>
-            <h1 className="font-display text-3xl font-bold" data-testid="text-page-title">Spending Trends</h1>
-            <p className="text-muted-foreground mt-1">Month-over-month comparison of your income and spending</p>
+            <h1 className="font-display text-3xl font-bold text-white" data-testid="text-page-title">Spending Trends</h1>
+            <p className="text-white/70 mt-1">Month-over-month comparison of your income and spending</p>
           </div>
 
           {/* Spending Alerts */}

@@ -103,8 +103,8 @@ export default function SavingsGoals() {
         <div className="max-w-6xl mx-auto p-6 lg:p-10 space-y-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="font-display text-3xl font-bold" data-testid="text-page-title">Savings Goals</h1>
-              <p className="text-muted-foreground mt-1">Set targets and track your progress</p>
+              <h1 className="font-display text-3xl font-bold text-white" data-testid="text-page-title">Savings Goals</h1>
+              <p className="text-white/70 mt-1">Set targets and track your progress</p>
             </div>
             <Dialog open={showAdd} onOpenChange={setShowAdd}>
               <DialogTrigger asChild>

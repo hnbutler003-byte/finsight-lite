@@ -141,11 +141,11 @@ export default function InvestmentSimulator() {
         <div className="max-w-7xl mx-auto space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-display font-bold flex items-center gap-3" data-testid="text-invest-title">
+              <h1 className="text-3xl font-display font-bold flex items-center gap-3 text-white" data-testid="text-invest-title">
                 <GraduationCap className="w-8 h-8 text-primary" />
                 Investment Simulator
               </h1>
-              <p className="text-muted-foreground">Learn how investing works with virtual money — no real risk!</p>
+              <p className="text-white/70">Learn how investing works with virtual money — no real risk!</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 bg-green-50 dark:bg-green-950/30 px-4 py-2 rounded-xl border border-green-200 dark:border-green-800">
