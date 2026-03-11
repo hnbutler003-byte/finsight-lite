@@ -1847,6 +1847,156 @@ If the user asks about FinSight Lite features, you can mention:
     res.json({ ok: true });
   });
 
+  // === ADMIN DASHBOARD ===
+
+  const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@finsightlite.com";
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+
+  const isAdmin = (req: any, res: any, next: any) => {
+    if (req.session?.isAdmin) return next();
+    return res.status(401).json({ message: "Admin access required" });
+  };
+
+  app.post("/api/admin/auth/login", async (req: any, res) => {
+    try {
+      const { email, password } = z.object({ email: z.string(), password: z.string() }).parse(req.body);
+      if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      req.session.isAdmin = true;
+      res.json({ ok: true, email: ADMIN_EMAIL });
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.post("/api/admin/auth/logout", (req: any, res) => {
+    req.session.isAdmin = false;
+    res.json({ ok: true });
+  });
+
+  app.get("/api/admin/auth/me", (req: any, res) => {
+    if (req.session?.isAdmin) return res.json({ email: ADMIN_EMAIL, isAdmin: true });
+    res.status(401).json({ message: "Not authenticated" });
+  });
+
+  app.get("/api/admin/overview", isAdmin, async (_req, res) => {
+    const data = await storage.getAdminOverview();
+    res.json(data);
+  });
+
+  app.get("/api/admin/students", isAdmin, async (_req, res) => {
+    const data = await storage.getAdminStudents();
+    res.json(data);
+  });
+
+  app.get("/api/admin/teachers", isAdmin, async (_req, res) => {
+    const data = await storage.getAdminTeachers();
+    res.json(data);
+  });
+
+  app.get("/api/admin/classes", isAdmin, async (_req, res) => {
+    const data = await storage.getAdminClasses();
+    res.json(data);
+  });
+
+  app.get("/api/admin/challenges", isAdmin, async (_req, res) => {
+    const data = await storage.getAdminChallenges();
+    res.json(data);
+  });
+
+  app.get("/api/admin/search", isAdmin, async (req, res) => {
+    const q = String(req.query.q || "");
+    const data = await storage.adminSearch(q);
+    res.json(data);
+  });
+
+  app.get("/api/admin/charts/growth", isAdmin, async (_req, res) => {
+    const growth = await storage.getStudentGrowth();
+    res.json(growth);
+  });
+
+  app.get("/api/admin/charts/lessons", isAdmin, async (_req, res) => {
+    const lessons = await storage.getLessonsCompletedPerWeek();
+    res.json(lessons);
+  });
+
+  app.get("/api/admin/charts/schools", isAdmin, async (_req, res) => {
+    const schools = await storage.getMostActiveSchools();
+    res.json(schools);
+  });
+
+  // Schools CRUD
+  app.get("/api/admin/schools", isAdmin, async (_req, res) => {
+    const data = await storage.getSchools();
+    res.json(data);
+  });
+  app.post("/api/admin/schools", isAdmin, async (req, res) => {
+    try {
+      const school = await storage.createSchool(req.body);
+      res.json(school);
+    } catch (e: any) { res.status(400).json({ message: e.message }); }
+  });
+  app.patch("/api/admin/schools/:id", isAdmin, async (req, res) => {
+    try {
+      const school = await storage.updateSchool(parseInt(req.params.id), req.body);
+      res.json(school);
+    } catch (e: any) { res.status(400).json({ message: e.message }); }
+  });
+  app.delete("/api/admin/schools/:id", isAdmin, async (req, res) => {
+    await storage.deleteSchool(parseInt(req.params.id));
+    res.json({ ok: true });
+  });
+
+  // Sponsors CRUD
+  app.get("/api/admin/sponsors", isAdmin, async (_req, res) => {
+    const data = await storage.getSponsors();
+    res.json(data);
+  });
+  app.post("/api/admin/sponsors", isAdmin, async (req, res) => {
+    try {
+      const sponsor = await storage.createSponsor(req.body);
+      res.json(sponsor);
+    } catch (e: any) { res.status(400).json({ message: e.message }); }
+  });
+  app.patch("/api/admin/sponsors/:id", isAdmin, async (req, res) => {
+    try {
+      const sponsor = await storage.updateSponsor(parseInt(req.params.id), req.body);
+      res.json(sponsor);
+    } catch (e: any) { res.status(400).json({ message: e.message }); }
+  });
+  app.delete("/api/admin/sponsors/:id", isAdmin, async (req, res) => {
+    await storage.deleteSponsor(parseInt(req.params.id));
+    res.json({ ok: true });
+  });
+
+  // DB Viewer
+  app.get("/api/admin/db/:table", isAdmin, async (req, res) => {
+    const rows = await storage.getAdminDbTable(req.params.table);
+    res.json(rows);
+  });
+
+  // Reports CSV
+  app.get("/api/admin/reports/:type.csv", isAdmin, async (req, res) => {
+    let data: any[] = [];
+    if (req.params.type === "students") data = await storage.getAdminStudents();
+    else if (req.params.type === "teachers") data = await storage.getAdminTeachers();
+    else if (req.params.type === "classes") data = await storage.getAdminClasses();
+    else if (req.params.type === "schools") data = await storage.getSchools();
+    else if (req.params.type === "sponsors") data = await storage.getSponsors();
+    if (!data.length) return res.status(404).json({ message: "No data" });
+    const cols = Object.keys(data[0]);
+    const rows = data.map(row => cols.map(c => {
+      const v = row[c];
+      if (v instanceof Date) return v.toISOString().split("T")[0];
+      return String(v ?? "");
+    }).join(","));
+    const csv = [cols.join(","), ...rows].join("\n");
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="${req.params.type}-report.csv"`);
+    res.send(csv);
+  });
+
   // === STUDENT SIDE - JOIN CLASS ===
   app.post("/api/student/join-class", isAuthenticated, async (req: any, res) => {
     try {

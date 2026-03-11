@@ -2,7 +2,10 @@ import {
   users, categories, transactions, budgets, linkedCards, documentUploads, savingsGoals, billReminders,
   simulatedStocks, portfolioHoldings, portfolioTransactions, learningModules, userLearningProgress, userVirtualBalance,
   examPapers, extractedQuestions, gameSessions, userXp, userBadges,
+  schools, sponsors,
   teachers, classes, classEnrollments, challenges, classNotifications,
+  type School, type InsertSchool,
+  type Sponsor, type InsertSponsor,
   type Teacher, type InsertTeacher,
   type Class, type InsertClass,
   type ClassEnrollment, type InsertClassEnrollment,
@@ -893,6 +896,249 @@ export class DatabaseStorage implements IStorage {
     const topStudents = [...students].sort((a: any, b: any) => b.xp - a.xp).slice(0, 3);
     const engagementRate = students.length > 0 ? Math.round((students.filter((s: any) => s.gamesPlayed > 0).length / students.length) * 100) : 0;
     return { avgScore, avgLessons, totalStudents: students.length, topStudents, engagementRate, totalGames: summary.totalGames };
+  }
+
+  // === ADMIN METHODS ===
+
+  async getAdminOverview(): Promise<any> {
+    const [studentCount] = await db.select({ count: sql<number>`count(*)::int` }).from(users);
+    const [teacherCount] = await db.select({ count: sql<number>`count(*)::int` }).from(teachers);
+    const [classCount] = await db.select({ count: sql<number>`count(*)::int` }).from(classes);
+    const [challengeCount] = await db.select({ count: sql<number>`count(*)::int` }).from(challenges);
+    const [sponsorCount] = await db.select({ count: sql<number>`count(*)::int` }).from(sponsors);
+    const [schoolCount] = await db.select({ count: sql<number>`count(*)::int` }).from(schools);
+    const [enrollmentCount] = await db.select({ count: sql<number>`count(*)::int` }).from(classEnrollments);
+    const [gameCount] = await db.select({ count: sql<number>`count(*)::int` }).from(gameSessions);
+    return {
+      totalStudents: studentCount.count,
+      totalTeachers: teacherCount.count,
+      totalClasses: classCount.count,
+      totalChallenges: challengeCount.count,
+      totalSponsors: sponsorCount.count,
+      totalSchools: schoolCount.count,
+      totalEnrollments: enrollmentCount.count,
+      totalGames: gameCount.count,
+    };
+  }
+
+  async getAdminStudents(): Promise<any[]> {
+    const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
+    const allXp = await db.select().from(userXp);
+    const allEnrollments = await db.select().from(classEnrollments);
+    const allClasses = await db.select().from(classes);
+    const allTeachers = await db.select().from(teachers);
+    const allSessions = await db.select().from(gameSessions);
+    const allProgress = await db.select().from(userLearningProgress);
+
+    return allUsers.map(u => {
+      const xpRow = allXp.find(x => x.userId === u.id);
+      const enrollment = allEnrollments.find(e => e.studentId === u.id);
+      const cls = enrollment ? allClasses.find(c => c.id === enrollment.classId) : null;
+      const teacher = cls ? allTeachers.find(t => t.id === cls.teacherId) : null;
+      const sessions = allSessions.filter(s => s.userId === u.id);
+      const lessons = allProgress.filter(p => p.userId === u.id && p.completed);
+      const avgScore = sessions.length > 0 ? Math.round(sessions.reduce((s, gs) => s + (gs.correctAnswers / Math.max(gs.totalQuestions, 1)) * 100, 0) / sessions.length) : 0;
+      return {
+        id: u.id,
+        studentName: u.firstName,
+        username: u.username,
+        className: cls?.name ?? '—',
+        schoolName: teacher?.schoolName ?? '—',
+        teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : '—',
+        lessonsCompleted: lessons.length,
+        quizScore: avgScore,
+        simulatorScore: xpRow?.xp ?? 0,
+        level: xpRow?.level ?? 1,
+        gamesPlayed: sessions.length,
+        joinedAt: u.createdAt,
+      };
+    });
+  }
+
+  async getAdminTeachers(): Promise<any[]> {
+    const allTeachers = await db.select().from(teachers).orderBy(desc(teachers.createdAt));
+    const allClasses = await db.select().from(classes);
+    const allEnrollments = await db.select().from(classEnrollments);
+    return allTeachers.map(t => {
+      const teacherClasses = allClasses.filter(c => c.teacherId === t.id);
+      const classIds = teacherClasses.map(c => c.id);
+      const studentCount = allEnrollments.filter(e => classIds.includes(e.classId)).length;
+      return {
+        id: t.id,
+        firstName: t.firstName,
+        lastName: t.lastName,
+        email: t.email,
+        schoolName: t.schoolName,
+        classCount: teacherClasses.length,
+        studentCount,
+        createdAt: t.createdAt,
+      };
+    });
+  }
+
+  async getAdminClasses(): Promise<any[]> {
+    const allClasses = await db.select().from(classes).orderBy(desc(classes.createdAt));
+    const allTeachers = await db.select().from(teachers);
+    const allEnrollments = await db.select().from(classEnrollments);
+    const allChallenges = await db.select().from(challenges);
+    return allClasses.map(c => {
+      const teacher = allTeachers.find(t => t.id === c.teacherId);
+      const enrolled = allEnrollments.filter(e => e.classId === c.id).length;
+      const challengeCount = allChallenges.filter(ch => ch.classId === c.id).length;
+      return {
+        id: c.id,
+        name: c.name,
+        subject: c.subject,
+        code: c.code,
+        sponsorName: c.sponsorName,
+        teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : '—',
+        schoolName: teacher?.schoolName ?? '—',
+        studentCount: enrolled,
+        challengeCount,
+        createdAt: c.createdAt,
+      };
+    });
+  }
+
+  async getAdminChallenges(): Promise<any[]> {
+    const allChallenges = await db.select().from(challenges).orderBy(desc(challenges.createdAt));
+    const allClasses = await db.select().from(classes);
+    const allTeachers = await db.select().from(teachers);
+    return allChallenges.map(ch => {
+      const cls = allClasses.find(c => c.id === ch.classId);
+      const teacher = allTeachers.find(t => t.id === ch.teacherId);
+      return {
+        ...ch,
+        className: cls?.name ?? '—',
+        teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : '—',
+      };
+    });
+  }
+
+  async adminSearch(query: string): Promise<any> {
+    const q = query.toLowerCase().trim();
+    if (!q) return { students: [], teachers: [], classes: [], sponsors: [], schools: [] };
+
+    const allUsers = await db.select().from(users);
+    const allTeachers = await db.select().from(teachers);
+    const allClasses = await db.select().from(classes);
+    const allSponsors = await db.select().from(sponsors);
+    const allSchools = await db.select().from(schools);
+
+    const students = allUsers.filter(u =>
+      u.firstName.toLowerCase().includes(q) || u.username.toLowerCase().includes(q)
+    ).slice(0, 10).map(u => ({ id: u.id, name: u.firstName, username: u.username, type: 'student' }));
+
+    const filteredTeachers = allTeachers.filter(t =>
+      t.firstName.toLowerCase().includes(q) || t.lastName.toLowerCase().includes(q) ||
+      t.email.toLowerCase().includes(q) || t.schoolName.toLowerCase().includes(q)
+    ).slice(0, 10).map(t => ({ id: t.id, name: `${t.firstName} ${t.lastName}`, email: t.email, school: t.schoolName, type: 'teacher' }));
+
+    const filteredClasses = allClasses.filter(c =>
+      c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q)
+    ).slice(0, 10).map(c => ({ id: c.id, name: c.name, code: c.code, type: 'class' }));
+
+    const filteredSponsors = allSponsors.filter(s =>
+      s.name.toLowerCase().includes(q)
+    ).slice(0, 5).map(s => ({ id: s.id, name: s.name, type: 'sponsor' }));
+
+    const filteredSchools = allSchools.filter(s =>
+      s.name.toLowerCase().includes(q) || s.country.toLowerCase().includes(q)
+    ).slice(0, 5).map(s => ({ id: s.id, name: s.name, country: s.country, type: 'school' }));
+
+    return { students, teachers: filteredTeachers, classes: filteredClasses, sponsors: filteredSponsors, schools: filteredSchools };
+  }
+
+  async getStudentGrowth(): Promise<any[]> {
+    const allUsers = await db.select({ createdAt: users.createdAt }).from(users).orderBy(users.createdAt);
+    const byWeek: Record<string, number> = {};
+    allUsers.forEach(u => {
+      if (!u.createdAt) return;
+      const d = new Date(u.createdAt);
+      const weekKey = `${d.getFullYear()}-W${String(Math.ceil((d.getDate() + new Date(d.getFullYear(), d.getMonth(), 1).getDay()) / 7)).padStart(2, '0')}`;
+      byWeek[weekKey] = (byWeek[weekKey] || 0) + 1;
+    });
+    return Object.entries(byWeek).slice(-12).map(([week, count]) => ({ week, count }));
+  }
+
+  async getLessonsCompletedPerWeek(): Promise<any[]> {
+    const sessions = await db.select({ completedAt: gameSessions.playedAt }).from(gameSessions).orderBy(gameSessions.playedAt);
+    const byWeek: Record<string, number> = {};
+    sessions.forEach(s => {
+      if (!s.completedAt) return;
+      const d = new Date(s.completedAt);
+      const weekKey = `${d.getFullYear()}-W${String(Math.ceil((d.getDate() + new Date(d.getFullYear(), d.getMonth(), 1).getDay()) / 7)).padStart(2, '0')}`;
+      byWeek[weekKey] = (byWeek[weekKey] || 0) + 1;
+    });
+    return Object.entries(byWeek).slice(-12).map(([week, count]) => ({ week, count }));
+  }
+
+  async getMostActiveSchools(): Promise<any[]> {
+    const teachers_ = await db.select().from(teachers);
+    const classes_ = await db.select().from(classes);
+    const enrollments_ = await db.select().from(classEnrollments);
+    const sessions_ = await db.select().from(gameSessions);
+    const xpAll = await db.select().from(userXp);
+    const enrollmentMap: Record<string, string> = {};
+    enrollments_.forEach(e => { enrollmentMap[e.studentId] = e.classId.toString(); });
+
+    const schoolData: Record<string, { name: string; students: Set<string>; games: number }> = {};
+    teachers_.forEach(t => {
+      const teacherClasses = classes_.filter(c => c.teacherId === t.id);
+      teacherClasses.forEach(c => {
+        const students = enrollments_.filter(e => e.classId === c.id);
+        const games = sessions_.filter(s => students.some(e => e.studentId === s.userId)).length;
+        if (!schoolData[t.schoolName]) schoolData[t.schoolName] = { name: t.schoolName, students: new Set(), games: 0 };
+        students.forEach(e => schoolData[t.schoolName].students.add(e.studentId));
+        schoolData[t.schoolName].games += games;
+      });
+    });
+    return Object.values(schoolData)
+      .map(s => ({ name: s.name, students: s.students.size, games: s.games }))
+      .sort((a, b) => b.students - a.students)
+      .slice(0, 10);
+  }
+
+  // Schools CRUD
+  async getSchools(): Promise<School[]> {
+    return await db.select().from(schools).orderBy(desc(schools.createdAt));
+  }
+  async createSchool(data: InsertSchool): Promise<School> {
+    const [school] = await db.insert(schools).values(data).returning();
+    return school;
+  }
+  async updateSchool(id: number, data: Partial<InsertSchool>): Promise<School> {
+    const [school] = await db.update(schools).set(data).where(eq(schools.id, id)).returning();
+    return school;
+  }
+  async deleteSchool(id: number): Promise<void> {
+    await db.delete(schools).where(eq(schools.id, id));
+  }
+
+  // Sponsors CRUD
+  async getSponsors(): Promise<Sponsor[]> {
+    return await db.select().from(sponsors).orderBy(desc(sponsors.createdAt));
+  }
+  async createSponsor(data: InsertSponsor): Promise<Sponsor> {
+    const [sponsor] = await db.insert(sponsors).values(data).returning();
+    return sponsor;
+  }
+  async updateSponsor(id: number, data: Partial<InsertSponsor>): Promise<Sponsor> {
+    const [sponsor] = await db.update(sponsors).set(data).where(eq(sponsors.id, id)).returning();
+    return sponsor;
+  }
+  async deleteSponsor(id: number): Promise<void> {
+    await db.delete(sponsors).where(eq(sponsors.id, id));
+  }
+
+  async getAdminDbTable(tableName: string): Promise<any[]> {
+    const tableMap: Record<string, any> = {
+      users, teachers, classes, classEnrollments, challenges, classNotifications,
+      schools, sponsors, gameSessions, userXp, userBadges, userLearningProgress,
+    };
+    const tbl = tableMap[tableName];
+    if (!tbl) return [];
+    return await db.select().from(tbl).limit(500);
   }
 }
 

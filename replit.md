@@ -161,6 +161,25 @@ Core tables include:
 - Student routes: POST /api/student/join-class, GET /api/student/classes, GET /api/student/classes/:id/notifications
 - isTeacher middleware: checks req.session.teacherId
 
+### Founder Admin Dashboard (client/src/pages/Admin*.tsx)
+- Separate portal at /admin and /admin/login (accessible without any user auth)
+- Auth: checks email + password against ADMIN_EMAIL/ADMIN_PASSWORD env vars (defaults: admin@finsightlite.com / admin123); stores req.session.isAdmin = true
+- isAdmin middleware: checks req.session.isAdmin
+- New DB tables: schools (id, name, country, city, website), sponsors (id, name, type, contactName, contactEmail, website, country)
+- 9-tab dashboard with global search bar (slate/indigo dark theme):
+  - Overview: 8 metric cards + 3 recharts (student growth line, games/week bar, most active schools horizontal bar)
+  - Schools: full CRUD table (add, edit, delete, CSV download)
+  - Teachers: read-only table (name, email, school, class count, student count, CSV)
+  - Students: read-only table (name, class, school, teacher, lessons, quiz score, XP, level, CSV)
+  - Classes: read-only table (name, code, teacher, school, enrollment, challenges, CSV)
+  - Sponsors: full CRUD table (add, edit, delete, CSV download)
+  - Challenges: read-only table (all challenges across all classes)
+  - Reports: 5 CSV download cards (students, teachers, classes, schools, sponsors)
+  - DB Viewer: raw spreadsheet view of any DB table (12 tables, 500-row limit)
+- Global search: queries /api/admin/search?q=... across students, teachers, classes, schools, sponsors — results shown in dropdown with color-coded type badges
+- All data tables: client-side search, sort (any column), pagination (15 rows/page)
+- Admin routes: /api/admin/auth/*, /api/admin/overview, /api/admin/students, /api/admin/teachers, /api/admin/classes, /api/admin/challenges, /api/admin/search, /api/admin/charts/*, /api/admin/schools/*, /api/admin/sponsors/*, /api/admin/db/:table, /api/admin/reports/:type.csv
+
 ## External Dependencies
 
 ### Authentication

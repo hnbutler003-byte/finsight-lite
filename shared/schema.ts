@@ -148,6 +148,28 @@ export const userVirtualBalance = pgTable("user_virtual_balance", {
   currency: text("currency").default("BSD").notNull(),
 });
 
+// === SCHOOLS & SPONSORS TABLES ===
+
+export const schools = pgTable("schools", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  country: text("country").default("Bahamas").notNull(),
+  city: text("city"),
+  website: text("website"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const sponsors = pgTable("sponsors", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  type: text("type", { enum: ["bank", "credit_union", "business", "government", "other"] }).default("business").notNull(),
+  contactName: text("contact_name"),
+  contactEmail: text("contact_email"),
+  website: text("website"),
+  country: text("country").default("Bahamas"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // === TEACHER DASHBOARD TABLES ===
 
 export const teachers = pgTable("teachers", {
@@ -433,6 +455,8 @@ export const insertPortfolioHoldingSchema = createInsertSchema(portfolioHoldings
 export const insertPortfolioTransactionSchema = createInsertSchema(portfolioTransactions).omit({ id: true, executedAt: true });
 export const insertLearningModuleSchema = createInsertSchema(learningModules).omit({ id: true });
 export const insertUserLearningProgressSchema = createInsertSchema(userLearningProgress).omit({ id: true, completedAt: true });
+export const insertSchoolSchema = createInsertSchema(schools).omit({ id: true, createdAt: true });
+export const insertSponsorSchema = createInsertSchema(sponsors).omit({ id: true, createdAt: true });
 export const insertTeacherSchema = createInsertSchema(teachers).omit({ id: true, createdAt: true, isVerified: true });
 export const insertClassSchema = createInsertSchema(classes).omit({ id: true, createdAt: true, code: true });
 export const insertClassEnrollmentSchema = createInsertSchema(classEnrollments).omit({ id: true, joinedAt: true });
@@ -482,6 +506,10 @@ export type InsertExamPaper = z.infer<typeof insertExamPaperSchema>;
 export type InsertExtractedQuestion = z.infer<typeof insertExtractedQuestionSchema>;
 export type InsertGameSession = z.infer<typeof insertGameSessionSchema>;
 export type InsertUserBadge = z.infer<typeof insertUserBadgeSchema>;
+export type School = typeof schools.$inferSelect;
+export type InsertSchool = z.infer<typeof insertSchoolSchema>;
+export type Sponsor = typeof sponsors.$inferSelect;
+export type InsertSponsor = z.infer<typeof insertSponsorSchema>;
 export type Teacher = typeof teachers.$inferSelect;
 export type InsertTeacher = z.infer<typeof insertTeacherSchema>;
 export type Class = typeof classes.$inferSelect;
