@@ -168,7 +168,8 @@ export function Sidebar() {
           </div>
         </div>
         <Button
-          className="w-full justify-start gap-2 rounded-2xl bg-amber-400 hover:bg-amber-300 text-amber-950 font-bold border-0 shadow-md shadow-black/20 transition-all hover:scale-[1.02]"
+          variant="outline"
+          className="w-full justify-start gap-2 rounded-2xl border border-white/20 text-white/80 hover:bg-white/10 hover:text-white font-semibold"
           onClick={() => setShowJoin(true)}
           data-testid="button-join-class"
         >
