@@ -130,8 +130,9 @@ export default function MoneyGuide() {
   return (
     <div className="flex min-h-screen caribbean-bg">
       <Sidebar />
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        <div className="border-b-2 border-dashed border-violet-200 dark:border-violet-800 p-4 lg:p-6 flex items-center justify-between bg-gradient-to-r from-violet-50 via-pink-50 to-amber-50 dark:from-violet-950/20 dark:via-pink-950/10 dark:to-amber-950/10">
+      <main className="flex-1 flex flex-col h-screen p-4 lg:p-6">
+        <div className="glass-card-heavy rounded-glass flex-1 flex flex-col overflow-hidden">
+        <div className="border-b border-gray-200/60 p-4 lg:p-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-purple-300/50 dark:shadow-purple-900/50">
               <Bot className="w-6 h-6" />
@@ -140,7 +141,7 @@ export default function MoneyGuide() {
               <h1 className="font-display text-xl lg:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-pink-500" data-testid="text-guide-title">
                 Money Guide
               </h1>
-              <p className="text-xs text-muted-foreground font-semibold flex items-center gap-1">
+              <p className="text-xs text-gray-500 font-semibold flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-amber-400" />
                 Your AI money mentor
               </p>
@@ -230,7 +231,7 @@ export default function MoneyGuide() {
           )}
         </div>
 
-        <div className="border-t-2 border-dashed border-violet-200 dark:border-violet-800 p-4 lg:p-6 bg-gradient-to-r from-violet-50/50 to-pink-50/50 dark:from-violet-950/10 dark:to-pink-950/10">
+        <div className="border-t border-gray-200/60 p-4 lg:p-6">
           <form onSubmit={handleSubmit} className="flex gap-3 max-w-3xl mx-auto">
             <input
               ref={inputRef}
@@ -255,9 +256,10 @@ export default function MoneyGuide() {
               )}
             </Button>
           </form>
-          <p className="text-center text-[10px] text-muted-foreground mt-2 font-medium">
+          <p className="text-center text-[10px] text-gray-400 mt-2 font-medium">
             Money Guide gives educational info only — not real financial advice!
           </p>
+        </div>
         </div>
       </main>
     </div>
