@@ -72,7 +72,7 @@ function JoinClassModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-card rounded-3xl border-2 border-violet-200 dark:border-violet-800 shadow-2xl p-8 w-full max-w-sm space-y-5" onClick={e => e.stopPropagation()}>
+      <div className="glass-card-heavy rounded-glass p-8 w-full max-w-sm space-y-5" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
@@ -119,17 +119,17 @@ export function Sidebar() {
   const [showJoin, setShowJoin] = useState(false);
 
   const NavContent = () => (
-    <div className="flex flex-col h-full bg-gradient-to-b from-violet-50 via-white to-pink-50 dark:from-violet-950/40 dark:via-background dark:to-pink-950/20">
-      <div className="p-6 border-b-2 border-dashed border-violet-200 dark:border-violet-800">
+    <div className="flex flex-col h-full bg-gradient-to-b from-[hsl(262,72%,18%)] via-[hsl(262,60%,14%)] to-[hsl(262,78%,12%)] text-white">
+      <div className="p-6 border-b border-white/10">
         <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-          <span className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-500 via-pink-500 to-orange-400 text-white flex items-center justify-center shrink-0 text-xl shadow-lg shadow-violet-300 dark:shadow-violet-900 animate-float">
+          <span className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-400 via-pink-500 to-orange-400 text-white flex items-center justify-center shrink-0 text-xl shadow-lg shadow-violet-900/50 animate-float">
             $
           </span>
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-600 via-pink-500 to-orange-500">
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-300 via-pink-400 to-orange-400">
             FinSight Lite
           </span>
         </h1>
-        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1 flex items-center gap-1">
+        <p className="text-[10px] text-white/60 uppercase font-bold tracking-widest mt-1 flex items-center gap-1">
           <Sparkles className="w-3 h-3 text-amber-400" />
           by FinSight Ltd.
         </p>
@@ -140,16 +140,16 @@ export function Sidebar() {
           const isActive = item.href === "/" ? location === "/" : location.startsWith(item.href);
           return (
             <Link key={item.href} href={item.href} className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 border-2",
+              "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 border",
               isActive 
-                ? "bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 text-white shadow-lg shadow-purple-300 dark:shadow-purple-900 border-transparent scale-[1.02]" 
-                : "text-foreground hover:bg-white/80 dark:hover:bg-white/5 hover:scale-[1.02] hover:shadow-md border-transparent hover:border-violet-200 dark:hover:border-violet-800"
+                ? "bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 text-white shadow-lg shadow-purple-900/50 border-transparent scale-[1.02]" 
+                : "text-white/80 hover:bg-white/10 hover:text-white hover:scale-[1.02] border-transparent hover:border-white/10"
             )} onClick={() => setOpen(false)}>
               <div className={cn(
                 "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all",
-                isActive ? "bg-white/20" : item.bg
+                isActive ? "bg-white/20" : "bg-white/10"
               )}>
-                <item.icon className={cn("w-4.5 h-4.5", isActive ? "text-white" : item.color)} />
+                <item.icon className={cn("w-4.5 h-4.5", isActive ? "text-white" : "text-white/80")} />
               </div>
               <span className="font-semibold text-sm">{item.label}</span>
             </Link>
@@ -157,19 +157,19 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t-2 border-dashed border-violet-200 dark:border-violet-800 mt-auto space-y-2">
+      <div className="p-4 border-t border-white/10 mt-auto space-y-2">
         <div className="flex items-center gap-3 mb-2 px-2">
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-xl shadow-md">
             {AVATAR_EMOJIS[(user as any)?.avatar] || "🌟"}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold truncate">{user?.firstName || "Player"}</p>
-            <p className="text-xs text-muted-foreground truncate">{(user as any)?.username}</p>
+            <p className="text-sm font-bold truncate text-white">{user?.firstName || "Player"}</p>
+            <p className="text-xs text-white/60 truncate">{(user as any)?.username}</p>
           </div>
         </div>
         <Button
           variant="outline"
-          className="w-full justify-start gap-2 rounded-2xl border-2 border-violet-200 text-violet-600 hover:bg-violet-50 dark:border-violet-800 dark:hover:bg-violet-950/20 font-semibold"
+          className="w-full justify-start gap-2 rounded-2xl border border-white/20 text-white/80 hover:bg-white/10 hover:text-white font-semibold"
           onClick={() => setShowJoin(true)}
           data-testid="button-join-class"
         >
@@ -178,7 +178,7 @@ export function Sidebar() {
         </Button>
         <Button 
           variant="outline" 
-          className="w-full justify-start gap-2 rounded-2xl border-2 border-red-200 text-red-500 hover:text-red-600 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950/30 font-semibold"
+          className="w-full justify-start gap-2 rounded-2xl border border-red-400/30 text-red-300 hover:text-red-200 hover:bg-red-500/10 font-semibold"
           onClick={() => logout()}
           data-testid="button-logout"
         >
@@ -205,7 +205,7 @@ export function Sidebar() {
         </Sheet>
       </div>
 
-      <aside className="hidden lg:block w-72 h-screen border-r-2 border-dashed border-violet-200 dark:border-violet-800 sticky top-0 overflow-hidden">
+      <aside className="hidden lg:block w-72 h-screen border-r border-white/10 sticky top-0 overflow-hidden">
         <NavContent />
       </aside>
     </>

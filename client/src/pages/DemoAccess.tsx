@@ -70,7 +70,7 @@ export default function DemoAccess() {
   const isSettingUp = isLoading || setupMut.isPending || !creds;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-950 via-purple-900 to-indigo-950">
+    <div className="min-h-screen caribbean-bg">
       {/* Header */}
       <header className="px-6 py-5 flex items-center justify-between max-w-6xl mx-auto">
         <div className="flex items-center gap-3">
@@ -121,7 +121,7 @@ export default function DemoAccess() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             {/* Teacher Card */}
-            <Card className="bg-gradient-to-br from-emerald-900/80 to-teal-900/80 border border-emerald-700/50 shadow-2xl">
+            <Card className="glass-card-teal rounded-glass shadow-2xl">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-5">
                   <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
@@ -190,7 +190,7 @@ export default function DemoAccess() {
             </Card>
 
             {/* Students Card */}
-            <Card className="bg-gradient-to-br from-violet-900/80 to-purple-900/80 border border-violet-700/50 shadow-2xl">
+            <Card className="glass-card-heavy rounded-glass shadow-2xl">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-5">
                   <div className="w-12 h-12 bg-violet-500 rounded-xl flex items-center justify-center shadow-lg">
@@ -248,7 +248,7 @@ export default function DemoAccess() {
 
       {/* Features section */}
       <section className="max-w-6xl mx-auto px-6 pb-16">
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+        <div className="glass-card rounded-glass p-6">
           <div className="flex items-center gap-2 mb-5">
             <School className="w-5 h-5 text-violet-300" />
             <h3 className="text-white font-bold text-lg">What's included in the demo</h3>

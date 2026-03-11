@@ -215,7 +215,7 @@ export default function BillReminders() {
 
           {/* Auto-detected bills */}
           {detectedBills.length > 0 && (
-            <div className="bg-card rounded-2xl p-6 shadow-sm border border-primary/30" data-testid="section-detected-bills">
+            <div className="glass-card rounded-glass p-6" data-testid="section-detected-bills">
               <h2 className="font-display text-lg font-bold mb-4 flex items-center gap-2">
                 <Zap className="w-5 h-5 text-primary" />
                 Detected Recurring Bills
@@ -247,7 +247,7 @@ export default function BillReminders() {
 
           {/* Bill reminders list */}
           {!reminders || reminders.length === 0 ? (
-            <div className="text-center py-16 bg-card rounded-2xl border border-border/50">
+            <div className="text-center py-16 glass-card rounded-glass">
               <Bell className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No bill reminders yet</h3>
               <p className="text-muted-foreground mb-4">Add reminders or let us detect recurring bills from your history</p>
@@ -257,7 +257,7 @@ export default function BillReminders() {
               {reminders.map((reminder) => {
                 const dueStatus = getDueStatus(reminder.nextDueDate);
                 return (
-                  <div key={reminder.id} className="bg-card rounded-xl p-4 shadow-sm border border-border/50 flex items-center justify-between" data-testid={`card-reminder-${reminder.id}`}>
+                  <div key={reminder.id} className="glass-card rounded-glass p-4 flex items-center justify-between" data-testid={`card-reminder-${reminder.id}`}>
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                         <CalendarClock className="w-5 h-5 text-primary" />

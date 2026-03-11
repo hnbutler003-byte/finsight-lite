@@ -209,7 +209,7 @@ export default function InvestmentSimulator() {
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 </div>
               ) : selectedModule ? (
-                <Card className="border-none shadow-lg">
+                <Card className="glass-card rounded-glass">
                   <CardHeader className="space-y-3">
                     <Button
                       variant="ghost"
@@ -304,7 +304,7 @@ export default function InvestmentSimulator() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Card className="border-none shadow-md bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10">
+                <Card className="glass-card rounded-glass">
                   <CardContent className="p-4 flex items-center gap-3">
                     <Wallet className="w-8 h-8 text-blue-600" />
                     <div>
@@ -315,7 +315,7 @@ export default function InvestmentSimulator() {
                     </div>
                   </CardContent>
                 </Card>
-                <Card className="border-none shadow-md bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10">
+                <Card className="glass-card rounded-glass">
                   <CardContent className="p-4 flex items-center gap-3">
                     <TrendingUp className="w-8 h-8 text-green-600" />
                     <div>
@@ -326,7 +326,7 @@ export default function InvestmentSimulator() {
                     </div>
                   </CardContent>
                 </Card>
-                <Card className="border-none shadow-md bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/20 dark:to-purple-900/10">
+                <Card className="glass-card rounded-glass">
                   <CardContent className="p-4 flex items-center gap-3">
                     <Briefcase className="w-8 h-8 text-purple-600" />
                     <div>
@@ -398,7 +398,7 @@ export default function InvestmentSimulator() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Card className="border-none shadow-md bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10">
+                <Card className="glass-card rounded-glass">
                   <CardContent className="p-4">
                     <p className="text-xs text-muted-foreground">Virtual Cash</p>
                     <p className="text-xl font-bold text-blue-600" data-testid="text-portfolio-cash">
@@ -406,7 +406,7 @@ export default function InvestmentSimulator() {
                     </p>
                   </CardContent>
                 </Card>
-                <Card className="border-none shadow-md bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10">
+                <Card className="glass-card rounded-glass">
                   <CardContent className="p-4">
                     <p className="text-xs text-muted-foreground">Invested Value</p>
                     <p className="text-xl font-bold text-green-600">
@@ -414,7 +414,7 @@ export default function InvestmentSimulator() {
                     </p>
                   </CardContent>
                 </Card>
-                <Card className="border-none shadow-md bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/20 dark:to-purple-900/10">
+                <Card className="glass-card rounded-glass">
                   <CardContent className="p-4">
                     <p className="text-xs text-muted-foreground">Net Worth</p>
                     <p className="text-xl font-bold text-purple-600">
@@ -429,7 +429,7 @@ export default function InvestmentSimulator() {
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 </div>
               ) : portfolio?.holdings.length === 0 ? (
-                <Card className="border-none shadow-md">
+                <Card className="glass-card rounded-glass">
                   <CardContent className="p-12 text-center">
                     <Briefcase className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">Your portfolio is empty</h3>
@@ -704,7 +704,7 @@ function StockCard({ stock, onBuy }: { stock: SimulatedStock; onBuy: () => void 
   };
 
   return (
-    <Card className="border-none shadow-md hover:shadow-lg transition-shadow" data-testid={`card-stock-${stock.id}`}>
+    <Card className="glass-card rounded-glass hover:shadow-lg transition-shadow" data-testid={`card-stock-${stock.id}`}>
       <CardContent className="p-5 space-y-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">

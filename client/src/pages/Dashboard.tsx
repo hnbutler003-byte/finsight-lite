@@ -141,7 +141,7 @@ export default function Dashboard() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            <div className="lg:col-span-2 bg-card rounded-3xl p-5 shadow-sm border-2 border-dashed border-border/60">
+            <div className="lg:col-span-2 glass-card rounded-glass p-5">
               <h3 className="font-display text-lg font-bold mb-3">Where It Goes</h3>
               <div className="h-[260px] w-full">
                 {expenseData.length > 0 ? (
@@ -172,7 +172,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="lg:col-span-3 bg-card rounded-3xl p-5 shadow-sm border-2 border-dashed border-border/60 flex flex-col">
+            <div className="lg:col-span-3 glass-card rounded-glass p-5 flex flex-col">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-display text-lg font-bold">Recent Activity</h3>
                 <TransactionForm>
@@ -274,7 +274,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-card rounded-3xl border-2 border-dashed border-amber-200 dark:border-amber-800 overflow-hidden">
+          <div className="glass-card rounded-glass overflow-hidden">
             <button
               className="w-full flex items-center justify-between p-5 text-left hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-colors"
               onClick={() => setShowTips(!showTips)}
@@ -321,7 +321,7 @@ export default function Dashboard() {
             )}
           </div>
 
-          <Card className="p-5 rounded-3xl border-2 border-dashed border-violet-200 dark:border-violet-800" data-testid="card-learning-progress">
+          <Card className="glass-card p-5 rounded-glass" data-testid="card-learning-progress">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">

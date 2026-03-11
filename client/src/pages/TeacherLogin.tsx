@@ -46,7 +46,7 @@ export default function TeacherLogin() {
           <p className="text-muted-foreground">Sign in to manage your classes</p>
         </div>
 
-        <Card className="rounded-3xl border-2 border-emerald-100 dark:border-emerald-800 shadow-xl">
+        <Card className="glass-card rounded-glass shadow-xl">
           <CardContent className="p-8">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">

@@ -367,7 +367,7 @@ export default function TeacherClassDetail() {
               {progressLoading ? (
                 <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>
               ) : !progress?.students.length ? (
-                <Card className="rounded-3xl border-2 border-dashed">
+                <Card className="glass-card rounded-glass border-dashed">
                   <CardContent className="p-10 text-center space-y-2">
                     <Users className="w-10 h-10 mx-auto text-muted-foreground" />
                     <p className="font-bold">No students yet</p>
@@ -382,7 +382,7 @@ export default function TeacherClassDetail() {
                       { label: "Avg XP", value: progress.avgXp, icon: Zap },
                       { label: "Total Games", value: progress.totalGames, icon: Gamepad2 },
                     ].map(s => (
-                      <Card key={s.label} className="rounded-2xl border-2">
+                      <Card key={s.label} className="glass-card rounded-glass">
                         <CardContent className="p-4 flex items-center gap-3">
                           <s.icon className="w-5 h-5 text-emerald-500 shrink-0" />
                           <div>
@@ -406,7 +406,7 @@ export default function TeacherClassDetail() {
               {lbLoading ? (
                 <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>
               ) : !leaderboard?.length ? (
-                <Card className="rounded-3xl border-2 border-dashed">
+                <Card className="glass-card rounded-glass border-dashed">
                   <CardContent className="p-10 text-center">
                     <Trophy className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
                     <p className="font-bold">No students on the leaderboard yet</p>

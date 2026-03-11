@@ -156,7 +156,7 @@ export default function Budgets() {
                     <TooltipProvider key={budget.id}>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="bg-card rounded-2xl p-6 border border-border/50 shadow-sm hover:shadow-md transition-all cursor-help">
+                          <div className="glass-card rounded-glass p-6 hover:shadow-md transition-all cursor-help">
                             <div className="flex justify-between items-start mb-4">
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
@@ -200,7 +200,7 @@ export default function Budgets() {
 
               {/* Budget Allocation Summary */}
               {budgets && budgets.length > 0 && (
-                <div className="mt-12 bg-primary/5 rounded-3xl p-8 border border-primary/10 shadow-sm relative overflow-hidden">
+                <div className="mt-12 glass-card rounded-glass p-8 relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-4 opacity-10">
                     <Wallet className="w-24 h-24 rotate-12" />
                   </div>

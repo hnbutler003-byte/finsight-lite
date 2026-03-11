@@ -154,7 +154,7 @@ export default function Trends() {
           )}
 
           {/* Income vs Expenses Bar Chart */}
-          <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/50">
+          <div className="glass-card rounded-glass p-6">
             <h2 className="font-display text-lg font-bold mb-4">Income vs Expenses</h2>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={320}>
@@ -181,7 +181,7 @@ export default function Trends() {
 
           {/* Category Breakdown Over Time */}
           {topCategories.size > 0 && (
-            <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/50">
+            <div className="glass-card rounded-glass p-6">
               <h2 className="font-display text-lg font-bold mb-4">Spending by Category</h2>
               <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={categoryChartData}>

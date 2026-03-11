@@ -87,7 +87,7 @@ export default function MoneyLabLeaderboard() {
           {isLoading ? (
             <div className="text-center py-12"><Loader2 className="w-8 h-8 animate-spin mx-auto text-muted-foreground" /></div>
           ) : !leaderboard?.length ? (
-            <Card className="rounded-3xl border-2 border-dashed">
+            <Card className="glass-card rounded-glass border-dashed">
               <CardContent className="p-8 text-center">
                 <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-30" />
                 <p className="text-lg font-bold">No games played yet</p>

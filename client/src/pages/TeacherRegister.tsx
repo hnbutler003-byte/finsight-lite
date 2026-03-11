@@ -52,7 +52,7 @@ export default function TeacherRegister() {
           <p className="text-muted-foreground">Set up your teacher portal in seconds</p>
         </div>
 
-        <Card className="rounded-3xl border-2 border-emerald-100 dark:border-emerald-800 shadow-xl">
+        <Card className="glass-card rounded-glass shadow-xl">
           <CardContent className="p-8">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">

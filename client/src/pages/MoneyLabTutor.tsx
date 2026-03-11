@@ -96,7 +96,7 @@ export default function MoneyLabTutor() {
             </div>
           </div>
 
-          <Card className="rounded-3xl border-2 border-violet-200 dark:border-violet-800 bg-gradient-to-r from-violet-50/50 to-purple-50/50 dark:from-violet-950/10 dark:to-purple-950/10">
+          <Card className="glass-card rounded-glass">
             <CardContent className="p-6 space-y-3">
               <div className="flex items-center gap-2">
                 <Search className="w-5 h-5 text-violet-500" />

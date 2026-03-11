@@ -165,7 +165,7 @@ export default function Transactions() {
             </div>
           </div>
 
-          <div className="bg-card rounded-2xl shadow-sm border border-border/50 overflow-hidden">
+          <div className="glass-card rounded-glass overflow-hidden">
             {isLoading ? (
               <div className="p-12 flex justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />

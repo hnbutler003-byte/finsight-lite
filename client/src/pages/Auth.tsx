@@ -61,10 +61,7 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col lg:flex-row">
-      <div className="lg:w-1/2 relative overflow-hidden flex flex-col justify-between p-8 lg:p-16 text-white bg-gradient-to-br from-violet-600 via-purple-600 to-pink-500">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-yellow-300/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/3" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-cyan-400/15 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3" />
-        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-pink-300/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+      <div className="lg:w-1/2 relative overflow-hidden flex flex-col justify-between p-8 lg:p-16 text-white caribbean-bg">
 
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-10">
@@ -96,7 +93,7 @@ export default function AuthPage() {
             { icon: GraduationCap, text: "Learn about stocks, bonds, and more" },
             { icon: Rocket, text: "Build smart money habits for life" },
           ].map((feature, i) => (
-            <div key={i} className="flex items-center gap-3 bg-white/10 rounded-2xl px-4 py-2.5 backdrop-blur-sm border border-white/10">
+            <div key={i} className="glass-inset-light flex items-center gap-3 rounded-2xl px-4 py-2.5">
               <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
                 <feature.icon className="w-4 h-4 text-yellow-300" />
               </div>
@@ -256,7 +253,7 @@ export default function AuthPage() {
           {step === "welcome" && createdUser && (
             <>
               <div className="text-center">
-                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-green-400 via-emerald-500 to-teal-500 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-300/50 dark:shadow-green-900/50 animate-float">
+                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-green-400 via-emerald-500 to-teal-500 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-300/50 dark:shadow-green-900/50 animate-bounce-in">
                   <span className="text-5xl">{AVATARS.find(a => a.id === createdUser.avatar)?.emoji || "🌟"}</span>
                 </div>
                 <h2 className="text-3xl font-bold font-display bg-clip-text text-transparent bg-gradient-to-r from-green-500 to-emerald-500">

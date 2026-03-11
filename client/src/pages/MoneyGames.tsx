@@ -1810,7 +1810,7 @@ export default function MoneyGames() {
               {GAMES.map((game) => (
                 <Card
                   key={game.id}
-                  className="rounded-3xl border-2 border-dashed hover:border-violet-300 dark:hover:border-violet-700 transition-all hover:shadow-xl cursor-pointer group overflow-hidden"
+                  className="glass-card rounded-glass transition-all hover:shadow-xl hover:scale-[1.02] cursor-pointer group overflow-hidden"
                   onClick={() => setActiveGame(game.id)}
                   data-testid={`card-game-${game.id}`}
                 >
@@ -1826,7 +1826,7 @@ export default function MoneyGames() {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">{game.description}</p>
-                    <Button className="rounded-2xl gap-2 w-full" data-testid={`button-play-${game.id}`}>
+                    <Button className="btn-coral rounded-2xl gap-2 w-full" data-testid={`button-play-${game.id}`}>
                       <Sparkles className="w-4 h-4" /> Play Now
                     </Button>
                   </CardContent>

@@ -276,7 +276,7 @@ export default function MoneyLabPlay() {
                 </div>
               </div>
 
-              <Card className="rounded-3xl border-2 border-teal-200 dark:border-teal-800">
+              <Card className="glass-card rounded-glass">
                 <CardContent className="p-6 lg:p-8">
                   <div className="mb-2 flex gap-2">
                     {currentQuestion.subject && (

@@ -91,7 +91,7 @@ export default function MoneyLabUpload() {
             </div>
           </div>
 
-          <Card className="border-2 border-dashed border-teal-200 dark:border-teal-800 rounded-3xl">
+          <Card className="glass-card rounded-glass">
             <CardContent className="p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -181,7 +181,7 @@ export default function MoneyLabUpload() {
                 <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
               </div>
             ) : !papers?.length ? (
-              <Card className="rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-800">
+              <Card className="glass-card rounded-glass">
                 <CardContent className="p-8 text-center text-muted-foreground">
                   <p className="font-medium">No papers uploaded yet</p>
                   <p className="text-sm mt-1">Upload your first exam paper to get started!</p>

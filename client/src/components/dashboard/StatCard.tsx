@@ -19,14 +19,14 @@ interface StatCardProps {
 
 export function StatCard({ title, value, trend, trendUp, icon: Icon, variant = "default", description }: StatCardProps) {
   const variants = {
-    default: "bg-white border-border/50 hover:border-primary/20",
+    default: "bg-white dark:bg-white/5 border-border/50 hover:border-primary/20 backdrop-blur-sm",
     primary: "bg-primary text-primary-foreground border-transparent",
-    secondary: "bg-secondary/20 border-secondary/20 hover:border-secondary",
+    secondary: "bg-secondary/20 border-secondary/20 hover:border-secondary backdrop-blur-sm",
   };
 
   const cardContent = (
     <div className={cn(
-      "p-6 rounded-2xl border shadow-sm transition-all duration-300 hover:shadow-md h-full cursor-help",
+      "p-6 rounded-glass border shadow-sm transition-all duration-300 hover:shadow-md hover:scale-[1.02] h-full cursor-help",
       variants[variant]
     )}>
       <div className="flex items-start justify-between">

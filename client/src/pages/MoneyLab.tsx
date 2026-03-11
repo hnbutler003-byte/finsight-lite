@@ -94,7 +94,7 @@ export default function MoneyLab() {
           </div>
 
           {xp && (
-            <Card className="border-2 border-dashed border-teal-200 dark:border-teal-800 rounded-3xl overflow-hidden">
+            <Card className="glass-card rounded-glass overflow-hidden">
               <CardContent className="p-6">
                 <div className="flex flex-wrap items-center gap-6">
                   <div className="flex items-center gap-3">
@@ -103,7 +103,7 @@ export default function MoneyLab() {
                     </div>
                     <div>
                       <p className="text-sm font-bold text-muted-foreground">Level {xp.level}</p>
-                      <p className="text-2xl font-bold font-display">{xp.totalXp} XP</p>
+                      <span className="xp-pill">{xp.totalXp} XP</span>
                     </div>
                   </div>
 
@@ -112,9 +112,9 @@ export default function MoneyLab() {
                       <span>Progress to Level {xp.level + 1}</span>
                       <span>{xpProgress}/100 XP</span>
                     </div>
-                    <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div className="xp-bar-track">
                       <div
-                        className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full transition-all"
+                        className="xp-bar-fill"
                         style={{ width: `${xpProgress}%` }}
                         data-testid="xp-progress-bar"
                       />
@@ -122,10 +122,10 @@ export default function MoneyLab() {
                   </div>
 
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1.5 text-orange-500">
-                      <Flame className="w-5 h-5" />
-                      <span className="font-bold">{xp.currentStreak} day{xp.currentStreak !== 1 ? "s" : ""}</span>
-                    </div>
+                    <span className="streak-badge">
+                      <Flame className="w-4 h-4" />
+                      {xp.currentStreak} day{xp.currentStreak !== 1 ? "s" : ""}
+                    </span>
                     <div className="flex items-center gap-1.5 text-blue-500">
                       <Gamepad2 className="w-5 h-5" />
                       <span className="font-bold">{xpData?.totalGames || 0} games</span>
@@ -139,7 +139,7 @@ export default function MoneyLab() {
                       const info = BADGE_INFO[b.badgeId];
                       if (!info) return null;
                       return (
-                        <span key={b.badgeId} className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${info.color}`} data-testid={`badge-${b.badgeId}`}>
+                        <span key={b.badgeId} className={`badge-coral`} data-testid={`badge-${b.badgeId}`}>
                           {info.icon} {info.label}
                         </span>
                       );
@@ -153,7 +153,7 @@ export default function MoneyLab() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {SECTIONS.map((s) => (
               <Link key={s.href} href={s.href}>
-                <Card className={`border-2 border-transparent hover:border-teal-200 dark:hover:border-teal-800 rounded-3xl transition-all hover:scale-[1.02] hover:shadow-lg cursor-pointer ${s.bg}`} data-testid={`card-${s.label.toLowerCase().replace(/\s+/g, "-")}`}>
+                <Card className={`glass-card rounded-glass transition-all hover:scale-[1.02] hover:shadow-lg cursor-pointer`} data-testid={`card-${s.label.toLowerCase().replace(/\s+/g, "-")}`}>
                   <CardContent className="p-6 flex items-center gap-4">
                     <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${s.color} flex items-center justify-center text-white shadow-lg ${s.shadow} shrink-0`}>
                       <s.icon className="w-7 h-7" />

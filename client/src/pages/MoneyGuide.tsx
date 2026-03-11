@@ -180,7 +180,7 @@ export default function MoneyGuide() {
                   <button
                     key={i}
                     onClick={() => sendMessage(prompt.label)}
-                    className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all hover:scale-[1.02] hover:shadow-md ${prompt.color}`}
+                    className={`glass-card flex items-center gap-3 p-4 rounded-glass text-left transition-all hover:scale-[1.02] hover:shadow-md ${prompt.color}`}
                     data-testid={`button-quick-prompt-${i}`}
                   >
                     <prompt.icon className="w-5 h-5 shrink-0" />

@@ -160,7 +160,7 @@ export default function SavingsGoals() {
           </div>
 
           {!goals || goals.length === 0 ? (
-            <div className="text-center py-16 bg-card rounded-2xl border border-border/50">
+            <div className="text-center py-16 glass-card rounded-glass">
               <PiggyBank className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No savings goals yet</h3>
               <p className="text-muted-foreground mb-4">Start setting financial targets to build your wealth</p>
@@ -175,7 +175,7 @@ export default function SavingsGoals() {
                 const isComplete = percent >= 100;
 
                 return (
-                  <div key={goal.id} className={`bg-card rounded-2xl p-6 shadow-sm border ${isComplete ? "border-green-300 dark:border-green-800" : "border-border/50"}`} data-testid={`card-goal-${goal.id}`}>
+                  <div key={goal.id} className={`glass-card rounded-glass p-6 ${isComplete ? "!border-green-300 dark:!border-green-800" : ""}`} data-testid={`card-goal-${goal.id}`}>
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isComplete ? "bg-green-100 dark:bg-green-900/30" : "bg-primary/10"}`}>

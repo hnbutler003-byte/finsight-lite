@@ -122,7 +122,7 @@ export default function Reports() {
               ) : summary ? (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card className="border-none shadow-md bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10">
+                    <Card className="glass-card rounded-glass">
                       <CardContent className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -137,7 +137,7 @@ export default function Reports() {
                         </div>
                       </CardContent>
                     </Card>
-                    <Card className="border-none shadow-md bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-950/20 dark:to-red-900/10">
+                    <Card className="glass-card rounded-glass">
                       <CardContent className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
@@ -152,7 +152,7 @@ export default function Reports() {
                         </div>
                       </CardContent>
                     </Card>
-                    <Card className="border-none shadow-md bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10">
+                    <Card className="glass-card rounded-glass">
                       <CardContent className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -167,7 +167,7 @@ export default function Reports() {
                         </div>
                       </CardContent>
                     </Card>
-                    <Card className="border-none shadow-md bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/20 dark:to-purple-900/10">
+                    <Card className="glass-card rounded-glass">
                       <CardContent className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
@@ -185,7 +185,7 @@ export default function Reports() {
                   </div>
 
                   {summary.topCategories?.length > 0 && (
-                    <Card className="border-none shadow-md">
+                    <Card className="glass-card rounded-glass">
                       <CardHeader>
                         <CardTitle className="text-lg font-display">Top Spending Categories</CardTitle>
                       </CardHeader>
@@ -213,7 +213,7 @@ export default function Reports() {
                   )}
 
                   {summary.budgetStatus?.length > 0 && (
-                    <Card className="border-none shadow-md">
+                    <Card className="glass-card rounded-glass">
                       <CardHeader>
                         <CardTitle className="text-lg font-display">Budget Status</CardTitle>
                       </CardHeader>
@@ -269,7 +269,7 @@ export default function Reports() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {(insights as any)?.spendingInsights?.map((insight: any, i: number) => (
                       <div key={i} className="animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both" style={{ animationDelay: `${i * 150}ms` }}>
-                        <Card className="hover-elevate border-none shadow-md bg-gradient-to-br from-card to-muted/30">
+                        <Card className="glass-card rounded-glass hover:scale-[1.02] transition-transform">
                           <CardHeader className="flex flex-row items-center gap-3 pb-2">
                             <div className="w-10 h-10 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center animate-pulse">
                               <Lightbulb className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />

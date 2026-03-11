@@ -16,7 +16,8 @@ Preferred communication style: Simple, everyday language.
 - **Framework**: React 18 with TypeScript
 - **Routing**: Wouter (lightweight React router)
 - **State Management**: TanStack React Query for server state caching and synchronization
-- **Styling**: Tailwind CSS with shadcn/ui component library (New York style variant)
+- **Styling**: Tailwind CSS with shadcn/ui component library (New York style variant), custom FinSight Lite design system
+- **Design System**: Custom CSS classes in index.css — `.caribbean-bg` (animated gradient background), `.glass-card` / `.glass-card-heavy` / `.glass-card-coral` / `.glass-card-teal` (glassmorphism cards), `.glass-inset` / `.glass-inset-light` (inner panels), `.xp-pill` / `.badge-coral` / `.streak-badge` (gamification tokens), `.xp-bar-track` / `.xp-bar-fill` (XP progress bars), `.btn-coral` (accent button), `.rounded-glass` / `.rounded-inset` / `.rounded-badge` (Tailwind radius utilities), `animate-bounce-in` / `animate-pop-in` (entrance animations). Coral accent `hsl(15, 90%, 65%)` for gamification elements only. Student sidebar uses dark violet gradient. Teacher sidebar uses dark emerald gradient.
 - **Charts**: Recharts for financial data visualization
 - **Form Handling**: React Hook Form with Zod validation
 - **Build Tool**: Vite with path aliases (@/ for client/src, @shared/ for shared code)

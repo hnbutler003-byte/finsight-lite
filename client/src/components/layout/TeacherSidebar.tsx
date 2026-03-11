@@ -17,7 +17,7 @@ export function TeacherSidebar() {
   const [open, setOpen] = useState(false);
 
   const content = (
-    <div className="flex flex-col h-full bg-gradient-to-b from-emerald-600 to-teal-700 text-white p-4">
+    <div className="flex flex-col h-full bg-gradient-to-b from-emerald-800 via-emerald-900 to-teal-950 text-white p-4">
       <div className="flex items-center gap-3 mb-8 mt-2">
         <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center shadow">
           <GraduationCap className="w-6 h-6 text-white" />

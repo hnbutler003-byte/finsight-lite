@@ -101,7 +101,7 @@ function ClassCard({ cls }: { cls: ClassItem }) {
 
   return (
     <Link href={`/teacher/classes/${cls.id}`}>
-      <Card className="rounded-3xl border-2 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-lg transition-all cursor-pointer group">
+      <Card className="glass-card rounded-glass hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-lg transition-all cursor-pointer group">
         <CardContent className="p-6 space-y-4">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
@@ -193,7 +193,7 @@ export default function TeacherDashboard() {
               { label: "Total Students", value: totalStudents, icon: Users, color: "blue" },
               { label: "Active Challenges", value: "—", icon: Trophy, color: "amber" },
             ].map(stat => (
-              <Card key={stat.label} className="rounded-3xl border-2">
+              <Card key={stat.label} className="glass-card rounded-glass">
                 <CardContent className="p-6 flex items-center gap-4">
                   <div className={`w-12 h-12 rounded-2xl bg-${stat.color}-100 dark:bg-${stat.color}-900/30 flex items-center justify-center shrink-0`}>
                     <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
@@ -216,7 +216,7 @@ export default function TeacherDashboard() {
             {isLoading ? (
               <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>
             ) : !classes?.length ? (
-              <Card className="rounded-3xl border-2 border-dashed">
+              <Card className="glass-card rounded-glass border-dashed">
                 <CardContent className="p-12 text-center space-y-4">
                   <div className="w-16 h-16 rounded-3xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto">
                     <BookOpen className="w-8 h-8 text-emerald-500" />
