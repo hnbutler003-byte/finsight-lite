@@ -170,7 +170,7 @@ export default function MoneyGuide() {
                 <h2 className="text-2xl lg:text-3xl font-display font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-pink-500">
                   Hey {userName}! 👋
                 </h2>
-                <p className="text-muted-foreground max-w-md mx-auto">
+                <p className="text-gray-600 max-w-md mx-auto font-medium">
                   I'm your Money Guide — ask me anything about saving, budgeting, investing, or money in general. No question is too simple!
                 </p>
               </div>
