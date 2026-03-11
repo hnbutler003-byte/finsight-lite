@@ -95,7 +95,7 @@ export default function Budgets() {
                                   <FormLabel>Category</FormLabel>
                                   <Select onValueChange={(val) => field.onChange(Number(val))} value={field.value ? String(field.value) : undefined}>
                                     <FormControl>
-                                      <SelectTrigger className="bg-white/50 backdrop-blur-sm border-white/50 rounded-xl text-gray-800 focus:ring-2 focus:ring-violet-400">
+                                      <SelectTrigger className="bg-white/50 backdrop-blur-sm border-white/50 rounded-xl text-gray-800 data-[placeholder]:text-gray-400 focus:ring-2 focus:ring-violet-400">
                                         <SelectValue placeholder="Select category" />
                                       </SelectTrigger>
                                     </FormControl>
