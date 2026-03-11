@@ -148,9 +148,9 @@ export default function MoneyLabTutor() {
 
           {selectedQuestion && !selectedPaperId ? (
             <div className="space-y-4">
-              <Card className="rounded-3xl border-2 border-violet-200 dark:border-violet-800">
+              <Card className="glass-card rounded-glass">
                 <CardContent className="p-6">
-                  <h3 className="font-bold text-lg">{selectedQuestion.questionText}</h3>
+                  <h3 className="font-bold text-lg text-gray-800">{selectedQuestion.questionText}</h3>
                   {selectedQuestion.options && (
                     <div className="space-y-1.5 mt-3">
                       {selectedQuestion.options.map((opt: string, i: number) => (
@@ -165,13 +165,13 @@ export default function MoneyLabTutor() {
                 </CardContent>
               </Card>
 
-              <Card className="rounded-3xl border-2 border-dashed border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/10">
+              <Card className="glass-card-teal rounded-glass">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center">
                       <GraduationCap className="w-4 h-4 text-white" />
                     </div>
-                    <h3 className="font-bold flex items-center gap-1">
+                    <h3 className="font-bold flex items-center gap-1 text-teal-900">
                       AI Tutor Explanation
                       <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                     </h3>
@@ -212,7 +212,7 @@ export default function MoneyLabTutor() {
               {papersLoading ? (
                 <div className="text-center py-8"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>
               ) : !papers?.length ? (
-                <Card className="rounded-3xl border-2 border-dashed">
+                <Card className="glass-card rounded-glass">
                   <CardContent className="p-8 text-center text-muted-foreground">
                     No papers available. Upload one first!
                   </CardContent>
@@ -285,7 +285,7 @@ export default function MoneyLabTutor() {
                 <ArrowLeft className="w-3 h-3 mr-1" /> Back to Questions
               </Button>
 
-              <Card className="rounded-3xl border-2 border-violet-200 dark:border-violet-800">
+              <Card className="glass-card rounded-glass">
                 <CardContent className="p-6">
                   <h3 className="font-bold text-lg mb-2">{selectedQuestion.questionText}</h3>
                   <div className="space-y-1.5 mb-3">
@@ -300,13 +300,13 @@ export default function MoneyLabTutor() {
                 </CardContent>
               </Card>
 
-              <Card className="rounded-3xl border-2 border-dashed border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/10">
+              <Card className="glass-card-teal rounded-glass">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center">
                       <GraduationCap className="w-4 h-4 text-white" />
                     </div>
-                    <h3 className="font-bold flex items-center gap-1">
+                    <h3 className="font-bold flex items-center gap-1 text-teal-900">
                       AI Tutor Explanation
                       <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                     </h3>
