@@ -758,7 +758,7 @@ function SavingsGoalGame({ currency }: { currency: string }) {
                 placeholder="What are you saving for?"
                 value={customName}
                 onChange={e => setCustomName(e.target.value)}
-                className="flex-1 rounded-xl border border-gray-200/60 bg-white/50 backdrop-blur-sm px-4 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                className="flex-1 rounded-xl border border-white/50 bg-white/50 backdrop-blur-sm px-4 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400"
                 data-testid="input-custom-goal-name"
               />
               <input
@@ -766,7 +766,7 @@ function SavingsGoalGame({ currency }: { currency: string }) {
                 placeholder="Amount"
                 value={customAmount}
                 onChange={e => setCustomAmount(e.target.value)}
-                className="w-32 rounded-xl border border-gray-200/60 bg-white/50 backdrop-blur-sm px-4 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                className="w-32 rounded-xl border border-white/50 bg-white/50 backdrop-blur-sm px-4 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400"
                 data-testid="input-custom-goal-amount"
               />
               <Button
@@ -1791,7 +1791,7 @@ export default function MoneyGames() {
             </div>
             <div className="w-48">
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white font-medium shadow-lg focus:ring-2 focus:ring-white/40" data-testid="select-currency-games">
+                <SelectTrigger className="rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 text-white font-medium shadow-lg focus:ring-2 focus:ring-white/40" data-testid="select-currency-games">
                   <SelectValue placeholder="Currency" />
                 </SelectTrigger>
                 <SelectContent>

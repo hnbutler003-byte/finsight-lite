@@ -129,17 +129,17 @@ export default function SavingsGoals() {
                 }} className="space-y-4">
                   <div>
                     <Label htmlFor="goal-name">Goal Name</Label>
-                    <Input id="goal-name" data-testid="input-goal-name" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="e.g., Emergency Fund" required className="bg-white/70 backdrop-blur-sm border-gray-200/60 rounded-xl focus:ring-2 focus:ring-violet-400" />
+                    <Input id="goal-name" data-testid="input-goal-name" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="e.g., Emergency Fund" required className="bg-white/50 backdrop-blur-sm border-white/50 rounded-xl focus:ring-2 focus:ring-violet-400" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="goal-target">Target Amount</Label>
-                      <Input id="goal-target" data-testid="input-goal-target" type="number" step="0.01" min="1" value={formData.targetAmount} onChange={e => setFormData(p => ({ ...p, targetAmount: e.target.value }))} required className="bg-white/70 backdrop-blur-sm border-gray-200/60 rounded-xl focus:ring-2 focus:ring-violet-400" />
+                      <Input id="goal-target" data-testid="input-goal-target" type="number" step="0.01" min="1" value={formData.targetAmount} onChange={e => setFormData(p => ({ ...p, targetAmount: e.target.value }))} required className="bg-white/50 backdrop-blur-sm border-white/50 rounded-xl focus:ring-2 focus:ring-violet-400" />
                     </div>
                     <div>
                       <Label>Currency</Label>
                       <Select value={formData.currency} onValueChange={v => setFormData(p => ({ ...p, currency: v }))}>
-                        <SelectTrigger data-testid="select-goal-currency" className="bg-white/70 backdrop-blur-sm border-gray-200/60 rounded-xl focus:ring-2 focus:ring-violet-400"><SelectValue /></SelectTrigger>
+                        <SelectTrigger data-testid="select-goal-currency" className="bg-white/50 backdrop-blur-sm border-white/50 rounded-xl focus:ring-2 focus:ring-violet-400"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {CURRENCIES.map(c => <SelectItem key={c.code} value={c.code}>{c.code}</SelectItem>)}
                         </SelectContent>
@@ -148,7 +148,7 @@ export default function SavingsGoals() {
                   </div>
                   <div>
                     <Label htmlFor="goal-deadline">Deadline (optional)</Label>
-                    <Input id="goal-deadline" data-testid="input-goal-deadline" type="date" value={formData.deadline} onChange={e => setFormData(p => ({ ...p, deadline: e.target.value }))} className="bg-white/70 backdrop-blur-sm border-gray-200/60 rounded-xl focus:ring-2 focus:ring-violet-400" />
+                    <Input id="goal-deadline" data-testid="input-goal-deadline" type="date" value={formData.deadline} onChange={e => setFormData(p => ({ ...p, deadline: e.target.value }))} className="bg-white/50 backdrop-blur-sm border-white/50 rounded-xl focus:ring-2 focus:ring-violet-400" />
                   </div>
                   <Button type="submit" className="w-full" disabled={createMutation.isPending} data-testid="button-submit-goal">
                     {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
@@ -209,7 +209,7 @@ export default function SavingsGoals() {
                       {!isComplete && (
                         addingTo === goal.id ? (
                           <div className="flex gap-2 mt-2">
-                            <Input type="number" step="0.01" min="0.01" value={addAmount} onChange={e => setAddAmount(e.target.value)} placeholder="Amount" className="flex-1 bg-white/70 backdrop-blur-sm border-gray-200/60 rounded-xl focus:ring-2 focus:ring-violet-400" data-testid={`input-add-savings-${goal.id}`} />
+                            <Input type="number" step="0.01" min="0.01" value={addAmount} onChange={e => setAddAmount(e.target.value)} placeholder="Amount" className="flex-1 bg-white/50 backdrop-blur-sm border-white/50 rounded-xl focus:ring-2 focus:ring-violet-400" data-testid={`input-add-savings-${goal.id}`} />
                             <Button size="sm" onClick={() => {
                               const newAmount = current + parseFloat(addAmount || "0");
                               updateMutation.mutate({ id: goal.id, currentAmount: newAmount });
