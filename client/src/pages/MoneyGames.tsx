@@ -1779,14 +1779,14 @@ export default function MoneyGames() {
                   <ArrowLeft className="w-4 h-4" /> Back to Games
                 </Button>
               ) : null}
-              <h1 className="text-3xl font-display font-bold flex items-center gap-3">
+              <h1 className="text-3xl font-display font-bold flex items-center gap-3 text-white">
                 <span className="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 to-orange-400 text-white flex items-center justify-center text-2xl shadow-lg animate-wiggle">
                   <Gamepad2 className="w-6 h-6" />
                 </span>
                 {activeGame ? GAMES.find(g => g.id === activeGame)?.title : "Money Games"}
               </h1>
               {!activeGame && (
-                <p className="text-muted-foreground mt-1 ml-15">Learn money skills the fun way!</p>
+                <p className="text-white/70 mt-1 ml-15">Learn money skills the fun way!</p>
               )}
             </div>
             <div className="w-48">
