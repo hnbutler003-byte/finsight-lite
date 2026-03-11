@@ -128,32 +128,32 @@ export default function DemoAccess() {
                     <GraduationCap className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-white font-bold text-xl">Teacher View</h2>
-                    <p className="text-emerald-300 text-sm">Classroom management portal</p>
+                    <h2 className="text-teal-900 font-bold text-xl">Teacher View</h2>
+                    <p className="text-teal-600 text-sm">Classroom management portal</p>
                   </div>
                 </div>
 
-                <div className="bg-black/20 rounded-xl p-4 mb-5 space-y-2">
+                <div className="bg-teal-50/80 rounded-xl p-4 mb-5 space-y-2 border border-teal-200/60">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-emerald-300">Name</span>
-                    <span className="text-white font-semibold">{creds.teacher.name}</span>
+                    <span className="text-teal-600 font-medium">Name</span>
+                    <span className="text-teal-900 font-semibold">{creds.teacher.name}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-emerald-300">School</span>
-                    <span className="text-white">{creds.teacher.school}</span>
+                    <span className="text-teal-600 font-medium">School</span>
+                    <span className="text-teal-900">{creds.teacher.school}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-emerald-300">Email</span>
-                    <span className="text-white font-mono text-xs">{creds.teacher.email}</span>
+                    <span className="text-teal-600 font-medium">Email</span>
+                    <span className="text-teal-900 font-mono text-xs">{creds.teacher.email}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-emerald-300">Password</span>
-                    <span className="text-white font-mono text-xs">demo1234</span>
+                    <span className="text-teal-600 font-medium">Password</span>
+                    <span className="text-teal-900 font-mono text-xs">demo1234</span>
                   </div>
                   {creds.class && (
-                    <div className="flex items-center justify-between text-sm pt-1 border-t border-emerald-700/40">
-                      <span className="text-emerald-300">Demo Class</span>
-                      <span className="text-white">{creds.class.name} <span className="font-mono text-amber-300">({creds.class.code})</span></span>
+                    <div className="flex items-center justify-between text-sm pt-1 border-t border-teal-300/50">
+                      <span className="text-teal-600 font-medium">Demo Class</span>
+                      <span className="text-teal-900">{creds.class.name} <span className="font-mono text-amber-600">({creds.class.code})</span></span>
                     </div>
                   )}
                 </div>
@@ -166,9 +166,9 @@ export default function DemoAccess() {
                   ].map((f, i) => {
                     const Icon = f.icon;
                     return (
-                      <div key={i} className="bg-emerald-800/40 rounded-lg p-2">
-                        <Icon className="w-4 h-4 text-emerald-300 mx-auto mb-1" />
-                        <p className="text-emerald-200 text-xs">{f.label}</p>
+                      <div key={i} className="bg-teal-100/80 rounded-lg p-2 border border-teal-200/50">
+                        <Icon className="w-4 h-4 text-teal-600 mx-auto mb-1" />
+                        <p className="text-teal-700 text-xs font-medium">{f.label}</p>
                       </div>
                     );
                   })}
@@ -197,8 +197,8 @@ export default function DemoAccess() {
                     <Users className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-white font-bold text-xl">Student View</h2>
-                    <p className="text-violet-300 text-sm">Pick any student to explore as</p>
+                    <h2 className="text-violet-900 font-bold text-xl">Student View</h2>
+                    <p className="text-violet-500 text-sm">Pick any student to explore as</p>
                   </div>
                 </div>
 
@@ -212,32 +212,32 @@ export default function DemoAccess() {
                         onClick={() => handleStudentLogin(student.id)}
                         disabled={loginStudent.isPending}
                         data-testid={`button-demo-student-${student.id}`}
-                        className="w-full flex items-center gap-3 bg-black/20 hover:bg-violet-800/40 rounded-xl p-3 transition-colors text-left group"
+                        className="w-full flex items-center gap-3 bg-violet-50 hover:bg-violet-100 rounded-xl p-3 transition-colors text-left group border border-violet-100"
                       >
-                        <div className="w-10 h-10 bg-violet-700 rounded-full flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-110 transition-transform">
+                        <div className="w-10 h-10 bg-violet-500 rounded-full flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-110 transition-transform">
                           {AVATAR_EMOJI[student.avatar] || "🎓"}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-white font-semibold">{student.name}</span>
-                            <span className="text-violet-400 text-xs font-mono">@{student.username}</span>
+                            <span className="text-violet-900 font-semibold">{student.name}</span>
+                            <span className="text-violet-500 text-xs font-mono">@{student.username}</span>
                           </div>
                           <div className="flex items-center gap-3 mt-0.5">
-                            <span className="text-violet-300 text-xs">{progressLabels[i]}</span>
-                            <span className="text-violet-400 text-xs">{lessonLabels[i]}</span>
+                            <span className="text-violet-600 text-xs">{progressLabels[i]}</span>
+                            <span className="text-violet-500 text-xs">{lessonLabels[i]}</span>
                           </div>
                         </div>
                         {loadingId === student.id && loginStudent.isPending ? (
-                          <div className="w-4 h-4 border-2 border-violet-300 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                          <div className="w-4 h-4 border-2 border-violet-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
                         ) : (
-                          <ArrowRight className="w-4 h-4 text-violet-400 group-hover:text-white flex-shrink-0 transition-colors" />
+                          <ArrowRight className="w-4 h-4 text-violet-400 group-hover:text-violet-700 flex-shrink-0 transition-colors" />
                         )}
                       </button>
                     );
                   })}
                 </div>
 
-                <p className="text-violet-400 text-xs text-center">
+                <p className="text-violet-500 text-xs text-center">
                   Each student has different XP, progress, and lesson completion — great for exploring the leaderboard
                 </p>
               </CardContent>
@@ -250,27 +250,27 @@ export default function DemoAccess() {
       <section className="max-w-6xl mx-auto px-6 pb-16">
         <div className="glass-card rounded-glass p-6">
           <div className="flex items-center gap-2 mb-5">
-            <School className="w-5 h-5 text-violet-300" />
-            <h3 className="text-white font-bold text-lg">What's included in the demo</h3>
-            <Badge className="bg-violet-600/30 text-violet-300 border-violet-600/30 ml-auto">Full Platform Access</Badge>
+            <School className="w-5 h-5 text-violet-600" />
+            <h3 className="text-violet-900 font-bold text-lg">What's included in the demo</h3>
+            <Badge className="bg-violet-100 text-violet-700 border-violet-200 ml-auto">Full Platform Access</Badge>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {FEATURE_LIST.map((f, i) => (
               <div key={i} className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <span className="text-violet-200 text-sm">{f}</span>
+                <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                <span className="text-gray-700 text-sm">{f}</span>
               </div>
             ))}
           </div>
-          <div className="mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center gap-4 text-sm">
-            <div className="flex items-center gap-1.5 text-violet-300">
-              <Star className="w-4 h-4 text-amber-400" /> Designed for Caribbean students aged 12–17
+          <div className="mt-5 pt-4 border-t border-violet-200/60 flex flex-wrap items-center gap-4 text-sm">
+            <div className="flex items-center gap-1.5 text-violet-600">
+              <Star className="w-4 h-4 text-amber-500" /> Designed for Caribbean students aged 12–17
             </div>
-            <div className="flex items-center gap-1.5 text-violet-300">
-              <Zap className="w-4 h-4 text-emerald-400" /> BSD currency & Bahamian context
+            <div className="flex items-center gap-1.5 text-violet-600">
+              <Zap className="w-4 h-4 text-emerald-500" /> BSD currency & Bahamian context
             </div>
-            <div className="flex items-center gap-1.5 text-violet-300">
-              <CheckCircle className="w-4 h-4 text-blue-400" /> BGCSE exam preparation built in
+            <div className="flex items-center gap-1.5 text-violet-600">
+              <CheckCircle className="w-4 h-4 text-blue-500" /> BGCSE exam preparation built in
             </div>
           </div>
         </div>

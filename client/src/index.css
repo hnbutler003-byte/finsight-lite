@@ -81,9 +81,9 @@
   --shadow-glow-teal:    0 0 20px hsl(190 80% 55% / 0.35);
 
   /* --- Glassmorphism layers --- */
-  --glass-bg:         rgba(255, 255, 255, 0.18);
-  --glass-bg-heavy:   rgba(255, 255, 255, 0.28);
-  --glass-border:     rgba(255, 255, 255, 0.35);
+  --glass-bg:         rgba(255, 255, 255, 0.82);
+  --glass-bg-heavy:   rgba(255, 255, 255, 0.92);
+  --glass-border:     rgba(255, 255, 255, 0.55);
   --glass-blur:       16px;
   --glass-blur-heavy: 24px;
 
@@ -144,9 +144,9 @@
   --input:  262 30% 20%;
   --ring:   262 83% 65%;
 
-  --glass-bg:       rgba(255, 255, 255, 0.07);
-  --glass-bg-heavy: rgba(255, 255, 255, 0.12);
-  --glass-border:   rgba(255, 255, 255, 0.14);
+  --glass-bg:       rgba(255, 255, 255, 0.10);
+  --glass-bg-heavy: rgba(255, 255, 255, 0.18);
+  --glass-border:   rgba(255, 255, 255, 0.20);
 
   --sidebar:                    262 60% 8%;
   --sidebar-foreground:         270 20% 88%;
@@ -226,19 +226,19 @@
 }
 
 .glass-card-coral {
-  background: hsl(var(--coral) / 0.15);
+  background: linear-gradient(135deg, rgba(255,255,255,0.80) 0%, hsl(var(--coral) / 0.18) 100%);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid hsl(var(--coral) / 0.30);
+  border: 1px solid hsl(var(--coral) / 0.40);
   border-radius: var(--radius-glass);
   box-shadow: var(--shadow-glow-coral), inset 0 1px 0 hsl(var(--coral) / 0.20);
 }
 
 .glass-card-teal {
-  background: hsl(190 80% 50% / 0.13);
+  background: linear-gradient(135deg, rgba(255,255,255,0.80) 0%, hsl(190 80% 50% / 0.18) 100%);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid hsl(190 80% 55% / 0.28);
+  border: 1px solid hsl(190 80% 55% / 0.40);
   border-radius: var(--radius-glass);
   box-shadow: var(--shadow-glow-teal), inset 0 1px 0 hsl(190 80% 80% / 0.20);
 }
