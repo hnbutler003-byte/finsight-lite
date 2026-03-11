@@ -1131,6 +1131,128 @@ export class DatabaseStorage implements IStorage {
     await db.delete(sponsors).where(eq(sponsors.id, id));
   }
 
+  // === DEMO SYSTEM ===
+
+  async setupDemoData(): Promise<{ teacher: any; students: any[]; classData: any }> {
+    const bcrypt = await import("bcryptjs");
+
+    // Check if demo already exists
+    const existing = await db.select().from(teachers).where(eq(teachers.email, "demo@finsightlite.com"));
+    let teacher = existing[0];
+
+    if (!teacher) {
+      const hash = await bcrypt.hash("demo1234", 10);
+      [teacher] = await db.insert(teachers).values({
+        firstName: "Alex", lastName: "Morgan",
+        email: "demo@finsightlite.com", passwordHash: hash,
+        schoolName: "Commonwealth Financial Academy",
+      }).returning();
+    }
+
+    // Demo class
+    const existingClass = await db.select().from(classes).where(eq(classes.code, "DEMO01"));
+    let cls = existingClass[0];
+    if (!cls) {
+      [cls] = await db.insert(classes).values({
+        teacherId: teacher.id, name: "Financial Literacy 101",
+        subject: "Financial Literacy", code: "DEMO01",
+        sponsorName: "Commonwealth Bank",
+      }).returning();
+    }
+
+    // Demo students
+    const demoStudents = [
+      { id: "demo-student-001", firstName: "Jamie", username: "Jamie_Demo", avatar: "star" },
+      { id: "demo-student-002", firstName: "Chris", username: "Chris_Demo", avatar: "dolphin" },
+      { id: "demo-student-003", firstName: "Taylor", username: "Taylor_Demo", avatar: "rocket" },
+      { id: "demo-student-004", firstName: "Jordan", username: "Jordan_Demo", avatar: "lion" },
+    ];
+
+    const studentProgress = [
+      { xp: 480, level: 5, streak: 7, lessons: [1,2,3,4,5], correct: 8, total: 10 },
+      { xp: 310, level: 4, streak: 3, lessons: [1,2,3,4], correct: 7, total: 10 },
+      { xp: 150, level: 2, streak: 1, lessons: [1,2,3], correct: 5, total: 10 },
+      { xp: 220, level: 3, streak: 5, lessons: [1,2,3,4], correct: 6, total: 10 },
+    ];
+
+    const createdStudents: any[] = [];
+    for (let i = 0; i < demoStudents.length; i++) {
+      const s = demoStudents[i];
+      const prog = studentProgress[i];
+      const already = await db.select().from(users).where(eq(users.id, s.id));
+      let student = already[0];
+      if (!student) {
+        [student] = await db.insert(users).values(s as any).returning();
+      }
+      createdStudents.push(student);
+
+      // Enroll in demo class
+      const alreadyEnrolled = await db.select().from(classEnrollments)
+        .where(and(eq(classEnrollments.classId, cls.id), eq(classEnrollments.studentId, s.id)));
+      if (!alreadyEnrolled.length) {
+        await db.insert(classEnrollments).values({ classId: cls.id, studentId: s.id });
+      }
+
+      // XP
+      const alreadyXp = await db.select().from(userXp).where(eq(userXp.userId, s.id));
+      if (!alreadyXp.length) {
+        await db.insert(userXp).values({ userId: s.id, xp: prog.xp, level: prog.level, currentStreak: prog.streak, longestStreak: prog.streak });
+      }
+
+      // Lesson progress
+      for (const moduleId of prog.lessons) {
+        const alreadyLesson = await db.select().from(userLearningProgress)
+          .where(and(eq(userLearningProgress.userId, s.id), eq(userLearningProgress.moduleId, moduleId)));
+        if (!alreadyLesson.length) {
+          await db.insert(userLearningProgress).values({ userId: s.id, moduleId, completed: true });
+        }
+      }
+
+      // Game session
+      const alreadySession = await db.select().from(gameSessions).where(eq(gameSessions.userId, s.id));
+      if (!alreadySession.length) {
+        await db.insert(gameSessions).values({ userId: s.id, mode: "quiz", score: prog.xp, correctAnswers: prog.correct, totalQuestions: prog.total });
+      }
+    }
+
+    // Challenges
+    const existingChallenges = await db.select().from(challenges).where(eq(challenges.classId, cls.id));
+    if (!existingChallenges.length) {
+      await db.insert(challenges).values([
+        { classId: cls.id, teacherId: teacher.id, title: "Savings Sprint", description: "Save $50 by end of the month using the simulator", type: "savings", startDate: new Date(), endDate: new Date(Date.now() + 30 * 86400000), targetValue: "50" },
+        { classId: cls.id, teacherId: teacher.id, title: "Quiz Bowl Round 1", description: "Complete all 6 learning modules and achieve 80%+ quiz accuracy", type: "quiz", startDate: new Date(), endDate: new Date(Date.now() + 14 * 86400000) },
+      ]);
+    }
+
+    // Notification
+    const existingNotifs = await db.select().from(classNotifications).where(eq(classNotifications.classId, cls.id));
+    if (!existingNotifs.length) {
+      await db.insert(classNotifications).values({
+        classId: cls.id, teacherId: teacher.id, title: "Welcome to Financial Literacy 101!",
+        message: "Hi everyone — welcome to this demo class. Explore the platform and try completing the learning modules. Your teacher can track your progress from the Teacher Dashboard.",
+        type: "announcement",
+      });
+    }
+
+    return { teacher, students: createdStudents, classData: cls };
+  }
+
+  async getDemoCredentials(): Promise<any> {
+    const teacher = await db.select().from(teachers).where(eq(teachers.email, "demo@finsightlite.com"));
+    if (!teacher.length) return null;
+    const cls = await db.select().from(classes).where(eq(classes.code, "DEMO01"));
+    const studentList = await Promise.all(
+      ["demo-student-001", "demo-student-002", "demo-student-003", "demo-student-004"].map(id =>
+        db.select().from(users).where(eq(users.id, id)).then(r => r[0])
+      )
+    );
+    return {
+      teacher: { id: teacher[0].id, name: `${teacher[0].firstName} ${teacher[0].lastName}`, email: teacher[0].email, school: teacher[0].schoolName },
+      students: studentList.filter(Boolean).map(s => ({ id: s.id, name: s.firstName, username: s.username, avatar: s.avatar })),
+      class: cls[0] ? { name: cls[0].name, code: cls[0].code } : null,
+    };
+  }
+
   async getAdminDbTable(tableName: string): Promise<any[]> {
     const tableMap: Record<string, any> = {
       users, teachers, classes, classEnrollments, challenges, classNotifications,

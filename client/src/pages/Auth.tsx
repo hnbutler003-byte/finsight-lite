@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Rocket, Coins, GraduationCap, TrendingUp, Loader2, ArrowRight, ArrowLeft, PartyPopper } from "lucide-react";
+import { Sparkles, Rocket, Coins, GraduationCap, TrendingUp, Loader2, ArrowRight, ArrowLeft, PartyPopper, School } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { Link } from "wouter";
 
 const AVATARS = [
   { id: "lion", emoji: "🦁", label: "Lion" },
@@ -104,7 +105,30 @@ export default function AuthPage() {
           ))}
         </div>
 
-        <div className="relative z-10 mt-12 text-xs text-white/30">
+        <div className="relative z-10 mt-8 flex flex-col gap-2">
+          <Link href="/demo">
+            <div className="flex items-center gap-3 bg-white/15 hover:bg-white/25 rounded-2xl px-4 py-3 cursor-pointer transition-colors border border-white/20" data-testid="link-try-demo">
+              <div className="w-8 h-8 rounded-xl bg-amber-400/30 flex items-center justify-center shrink-0">
+                <School className="w-4 h-4 text-amber-300" />
+              </div>
+              <div>
+                <p className="font-bold text-sm text-white">School / Organization Demo</p>
+                <p className="text-white/60 text-xs">Try the full platform instantly — no sign-up</p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-white/60 ml-auto" />
+            </div>
+          </Link>
+          <Link href="/teacher/login">
+            <div className="flex items-center gap-3 bg-white/10 hover:bg-white/20 rounded-2xl px-4 py-2.5 cursor-pointer transition-colors border border-white/10" data-testid="link-teacher-login">
+              <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                <GraduationCap className="w-4 h-4 text-white/80" />
+              </div>
+              <span className="font-medium text-sm text-white/80">Teacher Login</span>
+              <ArrowRight className="w-3 h-3 text-white/40 ml-auto" />
+            </div>
+          </Link>
+        </div>
+        <div className="relative z-10 mt-4 text-xs text-white/30">
           &copy; 2024 FinSight Financial Technologies. All rights reserved.
         </div>
       </div>

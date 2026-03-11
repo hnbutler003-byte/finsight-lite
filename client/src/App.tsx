@@ -26,6 +26,7 @@ import TeacherDashboard from "@/pages/TeacherDashboard";
 import TeacherClassDetail from "@/pages/TeacherClassDetail";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
+import DemoAccess from "@/pages/DemoAccess";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
@@ -61,6 +62,7 @@ function Router() {
   if (!user) {
     return (
       <Switch>
+        <Route path="/demo" component={DemoAccess} />
         <Route path="/admin/login" component={AdminLogin} />
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/teacher/login" component={TeacherLogin} />
@@ -77,6 +79,7 @@ function Router() {
 
   return (
     <Switch>
+      <Route path="/demo" component={DemoAccess} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/teacher/login" component={TeacherLogin} />

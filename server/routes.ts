@@ -1847,6 +1847,54 @@ If the user asks about FinSight Lite features, you can mention:
     res.json({ ok: true });
   });
 
+  // === DEMO ACCESS ===
+
+  app.post("/api/demo/setup", async (_req, res) => {
+    try {
+      const result = await storage.setupDemoData();
+      res.json({ ok: true, message: "Demo data ready", ...result });
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  app.get("/api/demo/credentials", async (_req, res) => {
+    try {
+      let creds = await storage.getDemoCredentials();
+      if (!creds) {
+        await storage.setupDemoData();
+        creds = await storage.getDemoCredentials();
+      }
+      res.json(creds);
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  app.post("/api/demo/login/teacher", async (req: any, res) => {
+    try {
+      const creds = await storage.getDemoCredentials();
+      if (!creds?.teacher) return res.status(404).json({ message: "Demo data not set up yet" });
+      const teacher = await storage.getTeacherByEmail("demo@finsightlite.com");
+      if (!teacher) return res.status(404).json({ message: "Demo teacher not found" });
+      req.session.teacherId = teacher.id;
+      res.json({ ok: true, redirect: "/teacher/dashboard" });
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  app.post("/api/demo/login/student/:studentId", async (req: any, res) => {
+    try {
+      const student = await storage.getUser(req.params.studentId);
+      if (!student) return res.status(404).json({ message: "Demo student not found" });
+      req.session.userId = student.id;
+      res.json({ ok: true, redirect: "/" });
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
   // === ADMIN DASHBOARD ===
 
   const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@finsightlite.com";
