@@ -14,7 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
 import { Link } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { GuidedTour } from "@/components/GuidedTour";
 import {
   PieChart, Pie, Cell, Legend, ResponsiveContainer,
   Tooltip as RechartsTooltip
@@ -47,6 +48,12 @@ export default function Dashboard() {
   const [currency, setCurrency] = useState("BSD");
   const [showAllTransactions, setShowAllTransactions] = useState(false);
   const [showTips, setShowTips] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+
+  useEffect(() => {
+    const done = localStorage.getItem("finsight_tour_done");
+    if (!done) setShowTour(true);
+  }, []);
 
   const { data: stats, isLoading: statsLoading } = useStats({ period: "all" });
   const { data: convertedStats } = useConvertedStats({ baseCurrency: currency, period: "all" });
@@ -84,6 +91,12 @@ export default function Dashboard() {
   return (
     <div className="flex min-h-screen caribbean-bg">
       <Sidebar />
+      {showTour && (
+        <GuidedTour onComplete={() => {
+          setShowTour(false);
+          localStorage.setItem("finsight_tour_done", "true");
+        }} />
+      )}
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto space-y-6">
 
