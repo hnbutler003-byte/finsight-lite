@@ -119,7 +119,7 @@ export function Sidebar() {
   const [showJoin, setShowJoin] = useState(false);
 
   const NavContent = () => (
-    <div className="flex flex-col h-full bg-gradient-to-b from-[hsl(262,72%,18%)] via-[hsl(262,60%,14%)] to-[hsl(262,78%,12%)] text-white">
+    <div className="flex flex-col h-full caribbean-bg text-white">
       <div className="p-6 border-b border-white/10">
         <h1 className="font-display text-2xl font-bold flex items-center gap-2">
           <span className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-400 via-pink-500 to-orange-400 text-white flex items-center justify-center shrink-0 text-xl shadow-lg shadow-violet-900/50 animate-float">

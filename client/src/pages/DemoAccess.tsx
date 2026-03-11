@@ -190,15 +190,15 @@ export default function DemoAccess() {
             </Card>
 
             {/* Students Card */}
-            <Card className="glass-card-heavy rounded-glass shadow-2xl">
+            <Card className="glass-card-coral rounded-glass shadow-2xl">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="w-12 h-12 bg-violet-500 rounded-xl flex items-center justify-center shadow-lg">
+                  <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center shadow-lg">
                     <Users className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-violet-900 font-bold text-xl">Student View</h2>
-                    <p className="text-violet-500 text-sm">Pick any student to explore as</p>
+                    <h2 className="text-gray-800 font-bold text-xl">Student View</h2>
+                    <p className="text-orange-700 text-sm">Pick any student to explore as</p>
                   </div>
                 </div>
 
@@ -212,32 +212,32 @@ export default function DemoAccess() {
                         onClick={() => handleStudentLogin(student.id)}
                         disabled={loginStudent.isPending}
                         data-testid={`button-demo-student-${student.id}`}
-                        className="w-full flex items-center gap-3 bg-violet-50 hover:bg-violet-100 rounded-xl p-3 transition-colors text-left group border border-violet-100"
+                        className="w-full flex items-center gap-3 bg-orange-50/60 hover:bg-orange-100/80 rounded-xl p-3 transition-colors text-left group border border-orange-200/50"
                       >
-                        <div className="w-10 h-10 bg-violet-500 rounded-full flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-110 transition-transform">
+                        <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-110 transition-transform">
                           {AVATAR_EMOJI[student.avatar] || "🎓"}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-violet-900 font-semibold">{student.name}</span>
-                            <span className="text-violet-500 text-xs font-mono">@{student.username}</span>
+                            <span className="text-gray-800 font-semibold">{student.name}</span>
+                            <span className="text-orange-600 text-xs font-mono">@{student.username}</span>
                           </div>
                           <div className="flex items-center gap-3 mt-0.5">
-                            <span className="text-violet-600 text-xs">{progressLabels[i]}</span>
-                            <span className="text-violet-500 text-xs">{lessonLabels[i]}</span>
+                            <span className="text-orange-700 text-xs">{progressLabels[i]}</span>
+                            <span className="text-orange-600 text-xs">{lessonLabels[i]}</span>
                           </div>
                         </div>
                         {loadingId === student.id && loginStudent.isPending ? (
-                          <div className="w-4 h-4 border-2 border-violet-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                          <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
                         ) : (
-                          <ArrowRight className="w-4 h-4 text-violet-400 group-hover:text-violet-700 flex-shrink-0 transition-colors" />
+                          <ArrowRight className="w-4 h-4 text-orange-400 group-hover:text-orange-700 flex-shrink-0 transition-colors" />
                         )}
                       </button>
                     );
                   })}
                 </div>
 
-                <p className="text-violet-500 text-xs text-center">
+                <p className="text-orange-700 text-xs text-center">
                   Each student has different XP, progress, and lesson completion — great for exploring the leaderboard
                 </p>
               </CardContent>

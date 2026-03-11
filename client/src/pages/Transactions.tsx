@@ -94,15 +94,15 @@ export default function Transactions() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen caribbean-bg">
       <Sidebar />
       <main className="flex-1 p-4 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-8">
           
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-display font-bold">Transactions</h1>
-              <p className="text-muted-foreground">Manage and track every dollar.</p>
+              <h1 className="text-3xl font-display font-bold text-white">Transactions</h1>
+              <p className="text-white/70">Manage and track every dollar.</p>
             </div>
             <div className="flex gap-2">
                <DropdownMenu>

@@ -337,7 +337,7 @@ export default function MoneyLabPlay() {
           )}
 
           {gameState === "results" && gameResults && (
-            <div className="space-y-6 text-center">
+            <div className="space-y-6 text-center animate-bounce-in">
               <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto shadow-xl text-5xl">
                 {gameResults.finalCorrect >= gameResults.totalQ * 0.8 ? "🏆" :
                  gameResults.finalCorrect >= gameResults.totalQ * 0.5 ? "⭐" : "💪"}
@@ -345,28 +345,28 @@ export default function MoneyLabPlay() {
               <h1 className="font-display text-3xl font-bold">Game Over!</h1>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <Card className="rounded-2xl border-2">
+                <Card className="glass-card rounded-glass">
                   <CardContent className="p-4 text-center">
-                    <p className="text-2xl font-bold text-amber-500">{gameResults.finalScore}</p>
-                    <p className="text-xs font-bold text-muted-foreground">Score</p>
+                    <p className="text-2xl font-bold text-amber-600">{gameResults.finalScore}</p>
+                    <p className="text-xs font-bold text-gray-500">Score</p>
                   </CardContent>
                 </Card>
-                <Card className="rounded-2xl border-2">
+                <Card className="glass-card rounded-glass">
                   <CardContent className="p-4 text-center">
-                    <p className="text-2xl font-bold text-green-500">{gameResults.finalCorrect}/{gameResults.totalQ}</p>
-                    <p className="text-xs font-bold text-muted-foreground">Correct</p>
+                    <p className="text-2xl font-bold text-green-600">{gameResults.finalCorrect}/{gameResults.totalQ}</p>
+                    <p className="text-xs font-bold text-gray-500">Correct</p>
                   </CardContent>
                 </Card>
-                <Card className="rounded-2xl border-2">
+                <Card className="glass-card rounded-glass">
                   <CardContent className="p-4 text-center">
-                    <p className="text-2xl font-bold text-violet-500">+{gameResults.xpEarned}</p>
-                    <p className="text-xs font-bold text-muted-foreground">XP Earned</p>
+                    <span className="xp-pill text-lg">+{gameResults.xpEarned} XP</span>
+                    <p className="text-xs font-bold text-gray-500 mt-1">XP Earned</p>
                   </CardContent>
                 </Card>
-                <Card className="rounded-2xl border-2">
+                <Card className="glass-card rounded-glass">
                   <CardContent className="p-4 text-center">
-                    <p className="text-2xl font-bold text-blue-500">Lv.{gameResults.level}</p>
-                    <p className="text-xs font-bold text-muted-foreground">Level</p>
+                    <p className="text-2xl font-bold text-blue-600">Lv.{gameResults.level}</p>
+                    <p className="text-xs font-bold text-gray-500">Level</p>
                   </CardContent>
                 </Card>
               </div>
@@ -379,14 +379,14 @@ export default function MoneyLabPlay() {
               )}
 
               {gameResults.newBadges?.length > 0 && (
-                <Card className="rounded-2xl border-2 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
+                <Card className="glass-card-coral rounded-glass">
                   <CardContent className="p-4">
-                    <p className="font-bold mb-2 flex items-center justify-center gap-1">
-                      <Award className="w-4 h-4 text-amber-500" /> New Badge{gameResults.newBadges.length > 1 ? "s" : ""}!
+                    <p className="font-bold mb-2 flex items-center justify-center gap-1 text-gray-800">
+                      <Award className="w-4 h-4 text-orange-500" /> New Badge{gameResults.newBadges.length > 1 ? "s" : ""}!
                     </p>
                     <div className="flex flex-wrap justify-center gap-2">
                       {gameResults.newBadges.map((id: string) => (
-                        <span key={id} className="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-sm font-bold">
+                        <span key={id} className="badge-coral">
                           {id.replace(/_/g, " ")}
                         </span>
                       ))}

@@ -1057,11 +1057,11 @@ function BeatTheBudgetGame({ currency }: { currency: string }) {
 
   if (phase === "result") {
     return (
-      <Card className="border-2 border-dashed border-amber-300 dark:border-amber-700 rounded-3xl">
+      <Card className="glass-card-coral rounded-glass animate-bounce-in">
         <CardContent className="p-8 space-y-6">
           <div className="text-center space-y-2">
             <div className="text-6xl">{futureScore >= 70 ? "🌟" : futureScore >= 40 ? "💪" : "📚"}</div>
-            <h3 className="font-display text-2xl font-bold">Your Future Self Score</h3>
+            <h3 className="font-display text-2xl font-bold text-gray-800">Your Future Self Score</h3>
             <div className="relative w-32 h-32 mx-auto">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
                 <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" strokeWidth="10" className="text-muted" />
@@ -1464,11 +1464,11 @@ function NeedsVsWantsGame() {
 
   if (gameState === "result") {
     return (
-      <Card className="border-2 border-dashed border-purple-300 dark:border-purple-700 rounded-3xl">
+      <Card className="glass-card-coral rounded-glass animate-bounce-in">
         <CardContent className="p-8 space-y-6">
           <div className="text-center space-y-2">
             <div className="text-6xl">{accuracy >= 80 ? "🏆" : accuracy >= 60 ? "💡" : "📚"}</div>
-            <h3 className="font-display text-2xl font-bold" data-testid="text-nw-result">
+            <h3 className="font-display text-2xl font-bold text-gray-800" data-testid="text-nw-result">
               {accuracy >= 80 ? "Amazing!" : accuracy >= 60 ? "Good job!" : "Keep learning!"}
             </h3>
             <p className="text-lg">{score} / {items.length} correct — <strong>{accuracy}% accuracy</strong></p>
@@ -1608,11 +1608,11 @@ function FutureMeGame({ currency }: { currency: string }) {
 
   if (gameState === "result") {
     return (
-      <Card className="border-2 border-dashed border-indigo-300 dark:border-indigo-700 rounded-3xl">
+      <Card className="glass-card-coral rounded-glass animate-bounce-in">
         <CardContent className="p-8 space-y-6">
           <div className="text-center space-y-2">
             <div className="text-6xl">{laterCount >= 4 ? "🏆" : laterCount >= 2 ? "💡" : "🎯"}</div>
-            <h3 className="font-display text-2xl font-bold" data-testid="text-futureme-result">
+            <h3 className="font-display text-2xl font-bold text-gray-800" data-testid="text-futureme-result">
               {laterCount >= 4 ? "Patient Investor!" : laterCount >= 2 ? "Balanced Thinker!" : "Live in the Moment!"}
             </h3>
           </div>
