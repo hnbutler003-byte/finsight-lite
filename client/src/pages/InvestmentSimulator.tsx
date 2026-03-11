@@ -189,8 +189,8 @@ export default function InvestmentSimulator() {
             <TabsContent value="learn" className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-display font-bold">Money & Investing Lessons</h2>
-                  <p className="text-sm text-muted-foreground">Complete these lessons to understand how money and investing work.</p>
+                  <h2 className="text-xl font-display font-bold text-white">Money & Investing Lessons</h2>
+                  <p className="text-sm text-white/70">Complete these lessons to understand how money and investing work.</p>
                 </div>
                 <Badge variant="secondary" className="text-sm px-3 py-1" data-testid="badge-progress">
                   {completedCount}/{totalModules} Complete
