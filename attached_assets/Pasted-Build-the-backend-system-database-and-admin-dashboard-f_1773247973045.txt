@@ -1,0 +1,197 @@
+Build the backend system, database, and admin dashboard for FinSight Lite, a financial literacy platform for Caribbean students aged 10–17.
+
+The platform must allow the system to run autonomously while giving the founder an extremely simple, visual, and easy-to-read dashboard to view and manage all data.
+
+Use the following stack:
+
+Node.js
+Express
+PostgreSQL
+
+The system must prioritize clarity, readability, and ease of use for a non-technical founder.
+
+CORE REQUIREMENTS
+
+Database Structure
+
+Create relational tables for:
+
+Schools
+Teachers
+Classes
+Students
+Sponsors
+Financial Challenges
+Student Progress
+
+Relationships:
+
+Teachers belong to a School
+Classes belong to Teachers
+Students belong to Classes
+Sponsors can sponsor Schools or Challenges
+
+Use clear descriptive column names so the database is easy to understand.
+
+Example fields:
+
+school_id
+school_name
+country
+teacher_count
+student_count
+created_at
+
+student_id
+student_name
+class_id
+lessons_completed
+quiz_score
+simulator_score
+
+Founder Admin Dashboard
+
+Create a simple visual dashboard for the platform owner that looks similar to a spreadsheet interface like Airtable or Excel.
+
+The dashboard should include navigation tabs:
+
+Dashboard
+Schools
+Teachers
+Students
+Sponsors
+Challenges
+Reports
+Database Viewer
+
+Each section should display data in clean, organized tables.
+
+Example table layouts:
+
+Schools Table
+
+School Name
+Country
+Teachers
+Students
+Sponsor
+Date Joined
+
+Students Table
+
+Student Name
+Class
+School
+Lessons Completed
+Quiz Score
+Simulator Score
+
+All tables should allow:
+
+Sorting
+Filtering
+Pagination
+
+Global Search Bar (Important)
+
+Add a global search bar at the top of the admin dashboard.
+
+The search should allow the founder to quickly search across all data including:
+
+Students
+Schools
+Teachers
+Sponsors
+Classes
+
+For example, if the founder types a student name or school name, the system should instantly show relevant results.
+
+Search results should display in a clean list with links to the relevant record.
+
+Simple Visual Metrics
+
+The main dashboard should display large metric cards such as:
+
+Total Schools
+Total Teachers
+Total Students
+Active Challenges
+Total Sponsors
+
+Include simple charts showing:
+
+Student growth over time
+Lessons completed per week
+Most active schools
+
+Charts should be simple and easy to understand.
+
+Easy Database Viewer
+
+Create a Database Viewer section where the admin can see all tables clearly.
+
+Each table should look like a spreadsheet and allow:
+
+Searching
+Filtering
+Sorting columns
+
+The goal is to allow the founder to easily explore the data without needing technical knowledge.
+
+Teacher Dashboard Integration
+
+Teachers should be able to:
+
+Create classes
+Generate class codes
+Invite students
+View student progress
+Create financial challenges
+Download class reports
+
+Reports
+
+Allow the admin and teachers to download reports as:
+
+CSV
+PDF
+
+Reports should include:
+
+Student progress
+Class performance
+School performance
+
+Automation
+
+Ensure the system automatically tracks:
+
+Student lesson completion
+Quiz scores
+Simulation performance
+Leaderboard rankings
+
+All progress should be stored in the database.
+
+Clean API Structure
+
+Create REST APIs for:
+
+Creating schools
+Creating teachers
+Creating classes
+Adding students
+Tracking student progress
+Viewing leaderboards
+Generating reports
+
+Interface Design
+
+The admin dashboard must be:
+
+Minimal and clean
+Highly readable
+Spreadsheet-like
+Beginner friendly
+
+The goal is for the founder to manage the entire FinSight platform easily without advanced technical knowledge.

@@ -1,0 +1,95 @@
+Build a **Teacher Dashboard for FinSight Lite**, a financial literacy web app designed for Caribbean students aged 10–17.
+
+The dashboard should allow teachers to **monitor student progress, manage classrooms, and run financial literacy challenges**.
+
+The interface should be simple, clean, and easy for teachers who are not highly technical.
+
+Core Features:
+
+1. **Teacher Login**
+
+* Secure login system for teachers
+* Teachers can create an account and verify their school
+* Each teacher can create multiple classes
+
+2. **Classroom Management**
+
+* Teachers can create a class
+* Each class generates a **class code**
+* Students join the class using that code
+* Teachers can see the full list of students in their class
+
+3. **Student Progress Tracking**
+   Display a dashboard showing:
+
+* Number of students enrolled
+* Average financial literacy score
+* Total lessons completed
+* Total simulations completed
+
+Each student profile should show:
+
+* Lessons completed
+* Quiz scores
+* Savings simulator progress
+* Budgeting simulator progress
+* Certificates earned
+
+4. **Financial Challenges**
+   Teachers can create challenges such as:
+
+“Turn $100 into $1000 in the simulator”
+
+Challenge features:
+
+* Start date
+* End date
+* Leaderboard showing top students
+* Automatic ranking based on simulation results
+
+5. **Leaderboard**
+   Create a class leaderboard showing:
+
+* Top savers
+* Top quiz scores
+* Most lessons completed
+
+6. **Reports**
+   Allow teachers to download reports showing:
+
+* Class progress summary
+* Individual student reports
+* Completion rates
+
+Reports should be downloadable as **PDF or CSV**.
+
+7. **Business Sponsor Recognition**
+   Include a section showing:
+
+“Financial Literacy Powered by [Sponsor Name]”
+
+Sponsors may include banks, credit unions, or businesses supporting the school.
+
+8. **Teacher Insights**
+   Display simple analytics such as:
+
+* Most difficult lessons
+* Average quiz scores
+* Student engagement trends
+
+9. **Notifications**
+   Allow teachers to send messages to their class like:
+
+* Challenge announcements
+* Reminders
+* Congratulations for achievements
+
+10. **User Interface**
+    Design the dashboard with:
+
+* Simple navigation sidebar
+* Dashboard overview cards
+* Clean charts and progress bars
+* Mobile-friendly layout
+
+The goal is to create a **simple but powerful teacher control center** that helps educators guide students through financial literacy lessons while tracking engagement and performance.

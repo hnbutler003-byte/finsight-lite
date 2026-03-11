@@ -2,6 +2,12 @@ import {
   users, categories, transactions, budgets, linkedCards, documentUploads, savingsGoals, billReminders,
   simulatedStocks, portfolioHoldings, portfolioTransactions, learningModules, userLearningProgress, userVirtualBalance,
   examPapers, extractedQuestions, gameSessions, userXp, userBadges,
+  teachers, classes, classEnrollments, challenges, classNotifications,
+  type Teacher, type InsertTeacher,
+  type Class, type InsertClass,
+  type ClassEnrollment, type InsertClassEnrollment,
+  type Challenge, type InsertChallenge,
+  type ClassNotification, type InsertClassNotification,
   type User, type UpsertUser,
   type Category, type InsertCategory,
   type Transaction, type InsertTransaction,
@@ -109,6 +115,30 @@ export interface IStorage extends IAuthStorage {
   updateUserXp(userId: string, data: Partial<UserXp>): Promise<UserXp>;
   getUserBadges(userId: string): Promise<UserBadge[]>;
   addUserBadge(badge: InsertUserBadge): Promise<UserBadge>;
+
+  // Teacher Dashboard
+  createTeacher(data: InsertTeacher & { passwordHash: string }): Promise<Teacher>;
+  getTeacherByEmail(email: string): Promise<Teacher | undefined>;
+  getTeacherById(id: number): Promise<Teacher | undefined>;
+  getClassesByTeacher(teacherId: number): Promise<(Class & { enrollmentCount: number })[]>;
+  createClass(data: { teacherId: number; name: string; subject: string; sponsorName?: string }): Promise<Class>;
+  getClassById(id: number): Promise<Class | undefined>;
+  getClassByCode(code: string): Promise<Class | undefined>;
+  updateClass(id: number, teacherId: number, data: Partial<Pick<Class, 'name' | 'subject' | 'sponsorName'>>): Promise<Class>;
+  deleteClass(id: number, teacherId: number): Promise<void>;
+  getEnrollmentsByClass(classId: number): Promise<(ClassEnrollment & { student: User })[]>;
+  enrollStudent(classId: number, studentId: string): Promise<ClassEnrollment>;
+  getStudentClasses(studentId: string): Promise<(ClassEnrollment & { class: Class })[]>;
+  removeEnrollment(classId: number, studentId: string): Promise<void>;
+  getClassProgressSummary(classId: number): Promise<any>;
+  getChallengesByClass(classId: number): Promise<Challenge[]>;
+  createChallenge(data: InsertChallenge): Promise<Challenge>;
+  deleteChallenge(id: number, teacherId: number): Promise<void>;
+  getNotificationsByClass(classId: number): Promise<ClassNotification[]>;
+  createNotification(data: InsertClassNotification): Promise<ClassNotification>;
+  deleteNotification(id: number, teacherId: number): Promise<void>;
+  getClassLeaderboard(classId: number): Promise<any[]>;
+  getClassAnalytics(classId: number): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -708,6 +738,161 @@ export class DatabaseStorage implements IStorage {
       })),
       isCardLinked: cards.length > 0
     };
+  }
+
+  // === TEACHER DASHBOARD ===
+
+  async createTeacher(data: InsertTeacher & { passwordHash: string }): Promise<Teacher> {
+    const [teacher] = await db.insert(teachers).values(data).returning();
+    return teacher;
+  }
+
+  async getTeacherByEmail(email: string): Promise<Teacher | undefined> {
+    const [teacher] = await db.select().from(teachers).where(eq(teachers.email, email.toLowerCase()));
+    return teacher;
+  }
+
+  async getTeacherById(id: number): Promise<Teacher | undefined> {
+    const [teacher] = await db.select().from(teachers).where(eq(teachers.id, id));
+    return teacher;
+  }
+
+  async getClassesByTeacher(teacherId: number): Promise<(Class & { enrollmentCount: number })[]> {
+    const classList = await db.select().from(classes).where(eq(classes.teacherId, teacherId)).orderBy(desc(classes.createdAt));
+    const result = await Promise.all(classList.map(async (cls) => {
+      const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(classEnrollments).where(eq(classEnrollments.classId, cls.id));
+      return { ...cls, enrollmentCount: Number(count) };
+    }));
+    return result;
+  }
+
+  async createClass(data: { teacherId: number; name: string; subject: string; sponsorName?: string }): Promise<Class> {
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const [cls] = await db.insert(classes).values({ ...data, code }).returning();
+    return cls;
+  }
+
+  async getClassById(id: number): Promise<Class | undefined> {
+    const [cls] = await db.select().from(classes).where(eq(classes.id, id));
+    return cls;
+  }
+
+  async getClassByCode(code: string): Promise<Class | undefined> {
+    const [cls] = await db.select().from(classes).where(eq(classes.code, code.toUpperCase()));
+    return cls;
+  }
+
+  async updateClass(id: number, teacherId: number, data: Partial<Pick<Class, 'name' | 'subject' | 'sponsorName'>>): Promise<Class> {
+    const [updated] = await db.update(classes).set(data).where(and(eq(classes.id, id), eq(classes.teacherId, teacherId))).returning();
+    if (!updated) throw new Error("Class not found");
+    return updated;
+  }
+
+  async deleteClass(id: number, teacherId: number): Promise<void> {
+    await db.delete(classes).where(and(eq(classes.id, id), eq(classes.teacherId, teacherId)));
+  }
+
+  async getEnrollmentsByClass(classId: number): Promise<(ClassEnrollment & { student: User })[]> {
+    const results = await db.select({ enrollment: classEnrollments, student: users })
+      .from(classEnrollments)
+      .innerJoin(users, eq(classEnrollments.studentId, users.id))
+      .where(eq(classEnrollments.classId, classId))
+      .orderBy(classEnrollments.joinedAt);
+    return results.map(r => ({ ...r.enrollment, student: r.student }));
+  }
+
+  async enrollStudent(classId: number, studentId: string): Promise<ClassEnrollment> {
+    const [existing] = await db.select().from(classEnrollments).where(and(eq(classEnrollments.classId, classId), eq(classEnrollments.studentId, studentId)));
+    if (existing) return existing;
+    const [enrollment] = await db.insert(classEnrollments).values({ classId, studentId }).returning();
+    return enrollment;
+  }
+
+  async getStudentClasses(studentId: string): Promise<(ClassEnrollment & { class: Class })[]> {
+    const results = await db.select({ enrollment: classEnrollments, class: classes })
+      .from(classEnrollments)
+      .innerJoin(classes, eq(classEnrollments.classId, classes.id))
+      .where(eq(classEnrollments.studentId, studentId));
+    return results.map(r => ({ ...r.enrollment, class: r.class }));
+  }
+
+  async removeEnrollment(classId: number, studentId: string): Promise<void> {
+    await db.delete(classEnrollments).where(and(eq(classEnrollments.classId, classId), eq(classEnrollments.studentId, studentId)));
+  }
+
+  async getClassProgressSummary(classId: number): Promise<any> {
+    const enrollments = await this.getEnrollmentsByClass(classId);
+    const studentIds = enrollments.map(e => e.studentId);
+    if (studentIds.length === 0) return { students: [], avgXp: 0, avgLessons: 0, totalGames: 0 };
+
+    const studentData = await Promise.all(studentIds.map(async (sid) => {
+      const xp = await this.getUserXp(sid);
+      const lessons = await this.getUserLearningProgress(sid);
+      const sessions = await this.getGameSessions(sid);
+      const badges = await this.getUserBadges(sid);
+      const student = enrollments.find(e => e.studentId === sid)?.student;
+      return {
+        id: sid,
+        name: student?.firstName || student?.username || sid,
+        avatar: student?.avatar || 'star',
+        username: student?.username || sid,
+        xp: xp.totalXp,
+        level: xp.level,
+        streak: xp.currentStreak,
+        lessonsCompleted: lessons.filter(l => l.completed).length,
+        totalLessons: 6,
+        gamesPlayed: sessions.length,
+        avgScore: sessions.length > 0 ? Math.round(sessions.reduce((sum, s) => sum + (s.correctAnswers / Math.max(s.totalQuestions, 1)) * 100, 0) / sessions.length) : 0,
+        badges: badges.length,
+      };
+    }));
+
+    const avgXp = studentData.length > 0 ? Math.round(studentData.reduce((s, d) => s + d.xp, 0) / studentData.length) : 0;
+    const avgLessons = studentData.length > 0 ? Math.round(studentData.reduce((s, d) => s + d.lessonsCompleted, 0) / studentData.length) : 0;
+    const totalGames = studentData.reduce((s, d) => s + d.gamesPlayed, 0);
+
+    return { students: studentData, avgXp, avgLessons, totalGames };
+  }
+
+  async getChallengesByClass(classId: number): Promise<Challenge[]> {
+    return await db.select().from(challenges).where(eq(challenges.classId, classId)).orderBy(desc(challenges.createdAt));
+  }
+
+  async createChallenge(data: InsertChallenge): Promise<Challenge> {
+    const [challenge] = await db.insert(challenges).values(data).returning();
+    return challenge;
+  }
+
+  async deleteChallenge(id: number, teacherId: number): Promise<void> {
+    await db.delete(challenges).where(and(eq(challenges.id, id), eq(challenges.teacherId, teacherId)));
+  }
+
+  async getNotificationsByClass(classId: number): Promise<ClassNotification[]> {
+    return await db.select().from(classNotifications).where(eq(classNotifications.classId, classId)).orderBy(desc(classNotifications.createdAt));
+  }
+
+  async createNotification(data: InsertClassNotification): Promise<ClassNotification> {
+    const [notification] = await db.insert(classNotifications).values(data).returning();
+    return notification;
+  }
+
+  async deleteNotification(id: number, teacherId: number): Promise<void> {
+    await db.delete(classNotifications).where(and(eq(classNotifications.id, id), eq(classNotifications.teacherId, teacherId)));
+  }
+
+  async getClassLeaderboard(classId: number): Promise<any[]> {
+    const summary = await this.getClassProgressSummary(classId);
+    return summary.students.sort((a: any, b: any) => b.xp - a.xp);
+  }
+
+  async getClassAnalytics(classId: number): Promise<any> {
+    const summary = await this.getClassProgressSummary(classId);
+    const students = summary.students;
+    const avgScore = students.length > 0 ? Math.round(students.reduce((s: number, d: any) => s + d.avgScore, 0) / students.length) : 0;
+    const avgLessons = summary.avgLessons;
+    const topStudents = [...students].sort((a: any, b: any) => b.xp - a.xp).slice(0, 3);
+    const engagementRate = students.length > 0 ? Math.round((students.filter((s: any) => s.gamesPlayed > 0).length / students.length) * 100) : 0;
+    return { avgScore, avgLessons, totalStudents: students.length, topStudents, engagementRate, totalGames: summary.totalGames };
   }
 }
 

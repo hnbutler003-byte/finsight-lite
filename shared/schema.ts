@@ -148,6 +148,59 @@ export const userVirtualBalance = pgTable("user_virtual_balance", {
   currency: text("currency").default("BSD").notNull(),
 });
 
+// === TEACHER DASHBOARD TABLES ===
+
+export const teachers = pgTable("teachers", {
+  id: serial("id").primaryKey(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").unique().notNull(),
+  passwordHash: text("password_hash").notNull(),
+  schoolName: text("school_name").notNull(),
+  isVerified: boolean("is_verified").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const classes = pgTable("classes", {
+  id: serial("id").primaryKey(),
+  teacherId: integer("teacher_id").notNull().references(() => teachers.id),
+  name: text("name").notNull(),
+  subject: text("subject").default("Financial Literacy").notNull(),
+  code: text("code").unique().notNull(),
+  sponsorName: text("sponsor_name"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const classEnrollments = pgTable("class_enrollments", {
+  id: serial("id").primaryKey(),
+  classId: integer("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
+  studentId: varchar("student_id").notNull().references(() => users.id),
+  joinedAt: timestamp("joined_at").defaultNow(),
+});
+
+export const challenges = pgTable("challenges", {
+  id: serial("id").primaryKey(),
+  classId: integer("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
+  teacherId: integer("teacher_id").notNull().references(() => teachers.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  type: text("type", { enum: ["savings", "quiz", "investment", "budget"] }).default("quiz").notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  targetValue: numeric("target_value", { precision: 12, scale: 2 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const classNotifications = pgTable("class_notifications", {
+  id: serial("id").primaryKey(),
+  classId: integer("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
+  teacherId: integer("teacher_id").notNull().references(() => teachers.id),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type", { enum: ["announcement", "reminder", "congratulations"] }).default("announcement").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // === MONEYLAB TABLES ===
 
 export const examPapers = pgTable("exam_papers", {
@@ -318,6 +371,34 @@ export const userBadgesRelations = relations(userBadges, ({ one }) => ({
   user: one(users, { fields: [userBadges.userId], references: [users.id] }),
 }));
 
+export const teachersRelations = relations(teachers, ({ many }) => ({
+  classes: many(classes),
+  challenges: many(challenges),
+  notifications: many(classNotifications),
+}));
+
+export const classesRelations = relations(classes, ({ one, many }) => ({
+  teacher: one(teachers, { fields: [classes.teacherId], references: [teachers.id] }),
+  enrollments: many(classEnrollments),
+  challenges: many(challenges),
+  notifications: many(classNotifications),
+}));
+
+export const classEnrollmentsRelations = relations(classEnrollments, ({ one }) => ({
+  class: one(classes, { fields: [classEnrollments.classId], references: [classes.id] }),
+  student: one(users, { fields: [classEnrollments.studentId], references: [users.id] }),
+}));
+
+export const challengesRelations = relations(challenges, ({ one }) => ({
+  class: one(classes, { fields: [challenges.classId], references: [classes.id] }),
+  teacher: one(teachers, { fields: [challenges.teacherId], references: [teachers.id] }),
+}));
+
+export const classNotificationsRelations = relations(classNotifications, ({ one }) => ({
+  class: one(classes, { fields: [classNotifications.classId], references: [classes.id] }),
+  teacher: one(teachers, { fields: [classNotifications.teacherId], references: [teachers.id] }),
+}));
+
 export const usersRelations = relations(users, ({ many, one }) => ({
   transactions: many(transactions),
   budgets: many(budgets),
@@ -352,6 +433,11 @@ export const insertPortfolioHoldingSchema = createInsertSchema(portfolioHoldings
 export const insertPortfolioTransactionSchema = createInsertSchema(portfolioTransactions).omit({ id: true, executedAt: true });
 export const insertLearningModuleSchema = createInsertSchema(learningModules).omit({ id: true });
 export const insertUserLearningProgressSchema = createInsertSchema(userLearningProgress).omit({ id: true, completedAt: true });
+export const insertTeacherSchema = createInsertSchema(teachers).omit({ id: true, createdAt: true, isVerified: true });
+export const insertClassSchema = createInsertSchema(classes).omit({ id: true, createdAt: true, code: true });
+export const insertClassEnrollmentSchema = createInsertSchema(classEnrollments).omit({ id: true, joinedAt: true });
+export const insertChallengeSchema = createInsertSchema(challenges).omit({ id: true, createdAt: true });
+export const insertClassNotificationSchema = createInsertSchema(classNotifications).omit({ id: true, createdAt: true });
 export const insertExamPaperSchema = createInsertSchema(examPapers).omit({ id: true, createdAt: true, questionCount: true, status: true });
 export const insertExtractedQuestionSchema = createInsertSchema(extractedQuestions).omit({ id: true });
 export const insertGameSessionSchema = createInsertSchema(gameSessions).omit({ id: true, completedAt: true });
@@ -396,6 +482,16 @@ export type InsertExamPaper = z.infer<typeof insertExamPaperSchema>;
 export type InsertExtractedQuestion = z.infer<typeof insertExtractedQuestionSchema>;
 export type InsertGameSession = z.infer<typeof insertGameSessionSchema>;
 export type InsertUserBadge = z.infer<typeof insertUserBadgeSchema>;
+export type Teacher = typeof teachers.$inferSelect;
+export type InsertTeacher = z.infer<typeof insertTeacherSchema>;
+export type Class = typeof classes.$inferSelect;
+export type InsertClass = z.infer<typeof insertClassSchema>;
+export type ClassEnrollment = typeof classEnrollments.$inferSelect;
+export type InsertClassEnrollment = z.infer<typeof insertClassEnrollmentSchema>;
+export type Challenge = typeof challenges.$inferSelect;
+export type InsertChallenge = z.infer<typeof insertChallengeSchema>;
+export type ClassNotification = typeof classNotifications.$inferSelect;
+export type InsertClassNotification = z.infer<typeof insertClassNotificationSchema>;
 
 // API Responses
 export type TransactionResponse = Transaction & { category?: Category };

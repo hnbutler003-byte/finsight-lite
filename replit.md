@@ -25,7 +25,7 @@ Preferred communication style: Simple, everyday language.
 - **Runtime**: Node.js with Express.js
 - **Language**: TypeScript (ESM modules)
 - **API Design**: RESTful endpoints defined in shared/routes.ts with Zod schemas for type-safe contracts
-- **Authentication**: Passwordless avatar-based auth with express-session (no passwords, no email — kids enter name + pick avatar, get auto-generated username)
+- **Authentication**: Dual auth system — Students use passwordless avatar-based auth; Teachers use email+password (bcryptjs hashing) with separate `req.session.teacherId` session key
 - **Session Management**: Express sessions stored in PostgreSQL via connect-pg-simple
 
 ### Data Storage
@@ -141,6 +141,25 @@ Core tables include:
 - Chat history maintained in-session (not persisted to DB)
 - Uses gpt-4o model via the existing OpenAI integration
 - Disclaimer footer: "educational info only — not real financial advice"
+
+### Teacher Dashboard (client/src/pages/Teacher*.tsx)
+- Separate portal for teachers at /teacher/* routes (accessible without student auth)
+- Auth: email + bcryptjs-hashed password; stores teacherId in session (separate from student userId)
+- Teacher pages: TeacherLogin (/teacher/login), TeacherRegister (/teacher/register), TeacherDashboard (/teacher/dashboard), TeacherClassDetail (/teacher/classes/:id)
+- TeacherSidebar: emerald/teal gradient; links to Dashboard, My Classes; shows teacher name/school; logout
+- Classroom management: create classes → auto-generated 6-char code (e.g. "AB12CD"); students join via code from student sidebar "Join a Class" button
+- Student progress tracking: aggregates XP, lessons, games, badges, avg score per enrolled student
+- Class detail tabs: Students | Leaderboard | Challenges | Notifications | Analytics
+- Challenges: create quiz/savings/investment/budget challenges with start/end dates and optional target value
+- Notifications: send announcements/reminders/congratulations to class
+- Reports: CSV download of class progress (GET /api/teacher/classes/:id/report.csv)
+- Analytics: avg score, lesson completion, engagement rate, top 3 students
+- Sponsor banner: displays "Financial Literacy powered by [SponsorName]" when set
+- Student side: "Join Class" button in sidebar → modal with code entry → POST /api/student/join-class
+- DB tables: teachers, classes, class_enrollments, challenges, class_notifications
+- Teacher routes: /api/teacher/auth/*, /api/teacher/classes/*, /api/teacher/challenges/*, /api/teacher/notifications/*
+- Student routes: POST /api/student/join-class, GET /api/student/classes, GET /api/student/classes/:id/notifications
+- isTeacher middleware: checks req.session.teacherId
 
 ## External Dependencies
 

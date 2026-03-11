@@ -7,6 +7,7 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import * as XLSX from "xlsx";
+import bcrypt from "bcryptjs";
 
 import { registerChatRoutes } from "./replit_integrations/chat";
 import { registerImageRoutes } from "./replit_integrations/image";
@@ -1623,6 +1624,256 @@ If the user asks about FinSight Lite features, you can mention:
         res.status(500).json({ message: "Failed to get response" });
       }
     }
+  });
+
+  // === TEACHER AUTH ROUTES ===
+  const isTeacher = (req: any, res: any, next: any) => {
+    if (!req.session?.teacherId) return res.status(401).json({ message: "Teacher not authenticated" });
+    next();
+  };
+
+  app.post("/api/teacher/auth/register", async (req, res) => {
+    try {
+      const { firstName, lastName, email, password, schoolName } = z.object({
+        firstName: z.string().min(1),
+        lastName: z.string().min(1),
+        email: z.string().email(),
+        password: z.string().min(6),
+        schoolName: z.string().min(1),
+      }).parse(req.body);
+
+      const existing = await storage.getTeacherByEmail(email);
+      if (existing) return res.status(409).json({ message: "Email already in use" });
+
+      const passwordHash = await bcrypt.hash(password, 12);
+      const teacher = await storage.createTeacher({ firstName, lastName, email: email.toLowerCase(), passwordHash, schoolName });
+      req.session.teacherId = teacher.id;
+      const { passwordHash: _, ...safe } = teacher;
+      return res.json(safe);
+    } catch (e: any) {
+      return res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.post("/api/teacher/auth/login", async (req, res) => {
+    try {
+      const { email, password } = z.object({ email: z.string().email(), password: z.string() }).parse(req.body);
+      const teacher = await storage.getTeacherByEmail(email);
+      if (!teacher) return res.status(401).json({ message: "Invalid email or password" });
+      const valid = await bcrypt.compare(password, teacher.passwordHash);
+      if (!valid) return res.status(401).json({ message: "Invalid email or password" });
+      req.session.teacherId = teacher.id;
+      const { passwordHash: _, ...safe } = teacher;
+      return res.json(safe);
+    } catch (e: any) {
+      return res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.post("/api/teacher/auth/logout", (req, res) => {
+    delete req.session.teacherId;
+    res.json({ ok: true });
+  });
+
+  app.get("/api/teacher/auth/me", isTeacher, async (req: any, res) => {
+    const teacher = await storage.getTeacherById(req.session.teacherId);
+    if (!teacher) return res.status(401).json({ message: "Not found" });
+    const { passwordHash: _, ...safe } = teacher;
+    res.json(safe);
+  });
+
+  // === TEACHER CLASS ROUTES ===
+  app.get("/api/teacher/classes", isTeacher, async (req: any, res) => {
+    const classes = await storage.getClassesByTeacher(req.session.teacherId);
+    res.json(classes);
+  });
+
+  app.post("/api/teacher/classes", isTeacher, async (req: any, res) => {
+    try {
+      const { name, subject, sponsorName } = z.object({
+        name: z.string().min(1),
+        subject: z.string().default("Financial Literacy"),
+        sponsorName: z.string().optional(),
+      }).parse(req.body);
+      const cls = await storage.createClass({ teacherId: req.session.teacherId, name, subject, sponsorName });
+      res.json(cls);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.get("/api/teacher/classes/:id", isTeacher, async (req: any, res) => {
+    const id = parseInt(req.params.id);
+    const cls = await storage.getClassById(id);
+    if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+    res.json(cls);
+  });
+
+  app.patch("/api/teacher/classes/:id", isTeacher, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const data = z.object({ name: z.string().optional(), subject: z.string().optional(), sponsorName: z.string().optional() }).parse(req.body);
+      const cls = await storage.updateClass(id, req.session.teacherId, data);
+      res.json(cls);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.delete("/api/teacher/classes/:id", isTeacher, async (req: any, res) => {
+    await storage.deleteClass(parseInt(req.params.id), req.session.teacherId);
+    res.json({ ok: true });
+  });
+
+  app.get("/api/teacher/classes/:id/students", isTeacher, async (req: any, res) => {
+    const id = parseInt(req.params.id);
+    const cls = await storage.getClassById(id);
+    if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+    const summary = await storage.getClassProgressSummary(id);
+    res.json(summary);
+  });
+
+  app.delete("/api/teacher/classes/:classId/students/:studentId", isTeacher, async (req: any, res) => {
+    const classId = parseInt(req.params.classId);
+    const cls = await storage.getClassById(classId);
+    if (!cls || cls.teacherId !== req.session.teacherId) return res.status(403).json({ message: "Forbidden" });
+    await storage.removeEnrollment(classId, req.params.studentId);
+    res.json({ ok: true });
+  });
+
+  app.get("/api/teacher/classes/:id/leaderboard", isTeacher, async (req: any, res) => {
+    const id = parseInt(req.params.id);
+    const cls = await storage.getClassById(id);
+    if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+    const leaderboard = await storage.getClassLeaderboard(id);
+    res.json(leaderboard);
+  });
+
+  app.get("/api/teacher/classes/:id/analytics", isTeacher, async (req: any, res) => {
+    const id = parseInt(req.params.id);
+    const cls = await storage.getClassById(id);
+    if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+    const analytics = await storage.getClassAnalytics(id);
+    res.json(analytics);
+  });
+
+  // CSV Report download
+  app.get("/api/teacher/classes/:id/report.csv", isTeacher, async (req: any, res) => {
+    const id = parseInt(req.params.id);
+    const cls = await storage.getClassById(id);
+    if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+    const summary = await storage.getClassProgressSummary(id);
+    const rows = [
+      ["Name", "Username", "XP", "Level", "Streak", "Lessons Completed", "Games Played", "Avg Score (%)", "Badges"],
+      ...summary.students.map((s: any) => [s.name, s.username, s.xp, s.level, s.streak, s.lessonsCompleted, s.gamesPlayed, s.avgScore, s.badges]),
+    ];
+    const csv = rows.map(r => r.map(String).map(v => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="${cls.name.replace(/[^a-z0-9]/gi, '_')}_report.csv"`);
+    res.send(csv);
+  });
+
+  // === TEACHER CHALLENGE ROUTES ===
+  app.get("/api/teacher/classes/:id/challenges", isTeacher, async (req: any, res) => {
+    const id = parseInt(req.params.id);
+    const cls = await storage.getClassById(id);
+    if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+    const data = await storage.getChallengesByClass(id);
+    res.json(data);
+  });
+
+  app.post("/api/teacher/classes/:id/challenges", isTeacher, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const cls = await storage.getClassById(id);
+      if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+      const body = z.object({
+        title: z.string().min(1),
+        description: z.string().min(1),
+        type: z.enum(["savings", "quiz", "investment", "budget"]).default("quiz"),
+        startDate: z.string(),
+        endDate: z.string(),
+        targetValue: z.string().optional(),
+      }).parse(req.body);
+      const challenge = await storage.createChallenge({
+        classId: id,
+        teacherId: req.session.teacherId,
+        title: body.title,
+        description: body.description,
+        type: body.type,
+        startDate: new Date(body.startDate),
+        endDate: new Date(body.endDate),
+        targetValue: body.targetValue,
+      });
+      res.json(challenge);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.delete("/api/teacher/challenges/:id", isTeacher, async (req: any, res) => {
+    await storage.deleteChallenge(parseInt(req.params.id), req.session.teacherId);
+    res.json({ ok: true });
+  });
+
+  // === TEACHER NOTIFICATION ROUTES ===
+  app.get("/api/teacher/classes/:id/notifications", isTeacher, async (req: any, res) => {
+    const id = parseInt(req.params.id);
+    const cls = await storage.getClassById(id);
+    if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+    const data = await storage.getNotificationsByClass(id);
+    res.json(data);
+  });
+
+  app.post("/api/teacher/classes/:id/notifications", isTeacher, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const cls = await storage.getClassById(id);
+      if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+      const body = z.object({
+        title: z.string().min(1),
+        message: z.string().min(1),
+        type: z.enum(["announcement", "reminder", "congratulations"]).default("announcement"),
+      }).parse(req.body);
+      const notification = await storage.createNotification({ classId: id, teacherId: req.session.teacherId, ...body });
+      res.json(notification);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.delete("/api/teacher/notifications/:id", isTeacher, async (req: any, res) => {
+    await storage.deleteNotification(parseInt(req.params.id), req.session.teacherId);
+    res.json({ ok: true });
+  });
+
+  // === STUDENT SIDE - JOIN CLASS ===
+  app.post("/api/student/join-class", isAuthenticated, async (req: any, res) => {
+    try {
+      const { code } = z.object({ code: z.string().min(1) }).parse(req.body);
+      const cls = await storage.getClassByCode(code);
+      if (!cls) return res.status(404).json({ message: "Class not found. Check the code and try again." });
+      const studentId = (req.user as any).id;
+      const enrollment = await storage.enrollStudent(cls.id, studentId);
+      res.json({ enrollment, class: cls });
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.get("/api/student/classes", isAuthenticated, async (req: any, res) => {
+    const studentId = (req.user as any).id;
+    const data = await storage.getStudentClasses(studentId);
+    res.json(data);
+  });
+
+  app.get("/api/student/classes/:classId/notifications", isAuthenticated, async (req: any, res) => {
+    const classId = parseInt(req.params.classId);
+    const studentId = (req.user as any).id;
+    const enrolled = await storage.getStudentClasses(studentId);
+    if (!enrolled.find(e => e.classId === classId)) return res.status(403).json({ message: "Not enrolled" });
+    const notifications = await storage.getNotificationsByClass(classId);
+    res.json(notifications);
   });
 
   return httpServer;

@@ -20,6 +20,10 @@ import MoneyLabUpload from "@/pages/MoneyLabUpload";
 import MoneyLabPlay from "@/pages/MoneyLabPlay";
 import MoneyLabTutor from "@/pages/MoneyLabTutor";
 import MoneyLabLeaderboard from "@/pages/MoneyLabLeaderboard";
+import TeacherLogin from "@/pages/TeacherLogin";
+import TeacherRegister from "@/pages/TeacherRegister";
+import TeacherDashboard from "@/pages/TeacherDashboard";
+import TeacherClassDetail from "@/pages/TeacherClassDetail";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
@@ -55,6 +59,12 @@ function Router() {
   if (!user) {
     return (
       <Switch>
+        <Route path="/teacher/login" component={TeacherLogin} />
+        <Route path="/teacher/register" component={TeacherRegister} />
+        <Route path="/teacher/dashboard" component={TeacherDashboard} />
+        <Route path="/teacher/classes/:id" component={TeacherClassDetail} />
+        <Route path="/teacher/classes" component={TeacherDashboard} />
+        <Route path="/teacher">{() => <Redirect to="/teacher/login" />}</Route>
         <Route path="/" component={AuthPage} />
         <Route component={AuthPage} />
       </Switch>
@@ -63,6 +73,12 @@ function Router() {
 
   return (
     <Switch>
+      <Route path="/teacher/login" component={TeacherLogin} />
+      <Route path="/teacher/register" component={TeacherRegister} />
+      <Route path="/teacher/dashboard" component={TeacherDashboard} />
+      <Route path="/teacher/classes/:id" component={TeacherClassDetail} />
+      <Route path="/teacher/classes" component={TeacherDashboard} />
+      <Route path="/teacher">{() => <Redirect to="/teacher/dashboard" />}</Route>
       <Route path="/" component={Dashboard} />
       <Route path="/budgets" component={Budgets} />
       <Route path="/trends" component={Trends} />
