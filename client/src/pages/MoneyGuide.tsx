@@ -239,7 +239,7 @@ export default function MoneyGuide() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask me anything about money..."
               disabled={isStreaming}
-              className="flex-1 rounded-2xl border-2 border-violet-200 bg-white/90 text-gray-800 px-4 py-3 text-sm font-medium placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 disabled:opacity-50"
+              className="flex-1 rounded-2xl border border-violet-200/40 bg-white/50 backdrop-blur-sm text-gray-800 px-4 py-3 text-sm font-medium placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 disabled:opacity-50"
               data-testid="input-chat"
             />
             <Button

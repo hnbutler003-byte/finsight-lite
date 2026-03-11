@@ -155,7 +155,7 @@ export default function InvestmentSimulator() {
                 </span>
               </div>
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="w-[200px] bg-white border-primary/20 text-gray-800 rounded-2xl font-medium" data-testid="select-currency">
+                <SelectTrigger className="w-[200px] bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl text-white font-medium shadow-lg" data-testid="select-currency">
                   <SelectValue placeholder="Filter by Currency" />
                 </SelectTrigger>
                 <SelectContent>

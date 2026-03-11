@@ -98,7 +98,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-3">
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="w-[160px] bg-white/90 border-white/40 rounded-2xl text-gray-800 font-medium shadow-sm" data-testid="select-currency">
+                <SelectTrigger className="w-[160px] bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl text-white font-medium shadow-lg" data-testid="select-currency">
                   <SelectValue placeholder="Currency" />
                 </SelectTrigger>
                 <SelectContent>
