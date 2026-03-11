@@ -238,7 +238,7 @@ function GroceryGame({ currency }: { currency: string }) {
       </div>
 
       {checkedOut ? (
-        <Card className="border-2 border-dashed border-green-300 dark:border-green-700 rounded-3xl">
+        <Card className="glass-card-coral rounded-glass animate-bounce-in">
           <CardContent className="p-8 text-center space-y-4">
             <div className="text-6xl">{getRating().emoji}</div>
             <h3 className={`font-display text-2xl font-bold ${getRating().color}`} data-testid="text-grocery-result">
@@ -423,11 +423,11 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
 
   if (gameState === "instructions") {
     return (
-      <Card className="border-2 border-dashed border-orange-300 dark:border-orange-700 rounded-3xl">
+      <Card className="glass-card rounded-glass">
         <CardContent className="p-8 space-y-8">
           <div className="text-center space-y-2">
             <div className="text-6xl">⚡</div>
-            <h3 className="font-display text-2xl font-bold">Speed Investor</h3>
+            <h3 className="font-display text-2xl font-bold text-gray-800">Speed Investor</h3>
             <p className="text-muted-foreground">Learn to make smart investment decisions!</p>
           </div>
 
@@ -528,7 +528,7 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
   if (gameState === "end") {
     const rating = getFinalRating();
     return (
-      <Card className="border-2 border-dashed border-orange-300 dark:border-orange-700 rounded-3xl">
+      <Card className="glass-card-coral rounded-glass animate-bounce-in">
         <CardContent className="p-8 text-center space-y-4">
           <div className="text-6xl">{rating.emoji}</div>
           <h3 className={`font-display text-3xl font-bold ${rating.color}`} data-testid="text-speed-result">

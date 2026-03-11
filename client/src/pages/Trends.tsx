@@ -206,8 +206,8 @@ export default function Trends() {
 
           {/* Budget Comparison */}
           {trends?.budgetComparison && trends.budgetComparison.length > 0 && (
-            <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/50" data-testid="section-budget-comparison">
-              <h2 className="font-display text-lg font-bold mb-4">Budget vs Actual</h2>
+            <div className="glass-card rounded-glass p-6" data-testid="section-budget-comparison">
+              <h2 className="font-display text-lg font-bold mb-4 text-gray-800">Budget vs Actual</h2>
               <div className="space-y-4">
                 {trends.budgetComparison.map((b) => (
                   <div key={b.category} className="space-y-2" data-testid={`budget-comparison-${b.category}`}>

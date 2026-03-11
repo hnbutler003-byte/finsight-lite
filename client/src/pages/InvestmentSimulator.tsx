@@ -448,7 +448,7 @@ export default function InvestmentSimulator() {
                     const gainPct = costBasis > 0 ? ((gainLoss / costBasis) * 100) : 0;
                     const sym = getSymbol(holding.stock.currency);
                     return (
-                      <Card key={holding.id} className="border-none shadow-md" data-testid={`card-holding-${holding.id}`}>
+                      <Card key={holding.id} className="glass-card rounded-glass" data-testid={`card-holding-${holding.id}`}>
                         <CardContent className="p-5">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div className="flex items-center gap-4">
@@ -514,7 +514,7 @@ export default function InvestmentSimulator() {
                       return (
                         <div
                           key={tx.id}
-                          className="flex items-center justify-between py-3 px-4 bg-card rounded-xl border border-border/50"
+                          className="flex items-center justify-between py-3 px-4 glass-inset rounded-xl"
                           data-testid={`row-trade-${tx.id}`}
                         >
                           <div className="flex items-center gap-3">
