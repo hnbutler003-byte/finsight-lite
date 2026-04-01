@@ -18,8 +18,9 @@ import {
   Shield, Users, GraduationCap, School, Building2, Trophy, Coins,
   LogOut, Search, Download, Plus, Trash2, Pencil, ChevronLeft, ChevronRight,
   LayoutDashboard, BookOpen, X, Globe, ChevronDown, ChevronUp,
-  CheckCircle2, XCircle, Layers, Medal
+  CheckCircle2, XCircle, Layers, Medal, FileText, Eye, EyeOff, Minus
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -446,11 +447,204 @@ function EnvDialog({ orgId, onClose }: { orgId: string; onClose: () => void }) {
   );
 }
 
+// ─── LessonPlanDialog ─────────────────────────────────────────────────────────
+
+type QuizQ = { question: string; option_a: string; option_b: string; option_c: string; option_d: string; correct_answer: string };
+type ContentSect = { heading: string; body: string; examples: string };
+
+function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => void }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [meta, setMeta] = useState({
+    title: "", instructor: "", subject: "Personal Finance",
+    grade_level: "", topic: "", duration: "",
+  });
+  const [objectives, setObjectives] = useState<string[]>(["", "", "", ""]);
+  const [sections, setSections] = useState<ContentSect[]>([{ heading: "", body: "", examples: "" }]);
+  const [questions, setQuestions] = useState<QuizQ[]>([
+    { question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "A" },
+  ]);
+  const [step, setStep] = useState<"meta" | "content" | "quiz">("meta");
+
+  const save = useMutation({
+    mutationFn: () => {
+      const payload = {
+        ...meta,
+        objectives: objectives.filter(o => o.trim()),
+        content_sections: sections
+          .filter(s => s.heading.trim() || s.body.trim())
+          .map(s => ({
+            heading: s.heading,
+            body: s.body,
+            examples: s.examples ? s.examples.split(",").map(e => e.trim()).filter(Boolean) : [],
+          })),
+        questions: questions.filter(q => q.question.trim() && q.option_a && q.option_b && q.option_c && q.option_d),
+      };
+      return apiRequest("POST", `/api/admin/organizations/${orgId}/lessons`, payload).then(r => r.json());
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/organizations", orgId, "lessons"] });
+      toast({ title: "Lesson created — remember to publish it!" });
+      onClose();
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const fm = (k: string) => (e: any) => setMeta(p => ({ ...p, [k]: e.target.value }));
+
+  return (
+    <div className="space-y-4 pt-1 max-h-[70vh] overflow-y-auto pr-1">
+      <div className="flex gap-2 mb-4">
+        {(["meta", "content", "quiz"] as const).map((s, i) => (
+          <button key={s} onClick={() => setStep(s)}
+            className={`flex-1 py-1.5 rounded text-xs font-bold border transition-colors ${step === s ? "bg-indigo-600 border-indigo-500 text-white" : "border-slate-600 text-slate-400 hover:text-white"}`}>
+            {i + 1}. {s === "meta" ? "Details" : s === "content" ? "Content" : "Quiz"}
+          </button>
+        ))}
+      </div>
+
+      {step === "meta" && (
+        <div className="space-y-3">
+          <div>
+            <Label className="text-slate-300 text-xs mb-1 block">Lesson Title *</Label>
+            <Input value={meta.title} onChange={fm("title")} placeholder="e.g. Needs and Wants" className="bg-slate-700 border-slate-600 text-white" data-testid="input-lesson-title" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-slate-300 text-xs mb-1 block">Instructor</Label>
+              <Input value={meta.instructor} onChange={fm("instructor")} placeholder="Mrs. Deveaux" className="bg-slate-700 border-slate-600 text-white" />
+            </div>
+            <div>
+              <Label className="text-slate-300 text-xs mb-1 block">Subject</Label>
+              <Input value={meta.subject} onChange={fm("subject")} placeholder="Personal Finance" className="bg-slate-700 border-slate-600 text-white" />
+            </div>
+            <div>
+              <Label className="text-slate-300 text-xs mb-1 block">Grade Level</Label>
+              <Input value={meta.grade_level} onChange={fm("grade_level")} placeholder="5/6" className="bg-slate-700 border-slate-600 text-white" />
+            </div>
+            <div>
+              <Label className="text-slate-300 text-xs mb-1 block">Topic</Label>
+              <Input value={meta.topic} onChange={fm("topic")} placeholder="Needs and Wants" className="bg-slate-700 border-slate-600 text-white" />
+            </div>
+          </div>
+          <div>
+            <Label className="text-slate-300 text-xs mb-1 block">Duration</Label>
+            <Input value={meta.duration} onChange={fm("duration")} placeholder="45 minutes (Period 7)" className="bg-slate-700 border-slate-600 text-white" />
+          </div>
+          <div>
+            <Label className="text-slate-300 text-xs mb-1 block">Learning Objectives</Label>
+            <div className="space-y-2">
+              {objectives.map((obj, i) => (
+                <div key={i} className="flex gap-2">
+                  <Input value={obj} onChange={e => setObjectives(p => p.map((x, j) => j === i ? e.target.value : x))}
+                    placeholder={`Objective ${i + 1}`} className="bg-slate-700 border-slate-600 text-white text-sm flex-1" />
+                  {objectives.length > 1 && (
+                    <button onClick={() => setObjectives(p => p.filter((_, j) => j !== i))} className="text-slate-500 hover:text-red-400 px-1">
+                      <Minus className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button onClick={() => setObjectives(p => [...p, ""])} className="text-indigo-400 text-xs hover:text-indigo-300 flex items-center gap-1">
+                <Plus className="w-3 h-3" /> Add objective
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-end pt-1">
+            <Button onClick={() => setStep("content")} disabled={!meta.title} className="bg-indigo-600 hover:bg-indigo-700">
+              Next: Content →
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {step === "content" && (
+        <div className="space-y-4">
+          <p className="text-slate-400 text-xs">Add content sections — definitions, explanations, examples.</p>
+          {sections.map((sec, i) => (
+            <div key={i} className="space-y-2 p-3 rounded-lg bg-slate-800 border border-slate-700">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-300 text-xs font-bold">Section {i + 1}</span>
+                {sections.length > 1 && (
+                  <button onClick={() => setSections(p => p.filter((_, j) => j !== i))} className="text-slate-500 hover:text-red-400">
+                    <Minus className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              <Input value={sec.heading} onChange={e => setSections(p => p.map((s, j) => j === i ? { ...s, heading: e.target.value } : s))}
+                placeholder="Section heading (e.g. What is a Need?)" className="bg-slate-700 border-slate-600 text-white text-sm" />
+              <Textarea value={sec.body} onChange={(e: any) => setSections(p => p.map((s, j) => j === i ? { ...s, body: e.target.value } : s))}
+                placeholder="Definition or explanation..." className="bg-slate-700 border-slate-600 text-white text-sm resize-none h-20" />
+              <Input value={sec.examples} onChange={e => setSections(p => p.map((s, j) => j === i ? { ...s, examples: e.target.value } : s))}
+                placeholder="Examples (comma-separated): Food, Water, Shelter" className="bg-slate-700 border-slate-600 text-white text-sm" />
+            </div>
+          ))}
+          <button onClick={() => setSections(p => [...p, { heading: "", body: "", examples: "" }])} className="text-indigo-400 text-xs hover:text-indigo-300 flex items-center gap-1">
+            <Plus className="w-3 h-3" /> Add section
+          </button>
+          <div className="flex justify-between pt-1">
+            <Button variant="ghost" onClick={() => setStep("meta")} className="text-slate-400 hover:text-white">← Back</Button>
+            <Button onClick={() => setStep("quiz")} className="bg-indigo-600 hover:bg-indigo-700">Next: Quiz →</Button>
+          </div>
+        </div>
+      )}
+
+      {step === "quiz" && (
+        <div className="space-y-4">
+          <p className="text-slate-400 text-xs">Add multiple-choice quiz questions. Select the correct answer for each.</p>
+          {questions.map((q, qi) => (
+            <div key={qi} className="space-y-2 p-3 rounded-lg bg-slate-800 border border-slate-700">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-300 text-xs font-bold">Q{qi + 1}</span>
+                {questions.length > 1 && (
+                  <button onClick={() => setQuestions(p => p.filter((_, j) => j !== qi))} className="text-slate-500 hover:text-red-400">
+                    <Minus className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              <Textarea value={q.question} onChange={(e: any) => setQuestions(p => p.map((x, j) => j === qi ? { ...x, question: e.target.value } : x))}
+                placeholder="Question text..." className="bg-slate-700 border-slate-600 text-white text-sm resize-none h-16" />
+              <div className="grid grid-cols-2 gap-2">
+                {(["option_a", "option_b", "option_c", "option_d"] as const).map((opt, oi) => {
+                  const letter = String.fromCharCode(65 + oi);
+                  const isCorrect = q.correct_answer === letter;
+                  return (
+                    <div key={opt} className={`flex gap-1.5 items-center p-1.5 rounded border cursor-pointer transition-colors ${isCorrect ? "border-emerald-500 bg-emerald-900/30" : "border-slate-600 hover:border-slate-500"}`}
+                      onClick={() => setQuestions(p => p.map((x, j) => j === qi ? { ...x, correct_answer: letter } : x))}>
+                      <span className={`w-5 h-5 rounded text-xs font-bold flex items-center justify-center flex-shrink-0 ${isCorrect ? "bg-emerald-500 text-white" : "bg-slate-600 text-slate-300"}`}>{letter}</span>
+                      <Input value={(q as any)[opt]}
+                        onChange={e => setQuestions(p => p.map((x, j) => j === qi ? { ...x, [opt]: e.target.value } : x))}
+                        onClick={e => e.stopPropagation()}
+                        placeholder={`Option ${letter}`} className="bg-transparent border-0 text-white text-xs p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-slate-500">Click an option to mark it correct</p>
+            </div>
+          ))}
+          <button onClick={() => setQuestions(p => [...p, { question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "A" }])}
+            className="text-indigo-400 text-xs hover:text-indigo-300 flex items-center gap-1">
+            <Plus className="w-3 h-3" /> Add question
+          </button>
+          <div className="flex justify-between pt-1">
+            <Button variant="ghost" onClick={() => setStep("content")} className="text-slate-400 hover:text-white">← Back</Button>
+            <Button onClick={() => save.mutate()} disabled={save.isPending || !meta.title} className="bg-indigo-600 hover:bg-indigo-700" data-testid="button-save-lesson">
+              {save.isPending ? "Saving…" : "Create Lesson"}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── OrgCard ─────────────────────────────────────────────────────────────────
 
 function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
   const [expanded, setExpanded] = useState(false);
   const [envDialog, setEnvDialog] = useState(false);
+  const [lessonDialog, setLessonDialog] = useState(false);
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data: envs = [], isLoading: envsLoading } = useQuery<any[]>({
@@ -458,10 +652,21 @@ function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
     queryFn: () => apiRequest("GET", `/api/admin/organizations/${org.id}/environments`).then(r => r.json()),
     enabled: expanded,
   });
+  const { data: lessons = [], isLoading: lessonsLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/organizations", org.id, "lessons"],
+    queryFn: () => apiRequest("GET", `/api/admin/organizations/${org.id}/lessons`).then(r => r.json()),
+    enabled: expanded,
+  });
   const toggleActive = useMutation({
     mutationFn: () => apiRequest("PATCH", `/api/admin/organizations/${org.id}`, { is_active: !org.is_active }).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/organizations"] }); },
     onError: () => toast({ title: "Error toggling status", variant: "destructive" }),
+  });
+  const togglePublish = useMutation({
+    mutationFn: ({ id, is_published }: { id: string; is_published: boolean }) =>
+      apiRequest("PATCH", `/api/admin/lessons/${id}/publish`, { is_published }).then(r => r.json()),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/organizations", org.id, "lessons"] }); },
+    onError: () => toast({ title: "Error updating lesson", variant: "destructive" }),
   });
 
   const tierColors: Record<string, string> = {
@@ -518,45 +723,103 @@ function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
       </div>
 
       {expanded && (
-        <div className="border-t border-slate-700 px-4 py-3 bg-slate-900/40">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-slate-300 text-sm font-medium flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-indigo-400" /> Environments ({envs.length})
-            </span>
-            <Dialog open={envDialog} onOpenChange={setEnvDialog}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-xs h-7" data-testid={`button-add-env-${org.id}`}>
-                  <Plus className="w-3 h-3 mr-1" /> Add Environment
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-slate-800 border-slate-700 text-white">
-                <DialogHeader><DialogTitle>New Environment for {org.name}</DialogTitle></DialogHeader>
-                <EnvDialog orgId={org.id} onClose={() => setEnvDialog(false)} />
-              </DialogContent>
-            </Dialog>
-          </div>
-          {envsLoading ? (
-            <p className="text-slate-500 text-xs">Loading environments…</p>
-          ) : envs.length === 0 ? (
-            <p className="text-slate-500 text-xs italic">No environments yet. Add one to assign students to this organization.</p>
-          ) : (
-            <div className="space-y-2">
-              {envs.map((env: any) => (
-                <div key={env.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700">
-                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: env.theme_color ?? "#7c3aed" }} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium truncate" data-testid={`text-env-name-${env.id}`}>{env.display_name}</p>
-                    <p className="text-slate-500 text-xs font-mono">{env.slug}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {(env.features_enabled ?? []).map((f: string) => (
-                      <span key={f} className="text-xs bg-indigo-900/60 text-indigo-300 px-1.5 py-0.5 rounded">{f.replace("_", " ")}</span>
-                    ))}
-                  </div>
-                </div>
-              ))}
+        <div className="border-t border-slate-700 px-4 py-3 bg-slate-900/40 space-y-4">
+          {/* Environments */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-slate-300 text-sm font-medium flex items-center gap-1.5">
+                <Layers className="w-4 h-4 text-indigo-400" /> Environments ({envs.length})
+              </span>
+              <Dialog open={envDialog} onOpenChange={setEnvDialog}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-xs h-7" data-testid={`button-add-env-${org.id}`}>
+                    <Plus className="w-3 h-3 mr-1" /> Add Environment
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-slate-800 border-slate-700 text-white">
+                  <DialogHeader><DialogTitle>New Environment for {org.name}</DialogTitle></DialogHeader>
+                  <EnvDialog orgId={org.id} onClose={() => setEnvDialog(false)} />
+                </DialogContent>
+              </Dialog>
             </div>
-          )}
+            {envsLoading ? (
+              <p className="text-slate-500 text-xs">Loading environments…</p>
+            ) : envs.length === 0 ? (
+              <p className="text-slate-500 text-xs italic">No environments yet. Add one to assign students to this organization.</p>
+            ) : (
+              <div className="space-y-2">
+                {envs.map((env: any) => (
+                  <div key={env.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700">
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: env.theme_color ?? "#7c3aed" }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-medium truncate" data-testid={`text-env-name-${env.id}`}>{env.display_name}</p>
+                      <p className="text-slate-500 text-xs font-mono">{env.slug}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {(env.features_enabled ?? []).map((f: string) => (
+                        <span key={f} className="text-xs bg-indigo-900/60 text-indigo-300 px-1.5 py-0.5 rounded">{f.replace("_", " ")}</span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Lesson Plans */}
+          <div className="border-t border-slate-700/50 pt-3">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-slate-300 text-sm font-medium flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-teal-400" /> Lesson Plans ({lessons.length})
+              </span>
+              <Dialog open={lessonDialog} onOpenChange={setLessonDialog}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="bg-teal-700 hover:bg-teal-600 text-xs h-7" data-testid={`button-add-lesson-${org.id}`}>
+                    <Plus className="w-3 h-3 mr-1" /> Add Lesson
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-xl">
+                  <DialogHeader><DialogTitle>New Lesson Plan for {org.name}</DialogTitle></DialogHeader>
+                  <LessonPlanDialog orgId={org.id} onClose={() => setLessonDialog(false)} />
+                </DialogContent>
+              </Dialog>
+            </div>
+            {lessonsLoading ? (
+              <p className="text-slate-500 text-xs">Loading lessons…</p>
+            ) : lessons.length === 0 ? (
+              <p className="text-slate-500 text-xs italic">No lesson plans yet. Add one to deliver curriculum to students.</p>
+            ) : (
+              <div className="space-y-2">
+                {lessons.map((lesson: any) => (
+                  <div key={lesson.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-800 border border-slate-700">
+                    <div className={`w-2 h-8 rounded-full flex-shrink-0 ${lesson.is_published ? "bg-teal-500" : "bg-slate-600"}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-medium truncate" data-testid={`text-lesson-title-${lesson.id}`}>{lesson.title}</p>
+                      <p className="text-slate-400 text-xs">
+                        {lesson.subject ? `${lesson.subject} · ` : ""}
+                        {lesson.grade_level ? `Grade ${lesson.grade_level} · ` : ""}
+                        {lesson.instructor || ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${lesson.is_published ? "bg-teal-900/60 text-teal-300" : "bg-slate-700 text-slate-400"}`}>
+                        {lesson.is_published ? "Published" : "Draft"}
+                      </span>
+                      <button
+                        onClick={() => togglePublish.mutate({ id: lesson.id, is_published: !lesson.is_published })}
+                        disabled={togglePublish.isPending}
+                        className={`p-1.5 rounded transition-colors ${lesson.is_published ? "text-teal-400 hover:text-slate-400 hover:bg-slate-700" : "text-slate-400 hover:text-teal-400 hover:bg-teal-900/30"}`}
+                        title={lesson.is_published ? "Unpublish" : "Publish"}
+                        data-testid={`button-toggle-lesson-${lesson.id}`}
+                      >
+                        {lesson.is_published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

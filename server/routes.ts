@@ -26,6 +26,14 @@ import {
   getLeaderboard,
   upsertLeaderboardSnapshot,
   trackEvent,
+  getLessonsByOrg,
+  getPublishedLessons,
+  getLessonWithQuestions,
+  createLessonPlan,
+  createLessonQuizQuestion,
+  toggleLessonPublish,
+  getStudentOrgIds,
+  seedFinancialAcademyLesson,
 } from "./supabase";
 
 const upload = multer({ 
@@ -2088,7 +2096,9 @@ If the user asks about FinSight Lite features, you can mention:
   });
 
   // === SUPABASE ORGANIZATIONS & ENVIRONMENTS ===
-  initSupabaseTables().catch(e => console.error("[Supabase] Init error:", e));
+  initSupabaseTables()
+    .then(() => seedFinancialAcademyLesson())
+    .catch(e => console.error("[Supabase] Init error:", e));
 
   app.get("/api/supabase/status", async (_req, res) => {
     if (!supabase) return res.json({ connected: false, reason: "Missing credentials" });
@@ -2193,6 +2203,115 @@ If the user asks about FinSight Lite features, you can mention:
       }).parse(req.body);
       await trackEvent({ student_user_id: req.user?.id, ...body });
       res.json({ ok: true });
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  // === LESSON PLANS (admin) ===
+
+  app.get("/api/admin/organizations/:id/lessons", isAdmin, async (req, res) => {
+    const lessons = await getLessonsByOrg(req.params.id);
+    res.json(lessons);
+  });
+
+  app.post("/api/admin/organizations/:id/lessons", isAdmin, async (req, res) => {
+    try {
+      const body = z.object({
+        title: z.string().min(1),
+        instructor: z.string().optional(),
+        subject: z.string().optional(),
+        grade_level: z.string().optional(),
+        topic: z.string().optional(),
+        duration: z.string().optional(),
+        env_id: z.string().uuid().optional().nullable(),
+        objectives: z.array(z.string()).default([]),
+        content_sections: z.array(z.object({
+          heading: z.string(),
+          body: z.string(),
+          examples: z.array(z.string()).optional(),
+        })).default([]),
+        questions: z.array(z.object({
+          question: z.string().min(1),
+          option_a: z.string().min(1),
+          option_b: z.string().min(1),
+          option_c: z.string().min(1),
+          option_d: z.string().min(1),
+          correct_answer: z.enum(["A", "B", "C", "D"]),
+        })).default([]),
+      }).parse(req.body);
+
+      const { questions, ...planData } = body;
+      const lesson = await createLessonPlan({ ...planData, org_id: req.params.id, is_published: false });
+      if (!lesson) return res.status(500).json({ message: "Failed to create lesson" });
+
+      for (let i = 0; i < questions.length; i++) {
+        await createLessonQuizQuestion({ ...questions[i], lesson_id: lesson.id, order_index: i });
+      }
+
+      const full = await getLessonWithQuestions(lesson.id);
+      res.json(full);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.patch("/api/admin/lessons/:id/publish", isAdmin, async (req, res) => {
+    try {
+      const { is_published } = z.object({ is_published: z.boolean() }).parse(req.body);
+      const lesson = await toggleLessonPublish(req.params.id, is_published);
+      if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+      res.json(lesson);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  // === LESSON PLANS (student) ===
+
+  app.get("/api/lessons", isAuthenticated, async (req: any, res) => {
+    const userId = req.user?.id;
+    const orgIds = userId ? await getStudentOrgIds(userId) : [];
+    // If student is enrolled in orgs, show those org lessons; else show all published
+    let lessons;
+    if (orgIds.length > 0) {
+      const allLessons = await Promise.all(orgIds.map(id => getPublishedLessons(id)));
+      lessons = allLessons.flat();
+    } else {
+      lessons = await getPublishedLessons();
+    }
+    res.json(lessons);
+  });
+
+  app.get("/api/lessons/:id", isAuthenticated, async (req, res) => {
+    const lesson = await getLessonWithQuestions(req.params.id);
+    if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+    if (!lesson.is_published) return res.status(403).json({ message: "Lesson not published" });
+    res.json(lesson);
+  });
+
+  app.post("/api/lessons/:id/complete", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const { correctAnswers, totalQuestions } = z.object({
+        correctAnswers: z.number().int().min(0),
+        totalQuestions: z.number().int().min(1),
+      }).parse(req.body);
+
+      const xpEarned = Math.round(correctAnswers * 10 + (correctAnswers / totalQuestions) * 20);
+
+      const currentXp = await storage.getUserXp(userId);
+      const newTotalXp = currentXp.totalXp + xpEarned;
+      const newLevel = Math.floor(newTotalXp / 100) + 1;
+      await storage.updateUserXp(userId, {
+        totalXp: newTotalXp,
+        level: newLevel,
+        currentStreak: currentXp.currentStreak,
+        longestStreak: currentXp.longestStreak,
+        lastPlayedAt: new Date(),
+      });
+
+      res.json({ xpEarned, totalXp: newTotalXp, level: newLevel });
     } catch (e: any) {
       res.status(400).json({ message: e.message });
     }

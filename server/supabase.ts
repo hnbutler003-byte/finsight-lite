@@ -58,6 +58,45 @@ export type OrgStudent = {
   joined_at: string;
 };
 
+export type ContentSection = {
+  heading: string;
+  body: string;
+  examples?: string[];
+};
+
+export type LessonPlan = {
+  id: string;
+  org_id: string;
+  env_id?: string | null;
+  title: string;
+  instructor?: string | null;
+  subject?: string | null;
+  grade_level?: string | null;
+  topic?: string | null;
+  duration?: string | null;
+  objectives: string[];
+  content_sections: ContentSection[];
+  is_published: boolean;
+  created_at: string;
+};
+
+export type LessonQuizQuestion = {
+  id: string;
+  lesson_id: string;
+  question: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_answer: string;
+  order_index: number;
+};
+
+export type LessonWithQuestions = LessonPlan & {
+  questions: LessonQuizQuestion[];
+};
+
+// SQL to run in Supabase SQL Editor:
 const INIT_SQL = `
 -- Organizations table
 CREATE TABLE IF NOT EXISTS organizations (
@@ -124,6 +163,36 @@ CREATE TABLE IF NOT EXISTS analytics_events (
   event_data jsonb DEFAULT '{}',
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Organization lesson plans
+CREATE TABLE IF NOT EXISTS lesson_plans (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  env_id uuid REFERENCES org_environments(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  instructor text,
+  subject text,
+  grade_level text,
+  topic text,
+  duration text,
+  objectives text[] DEFAULT ARRAY[]::text[],
+  content_sections jsonb DEFAULT '[]'::jsonb,
+  is_published boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Lesson quiz questions
+CREATE TABLE IF NOT EXISTS lesson_quiz_questions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lesson_id uuid NOT NULL REFERENCES lesson_plans(id) ON DELETE CASCADE,
+  question text NOT NULL,
+  option_a text NOT NULL,
+  option_b text NOT NULL,
+  option_c text NOT NULL,
+  option_d text NOT NULL,
+  correct_answer text NOT NULL,
+  order_index integer NOT NULL DEFAULT 0
+);
 `;
 
 export async function initSupabaseTables(): Promise<void> {
@@ -153,6 +222,13 @@ export async function getOrganizations(): Promise<Organization[]> {
 export async function getOrganization(id: string): Promise<Organization | null> {
   if (!supabase) return null;
   const { data, error } = await supabase.from("organizations").select("*").eq("id", id).single();
+  if (error) return null;
+  return data;
+}
+
+export async function getOrganizationByName(name: string): Promise<Organization | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("organizations").select("*").eq("name", name).limit(1).single();
   if (error) return null;
   return data;
 }
@@ -218,4 +294,210 @@ export async function trackEvent(event: {
   if (!supabase) return;
   const { error } = await supabase.from("analytics_events").insert(event);
   if (error) console.error("[Supabase] trackEvent:", error.message);
+}
+
+// ─── Lesson Plans ─────────────────────────────────────────────────────────────
+
+export async function getLessonsByOrg(orgId: string): Promise<LessonPlan[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("lesson_plans")
+    .select("*")
+    .eq("org_id", orgId)
+    .order("created_at", { ascending: false });
+  if (error) { console.error("[Supabase] getLessonsByOrg:", error.message); return []; }
+  return (data ?? []).map(normalizeLessonPlan);
+}
+
+export async function getPublishedLessons(orgId?: string): Promise<LessonPlan[]> {
+  if (!supabase) return [];
+  let q = supabase.from("lesson_plans").select("*").eq("is_published", true).order("created_at", { ascending: false });
+  if (orgId) q = q.eq("org_id", orgId);
+  const { data, error } = await q;
+  if (error) { console.error("[Supabase] getPublishedLessons:", error.message); return []; }
+  return (data ?? []).map(normalizeLessonPlan);
+}
+
+export async function getLessonWithQuestions(lessonId: string): Promise<LessonWithQuestions | null> {
+  if (!supabase) return null;
+  const { data: lesson, error: le } = await supabase
+    .from("lesson_plans").select("*").eq("id", lessonId).single();
+  if (le || !lesson) return null;
+  const { data: questions, error: qe } = await supabase
+    .from("lesson_quiz_questions").select("*").eq("lesson_id", lessonId).order("order_index");
+  if (qe) { console.error("[Supabase] getLessonWithQuestions questions:", qe.message); }
+  return { ...normalizeLessonPlan(lesson), questions: questions ?? [] };
+}
+
+export async function createLessonPlan(plan: Omit<LessonPlan, "id" | "created_at">): Promise<LessonPlan | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("lesson_plans").insert({
+    ...plan,
+    objectives: plan.objectives ?? [],
+    content_sections: plan.content_sections ?? [],
+  }).select().single();
+  if (error) { console.error("[Supabase] createLessonPlan:", error.message); return null; }
+  return normalizeLessonPlan(data);
+}
+
+export async function createLessonQuizQuestion(q: Omit<LessonQuizQuestion, "id">): Promise<LessonQuizQuestion | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("lesson_quiz_questions").insert(q).select().single();
+  if (error) { console.error("[Supabase] createLessonQuizQuestion:", error.message); return null; }
+  return data;
+}
+
+export async function toggleLessonPublish(lessonId: string, isPublished: boolean): Promise<LessonPlan | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("lesson_plans").update({ is_published: isPublished }).eq("id", lessonId).select().single();
+  if (error) { console.error("[Supabase] toggleLessonPublish:", error.message); return null; }
+  return normalizeLessonPlan(data);
+}
+
+export async function getStudentOrgIds(studentUserId: string): Promise<string[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("org_students").select("org_id").eq("student_user_id", studentUserId);
+  if (error) return [];
+  return (data ?? []).map((r: any) => r.org_id);
+}
+
+function normalizeLessonPlan(raw: any): LessonPlan {
+  return {
+    ...raw,
+    objectives: Array.isArray(raw.objectives) ? raw.objectives : [],
+    content_sections: Array.isArray(raw.content_sections) ? raw.content_sections : [],
+  };
+}
+
+// ─── Seed: The Financial Academy — Needs & Wants lesson ───────────────────────
+
+export async function seedFinancialAcademyLesson(): Promise<void> {
+  if (!supabase) return;
+  try {
+    const org = await getOrganizationByName("The Financial Academy");
+    if (!org) {
+      console.log("[Supabase] Seed: 'The Financial Academy' org not found — skipping lesson seed.");
+      return;
+    }
+
+    const { data: existing } = await supabase
+      .from("lesson_plans")
+      .select("id")
+      .eq("org_id", org.id)
+      .eq("title", "Needs and Wants")
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      console.log("[Supabase] Seed: Financial Academy lesson already exists — skipping.");
+      return;
+    }
+
+    const lesson = await createLessonPlan({
+      org_id: org.id,
+      env_id: null,
+      title: "Needs and Wants",
+      instructor: "Mrs. L. Deveaux",
+      subject: "Personal Finance",
+      grade_level: "5/6",
+      topic: "Needs and Wants",
+      duration: "45 minutes (Period 7)",
+      objectives: [
+        "I can define needs.",
+        "I can provide examples of at least 3 needs.",
+        "I can define wants.",
+        "I can provide examples of at least 3 wants.",
+      ],
+      content_sections: [
+        {
+          heading: "What is a Need?",
+          body: "A need is something you must have to survive and live safely.",
+          examples: ["Food", "Water", "Shelter", "Clothing"],
+        },
+        {
+          heading: "What is a Want?",
+          body: "A want is something you would like to have but can live without.",
+          examples: ["Video games", "Designer sneakers", "The newest phone", "Jewellery"],
+        },
+      ],
+      is_published: true,
+    });
+
+    if (!lesson) {
+      console.error("[Supabase] Seed: Failed to create Financial Academy lesson.");
+      return;
+    }
+
+    const questions: Omit<LessonQuizQuestion, "id">[] = [
+      {
+        lesson_id: lesson.id,
+        question: "What is a need?",
+        option_a: "Something you must have to live",
+        option_b: "A toy you like",
+        option_c: "A video game",
+        option_d: "A piece of candy",
+        correct_answer: "A",
+        order_index: 0,
+      },
+      {
+        lesson_id: lesson.id,
+        question: "Which of these is NOT a need?",
+        option_a: "Food",
+        option_b: "Shelter",
+        option_c: "Designer sneakers",
+        option_d: "Clothing",
+        correct_answer: "C",
+        order_index: 1,
+      },
+      {
+        lesson_id: lesson.id,
+        question: "Which group shows only wants?",
+        option_a: "Air, water, food",
+        option_b: "Shoes, uniform, lunch",
+        option_c: "Video game, doll, skateboard",
+        option_d: "Jacket, house, water",
+        correct_answer: "C",
+        order_index: 2,
+      },
+      {
+        lesson_id: lesson.id,
+        question: "Which of the following is a need?",
+        option_a: "Ice cream",
+        option_b: "Clean water",
+        option_c: "A new phone",
+        option_d: "A skateboard",
+        correct_answer: "B",
+        order_index: 3,
+      },
+      {
+        lesson_id: lesson.id,
+        question: "What is a want?",
+        option_a: "Something you must have to survive",
+        option_b: "Something that keeps you safe",
+        option_c: "Something nice to have but not necessary",
+        option_d: "Something you cannot live without",
+        correct_answer: "C",
+        order_index: 4,
+      },
+      {
+        lesson_id: lesson.id,
+        question: "Which group shows only needs?",
+        option_a: "Pizza, candy, chips",
+        option_b: "House, food, water",
+        option_c: "Bike, toy, tablet",
+        option_d: "Ice cream, cake, soda",
+        correct_answer: "B",
+        order_index: 5,
+      },
+    ];
+
+    for (const q of questions) {
+      await createLessonQuizQuestion(q);
+    }
+
+    console.log("[Supabase] ✓ Seeded Financial Academy 'Needs and Wants' lesson.");
+  } catch (e: any) {
+    console.error("[Supabase] Seed error:", e.message);
+  }
 }

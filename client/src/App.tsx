@@ -27,6 +27,7 @@ import TeacherClassDetail from "@/pages/TeacherClassDetail";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import DemoAccess from "@/pages/DemoAccess";
+import Lessons from "@/pages/Lessons";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
@@ -100,6 +101,7 @@ function Router() {
       <Route path="/moneylab/play" component={MoneyLabPlay} />
       <Route path="/moneylab/tutor" component={MoneyLabTutor} />
       <Route path="/moneylab/leaderboard" component={MoneyLabLeaderboard} />
+      <Route path="/lessons" component={Lessons} />
       <Route path="/transactions">{() => <Redirect to="/" />}</Route>
       <Route path="/reports">{() => <Redirect to="/" />}</Route>
       <Route component={NotFound} />
