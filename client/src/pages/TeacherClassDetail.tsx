@@ -8,7 +8,7 @@ import { useState } from "react";
 import {
   ArrowLeft, Users, Trophy, Bell, BarChart3, Loader2, Copy, Check,
   Download, Trash2, Plus, Medal, Star, BookOpen, Gamepad2, Zap, Target,
-  Send, Crown, TrendingUp, AlertCircle, Sparkles
+  Send, Crown, TrendingUp, AlertCircle, Sparkles, BookMarked, GraduationCap, Clock
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,13 +34,14 @@ type Notification = {
   id: number; title: string; message: string; type: string; createdAt: string;
 };
 
-const TABS = [
+const BASE_TABS = [
   { id: "students", label: "Students", icon: Users },
   { id: "leaderboard", label: "Leaderboard", icon: Trophy },
   { id: "challenges", label: "Challenges", icon: Target },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
 ];
+const LESSONS_TAB = { id: "lessons", label: "Lessons", icon: BookMarked };
 
 function StudentRow({ s }: { s: StudentData }) {
   const pct = Math.round((s.lessonsCompleted / s.totalLessons) * 100);
@@ -270,6 +271,14 @@ export default function TeacherClassDetail() {
     queryFn: () => fetch(`/api/teacher/classes/${classId}/analytics`, { credentials: "include" }).then(r => r.json()),
     enabled: !!teacher && activeTab === "analytics",
   });
+
+  const { data: orgLessons = [], isLoading: lessonsLoading } = useQuery<any[]>({
+    queryKey: [`/api/teacher/classes/${classId}/lessons`],
+    queryFn: () => fetch(`/api/teacher/classes/${classId}/lessons`, { credentials: "include" }).then(r => r.json()),
+    enabled: !!teacher && activeTab === "lessons" && !!cls?.envId,
+  });
+
+  const TABS = cls?.envId ? [...BASE_TABS, LESSONS_TAB] : BASE_TABS;
 
   const deleteChallenge = useMutation({
     mutationFn: (id: number) => fetch(`/api/teacher/challenges/${id}`, { method: "DELETE", credentials: "include" }).then(r => r.json()),
@@ -532,6 +541,58 @@ export default function TeacherClassDetail() {
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "lessons" && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-2xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
+                  <BookMarked className="w-5 h-5 text-teal-600" />
+                </div>
+                <div>
+                  <h2 className="font-bold">Org Lesson Plans</h2>
+                  <p className="text-xs text-muted-foreground">Published lessons from your linked organization — share with students.</p>
+                </div>
+              </div>
+              {lessonsLoading ? (
+                <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-teal-500" /></div>
+              ) : orgLessons.length === 0 ? (
+                <Card className="rounded-3xl border-2 border-dashed">
+                  <CardContent className="p-10 text-center">
+                    <BookOpen className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
+                    <p className="font-bold">No lessons published yet</p>
+                    <p className="text-sm text-muted-foreground mt-1">Your organization hasn't published any lessons yet. Check back soon.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {orgLessons.map((lesson: any) => (
+                    <Card key={lesson.id} className="rounded-2xl border-2" data-testid={`lesson-card-${lesson.id}`}>
+                      <CardContent className="p-4 flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white shadow shrink-0">
+                          <BookMarked className="w-6 h-6" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-bold truncate">{lesson.title}</h3>
+                            {lesson.subject && (
+                              <span className="text-xs bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 px-2 py-0.5 rounded-full font-medium">{lesson.subject}</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
+                            {lesson.instructor && <span className="flex items-center gap-1"><GraduationCap className="w-3 h-3" />{lesson.instructor}</span>}
+                            {lesson.grade_level && <span>Grade {lesson.grade_level}</span>}
+                            {lesson.duration && <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{lesson.duration}</span>}
+                            <span className="text-muted-foreground/60">{lesson.objectives?.length ?? 0} objectives · {lesson.content_sections?.length ?? 0} sections</span>
+                          </div>
+                        </div>
+                        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-1 rounded-xl shrink-0">Published</span>
                       </CardContent>
                     </Card>
                   ))}

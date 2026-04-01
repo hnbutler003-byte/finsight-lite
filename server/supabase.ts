@@ -301,6 +301,13 @@ export async function createOrgEnvironment(env: Omit<OrgEnvironment, "id" | "cre
   return data;
 }
 
+export async function getOrgEnvironmentById(id: string): Promise<OrgEnvironment | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("org_environments").select("*").eq("id", id).single();
+  if (error) return null;
+  return data;
+}
+
 export async function getOrgEnvironmentByJoinCode(code: string): Promise<OrgEnvironment | null> {
   if (!supabase) return null;
   const { data, error } = await supabase

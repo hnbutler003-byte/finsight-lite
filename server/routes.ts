@@ -35,6 +35,7 @@ import {
   getStudentOrgIds,
   seedFinancialAcademyLesson,
   getOrgEnvironmentByJoinCode,
+  getOrgEnvironmentById,
   enrollStudentInOrg,
 } from "./supabase";
 
@@ -1780,6 +1781,18 @@ If the user asks about FinSight Lite features, you can mention:
     res.json(analytics);
   });
 
+  // Lessons for a linked org environment (read-only, teacher view)
+  app.get("/api/teacher/classes/:id/lessons", isTeacher, async (req: any, res) => {
+    const id = parseInt(req.params.id);
+    const cls = await storage.getClassById(id);
+    if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+    if (!cls.envId) return res.json([]);
+    const env = await getOrgEnvironmentById(cls.envId);
+    if (!env) return res.json([]);
+    const lessons = await getPublishedLessons(env.org_id);
+    res.json(lessons);
+  });
+
   // CSV Report download
   app.get("/api/teacher/classes/:id/report.csv", isTeacher, async (req: any, res) => {
     const id = parseInt(req.params.id);
@@ -1966,9 +1979,35 @@ If the user asks about FinSight Lite features, you can mention:
     res.json(data);
   });
 
+  app.patch("/api/admin/teachers/:id/org-link", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { org_id, env_id } = z.object({
+        org_id: z.string().nullable(),
+        env_id: z.string().nullable(),
+      }).parse(req.body);
+      const updated = await storage.updateTeacherOrgLink(id, org_id, env_id);
+      const { passwordHash: _, ...safe } = updated;
+      res.json(safe);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
   app.get("/api/admin/classes", isAdmin, async (_req, res) => {
     const data = await storage.getAdminClasses();
     res.json(data);
+  });
+
+  app.patch("/api/admin/classes/:id/org-link", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { env_id } = z.object({ env_id: z.string().nullable() }).parse(req.body);
+      const updated = await storage.updateClassEnvLink(id, env_id);
+      res.json(updated);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
   });
 
   app.get("/api/admin/challenges", isAdmin, async (_req, res) => {
@@ -2076,6 +2115,17 @@ If the user asks about FinSight Lite features, you can mention:
       if (!cls) return res.status(404).json({ message: "Class not found. Check the code and try again." });
       const studentId = (req.user as any).id;
       const enrollment = await storage.enrollStudent(cls.id, studentId);
+
+      // Auto-enroll in org if the class is linked to an org environment
+      if (cls.envId) {
+        const env = await getOrgEnvironmentById(cls.envId);
+        if (env) {
+          enrollStudentInOrg(env.org_id, env.id, studentId).catch(err =>
+            console.warn("[join-class] org auto-enroll failed (non-blocking):", err?.message)
+          );
+        }
+      }
+
       res.json({ enrollment, class: cls });
     } catch (e: any) {
       res.status(400).json({ message: e.message });
@@ -2203,6 +2253,19 @@ If the user asks about FinSight Lite features, you can mention:
     res.json(org);
   });
 
+  // Flat list of all org environments (used in admin link dropdowns)
+  app.get("/api/admin/org-envs", isAdmin, async (_req, res) => {
+    const orgs = await getOrganizations();
+    const envRows: any[] = [];
+    await Promise.all(orgs.map(async (org) => {
+      const envs = await getOrgEnvironments(org.id);
+      for (const env of envs) {
+        envRows.push({ ...env, org_name: org.name });
+      }
+    }));
+    res.json(envRows);
+  });
+
   app.get("/api/admin/organizations/:id/environments", isAdmin, async (req, res) => {
     const envs = await getOrgEnvironments(req.params.id);
     res.json(envs);
@@ -2328,15 +2391,40 @@ If the user asks about FinSight Lite features, you can mention:
 
   // === LESSON PLANS (student) ===
 
+  // Helper: get all org_ids accessible to a student (direct + via linked classes)
+  async function getStudentAccessibleOrgIds(userId: string): Promise<string[]> {
+    const directOrgIds = await getStudentOrgIds(userId);
+
+    // Also collect org_ids from classes the student is enrolled in that have env_id set
+    const studentClasses = await storage.getStudentClasses(userId);
+    const linkedEnvIds = studentClasses
+      .map(e => (e.class as any).envId as string | null | undefined)
+      .filter((envId): envId is string => !!envId);
+
+    if (linkedEnvIds.length > 0) {
+      const envOrgIds = await Promise.all(linkedEnvIds.map(async (envId) => {
+        const env = await getOrgEnvironmentById(envId);
+        return env?.org_id ?? null;
+      }));
+      for (const orgId of envOrgIds) {
+        if (orgId && !directOrgIds.includes(orgId)) directOrgIds.push(orgId);
+      }
+    }
+
+    return directOrgIds;
+  }
+
   app.get("/api/lessons", isAuthenticated, async (req: any, res) => {
     const userId = req.user?.id;
-    const orgIds = userId ? await getStudentOrgIds(userId) : [];
+    const orgIds = userId ? await getStudentAccessibleOrgIds(userId) : [];
     if (orgIds.length === 0) {
-      // No org enrollment — return empty list
       return res.json([]);
     }
     const allLessons = await Promise.all(orgIds.map(id => getPublishedLessons(id)));
-    res.json(allLessons.flat());
+    // Deduplicate by lesson id
+    const seen = new Set<string>();
+    const unique = allLessons.flat().filter(l => { if (seen.has(l.id)) return false; seen.add(l.id); return true; });
+    res.json(unique);
   });
 
   app.get("/api/lessons/:id", isAuthenticated, async (req: any, res) => {
@@ -2344,8 +2432,8 @@ If the user asks about FinSight Lite features, you can mention:
     const lesson = await getLessonWithQuestions(req.params.id);
     if (!lesson) return res.status(404).json({ message: "Lesson not found" });
     if (!lesson.is_published) return res.status(403).json({ message: "Lesson not published" });
-    // Verify the user is enrolled in this lesson's organization
-    const orgIds = userId ? await getStudentOrgIds(userId) : [];
+    // Verify the user has access through direct org enrollment OR a linked class
+    const orgIds = userId ? await getStudentAccessibleOrgIds(userId) : [];
     if (!orgIds.includes(lesson.org_id)) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -2365,7 +2453,7 @@ If the user asks about FinSight Lite features, you can mention:
       if (!lesson) return res.status(404).json({ message: "Lesson not found" });
       if (!lesson.is_published) return res.status(403).json({ message: "Lesson not published" });
 
-      const orgIds = await getStudentOrgIds(userId);
+      const orgIds = await getStudentAccessibleOrgIds(userId);
       if (!orgIds.includes(lesson.org_id)) {
         return res.status(403).json({ message: "Access denied" });
       }

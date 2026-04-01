@@ -180,6 +180,8 @@ Core tables include:
 - Global search: queries /api/admin/search?q=... across students, teachers, classes, schools, sponsors — results shown in dropdown with color-coded type badges
 - All data tables: client-side search, sort (any column), pagination (15 rows/page)
 - Admin routes: /api/admin/auth/*, /api/admin/overview, /api/admin/students, /api/admin/teachers, /api/admin/classes, /api/admin/challenges, /api/admin/search, /api/admin/charts/*, /api/admin/schools/*, /api/admin/sponsors/*, /api/admin/db/:table, /api/admin/reports/:type.csv
+- Org-Teacher bridge: PATCH /api/admin/teachers/:id/org-link, PATCH /api/admin/classes/:id/org-link, GET /api/admin/org-envs (flat list of all envs with org_name)
+- Teacher org lessons route: GET /api/teacher/classes/:id/lessons (returns published org lessons for the class's linked env)
 
 ## External Dependencies
 

@@ -128,6 +128,8 @@ export interface IStorage extends IAuthStorage {
   getClassById(id: number): Promise<Class | undefined>;
   getClassByCode(code: string): Promise<Class | undefined>;
   updateClass(id: number, teacherId: number, data: Partial<Pick<Class, 'name' | 'subject' | 'sponsorName'>>): Promise<Class>;
+  updateTeacherOrgLink(teacherId: number, orgId: string | null, envId: string | null): Promise<Teacher>;
+  updateClassEnvLink(classId: number, envId: string | null): Promise<Class>;
   deleteClass(id: number, teacherId: number): Promise<void>;
   getEnrollmentsByClass(classId: number): Promise<(ClassEnrollment & { student: User })[]>;
   enrollStudent(classId: number, studentId: string): Promise<ClassEnrollment>;
@@ -791,6 +793,18 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async updateTeacherOrgLink(teacherId: number, orgId: string | null, envId: string | null): Promise<Teacher> {
+    const [updated] = await db.update(teachers).set({ orgId, envId }).where(eq(teachers.id, teacherId)).returning();
+    if (!updated) throw new Error("Teacher not found");
+    return updated;
+  }
+
+  async updateClassEnvLink(classId: number, envId: string | null): Promise<Class> {
+    const [updated] = await db.update(classes).set({ envId }).where(eq(classes.id, classId)).returning();
+    if (!updated) throw new Error("Class not found");
+    return updated;
+  }
+
   async deleteClass(id: number, teacherId: number): Promise<void> {
     await db.delete(classes).where(and(eq(classes.id, id), eq(classes.teacherId, teacherId)));
   }
@@ -971,6 +985,8 @@ export class DatabaseStorage implements IStorage {
         schoolName: t.schoolName,
         classCount: teacherClasses.length,
         studentCount,
+        orgId: t.orgId,
+        envId: t.envId,
         createdAt: t.createdAt,
       };
     });
@@ -991,6 +1007,7 @@ export class DatabaseStorage implements IStorage {
         subject: c.subject,
         code: c.code,
         sponsorName: c.sponsorName,
+        envId: c.envId,
         teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : '—',
         schoolName: teacher?.schoolName ?? '—',
         studentCount: enrolled,

@@ -882,6 +882,11 @@ export default function AdminDashboard() {
     queryFn: () => apiRequest("GET", "/api/admin/organizations").then(r => r.json()),
     enabled: !!admin && activeTab === "organizations",
   });
+  const { data: allOrgEnvs = [] } = useQuery<any[]>({
+    queryKey: ["/api/admin/org-envs"],
+    queryFn: () => apiRequest("GET", "/api/admin/org-envs").then(r => r.json()),
+    enabled: !!admin && (activeTab === "teachers" || activeTab === "classes"),
+  });
   const { data: supabaseStatus } = useQuery<any>({
     queryKey: ["/api/supabase/status"],
     queryFn: () => apiRequest("GET", "/api/supabase/status").then(r => r.json()),
@@ -901,6 +906,18 @@ export default function AdminDashboard() {
   const deleteSponsor = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/admin/sponsors/${id}`).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/sponsors"] }); toast({ title: "Sponsor deleted" }); },
+  });
+  const linkTeacherOrg = useMutation({
+    mutationFn: ({ teacherId, org_id, env_id }: { teacherId: number; org_id: string | null; env_id: string | null }) =>
+      apiRequest("PATCH", `/api/admin/teachers/${teacherId}/org-link`, { org_id, env_id }).then(r => r.json()),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/teachers"] }); toast({ title: "Teacher linked to org environment" }); },
+    onError: (e: any) => toast({ title: "Link failed", description: e.message, variant: "destructive" }),
+  });
+  const linkClassEnv = useMutation({
+    mutationFn: ({ classId, env_id }: { classId: number; env_id: string | null }) =>
+      apiRequest("PATCH", `/api/admin/classes/${classId}/org-link`, { env_id }).then(r => r.json()),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/classes"] }); toast({ title: "Class linked to org environment" }); },
+    onError: (e: any) => toast({ title: "Link failed", description: e.message, variant: "destructive" }),
   });
 
   if (isLoading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center"><p className="text-slate-400">Loading...</p></div>;
@@ -1167,6 +1184,35 @@ export default function AdminDashboard() {
                 { key: "classCount", label: "Classes", render: v => <Badge className="bg-indigo-900 text-indigo-300">{v}</Badge> },
                 { key: "studentCount", label: "Students", render: v => <Badge className="bg-violet-900 text-violet-300">{v}</Badge> },
                 { key: "createdAt", label: "Joined", render: v => fmtDate(v) },
+                {
+                  key: "id",
+                  label: "Org Environment",
+                  render: (_v, row) => (
+                    <Select
+                      value={row.envId ?? "none"}
+                      onValueChange={(val) => {
+                        const env = allOrgEnvs.find((e: any) => e.id === val);
+                        linkTeacherOrg.mutate({
+                          teacherId: row.id,
+                          org_id: env ? env.org_id : null,
+                          env_id: val === "none" ? null : val,
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-200 h-8 text-xs w-44" data-testid={`select-teacher-org-${row.id}`}>
+                        <SelectValue placeholder="Unlinked" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700 text-slate-200">
+                        <SelectItem value="none" className="text-slate-400 text-xs">Unlinked</SelectItem>
+                        {allOrgEnvs.map((env: any) => (
+                          <SelectItem key={env.id} value={env.id} className="text-xs">
+                            {env.org_name} — {env.display_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ),
+                },
               ]}
             />
           </div>
@@ -1227,6 +1273,33 @@ export default function AdminDashboard() {
                 { key: "challengeCount", label: "Challenges" },
                 { key: "sponsorName", label: "Sponsor", render: v => v || "—" },
                 { key: "createdAt", label: "Created", render: v => fmtDate(v) },
+                {
+                  key: "id",
+                  label: "Org Environment",
+                  render: (_v, row) => (
+                    <Select
+                      value={row.envId ?? "none"}
+                      onValueChange={(val) => {
+                        linkClassEnv.mutate({
+                          classId: row.id,
+                          env_id: val === "none" ? null : val,
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-200 h-8 text-xs w-44" data-testid={`select-class-org-${row.id}`}>
+                        <SelectValue placeholder="Unlinked" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700 text-slate-200">
+                        <SelectItem value="none" className="text-slate-400 text-xs">Unlinked</SelectItem>
+                        {allOrgEnvs.map((env: any) => (
+                          <SelectItem key={env.id} value={env.id} className="text-xs">
+                            {env.org_name} — {env.display_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ),
+                },
               ]}
             />
           </div>

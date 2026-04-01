@@ -180,6 +180,8 @@ export const teachers = pgTable("teachers", {
   passwordHash: text("password_hash").notNull(),
   schoolName: text("school_name").notNull(),
   isVerified: boolean("is_verified").default(false).notNull(),
+  orgId: text("org_id"),
+  envId: text("env_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -190,6 +192,7 @@ export const classes = pgTable("classes", {
   subject: text("subject").default("Financial Literacy").notNull(),
   code: text("code").unique().notNull(),
   sponsorName: text("sponsor_name"),
+  envId: text("env_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
