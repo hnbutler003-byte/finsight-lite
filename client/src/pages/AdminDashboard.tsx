@@ -17,7 +17,8 @@ import {
 import {
   Shield, Users, GraduationCap, School, Building2, Trophy, Coins,
   LogOut, Search, Download, Plus, Trash2, Pencil, ChevronLeft, ChevronRight,
-  LayoutDashboard, BookOpen, X
+  LayoutDashboard, BookOpen, X, Globe, ChevronDown, ChevronUp,
+  CheckCircle2, XCircle, Layers, Medal
 } from "lucide-react";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -29,6 +30,7 @@ function fmtDate(d: any) {
 
 const TABS = [
   { id: "overview", label: "Dashboard", icon: LayoutDashboard },
+  { id: "organizations", label: "Organizations", icon: Globe },
   { id: "schools", label: "Schools", icon: School },
   { id: "teachers", label: "Teachers", icon: GraduationCap },
   { id: "students", label: "Students", icon: Users },
@@ -302,6 +304,265 @@ function SponsorDialog({ existing, onClose }: { existing?: any; onClose: () => v
   );
 }
 
+// ─── OrgDialog ───────────────────────────────────────────────────────────────
+
+function OrgDialog({ existing, onClose }: { existing?: any; onClose: () => void }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [form, setForm] = useState({
+    name: existing?.name ?? "",
+    type: existing?.type ?? "school",
+    country: existing?.country ?? "Bahamas",
+    city: existing?.city ?? "",
+    website: existing?.website ?? "",
+    contact_name: existing?.contact_name ?? "",
+    contact_email: existing?.contact_email ?? "",
+    subscription_tier: existing?.subscription_tier ?? "free",
+    max_students: existing?.max_students ?? 100,
+  });
+  const save = useMutation({
+    mutationFn: () => existing
+      ? apiRequest("PATCH", `/api/admin/organizations/${existing.id}`, form).then(r => r.json())
+      : apiRequest("POST", "/api/admin/organizations", form).then(r => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
+      toast({ title: existing ? "Organization updated" : "Organization created" });
+      onClose();
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+  const f = (k: string) => (e: any) => setForm(p => ({ ...p, [k]: e.target.value }));
+  return (
+    <div className="space-y-3 pt-2">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="col-span-2">
+          <Label className="text-slate-300 text-xs mb-1 block">Organization Name *</Label>
+          <Input value={form.name} onChange={f("name")} placeholder="e.g. St. Anne's High School"
+            className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500" data-testid="input-org-name" />
+        </div>
+        <div>
+          <Label className="text-slate-300 text-xs mb-1 block">Type</Label>
+          <Select value={form.type} onValueChange={v => setForm(p => ({ ...p, type: v }))}>
+            <SelectTrigger className="bg-slate-700 border-slate-600 text-white" data-testid="select-org-type"><SelectValue /></SelectTrigger>
+            <SelectContent className="bg-slate-800 border-slate-700">
+              {["school","credit_union","government","ngo","other"].map(t => (
+                <SelectItem key={t} value={t} className="text-white hover:bg-slate-700 capitalize">{t.replace("_", " ")}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-slate-300 text-xs mb-1 block">Tier</Label>
+          <Select value={form.subscription_tier} onValueChange={v => setForm(p => ({ ...p, subscription_tier: v }))}>
+            <SelectTrigger className="bg-slate-700 border-slate-600 text-white" data-testid="select-org-tier"><SelectValue /></SelectTrigger>
+            <SelectContent className="bg-slate-800 border-slate-700">
+              {["free","standard","premium"].map(t => (
+                <SelectItem key={t} value={t} className="text-white hover:bg-slate-700 capitalize">{t}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-slate-300 text-xs mb-1 block">Country</Label>
+          <Input value={form.country} onChange={f("country")} className="bg-slate-700 border-slate-600 text-white" data-testid="input-org-country" />
+        </div>
+        <div>
+          <Label className="text-slate-300 text-xs mb-1 block">City</Label>
+          <Input value={form.city} onChange={f("city")} className="bg-slate-700 border-slate-600 text-white" data-testid="input-org-city" />
+        </div>
+        <div>
+          <Label className="text-slate-300 text-xs mb-1 block">Contact Name</Label>
+          <Input value={form.contact_name} onChange={f("contact_name")} className="bg-slate-700 border-slate-600 text-white" data-testid="input-org-contact-name" />
+        </div>
+        <div>
+          <Label className="text-slate-300 text-xs mb-1 block">Contact Email</Label>
+          <Input value={form.contact_email} onChange={f("contact_email")} type="email" className="bg-slate-700 border-slate-600 text-white" data-testid="input-org-contact-email" />
+        </div>
+        <div>
+          <Label className="text-slate-300 text-xs mb-1 block">Website</Label>
+          <Input value={form.website} onChange={f("website")} placeholder="https://" className="bg-slate-700 border-slate-600 text-white" data-testid="input-org-website" />
+        </div>
+        <div>
+          <Label className="text-slate-300 text-xs mb-1 block">Max Students</Label>
+          <Input value={form.max_students} onChange={e => setForm(p => ({ ...p, max_students: Number(e.target.value) }))} type="number" min={1} className="bg-slate-700 border-slate-600 text-white" data-testid="input-org-max-students" />
+        </div>
+      </div>
+      <div className="flex justify-end gap-2 pt-2">
+        <Button variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white">Cancel</Button>
+        <Button onClick={() => save.mutate()} disabled={save.isPending || !form.name}
+          className="bg-indigo-600 hover:bg-indigo-700" data-testid="button-save-org">
+          {save.isPending ? "Saving…" : existing ? "Save Changes" : "Create Organization"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── EnvDialog ───────────────────────────────────────────────────────────────
+
+function EnvDialog({ orgId, onClose }: { orgId: string; onClose: () => void }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [form, setForm] = useState({ slug: "", display_name: "", theme_color: "#7c3aed" });
+  const save = useMutation({
+    mutationFn: () => apiRequest("POST", `/api/admin/organizations/${orgId}/environments`, form).then(r => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/organizations", orgId, "environments"] });
+      toast({ title: "Environment created" });
+      onClose();
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+  return (
+    <div className="space-y-3 pt-2">
+      <div>
+        <Label className="text-slate-300 text-xs mb-1 block">Display Name *</Label>
+        <Input value={form.display_name} onChange={e => setForm(p => ({ ...p, display_name: e.target.value }))}
+          placeholder="e.g. Grade 10 - Block A"
+          className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500" data-testid="input-env-name" />
+      </div>
+      <div>
+        <Label className="text-slate-300 text-xs mb-1 block">Slug (URL-safe, lowercase) *</Label>
+        <Input value={form.slug} onChange={e => setForm(p => ({ ...p, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,"") }))}
+          placeholder="e.g. grade10-block-a"
+          className="bg-slate-700 border-slate-600 text-white font-mono placeholder:text-slate-500" data-testid="input-env-slug" />
+      </div>
+      <div>
+        <Label className="text-slate-300 text-xs mb-1 block">Theme Color</Label>
+        <div className="flex gap-2 items-center">
+          <input type="color" value={form.theme_color} onChange={e => setForm(p => ({ ...p, theme_color: e.target.value }))}
+            className="w-10 h-10 rounded border border-slate-600 bg-slate-700 cursor-pointer" data-testid="input-env-color" />
+          <span className="text-slate-400 text-sm font-mono">{form.theme_color}</span>
+        </div>
+      </div>
+      <div className="flex justify-end gap-2 pt-2">
+        <Button variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white">Cancel</Button>
+        <Button onClick={() => save.mutate()} disabled={save.isPending || !form.display_name || !form.slug}
+          className="bg-indigo-600 hover:bg-indigo-700" data-testid="button-save-env">
+          {save.isPending ? "Creating…" : "Create Environment"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── OrgCard ─────────────────────────────────────────────────────────────────
+
+function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const [envDialog, setEnvDialog] = useState(false);
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { data: envs = [], isLoading: envsLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/organizations", org.id, "environments"],
+    queryFn: () => apiRequest("GET", `/api/admin/organizations/${org.id}/environments`).then(r => r.json()),
+    enabled: expanded,
+  });
+  const toggleActive = useMutation({
+    mutationFn: () => apiRequest("PATCH", `/api/admin/organizations/${org.id}`, { is_active: !org.is_active }).then(r => r.json()),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/organizations"] }); },
+    onError: () => toast({ title: "Error toggling status", variant: "destructive" }),
+  });
+
+  const tierColors: Record<string, string> = {
+    free: "bg-slate-700 text-slate-300",
+    standard: "bg-blue-900 text-blue-300",
+    premium: "bg-amber-900 text-amber-300",
+  };
+  const typeColors: Record<string, string> = {
+    school: "bg-indigo-900 text-indigo-300",
+    credit_union: "bg-teal-900 text-teal-300",
+    government: "bg-purple-900 text-purple-300",
+    ngo: "bg-green-900 text-green-300",
+    other: "bg-slate-700 text-slate-400",
+  };
+
+  return (
+    <div className="rounded-lg border border-slate-700 bg-slate-800/50 overflow-hidden">
+      <div className="px-4 py-3 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: `${org.name?.charCodeAt(0) % 2 === 0 ? "#312e81" : "#164e63"}` }}>
+          <Globe className="w-4 h-4 text-white/70" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-white truncate" data-testid={`text-org-name-${org.id}`}>{org.name}</span>
+            <Badge className={`text-xs px-2 py-0 ${typeColors[org.type] ?? "bg-slate-700 text-slate-300"} capitalize`}>
+              {org.type?.replace("_", " ")}
+            </Badge>
+            <Badge className={`text-xs px-2 py-0 ${tierColors[org.subscription_tier] ?? ""} capitalize`}>
+              {org.subscription_tier}
+            </Badge>
+            {org.is_active
+              ? <span className="flex items-center gap-1 text-xs text-emerald-400"><CheckCircle2 className="w-3 h-3" /> Active</span>
+              : <span className="flex items-center gap-1 text-xs text-red-400"><XCircle className="w-3 h-3" /> Inactive</span>}
+          </div>
+          <p className="text-slate-400 text-xs mt-0.5">
+            {org.city ? `${org.city}, ` : ""}{org.country} · {org.max_students} students max
+            {org.contact_email ? ` · ${org.contact_email}` : ""}
+          </p>
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button onClick={() => toggleActive.mutate()}
+            className={`text-xs px-2 py-1 rounded border ${org.is_active ? "border-red-800 text-red-400 hover:bg-red-900/30" : "border-emerald-800 text-emerald-400 hover:bg-emerald-900/30"}`}
+            data-testid={`button-toggle-org-${org.id}`}>
+            {org.is_active ? "Deactivate" : "Activate"}
+          </button>
+          <button onClick={() => onEdit(org)} className="text-slate-400 hover:text-white p-1.5" data-testid={`button-edit-org-${org.id}`}>
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button onClick={() => setExpanded(e => !e)} className="text-slate-400 hover:text-white p-1.5" data-testid={`button-expand-org-${org.id}`}>
+            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="border-t border-slate-700 px-4 py-3 bg-slate-900/40">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-slate-300 text-sm font-medium flex items-center gap-1.5">
+              <Layers className="w-4 h-4 text-indigo-400" /> Environments ({envs.length})
+            </span>
+            <Dialog open={envDialog} onOpenChange={setEnvDialog}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-xs h-7" data-testid={`button-add-env-${org.id}`}>
+                  <Plus className="w-3 h-3 mr-1" /> Add Environment
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-slate-800 border-slate-700 text-white">
+                <DialogHeader><DialogTitle>New Environment for {org.name}</DialogTitle></DialogHeader>
+                <EnvDialog orgId={org.id} onClose={() => setEnvDialog(false)} />
+              </DialogContent>
+            </Dialog>
+          </div>
+          {envsLoading ? (
+            <p className="text-slate-500 text-xs">Loading environments…</p>
+          ) : envs.length === 0 ? (
+            <p className="text-slate-500 text-xs italic">No environments yet. Add one to assign students to this organization.</p>
+          ) : (
+            <div className="space-y-2">
+              {envs.map((env: any) => (
+                <div key={env.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700">
+                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: env.theme_color ?? "#7c3aed" }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm font-medium truncate" data-testid={`text-env-name-${env.id}`}>{env.display_name}</p>
+                    <p className="text-slate-500 text-xs font-mono">{env.slug}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {(env.features_enabled ?? []).map((f: string) => (
+                      <span key={f} className="text-xs bg-indigo-900/60 text-indigo-300 px-1.5 py-0.5 rounded">{f.replace("_", " ")}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── main dashboard ───────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
@@ -310,6 +571,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [schoolDialog, setSchoolDialog] = useState<{ open: boolean; existing?: any }>({ open: false });
   const [sponsorDialog, setSponsorDialog] = useState<{ open: boolean; existing?: any }>({ open: false });
+  const [orgDialog, setOrgDialog] = useState<{ open: boolean; existing?: any }>({ open: false });
   const [dbTable, setDbTable] = useState("users");
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -323,6 +585,17 @@ export default function AdminDashboard() {
   const { data: classes = [] } = useQuery<any[]>({ queryKey: ["/api/admin/classes"], enabled: activeTab === "classes" });
   const { data: challenges = [] } = useQuery<any[]>({ queryKey: ["/api/admin/challenges"], enabled: activeTab === "challenges" });
   const { data: schools = [] } = useQuery<any[]>({ queryKey: ["/api/admin/schools"] });
+  const { data: organizations = [], isLoading: orgsLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/organizations"],
+    queryFn: () => apiRequest("GET", "/api/admin/organizations").then(r => r.json()),
+    enabled: activeTab === "organizations",
+  });
+  const { data: supabaseStatus } = useQuery<any>({
+    queryKey: ["/api/supabase/status"],
+    queryFn: () => apiRequest("GET", "/api/supabase/status").then(r => r.json()),
+    enabled: activeTab === "organizations",
+    staleTime: 30000,
+  });
   const { data: sponsors = [] } = useQuery<any[]>({ queryKey: ["/api/admin/sponsors"] });
   const { data: growth = [] } = useQuery<any[]>({ queryKey: ["/api/admin/charts/growth"], enabled: activeTab === "overview" });
   const { data: lessonsChart = [] } = useQuery<any[]>({ queryKey: ["/api/admin/charts/lessons"], enabled: activeTab === "overview" });
@@ -451,6 +724,79 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </div>
+          </div>
+        )}
+
+        {/* ── Organizations (Supabase) ── */}
+        {activeTab === "organizations" && (
+          <div className="space-y-5">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <Globe className="w-6 h-6 text-indigo-400" /> Organizations
+                </h2>
+                <p className="text-slate-400 text-sm mt-0.5">Schools, credit unions and other partner organizations — powered by Supabase</p>
+              </div>
+              <div className="flex items-center gap-3">
+                {supabaseStatus && (
+                  <div className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border ${supabaseStatus.connected ? "border-emerald-700 bg-emerald-900/30 text-emerald-400" : "border-red-800 bg-red-900/20 text-red-400"}`}
+                    data-testid="text-supabase-status">
+                    {supabaseStatus.connected
+                      ? <><CheckCircle2 className="w-3.5 h-3.5" /> Supabase connected</>
+                      : <><XCircle className="w-3.5 h-3.5" /> {supabaseStatus.error || "Not connected"}</>}
+                  </div>
+                )}
+                <Dialog open={orgDialog.open && !orgDialog.existing} onOpenChange={o => setOrgDialog(o ? { open: true } : { open: false })}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-indigo-600 hover:bg-indigo-700" data-testid="button-add-org">
+                      <Plus className="w-4 h-4 mr-1" /> Add Organization
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-lg">
+                    <DialogHeader><DialogTitle>New Organization</DialogTitle></DialogHeader>
+                    <OrgDialog onClose={() => setOrgDialog({ open: false })} />
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+
+            {!supabaseStatus?.connected && supabaseStatus !== undefined && (
+              <div className="rounded-lg border border-amber-700/50 bg-amber-900/20 px-4 py-3 text-sm text-amber-300">
+                <strong>Supabase tables not found.</strong> Please run the SQL setup in your Supabase SQL Editor first (as shared in chat), then refresh this page.
+              </div>
+            )}
+
+            {orgsLoading ? (
+              <div className="space-y-3">
+                {[1,2,3].map(i => <div key={i} className="h-16 rounded-lg bg-slate-800 animate-pulse" />)}
+              </div>
+            ) : organizations.length === 0 ? (
+              <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-10 text-center">
+                <Globe className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                <p className="text-slate-400 font-medium">No organizations yet</p>
+                <p className="text-slate-500 text-sm mt-1">Add a school or organization to start managing their student environments.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex gap-4 text-sm text-slate-400 px-1">
+                  <span><strong className="text-white">{organizations.length}</strong> total</span>
+                  <span><strong className="text-emerald-400">{organizations.filter((o: any) => o.is_active).length}</strong> active</span>
+                  <span><strong className="text-amber-400">{organizations.filter((o: any) => o.subscription_tier === "premium").length}</strong> premium</span>
+                </div>
+                {organizations.map((org: any) => (
+                  <div key={org.id}>
+                    <OrgCard org={org} onEdit={o => setOrgDialog({ open: true, existing: o })} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <Dialog open={orgDialog.open && !!orgDialog.existing} onOpenChange={o => setOrgDialog(o ? orgDialog : { open: false })}>
+              <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-lg">
+                <DialogHeader><DialogTitle>Edit Organization</DialogTitle></DialogHeader>
+                {orgDialog.existing && <OrgDialog existing={orgDialog.existing} onClose={() => setOrgDialog({ open: false })} />}
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 
