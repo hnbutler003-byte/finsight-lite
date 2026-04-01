@@ -188,10 +188,16 @@ Core tables include:
 ### Authentication
 - **Passwordless Auth**: Avatar-based registration (server/replit_integrations/auth/)
   - Registration: POST /api/auth/register `{ name, avatar }` → auto-generates username like `Name_XXXX`
+  - Resume session: POST /api/auth/resume `{ username }` → logs returning students back in by username
   - Current user: GET /api/auth/user
   - Logout: POST /api/auth/logout
-  - No login endpoint (sessions keep users logged in)
   - 12 avatar options: lion, dolphin, parrot, turtle, star, butterfly, octopus, artist, rocket, wave, palm, gamer
+- **Entry Flow (client/src/pages/Auth.tsx)**: Redesigned multi-step decision layer
+  1. **Entry Screen**: 3 buttons — "I'm a Student" / "I'm a Teacher" / "Continue as Guest"
+  2. **Student path**: → Student Access screen → Enter Class Code (validates via GET /api/classes/check-code/:code) → Name → Avatar → Welcome (auto-joins class after register)
+  3. **Student resume path**: → Student Access screen → Continue Previous Session → Enter username → resume endpoint logs them in
+  4. **Teacher path**: → redirects directly to /teacher/login
+  5. **Guest path**: → Name → Avatar → Welcome (no class code needed)
 - Requires SESSION_SECRET environment variable (optional, has fallback)
 
 ### Database

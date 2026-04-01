@@ -2116,6 +2116,18 @@ If the user asks about FinSight Lite features, you can mention:
   });
 
   // === STUDENT SIDE - JOIN CLASS ===
+  // Public endpoint: validate a class code before a student registers
+  app.get("/api/classes/check-code/:code", async (req, res) => {
+    try {
+      const code = req.params.code.toUpperCase().trim();
+      const cls = await storage.getClassByCode(code);
+      if (!cls) return res.status(404).json({ message: "Class not found. Double-check the code." });
+      res.json({ id: cls.id, name: cls.name, subject: cls.subject });
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
   app.post("/api/student/join-class", isAuthenticated, async (req: any, res) => {
     try {
       const { code } = z.object({ code: z.string().min(1) }).parse(req.body);

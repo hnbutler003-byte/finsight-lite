@@ -51,6 +51,25 @@ export function registerAuthRoutes(app: Express): void {
     }
   });
 
+  // Resume session by username (for returning students whose session expired)
+  app.post("/api/auth/resume", async (req, res) => {
+    try {
+      const { username } = req.body;
+      if (!username || typeof username !== "string" || !username.trim()) {
+        return res.status(400).json({ message: "Please enter your username." });
+      }
+      const user = await authStorage.getUserByUsername(username.trim());
+      if (!user) {
+        return res.status(404).json({ message: "Username not found. Check the spelling and try again." });
+      }
+      req.session.userId = user.id;
+      return res.json(user);
+    } catch (error) {
+      console.error("Resume session error:", error);
+      return res.status(500).json({ message: "Something went wrong. Please try again." });
+    }
+  });
+
   app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
     return res.json(req.user);
   });
