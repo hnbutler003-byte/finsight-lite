@@ -129,10 +129,15 @@ CREATE TABLE IF NOT EXISTS analytics_events (
 export async function initSupabaseTables(): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.from("organizations").select("id").limit(1);
-  if (error && error.code === "42P01") {
-    console.warn("[Supabase] Tables not yet created. Please run the SQL in the Supabase SQL editor:\n", INIT_SQL.slice(0, 200), "...");
-  } else if (!error) {
-    console.log("[Supabase] Connected and tables verified.");
+  if (!error) {
+    console.log("[Supabase] ✓ Connected — tables verified.");
+  } else if (
+    error.message?.includes("not found") ||
+    error.message?.includes("schema cache") ||
+    error.code === "42P01" ||
+    error.code === "PGRST200"
+  ) {
+    console.warn("[Supabase] ⚠ Connected but tables not created yet. Run the SQL setup in your Supabase SQL Editor.");
   } else {
     console.error("[Supabase] Connection check failed:", error.message);
   }
