@@ -1062,7 +1062,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLessonsCompletedPerWeek(): Promise<any[]> {
-    const sessions = await db.select({ completedAt: gameSessions.playedAt }).from(gameSessions).orderBy(gameSessions.playedAt);
+    const sessions = await db.select({ completedAt: gameSessions.completedAt }).from(gameSessions).orderBy(gameSessions.completedAt);
     const byWeek: Record<string, number> = {};
     sessions.forEach(s => {
       if (!s.completedAt) return;
