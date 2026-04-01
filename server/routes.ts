@@ -2296,9 +2296,9 @@ If the user asks about FinSight Lite features, you can mention:
   app.post("/api/lessons/:id/complete", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.id;
-      const { correctAnswers, totalQuestions } = z.object({
-        correctAnswers: z.number().int().min(0),
-        totalQuestions: z.number().int().min(1),
+      // Accept submitted answers as array of letters (A/B/C/D) for server-side scoring
+      const { answers } = z.object({
+        answers: z.array(z.enum(["A", "B", "C", "D"])).min(1),
       }).parse(req.body);
 
       // Validate lesson existence, publication, and user's org access
@@ -2311,12 +2311,17 @@ If the user asks about FinSight Lite features, you can mention:
         return res.status(403).json({ message: "Access denied" });
       }
 
-      // Bound submitted values against actual question count
-      const actualTotal = lesson.questions.length;
-      const boundedTotal = Math.max(1, actualTotal > 0 ? actualTotal : totalQuestions);
-      const boundedCorrect = Math.min(Math.max(0, correctAnswers), boundedTotal);
+      // Server-side scoring — compare submitted answers to stored correct answers
+      const questions = lesson.questions.sort((a, b) => a.order_index - b.order_index);
+      const total = questions.length;
+      const scored = Math.min(answers.length, total);
+      const correctAnswers = answers
+        .slice(0, scored)
+        .reduce((acc, ans, i) => acc + (ans === questions[i].correct_answer ? 1 : 0), 0);
 
-      const xpEarned = Math.round(boundedCorrect * 10 + (boundedCorrect / boundedTotal) * 20);
+      const xpEarned = total > 0
+        ? Math.round(correctAnswers * 10 + (correctAnswers / total) * 20)
+        : 0;
 
       const currentXp = await storage.getUserXp(userId);
       const newTotalXp = currentXp.totalXp + xpEarned;
@@ -2329,7 +2334,7 @@ If the user asks about FinSight Lite features, you can mention:
         lastPlayedAt: new Date(),
       });
 
-      res.json({ xpEarned, totalXp: newTotalXp, level: newLevel });
+      res.json({ xpEarned, totalXp: newTotalXp, level: newLevel, correctAnswers, total });
     } catch (e: any) {
       res.status(400).json({ message: e.message });
     }

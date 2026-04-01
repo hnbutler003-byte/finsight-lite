@@ -56,8 +56,8 @@ export default function Lessons() {
   });
 
   const completeMutation = useMutation({
-    mutationFn: async ({ id, correctAnswers, totalQuestions }: { id: string; correctAnswers: number; totalQuestions: number }) => {
-      const res = await apiRequest("POST", `/api/lessons/${id}/complete`, { correctAnswers, totalQuestions });
+    mutationFn: async ({ id, answers }: { id: string; answers: string[] }) => {
+      const res = await apiRequest("POST", `/api/lessons/${id}/complete`, { answers });
       return res.json();
     },
     onSuccess: () => {
@@ -109,18 +109,17 @@ export default function Lessons() {
         setSelected(null);
         setShowResult(false);
       } else {
-        // Quiz finished — compute score from full answer record
-        const finalCorrect = newAnswers.reduce(
-          (acc, ans, i) => acc + (ans === selectedLesson.questions[i].correct_answer ? 1 : 0),
-          0
-        );
-        const total = selectedLesson.questions.length;
+        // Quiz finished — send full answers array; server computes the score
         const result = await completeMutation.mutateAsync({
           id: selectedLesson.id,
-          correctAnswers: finalCorrect,
-          totalQuestions: total,
+          answers: newAnswers,
         });
-        setQuizResults({ ...result, finalCorrect, total });
+        // Use server-returned correctAnswers and total for results page
+        setQuizResults({
+          ...result,
+          finalCorrect: result.correctAnswers ?? newAnswers.filter((a, i) => a === selectedLesson.questions[i]?.correct_answer).length,
+          total: result.total ?? selectedLesson.questions.length,
+        });
         setPageState("results");
       }
     }, 1400);
