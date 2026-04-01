@@ -608,11 +608,12 @@ function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => vo
                 {(["option_a", "option_b", "option_c", "option_d"] as const).map((opt, oi) => {
                   const letter = String.fromCharCode(65 + oi);
                   const isCorrect = q.correct_answer === letter;
+                  const optValue: string = q[opt];
                   return (
                     <div key={opt} className={`flex gap-1.5 items-center p-1.5 rounded border cursor-pointer transition-colors ${isCorrect ? "border-emerald-500 bg-emerald-900/30" : "border-slate-600 hover:border-slate-500"}`}
                       onClick={() => setQuestions(p => p.map((x, j) => j === qi ? { ...x, correct_answer: letter } : x))}>
                       <span className={`w-5 h-5 rounded text-xs font-bold flex items-center justify-center flex-shrink-0 ${isCorrect ? "bg-emerald-500 text-white" : "bg-slate-600 text-slate-300"}`}>{letter}</span>
-                      <Input value={(q as any)[opt]}
+                      <Input value={optValue}
                         onChange={e => setQuestions(p => p.map((x, j) => j === qi ? { ...x, [opt]: e.target.value } : x))}
                         onClick={e => e.stopPropagation()}
                         placeholder={`Option ${letter}`} className="bg-transparent border-0 text-white text-xs p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />

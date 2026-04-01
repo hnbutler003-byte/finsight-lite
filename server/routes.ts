@@ -2272,21 +2272,24 @@ If the user asks about FinSight Lite features, you can mention:
   app.get("/api/lessons", isAuthenticated, async (req: any, res) => {
     const userId = req.user?.id;
     const orgIds = userId ? await getStudentOrgIds(userId) : [];
-    // If student is enrolled in orgs, show those org lessons; else show all published
-    let lessons;
-    if (orgIds.length > 0) {
-      const allLessons = await Promise.all(orgIds.map(id => getPublishedLessons(id)));
-      lessons = allLessons.flat();
-    } else {
-      lessons = await getPublishedLessons();
+    if (orgIds.length === 0) {
+      // No org enrollment — return empty list
+      return res.json([]);
     }
-    res.json(lessons);
+    const allLessons = await Promise.all(orgIds.map(id => getPublishedLessons(id)));
+    res.json(allLessons.flat());
   });
 
-  app.get("/api/lessons/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/lessons/:id", isAuthenticated, async (req: any, res) => {
+    const userId = req.user?.id;
     const lesson = await getLessonWithQuestions(req.params.id);
     if (!lesson) return res.status(404).json({ message: "Lesson not found" });
     if (!lesson.is_published) return res.status(403).json({ message: "Lesson not published" });
+    // Verify the user is enrolled in this lesson's organization
+    const orgIds = userId ? await getStudentOrgIds(userId) : [];
+    if (!orgIds.includes(lesson.org_id)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
     res.json(lesson);
   });
 
@@ -2298,7 +2301,22 @@ If the user asks about FinSight Lite features, you can mention:
         totalQuestions: z.number().int().min(1),
       }).parse(req.body);
 
-      const xpEarned = Math.round(correctAnswers * 10 + (correctAnswers / totalQuestions) * 20);
+      // Validate lesson existence, publication, and user's org access
+      const lesson = await getLessonWithQuestions(req.params.id);
+      if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+      if (!lesson.is_published) return res.status(403).json({ message: "Lesson not published" });
+
+      const orgIds = await getStudentOrgIds(userId);
+      if (!orgIds.includes(lesson.org_id)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Bound submitted values against actual question count
+      const actualTotal = lesson.questions.length;
+      const boundedTotal = Math.max(1, actualTotal > 0 ? actualTotal : totalQuestions);
+      const boundedCorrect = Math.min(Math.max(0, correctAnswers), boundedTotal);
+
+      const xpEarned = Math.round(boundedCorrect * 10 + (boundedCorrect / boundedTotal) * 20);
 
       const currentXp = await storage.getUserXp(userId);
       const newTotalXp = currentXp.totalXp + xpEarned;
