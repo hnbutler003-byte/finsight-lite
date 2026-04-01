@@ -14,6 +14,19 @@ import { registerImageRoutes } from "./replit_integrations/image";
 import { registerAudioRoutes } from "./replit_integrations/audio";
 import { openai } from "./replit_integrations/chat/routes";
 import { isVeryfiConfigured, parseWithVeryfi } from "./veryfi";
+import {
+  supabase,
+  initSupabaseTables,
+  getOrganizations,
+  getOrganization,
+  createOrganization,
+  updateOrganization,
+  getOrgEnvironments,
+  createOrgEnvironment,
+  getLeaderboard,
+  upsertLeaderboardSnapshot,
+  trackEvent,
+} from "./supabase";
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -2072,6 +2085,117 @@ If the user asks about FinSight Lite features, you can mention:
     if (!enrolled.find(e => e.classId === classId)) return res.status(403).json({ message: "Not enrolled" });
     const notifications = await storage.getNotificationsByClass(classId);
     res.json(notifications);
+  });
+
+  // === SUPABASE ORGANIZATIONS & ENVIRONMENTS ===
+  initSupabaseTables().catch(e => console.error("[Supabase] Init error:", e));
+
+  app.get("/api/supabase/status", async (_req, res) => {
+    if (!supabase) return res.json({ connected: false, reason: "Missing credentials" });
+    const { error } = await supabase.from("organizations").select("id").limit(1);
+    res.json({ connected: !error, error: error?.message });
+  });
+
+  app.get("/api/admin/organizations", isAdmin, async (_req, res) => {
+    const orgs = await getOrganizations();
+    res.json(orgs);
+  });
+
+  app.get("/api/admin/organizations/:id", isAdmin, async (req, res) => {
+    const org = await getOrganization(req.params.id);
+    if (!org) return res.status(404).json({ message: "Organization not found" });
+    res.json(org);
+  });
+
+  app.post("/api/admin/organizations", isAdmin, async (req, res) => {
+    try {
+      const body = z.object({
+        name: z.string().min(1),
+        type: z.enum(["school", "credit_union", "government", "ngo", "other"]).default("school"),
+        country: z.string().default("Bahamas"),
+        city: z.string().optional(),
+        website: z.string().optional(),
+        contact_name: z.string().optional(),
+        contact_email: z.string().optional(),
+        subscription_tier: z.enum(["free", "standard", "premium"]).default("free"),
+        max_students: z.number().default(100),
+      }).parse(req.body);
+      const org = await createOrganization({ ...body, is_active: true, logo_url: undefined });
+      if (!org) return res.status(500).json({ message: "Failed to create organization" });
+      res.json(org);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.patch("/api/admin/organizations/:id", isAdmin, async (req, res) => {
+    const org = await updateOrganization(req.params.id, req.body);
+    if (!org) return res.status(404).json({ message: "Organization not found" });
+    res.json(org);
+  });
+
+  app.get("/api/admin/organizations/:id/environments", isAdmin, async (req, res) => {
+    const envs = await getOrgEnvironments(req.params.id);
+    res.json(envs);
+  });
+
+  app.post("/api/admin/organizations/:id/environments", isAdmin, async (req, res) => {
+    try {
+      const body = z.object({
+        slug: z.string().min(1).regex(/^[a-z0-9-]+$/),
+        display_name: z.string().min(1),
+        theme_color: z.string().optional(),
+        features_enabled: z.array(z.string()).default(["money_games","investment_sim","money_guide","moneylab"]),
+      }).parse(req.body);
+      const env = await createOrgEnvironment({ org_id: req.params.id, ...body, custom_logo_url: undefined });
+      if (!env) return res.status(500).json({ message: "Failed to create environment" });
+      res.json(env);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.get("/api/admin/leaderboard", isAdmin, async (req, res) => {
+    const envId = req.query.env_id as string | undefined;
+    const data = await getLeaderboard(envId, 100);
+    res.json(data);
+  });
+
+  app.post("/api/leaderboard/snapshot", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user as any;
+      const body = z.object({
+        total_xp: z.number().default(0),
+        exams_passed: z.number().default(0),
+        games_won: z.number().default(0),
+        org_id: z.string().optional(),
+        env_id: z.string().optional(),
+      }).parse(req.body);
+      await upsertLeaderboardSnapshot({
+        student_user_id: user.id,
+        display_name: user.firstName || user.username || "Student",
+        avatar: user.avatar,
+        ...body,
+      });
+      res.json({ ok: true });
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.post("/api/analytics/event", isAuthenticated, async (req: any, res) => {
+    try {
+      const body = z.object({
+        event_type: z.string().min(1),
+        event_data: z.record(z.any()).optional(),
+        org_id: z.string().optional(),
+        env_id: z.string().optional(),
+      }).parse(req.body);
+      await trackEvent({ student_user_id: req.user?.id, ...body });
+      res.json({ ok: true });
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
   });
 
   return httpServer;

@@ -193,9 +193,16 @@ Core tables include:
 - Requires SESSION_SECRET environment variable (optional, has fallback)
 
 ### Database
-- **PostgreSQL**: Primary data store
+- **PostgreSQL (Replit)**: Primary data store for all student/teacher/transaction data
 - Requires DATABASE_URL environment variable
 - Uses connect-pg-simple for session storage
+- **Supabase (secondary)**: Hosts organizations, environments, leaderboard snapshots, and analytics events
+  - Connected via HTTPS using the Supabase JS client (direct Postgres TCP blocked by Replit network)
+  - Requires SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY secrets
+  - Server module: server/supabase.ts
+  - Tables (create via Supabase SQL editor): organizations, org_environments, org_students, leaderboard_snapshots, analytics_events
+  - Admin API routes: /api/admin/organizations/*, /api/admin/leaderboard, /api/supabase/status
+  - Student API routes: /api/leaderboard/snapshot, /api/analytics/event
 
 ### Frontend Libraries
 - **@radix-ui/***: Accessible UI primitives for shadcn/ui components
