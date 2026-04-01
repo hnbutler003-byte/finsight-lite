@@ -48,8 +48,7 @@ export default function Lessons() {
   const [currentQ, setCurrentQ] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [answers, setAnswers] = useState<(string | null)[]>([]);
+  const [answers, setAnswers] = useState<string[]>([]);
   const [quizResults, setQuizResults] = useState<any>(null);
 
   const { data: lessons = [], isLoading } = useQuery<Lesson[]>({
@@ -69,13 +68,16 @@ export default function Lessons() {
   const openLesson = async (lesson: Lesson) => {
     try {
       const res = await fetch(`/api/lessons/${lesson.id}`, { credentials: "include" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: "Failed to load lesson" }));
+        throw new Error(err.message ?? "Failed to load lesson");
+      }
       const data: LessonWithQuestions = await res.json();
       setSelectedLesson(data);
       setPageState("reading");
       setCurrentQ(0);
       setSelected(null);
       setShowResult(false);
-      setCorrectCount(0);
       setAnswers([]);
       setQuizResults(null);
     } catch (e) {
@@ -87,7 +89,6 @@ export default function Lessons() {
     setCurrentQ(0);
     setSelected(null);
     setShowResult(false);
-    setCorrectCount(0);
     setAnswers([]);
     setPageState("quiz");
   };
@@ -95,20 +96,24 @@ export default function Lessons() {
   const handleAnswer = (letter: string) => {
     if (showResult || !selectedLesson) return;
     const q = selectedLesson.questions[currentQ];
-    const isCorrect = letter === q.correct_answer;
     setSelected(letter);
     setShowResult(true);
-    const newCorrect = correctCount + (isCorrect ? 1 : 0);
+
+    // Record this answer; derive correctness purely from answers + questions
     const newAnswers = [...answers, letter];
+    setAnswers(newAnswers);
 
     setTimeout(async () => {
       if (currentQ < selectedLesson.questions.length - 1) {
         setCurrentQ(i => i + 1);
         setSelected(null);
         setShowResult(false);
-        if (isCorrect) setCorrectCount(c => c + 1);
       } else {
-        const finalCorrect = newCorrect;
+        // Quiz finished — compute score from full answer record
+        const finalCorrect = newAnswers.reduce(
+          (acc, ans, i) => acc + (ans === selectedLesson.questions[i].correct_answer ? 1 : 0),
+          0
+        );
         const total = selectedLesson.questions.length;
         const result = await completeMutation.mutateAsync({
           id: selectedLesson.id,
@@ -119,9 +124,6 @@ export default function Lessons() {
         setPageState("results");
       }
     }, 1400);
-
-    if (isCorrect) setCorrectCount(c => c + 1);
-    setAnswers(newAnswers);
   };
 
   const goBack = () => {
@@ -130,6 +132,14 @@ export default function Lessons() {
   };
 
   const currentQuestion = selectedLesson?.questions[currentQ];
+
+  // Derive correct count from answers array — single source of truth
+  const correctCount = selectedLesson
+    ? answers.reduce(
+        (acc, ans, i) => acc + (ans === selectedLesson.questions[i]?.correct_answer ? 1 : 0),
+        0
+      )
+    : 0;
   const pct = selectedLesson ? Math.round(((quizResults?.finalCorrect ?? correctCount) / (selectedLesson.questions.length || 1)) * 100) : 0;
 
   return (
