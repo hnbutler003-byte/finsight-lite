@@ -213,11 +213,11 @@ function JoinOrgModal({ onClose }: { onClose: () => void }) {
               value={code}
               onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
               placeholder="e.g. ABC2DE"
-              maxLength={8}
+              maxLength={6}
               className="w-full rounded-2xl border-2 border-input bg-background px-4 py-3 text-center font-display font-bold text-2xl tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
               data-testid="input-org-code"
             />
-            <Button type="submit" disabled={!code.trim() || loading} className="w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 py-5 font-bold" data-testid="button-lookup-org-code">
+            <Button type="submit" disabled={code.length !== 6 || loading} className="w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 py-5 font-bold" data-testid="button-lookup-org-code">
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Find Organization"}
             </Button>
           </form>

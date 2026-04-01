@@ -2102,8 +2102,10 @@ If the user asks about FinSight Lite features, you can mention:
   // Preview: look up org+env info by join code (no side effects — used to show confirmation before enrolling)
   app.get("/api/org/join/preview", isAuthenticated, async (req: any, res) => {
     try {
-      const code = (req.query.code as string | undefined)?.toUpperCase().trim();
-      if (!code) return res.status(400).json({ message: "Join code is required." });
+      const raw = (req.query.code as string | undefined)?.toUpperCase().trim() ?? "";
+      const codeResult = z.string().length(6).regex(/^[A-Z0-9]+$/).safeParse(raw);
+      if (!codeResult.success) return res.status(400).json({ message: "Join code must be exactly 6 uppercase letters or digits." });
+      const code = codeResult.data;
 
       const env = await getOrgEnvironmentByJoinCode(code);
       if (!env) return res.status(404).json({ message: "Invalid join code. Please check and try again." });
@@ -2124,7 +2126,9 @@ If the user asks about FinSight Lite features, you can mention:
   // Enroll: actually add the student to the org environment
   app.post("/api/org/join", isAuthenticated, async (req: any, res) => {
     try {
-      const { code } = z.object({ code: z.string().min(1) }).parse(req.body);
+      const { code } = z.object({
+        code: z.string().min(6).max(6).regex(/^[A-Z0-9]+$/, "Join code must be 6 uppercase letters or digits."),
+      }).parse(req.body);
       const env = await getOrgEnvironmentByJoinCode(code);
       if (!env) return res.status(404).json({ message: "Invalid join code. Please check and try again." });
 

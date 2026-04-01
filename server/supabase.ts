@@ -283,14 +283,14 @@ function randomCode(len = 6): string {
 
 export async function generateUniqueJoinCode(): Promise<string> {
   if (!supabase) return randomCode();
-  // Retry up to 10 times on collision (astronomically unlikely in practice)
-  for (let attempt = 0; attempt < 10; attempt++) {
+  // Retry on collision — with 32^6 = ~1B possible codes, collision probability is negligible
+  for (let attempt = 0; attempt < 20; attempt++) {
     const code = randomCode();
     const { data } = await supabase.from("org_environments").select("id").eq("join_code", code).limit(1);
     if (!data || data.length === 0) return code;
   }
-  // Final fallback: longer code to guarantee uniqueness
-  return randomCode(8);
+  // Should never reach here in practice; randomCode always generates exactly 6 chars
+  return randomCode();
 }
 
 export async function createOrgEnvironment(env: Omit<OrgEnvironment, "id" | "created_at">): Promise<OrgEnvironment | null> {
