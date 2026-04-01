@@ -1,14 +1,24 @@
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+const anonKey = process.env.SUPABASE_ANON_KEY ?? "";
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.warn("[Supabase] Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY — Supabase features disabled.");
+// Accept long JWT keys only (short sb_publishable_ keys are client-side only)
+const supabaseKey = serviceKey.startsWith("eyJ") ? serviceKey
+  : anonKey.startsWith("eyJ") ? anonKey
+  : "";
+
+if (!supabaseUrl || !supabaseKey) {
+  console.warn("[Supabase] Missing or invalid API keys — Supabase features disabled.");
 }
 
-export const supabase = supabaseUrl && supabaseServiceKey
-  ? createClient(supabaseUrl, supabaseServiceKey, {
+if (supabaseKey && !serviceKey.startsWith("eyJ")) {
+  console.warn("[Supabase] Using anon key (no valid service_role key found). RLS policies will apply.");
+}
+
+export const supabase = supabaseUrl && supabaseKey
+  ? createClient(supabaseUrl, supabaseKey, {
       auth: { persistSession: false },
     })
   : null;
