@@ -1981,10 +1981,14 @@ If the user asks about FinSight Lite features, you can mention:
   app.patch("/api/admin/teachers/:id/org-link", isAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { org_id, env_id } = z.object({
-        org_id: z.string().nullable(),
-        env_id: z.string().nullable(),
-      }).parse(req.body);
+      const { env_id } = z.object({ env_id: z.string().nullable() }).parse(req.body);
+      // Derive org_id server-side from the env to prevent inconsistent client-sent pairs
+      let org_id: string | null = null;
+      if (env_id) {
+        const env = await getOrgEnvironmentById(env_id);
+        if (!env) return res.status(404).json({ message: "Org environment not found" });
+        org_id = env.org_id;
+      }
       const updated = await storage.updateTeacherOrgLink(id, org_id, env_id);
       const { passwordHash: _, ...safe } = updated;
       res.json(safe);
@@ -2400,7 +2404,7 @@ If the user asks about FinSight Lite features, you can mention:
     ]);
 
     const linkedEnvIds = studentClasses
-      .map(e => (e.class as any).envId as string | null | undefined)
+      .map(e => e.class.envId)
       .filter((envId): envId is string => !!envId);
 
     const lessonFetches: Promise<import("./supabase").LessonPlan[]>[] = [
@@ -2424,7 +2428,7 @@ If the user asks about FinSight Lite features, you can mention:
     if (lesson.env_id) {
       const studentClasses = await storage.getStudentClasses(userId);
       const linkedEnvIds = studentClasses
-        .map(e => (e.class as any).envId as string | null | undefined)
+        .map(e => e.class.envId)
         .filter((envId): envId is string => !!envId);
       if (linkedEnvIds.includes(lesson.env_id)) return true;
     }

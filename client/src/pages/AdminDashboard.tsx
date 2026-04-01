@@ -908,8 +908,8 @@ export default function AdminDashboard() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/sponsors"] }); toast({ title: "Sponsor deleted" }); },
   });
   const linkTeacherOrg = useMutation({
-    mutationFn: ({ teacherId, org_id, env_id }: { teacherId: number; org_id: string | null; env_id: string | null }) =>
-      apiRequest("PATCH", `/api/admin/teachers/${teacherId}/org-link`, { org_id, env_id }).then(r => r.json()),
+    mutationFn: ({ teacherId, env_id }: { teacherId: number; env_id: string | null }) =>
+      apiRequest("PATCH", `/api/admin/teachers/${teacherId}/org-link`, { env_id }).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/teachers"] }); toast({ title: "Teacher linked to org environment" }); },
     onError: (e: any) => toast({ title: "Link failed", description: e.message, variant: "destructive" }),
   });
@@ -1194,7 +1194,6 @@ export default function AdminDashboard() {
                         const env = allOrgEnvs.find((e: any) => e.id === val);
                         linkTeacherOrg.mutate({
                           teacherId: row.id,
-                          org_id: env ? env.org_id : null,
                           env_id: val === "none" ? null : val,
                         });
                       }}
