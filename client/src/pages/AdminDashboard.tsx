@@ -576,31 +576,28 @@ export default function AdminDashboard() {
   const qc = useQueryClient();
   const { toast } = useToast();
 
-  if (isLoading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center"><p className="text-slate-400">Loading...</p></div>;
-  if (!admin) { setLocation("/admin/login"); return null; }
-
-  const { data: overview } = useQuery<any>({ queryKey: ["/api/admin/overview"] });
-  const { data: students = [] } = useQuery<any[]>({ queryKey: ["/api/admin/students"], enabled: activeTab === "students" || activeTab === "reports" });
-  const { data: teachers = [] } = useQuery<any[]>({ queryKey: ["/api/admin/teachers"], enabled: activeTab === "teachers" || activeTab === "reports" });
-  const { data: classes = [] } = useQuery<any[]>({ queryKey: ["/api/admin/classes"], enabled: activeTab === "classes" });
-  const { data: challenges = [] } = useQuery<any[]>({ queryKey: ["/api/admin/challenges"], enabled: activeTab === "challenges" });
-  const { data: schools = [] } = useQuery<any[]>({ queryKey: ["/api/admin/schools"] });
+  const { data: overview } = useQuery<any>({ queryKey: ["/api/admin/overview"], enabled: !!admin });
+  const { data: students = [] } = useQuery<any[]>({ queryKey: ["/api/admin/students"], enabled: !!admin && (activeTab === "students" || activeTab === "reports") });
+  const { data: teachers = [] } = useQuery<any[]>({ queryKey: ["/api/admin/teachers"], enabled: !!admin && (activeTab === "teachers" || activeTab === "reports") });
+  const { data: classes = [] } = useQuery<any[]>({ queryKey: ["/api/admin/classes"], enabled: !!admin && activeTab === "classes" });
+  const { data: challenges = [] } = useQuery<any[]>({ queryKey: ["/api/admin/challenges"], enabled: !!admin && activeTab === "challenges" });
+  const { data: schools = [] } = useQuery<any[]>({ queryKey: ["/api/admin/schools"], enabled: !!admin });
   const { data: organizations = [], isLoading: orgsLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/organizations"],
     queryFn: () => apiRequest("GET", "/api/admin/organizations").then(r => r.json()),
-    enabled: activeTab === "organizations",
+    enabled: !!admin && activeTab === "organizations",
   });
   const { data: supabaseStatus } = useQuery<any>({
     queryKey: ["/api/supabase/status"],
     queryFn: () => apiRequest("GET", "/api/supabase/status").then(r => r.json()),
-    enabled: activeTab === "organizations",
+    enabled: !!admin && activeTab === "organizations",
     staleTime: 30000,
   });
-  const { data: sponsors = [] } = useQuery<any[]>({ queryKey: ["/api/admin/sponsors"] });
-  const { data: growth = [] } = useQuery<any[]>({ queryKey: ["/api/admin/charts/growth"], enabled: activeTab === "overview" });
-  const { data: lessonsChart = [] } = useQuery<any[]>({ queryKey: ["/api/admin/charts/lessons"], enabled: activeTab === "overview" });
-  const { data: schoolsChart = [] } = useQuery<any[]>({ queryKey: ["/api/admin/charts/schools"], enabled: activeTab === "overview" });
-  const { data: dbRows = [] } = useQuery<any[]>({ queryKey: ["/api/admin/db", dbTable], queryFn: () => apiRequest("GET", `/api/admin/db/${dbTable}`).then(r => r.json()), enabled: activeTab === "dbviewer" });
+  const { data: sponsors = [] } = useQuery<any[]>({ queryKey: ["/api/admin/sponsors"], enabled: !!admin });
+  const { data: growth = [] } = useQuery<any[]>({ queryKey: ["/api/admin/charts/growth"], enabled: !!admin && activeTab === "overview" });
+  const { data: lessonsChart = [] } = useQuery<any[]>({ queryKey: ["/api/admin/charts/lessons"], enabled: !!admin && activeTab === "overview" });
+  const { data: schoolsChart = [] } = useQuery<any[]>({ queryKey: ["/api/admin/charts/schools"], enabled: !!admin && activeTab === "overview" });
+  const { data: dbRows = [] } = useQuery<any[]>({ queryKey: ["/api/admin/db", dbTable], queryFn: () => apiRequest("GET", `/api/admin/db/${dbTable}`).then(r => r.json()), enabled: !!admin && activeTab === "dbviewer" });
 
   const deleteSchool = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/admin/schools/${id}`).then(r => r.json()),
@@ -610,6 +607,9 @@ export default function AdminDashboard() {
     mutationFn: (id: number) => apiRequest("DELETE", `/api/admin/sponsors/${id}`).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/sponsors"] }); toast({ title: "Sponsor deleted" }); },
   });
+
+  if (isLoading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center"><p className="text-slate-400">Loading...</p></div>;
+  if (!admin) { setLocation("/admin/login"); return null; }
 
   const downloadCSV = (type: string) => {
     window.open(`/api/admin/reports/${type}.csv`, "_blank");
