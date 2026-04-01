@@ -2006,6 +2006,11 @@ If the user asks about FinSight Lite features, you can mention:
     try {
       const id = parseInt(req.params.id);
       const { env_id } = z.object({ env_id: z.string().nullable() }).parse(req.body);
+      // Validate env exists when linking (parity with teacher org-link route)
+      if (env_id) {
+        const env = await getOrgEnvironmentById(env_id);
+        if (!env) return res.status(404).json({ message: "Org environment not found" });
+      }
       const updated = await storage.updateClassEnvLink(id, env_id);
       res.json(updated);
     } catch (e: any) {

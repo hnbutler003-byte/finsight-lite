@@ -1191,7 +1191,6 @@ export default function AdminDashboard() {
                     <Select
                       value={row.envId ?? "none"}
                       onValueChange={(val) => {
-                        const env = allOrgEnvs.find((e: any) => e.id === val);
                         linkTeacherOrg.mutate({
                           teacherId: row.id,
                           env_id: val === "none" ? null : val,
