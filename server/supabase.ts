@@ -47,6 +47,7 @@ export type OrgEnvironment = {
   theme_color?: string;
   custom_logo_url?: string;
   features_enabled: string[];
+  join_code?: string | null;
   created_at: string;
 };
 
@@ -124,6 +125,7 @@ CREATE TABLE IF NOT EXISTS org_environments (
   theme_color text DEFAULT '#7c3aed',
   custom_logo_url text,
   features_enabled text[] DEFAULT ARRAY['money_games','investment_sim','money_guide','moneylab'],
+  join_code text UNIQUE,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
@@ -251,14 +253,100 @@ export async function getOrgEnvironments(orgId: string): Promise<OrgEnvironment[
   if (!supabase) return [];
   const { data, error } = await supabase.from("org_environments").select("*").eq("org_id", orgId).order("created_at");
   if (error) { console.error("[Supabase] getOrgEnvironments:", error.message); return []; }
-  return data ?? [];
+  const envs: OrgEnvironment[] = data ?? [];
+
+  // Auto-assign join codes for any environments missing one (backward compat for pre-Task#8 records)
+  const updated = await Promise.all(envs.map(async (env) => {
+    if (!env.join_code) {
+      const code = await generateUniqueJoinCode();
+      await supabase!.from("org_environments").update({ join_code: code }).eq("id", env.id);
+      return { ...env, join_code: code };
+    }
+    return env;
+  }));
+
+  return updated;
+}
+
+// ─── Join Code Helpers ────────────────────────────────────────────────────────
+
+// Characters that are visually unambiguous (no O/0, I/1/l)
+const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+function randomCode(len = 6): string {
+  let result = "";
+  for (let i = 0; i < len; i++) {
+    result += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
+  }
+  return result;
+}
+
+export async function generateUniqueJoinCode(): Promise<string> {
+  if (!supabase) return randomCode();
+  // Retry up to 10 times on collision (astronomically unlikely in practice)
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const code = randomCode();
+    const { data } = await supabase.from("org_environments").select("id").eq("join_code", code).limit(1);
+    if (!data || data.length === 0) return code;
+  }
+  // Final fallback: longer code to guarantee uniqueness
+  return randomCode(8);
 }
 
 export async function createOrgEnvironment(env: Omit<OrgEnvironment, "id" | "created_at">): Promise<OrgEnvironment | null> {
   if (!supabase) return null;
-  const { data, error } = await supabase.from("org_environments").insert(env).select().single();
+  const join_code = env.join_code ?? await generateUniqueJoinCode();
+  const { data, error } = await supabase.from("org_environments").insert({ ...env, join_code }).select().single();
   if (error) { console.error("[Supabase] createOrgEnvironment:", error.message); return null; }
   return data;
+}
+
+export async function getOrgEnvironmentByJoinCode(code: string): Promise<OrgEnvironment | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("org_environments")
+    .select("*")
+    .eq("join_code", code.toUpperCase().trim())
+    .single();
+  if (error) return null;
+  return data;
+}
+
+export async function enrollStudentInOrg(
+  orgId: string,
+  envId: string,
+  studentUserId: string
+): Promise<{ success: boolean; alreadyEnrolled: boolean; enrollment: any | null }> {
+  if (!supabase) return { success: false, alreadyEnrolled: false, enrollment: null };
+
+  // Check if already enrolled
+  const { data: existing } = await supabase
+    .from("org_students")
+    .select("id")
+    .eq("env_id", envId)
+    .eq("student_user_id", studentUserId)
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    return { success: true, alreadyEnrolled: true, enrollment: existing[0] };
+  }
+
+  const { data, error } = await supabase
+    .from("org_students")
+    .insert({ org_id: orgId, env_id: envId, student_user_id: studentUserId })
+    .select()
+    .single();
+
+  if (error) {
+    // Handle unique constraint violation gracefully
+    if (error.code === "23505") {
+      return { success: true, alreadyEnrolled: true, enrollment: null };
+    }
+    console.error("[Supabase] enrollStudentInOrg:", error.message);
+    return { success: false, alreadyEnrolled: false, enrollment: null };
+  }
+
+  return { success: true, alreadyEnrolled: false, enrollment: data };
 }
 
 export async function upsertLeaderboardSnapshot(entry: {

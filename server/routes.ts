@@ -34,6 +34,8 @@ import {
   toggleLessonPublish,
   getStudentOrgIds,
   seedFinancialAcademyLesson,
+  getOrgEnvironmentByJoinCode,
+  enrollStudentInOrg,
 } from "./supabase";
 
 const upload = multer({ 
@@ -2093,6 +2095,59 @@ If the user asks about FinSight Lite features, you can mention:
     if (!enrolled.find(e => e.classId === classId)) return res.status(403).json({ message: "Not enrolled" });
     const notifications = await storage.getNotificationsByClass(classId);
     res.json(notifications);
+  });
+
+  // === STUDENT SIDE - JOIN ORGANIZATION VIA JOIN CODE ===
+
+  // Preview: look up org+env info by join code (no side effects — used to show confirmation before enrolling)
+  app.get("/api/org/join/preview", isAuthenticated, async (req: any, res) => {
+    try {
+      const code = (req.query.code as string | undefined)?.toUpperCase().trim();
+      if (!code) return res.status(400).json({ message: "Join code is required." });
+
+      const env = await getOrgEnvironmentByJoinCode(code);
+      if (!env) return res.status(404).json({ message: "Invalid join code. Please check and try again." });
+
+      const org = await getOrganization(env.org_id);
+      if (!org) return res.status(404).json({ message: "Organization not found." });
+      if (!org.is_active) return res.status(403).json({ message: "This organization is not currently active." });
+
+      res.json({
+        org: { id: org.id, name: org.name, type: org.type },
+        env: { id: env.id, display_name: env.display_name },
+      });
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  // Enroll: actually add the student to the org environment
+  app.post("/api/org/join", isAuthenticated, async (req: any, res) => {
+    try {
+      const { code } = z.object({ code: z.string().min(1) }).parse(req.body);
+      const env = await getOrgEnvironmentByJoinCode(code);
+      if (!env) return res.status(404).json({ message: "Invalid join code. Please check and try again." });
+
+      const org = await getOrganization(env.org_id);
+      if (!org) return res.status(404).json({ message: "Organization not found." });
+      if (!org.is_active) return res.status(403).json({ message: "This organization is not currently active." });
+
+      const studentUserId = String((req.user as any).id);
+      const result = await enrollStudentInOrg(org.id, env.id, studentUserId);
+
+      if (!result.success) {
+        return res.status(500).json({ message: "Failed to enroll. Please try again." });
+      }
+
+      res.json({
+        alreadyEnrolled: result.alreadyEnrolled,
+        org: { name: org.name, type: org.type },
+        env: { display_name: env.display_name },
+      });
+    } catch (e: any) {
+      if (e instanceof z.ZodError) return res.status(400).json({ message: e.errors[0].message });
+      res.status(500).json({ message: e.message });
+    }
   });
 
   // === SUPABASE ORGANIZATIONS & ENVIRONMENTS ===

@@ -18,6 +18,8 @@ import {
   Loader2,
   Check,
   BookMarked,
+  Building2,
+  ChevronRight,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -114,11 +116,125 @@ function JoinClassModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ─── JoinOrgModal ────────────────────────────────────────────────────────────
+
+type OrgPreview = { org: { name: string; type: string }; env: { display_name: string } };
+
+function JoinOrgModal({ onClose }: { onClose: () => void }) {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState<OrgPreview | null>(null);
+  const [result, setResult] = useState<{ alreadyEnrolled: boolean; orgName: string; envName: string } | null>(null);
+
+  const lookupCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!code.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/org/join/preview?code=${encodeURIComponent(code.trim())}`, {
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      setPreview(data);
+    } catch (e: any) {
+      toast({ title: "Code not found", description: e.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmJoin = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/org/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ code: code.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      qc.invalidateQueries({ queryKey: ["/api/lessons"] });
+      setResult({ alreadyEnrolled: data.alreadyEnrolled, orgName: data.org.name, envName: data.env.display_name });
+    } catch (e: any) {
+      toast({ title: "Couldn't join", description: e.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="glass-card-heavy rounded-glass p-8 w-full max-w-sm space-y-5" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-indigo-600" />
+            </div>
+            <h2 className="font-display font-bold text-xl">Join an Organization</h2>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-muted text-muted-foreground"><X className="w-4 h-4" /></button>
+        </div>
+
+        {result ? (
+          <div className="text-center space-y-3 py-4">
+            <div className="w-14 h-14 rounded-3xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mx-auto">
+              <Check className="w-7 h-7 text-indigo-600" />
+            </div>
+            <p className="font-bold text-lg">{result.alreadyEnrolled ? "Already Enrolled!" : "You're in!"}</p>
+            <p className="text-sm text-muted-foreground">
+              {result.alreadyEnrolled
+                ? <>You're already part of <span className="font-bold text-indigo-600">{result.orgName}</span> — {result.envName}.</>
+                : <>You've joined <span className="font-bold text-indigo-600">{result.orgName}</span> — {result.envName}. Check your Lessons tab!</>}
+            </p>
+            <Button onClick={onClose} className="w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500">Done</Button>
+          </div>
+        ) : preview ? (
+          <div className="space-y-4">
+            <div className="rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 p-4 space-y-1">
+              <p className="text-xs text-indigo-500 uppercase font-bold tracking-widest">You're joining</p>
+              <p className="font-bold text-lg text-indigo-800 dark:text-indigo-200">{preview.org.name}</p>
+              <p className="text-sm text-indigo-600 dark:text-indigo-300">{preview.env.display_name}</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setPreview(null)} className="flex-1 rounded-2xl">Back</Button>
+              <Button onClick={confirmJoin} disabled={loading} className="flex-1 rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600" data-testid="button-confirm-join-org">
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Confirm <ChevronRight className="w-4 h-4 ml-1" /></>}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={lookupCode} className="space-y-4">
+            <p className="text-sm text-muted-foreground">Enter the join code given by your school or organization.</p>
+            <input
+              value={code}
+              onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+              placeholder="e.g. ABC2DE"
+              maxLength={8}
+              className="w-full rounded-2xl border-2 border-input bg-background px-4 py-3 text-center font-display font-bold text-2xl tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
+              data-testid="input-org-code"
+            />
+            <Button type="submit" disabled={!code.trim() || loading} className="w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 py-5 font-bold" data-testid="button-lookup-org-code">
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Find Organization"}
+            </Button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Sidebar ─────────────────────────────────────────────────────────────────
+
 export function Sidebar() {
   const [location] = useLocation();
   const { logout, user } = useAuth();
   const [open, setOpen] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
+  const [showJoinOrg, setShowJoinOrg] = useState(false);
 
   const NavContent = () => (
     <div className="flex flex-col h-full caribbean-bg text-white">
@@ -178,6 +294,15 @@ export function Sidebar() {
           <UsersRound className="w-4 h-4" />
           Join a Class
         </Button>
+        <Button
+          variant="outline"
+          className="w-full justify-start gap-2 rounded-2xl border border-indigo-400/30 text-indigo-300 hover:text-indigo-200 hover:bg-indigo-500/10 font-semibold"
+          onClick={() => setShowJoinOrg(true)}
+          data-testid="button-join-org"
+        >
+          <Building2 className="w-4 h-4" />
+          Join an Organization
+        </Button>
         <Button 
           variant="outline" 
           className="w-full justify-start gap-2 rounded-2xl border border-red-400/30 text-red-300 hover:text-red-200 hover:bg-red-500/10 font-semibold"
@@ -194,6 +319,7 @@ export function Sidebar() {
   return (
     <>
       {showJoin && <JoinClassModal onClose={() => setShowJoin(false)} />}
+      {showJoinOrg && <JoinOrgModal onClose={() => setShowJoinOrg(false)} />}
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>

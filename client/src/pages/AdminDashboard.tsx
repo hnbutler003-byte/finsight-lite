@@ -18,7 +18,7 @@ import {
   Shield, Users, GraduationCap, School, Building2, Trophy, Coins,
   LogOut, Search, Download, Plus, Trash2, Pencil, ChevronLeft, ChevronRight,
   LayoutDashboard, BookOpen, X, Globe, ChevronDown, ChevronUp,
-  CheckCircle2, XCircle, Layers, Medal, FileText, Eye, EyeOff, Minus
+  CheckCircle2, XCircle, Layers, Medal, FileText, Eye, EyeOff, Minus, Copy, Check
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -399,6 +399,48 @@ function OrgDialog({ existing, onClose }: { existing?: any; onClose: () => void 
   );
 }
 
+// ─── EnvCard (shows env info + join code with copy button) ──────────────────
+
+function EnvCard({ env }: { env: any }) {
+  const [copied, setCopied] = useState(false);
+
+  const copyCode = () => {
+    if (!env.join_code) return;
+    navigator.clipboard.writeText(env.join_code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-800 border border-slate-700">
+      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: env.theme_color ?? "#7c3aed" }} />
+      <div className="flex-1 min-w-0">
+        <p className="text-white text-sm font-medium truncate" data-testid={`text-env-name-${env.id}`}>{env.display_name}</p>
+        <p className="text-slate-500 text-xs font-mono">{env.slug}</p>
+      </div>
+      {env.join_code && (
+        <button
+          onClick={copyCode}
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-900/50 border border-indigo-700/50 hover:bg-indigo-800/70 transition-colors group"
+          title="Copy join code"
+          data-testid={`button-copy-join-code-${env.id}`}
+        >
+          <span className="text-indigo-200 font-mono font-bold text-xs tracking-widest">{env.join_code}</span>
+          {copied
+            ? <Check className="w-3.5 h-3.5 text-emerald-400" />
+            : <Copy className="w-3.5 h-3.5 text-indigo-400 group-hover:text-indigo-200" />}
+        </button>
+      )}
+      <div className="flex flex-wrap gap-1">
+        {(env.features_enabled ?? []).map((f: string) => (
+          <span key={f} className="text-xs bg-indigo-900/60 text-indigo-300 px-1.5 py-0.5 rounded">{f.replace("_", " ")}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── EnvDialog ───────────────────────────────────────────────────────────────
 
 function EnvDialog({ orgId, onClose }: { orgId: string; onClose: () => void }) {
@@ -750,18 +792,7 @@ function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
             ) : (
               <div className="space-y-2">
                 {envs.map((env: any) => (
-                  <div key={env.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700">
-                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: env.theme_color ?? "#7c3aed" }} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-medium truncate" data-testid={`text-env-name-${env.id}`}>{env.display_name}</p>
-                      <p className="text-slate-500 text-xs font-mono">{env.slug}</p>
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {(env.features_enabled ?? []).map((f: string) => (
-                        <span key={f} className="text-xs bg-indigo-900/60 text-indigo-300 px-1.5 py-0.5 rounded">{f.replace("_", " ")}</span>
-                      ))}
-                    </div>
-                  </div>
+                  <EnvCard key={env.id} env={env} />
                 ))}
               </div>
             )}

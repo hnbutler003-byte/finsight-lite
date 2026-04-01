@@ -200,9 +200,11 @@ Core tables include:
   - Connected via HTTPS using the Supabase JS client (direct Postgres TCP blocked by Replit network)
   - Requires SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY secrets
   - Server module: server/supabase.ts
-  - Tables (create via Supabase SQL editor): organizations, org_environments, org_students, leaderboard_snapshots, analytics_events
+  - Tables (create via Supabase SQL editor): organizations, org_environments (has join_code UNIQUE column — run `ALTER TABLE org_environments ADD COLUMN IF NOT EXISTS join_code text UNIQUE;` if upgrading), org_students, leaderboard_snapshots, analytics_events, lesson_plans, lesson_quiz_questions
   - Admin API routes: /api/admin/organizations/*, /api/admin/leaderboard, /api/supabase/status
+  - Student org join API routes: GET /api/org/join/preview?code=, POST /api/org/join
   - Student API routes: /api/leaderboard/snapshot, /api/analytics/event
+  - join_code: auto-generated 6-char alphanumeric (no ambiguous chars) per org_environment; shown in AdminDashboard env cards with copy button; students use "Join an Organization" modal in Sidebar
 
 ### Frontend Libraries
 - **@radix-ui/***: Accessible UI primitives for shadcn/ui components
