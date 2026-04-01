@@ -37,6 +37,7 @@ import {
   getOrgEnvironmentByJoinCode,
   getOrgEnvironmentById,
   enrollStudentInOrg,
+  getPublishedLessonsByEnv,
 } from "./supabase";
 
 const upload = multer({ 
@@ -1781,15 +1782,13 @@ If the user asks about FinSight Lite features, you can mention:
     res.json(analytics);
   });
 
-  // Lessons for a linked org environment (read-only, teacher view)
+  // Lessons for a linked org environment (read-only, teacher view — env-scoped)
   app.get("/api/teacher/classes/:id/lessons", isTeacher, async (req: any, res) => {
     const id = parseInt(req.params.id);
     const cls = await storage.getClassById(id);
     if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
     if (!cls.envId) return res.json([]);
-    const env = await getOrgEnvironmentById(cls.envId);
-    if (!env) return res.json([]);
-    const lessons = await getPublishedLessons(env.org_id);
+    const lessons = await getPublishedLessonsByEnv(cls.envId);
     res.json(lessons);
   });
 
@@ -2391,40 +2390,53 @@ If the user asks about FinSight Lite features, you can mention:
 
   // === LESSON PLANS (student) ===
 
-  // Helper: get all org_ids accessible to a student (direct + via linked classes)
-  async function getStudentAccessibleOrgIds(userId: string): Promise<string[]> {
-    const directOrgIds = await getStudentOrgIds(userId);
+  // Helper: collect all lessons accessible to a student with correct env scoping.
+  // - Direct org enrollment → all published lessons for that org (org-scoped; env_id may be null or any)
+  // - Class-linked enrollment → only published lessons for that specific env_id
+  async function getStudentAccessibleLessons(userId: string): Promise<import("./supabase").LessonPlan[]> {
+    const [directOrgIds, studentClasses] = await Promise.all([
+      getStudentOrgIds(userId),
+      storage.getStudentClasses(userId),
+    ]);
 
-    // Also collect org_ids from classes the student is enrolled in that have env_id set
-    const studentClasses = await storage.getStudentClasses(userId);
     const linkedEnvIds = studentClasses
       .map(e => (e.class as any).envId as string | null | undefined)
       .filter((envId): envId is string => !!envId);
 
-    if (linkedEnvIds.length > 0) {
-      const envOrgIds = await Promise.all(linkedEnvIds.map(async (envId) => {
-        const env = await getOrgEnvironmentById(envId);
-        return env?.org_id ?? null;
-      }));
-      for (const orgId of envOrgIds) {
-        if (orgId && !directOrgIds.includes(orgId)) directOrgIds.push(orgId);
-      }
+    const lessonFetches: Promise<import("./supabase").LessonPlan[]>[] = [
+      ...directOrgIds.map(id => getPublishedLessons(id)),
+      ...linkedEnvIds.map(envId => getPublishedLessonsByEnv(envId)),
+    ];
+
+    const results = await Promise.all(lessonFetches);
+
+    // Deduplicate by lesson id
+    const seen = new Set<string>();
+    return results.flat().filter(l => { if (seen.has(l.id)) return false; seen.add(l.id); return true; });
+  }
+
+  // Helper: check if a student has access to a specific lesson (for access control on /lessons/:id)
+  async function studentHasLessonAccess(userId: string, lesson: import("./supabase").LessonPlan): Promise<boolean> {
+    const directOrgIds = await getStudentOrgIds(userId);
+    if (directOrgIds.includes(lesson.org_id)) return true;
+
+    // Check class-linked env access (lesson must be env-scoped to that env_id)
+    if (lesson.env_id) {
+      const studentClasses = await storage.getStudentClasses(userId);
+      const linkedEnvIds = studentClasses
+        .map(e => (e.class as any).envId as string | null | undefined)
+        .filter((envId): envId is string => !!envId);
+      if (linkedEnvIds.includes(lesson.env_id)) return true;
     }
 
-    return directOrgIds;
+    return false;
   }
 
   app.get("/api/lessons", isAuthenticated, async (req: any, res) => {
     const userId = req.user?.id;
-    const orgIds = userId ? await getStudentAccessibleOrgIds(userId) : [];
-    if (orgIds.length === 0) {
-      return res.json([]);
-    }
-    const allLessons = await Promise.all(orgIds.map(id => getPublishedLessons(id)));
-    // Deduplicate by lesson id
-    const seen = new Set<string>();
-    const unique = allLessons.flat().filter(l => { if (seen.has(l.id)) return false; seen.add(l.id); return true; });
-    res.json(unique);
+    if (!userId) return res.json([]);
+    const lessons = await getStudentAccessibleLessons(userId);
+    res.json(lessons);
   });
 
   app.get("/api/lessons/:id", isAuthenticated, async (req: any, res) => {
@@ -2432,11 +2444,8 @@ If the user asks about FinSight Lite features, you can mention:
     const lesson = await getLessonWithQuestions(req.params.id);
     if (!lesson) return res.status(404).json({ message: "Lesson not found" });
     if (!lesson.is_published) return res.status(403).json({ message: "Lesson not published" });
-    // Verify the user has access through direct org enrollment OR a linked class
-    const orgIds = userId ? await getStudentAccessibleOrgIds(userId) : [];
-    if (!orgIds.includes(lesson.org_id)) {
-      return res.status(403).json({ message: "Access denied" });
-    }
+    const hasAccess = userId ? await studentHasLessonAccess(userId, lesson) : false;
+    if (!hasAccess) return res.status(403).json({ message: "Access denied" });
     res.json(lesson);
   });
 
@@ -2453,8 +2462,8 @@ If the user asks about FinSight Lite features, you can mention:
       if (!lesson) return res.status(404).json({ message: "Lesson not found" });
       if (!lesson.is_published) return res.status(403).json({ message: "Lesson not published" });
 
-      const orgIds = await getStudentAccessibleOrgIds(userId);
-      if (!orgIds.includes(lesson.org_id)) {
+      const hasAccess = await studentHasLessonAccess(userId, lesson);
+      if (!hasAccess) {
         return res.status(403).json({ message: "Access denied" });
       }
 

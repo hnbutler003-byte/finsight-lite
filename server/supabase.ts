@@ -413,6 +413,18 @@ export async function getPublishedLessons(orgId?: string): Promise<LessonPlan[]>
   return (data ?? []).map(normalizeLessonPlan);
 }
 
+export async function getPublishedLessonsByEnv(envId: string): Promise<LessonPlan[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("lesson_plans")
+    .select("*")
+    .eq("is_published", true)
+    .eq("env_id", envId)
+    .order("created_at", { ascending: false });
+  if (error) { console.error("[Supabase] getPublishedLessonsByEnv:", error.message); return []; }
+  return (data ?? []).map(normalizeLessonPlan);
+}
+
 export async function getLessonWithQuestions(lessonId: string): Promise<LessonWithQuestions | null> {
   if (!supabase) return null;
   const { data: lesson, error: le } = await supabase
