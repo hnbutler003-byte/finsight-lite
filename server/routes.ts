@@ -2620,6 +2620,13 @@ If the user asks about FinSight Lite features, you can mention:
 
     const orgStudents = data ?? [];
 
+    // Fetch all environments for this org to resolve display names
+    const envs = await getOrgEnvironments(admin.orgId);
+    const envMap: Record<string, string> = {};
+    for (const env of envs) {
+      envMap[env.id] = env.display_name ?? env.slug ?? env.id;
+    }
+
     // Enrich with local user profile data (name, avatar, XP, level) from PostgreSQL
     const enriched = await Promise.all(orgStudents.map(async (s: any) => {
       const user = await storage.getUser(s.student_user_id).catch(() => null);
@@ -2632,6 +2639,7 @@ If the user asks about FinSight Lite features, you can mention:
         xp: xpData?.totalXp ?? 0,
         level: xpData?.level ?? 1,
         streak: xpData?.currentStreak ?? 0,
+        envName: envMap[s.env_id] ?? s.env_id,
       };
     }));
 

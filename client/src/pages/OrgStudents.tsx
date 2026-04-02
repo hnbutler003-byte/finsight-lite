@@ -20,6 +20,7 @@ type EnrichedStudent = {
   xp: number;
   level: number;
   streak: number;
+  envName: string;
 };
 
 const AVATAR_MAP: Record<string, string> = {
@@ -126,6 +127,7 @@ export default function OrgStudents() {
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-blue-500" />{s.xp} XP</span>
                       <span>Joined {formatDate(s.joined_at)}</span>
+                      {s.envName && <span className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-lg font-medium">{s.envName}</span>}
                     </div>
                   </div>
 
