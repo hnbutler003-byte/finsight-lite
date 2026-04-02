@@ -47,7 +47,7 @@ export function StatCard({ title, value, trend, trendUp, icon: Icon, variant = "
         <div className="mt-4 flex items-center gap-2 text-sm">
           <span className={cn(
             "font-medium px-2 py-0.5 rounded-full text-xs",
-            trendUp ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+            trendUp ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
           )}>
             {trend}
           </span>
