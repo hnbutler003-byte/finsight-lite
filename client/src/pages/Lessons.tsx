@@ -1,12 +1,13 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   ArrowLeft, BookOpen, CheckCircle2, XCircle, Trophy,
   Star, Award, Loader2, ChevronRight, Clock, GraduationCap,
-  Target, ListChecks, BookMarked
+  Target, ListChecks, BookMarked, KeyRound
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -51,9 +52,50 @@ export default function Lessons() {
   const [answers, setAnswers] = useState<string[]>([]);
   const [quizResults, setQuizResults] = useState<any>(null);
 
+  // Inline join code state (for empty state)
+  const [joinCode, setJoinCode] = useState("");
+  const [joinError, setJoinError] = useState("");
+  const [joinSuccess, setJoinSuccess] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
+
   const { data: lessons = [], isLoading } = useQuery<Lesson[]>({
     queryKey: ["/api/lessons"],
   });
+
+  const handleJoinCode = async () => {
+    const code = joinCode.trim().toUpperCase();
+    if (!code) { setJoinError("Please enter a code."); return; }
+    setIsJoining(true);
+    setJoinError("");
+    setJoinSuccess("");
+    try {
+      // First validate the code type
+      const checkRes = await fetch(`/api/classes/check-code/${encodeURIComponent(code)}`, { credentials: "include" });
+      const checkData = await checkRes.json();
+      if (!checkRes.ok) { setJoinError(checkData.message || "Code not found."); return; }
+
+      const endpoint = checkData.type === "org" ? "/api/org/join" : "/api/student/join-class";
+      const joinRes = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+        credentials: "include",
+      });
+      const joinData = await joinRes.json();
+      if (!joinRes.ok) { setJoinError(joinData.message || "Could not join. Try again."); return; }
+
+      const label = checkData.type === "org"
+        ? `${checkData.name} — ${checkData.envName}`
+        : checkData.name;
+      setJoinSuccess(`You've joined ${label}! Your lessons will appear below.`);
+      setJoinCode("");
+      queryClient.invalidateQueries({ queryKey: ["/api/lessons"] });
+    } catch {
+      setJoinError("Something went wrong. Please try again.");
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
   const completeMutation = useMutation({
     mutationFn: async ({ id, answers }: { id: string; answers: string[] }) => {
@@ -162,12 +204,45 @@ export default function Lessons() {
                   <Loader2 className="w-8 h-8 animate-spin text-white/60" />
                 </div>
               ) : lessons.length === 0 ? (
-                <div className="glass-card rounded-glass p-10 text-center">
-                  <BookOpen className="w-12 h-12 text-teal-400 mx-auto mb-3 opacity-60" />
-                  <p className="font-bold text-lg">No lessons available yet</p>
-                  <p className="text-muted-foreground text-sm mt-1">
-                    Your teacher or school admin hasn't published any lessons yet. Check back soon!
-                  </p>
+                <div className="space-y-4">
+                  <div className="glass-card rounded-glass p-10 text-center">
+                    <BookOpen className="w-12 h-12 text-teal-400 mx-auto mb-3 opacity-60" />
+                    <p className="font-bold text-lg">No lessons yet</p>
+                    <p className="text-muted-foreground text-sm mt-1">
+                      Enter your class or organization code below to unlock your lessons.
+                    </p>
+                  </div>
+                  <div className="glass-card rounded-glass p-6 space-y-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <KeyRound className="w-5 h-5 text-violet-500" />
+                      <span className="font-bold text-sm">Enter your code</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        value={joinCode}
+                        onChange={(e) => { setJoinCode(e.target.value.toUpperCase()); setJoinError(""); setJoinSuccess(""); }}
+                        onKeyDown={(e) => e.key === "Enter" && handleJoinCode()}
+                        placeholder="e.g. 3KMXJD"
+                        className="rounded-xl font-mono text-center tracking-widest uppercase h-11"
+                        maxLength={8}
+                        data-testid="input-join-code-lessons"
+                      />
+                      <Button
+                        onClick={handleJoinCode}
+                        disabled={isJoining || !joinCode.trim()}
+                        className="rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 text-white font-bold px-5 shrink-0"
+                        data-testid="button-join-code-lessons"
+                      >
+                        {isJoining ? <Loader2 className="w-4 h-4 animate-spin" /> : "Join"}
+                      </Button>
+                    </div>
+                    {joinError && (
+                      <p className="text-destructive text-sm font-medium" data-testid="text-join-error">{joinError}</p>
+                    )}
+                    {joinSuccess && (
+                      <p className="text-green-600 dark:text-green-400 text-sm font-medium" data-testid="text-join-success">{joinSuccess}</p>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3">

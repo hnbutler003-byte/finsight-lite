@@ -43,7 +43,12 @@ export function registerAuthRoutes(app: Express): void {
         firstName: name.trim(),
       });
 
-      req.session.userId = user.id;
+      // Explicitly save session before responding so subsequent requests in the
+      // same browser context (e.g. auto-join class/org) see the authenticated session.
+      await new Promise<void>((resolve, reject) => {
+        req.session.userId = user.id;
+        req.session.save((err) => (err ? reject(err) : resolve()));
+      });
       return res.status(201).json(user);
     } catch (error) {
       console.error("Registration error:", error);
