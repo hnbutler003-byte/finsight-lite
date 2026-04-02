@@ -1,0 +1,81 @@
+Build OECD-Aligned Financial Literacy Modules in “My Lessons” Tab
+
+Create and display three structured financial literacy modules inside the “My Lessons” tab of FinSight Lite.
+
+📚 Modules to Create
+Budgeting
+Saving
+Investing
+🧠 Curriculum Requirements (OECD-Aligned)
+
+Each module must follow OECD financial literacy principles, meaning:
+
+Focus on real-life decision making
+Teach money management, planning, risk, and value of money
+Be age-appropriate for kids/teens
+Include practical application (not just definitions)
+🧩 Module Structure (REQUIRED)
+
+Each module should be displayed as a separate bordered card/container with clear visual separation.
+
+Inside each module, include:
+
+1. Module Title
+(e.g., “Budgeting Basics”)
+
+2. Learning Objective
+Short, clear sentence:
+
+“Students will learn how to plan and manage money effectively.”
+
+3. Lessons (3 per module minimum)
+Each lesson should include:
+
+Lesson title
+Short description (1–2 sentences)
+Optional icon or emoji for visual appeal
+
+Example:
+
+Needs vs Wants
+Creating a Simple Budget
+Tracking Spending
+
+4. Interactive Element (Placeholder is fine)
+
+Quiz button OR
+“Start Activity” button
+
+5. Progress Indicator (UI only if backend not ready)
+
+Progress bar or % text
+🎨 UI / DESIGN REQUIREMENTS
+Each module must be in a card with:
+Border or shadow for separation
+Slight padding
+Rounded corners (modern, clean look)
+Ensure:
+Text is clearly visible (fix contrast issues)
+Background and text colors meet accessibility standards
+Consistent spacing between modules
+Layout:
+Stack modules vertically OR grid (responsive for screen size)
+🏫 SCHOOL-READY STRUCTURE
+
+Prepare this so it can scale later:
+
+Each module should be assignable to a class (future-ready)
+Lessons should be structured in a way that allows:
+Tracking completion
+Tracking scores (later integration)
+⚙️ FLEXIBILITY IN IMPLEMENTATION
+If lesson data is static → hardcode for now
+If database exists → structure it cleanly for future expansion
+Do NOT break existing “My Lessons” functionality
+🎯 OUTPUT GOAL
+
+When a user clicks “My Lessons”, they should see:
+
+3 clearly separated modules
+Each with lessons, objectives, and actions
+A clean, engaging, school-ready interface
