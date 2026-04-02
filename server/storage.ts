@@ -4,6 +4,7 @@ import {
   examPapers, extractedQuestions, gameSessions, userXp, userBadges,
   schools, sponsors,
   teachers, classes, classEnrollments, challenges, classNotifications,
+  orgAdmins,
   type School, type InsertSchool,
   type Sponsor, type InsertSponsor,
   type Teacher, type InsertTeacher,
@@ -11,6 +12,7 @@ import {
   type ClassEnrollment, type InsertClassEnrollment,
   type Challenge, type InsertChallenge,
   type ClassNotification, type InsertClassNotification,
+  type OrgAdmin, type InsertOrgAdmin,
   type User, type UpsertUser,
   type Category, type InsertCategory,
   type Transaction, type InsertTransaction,
@@ -144,6 +146,11 @@ export interface IStorage extends IAuthStorage {
   deleteNotification(id: number, teacherId: number): Promise<void>;
   getClassLeaderboard(classId: number): Promise<any[]>;
   getClassAnalytics(classId: number): Promise<any>;
+
+  // Org Admin
+  createOrgAdmin(data: InsertOrgAdmin & { passwordHash: string }): Promise<OrgAdmin>;
+  getOrgAdminByEmail(email: string): Promise<OrgAdmin | undefined>;
+  getOrgAdminById(id: number): Promise<OrgAdmin | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1278,6 +1285,23 @@ export class DatabaseStorage implements IStorage {
     const tbl = tableMap[tableName];
     if (!tbl) return [];
     return await db.select().from(tbl).limit(500);
+  }
+
+  // === ORG ADMIN ===
+
+  async createOrgAdmin(data: InsertOrgAdmin & { passwordHash: string }): Promise<OrgAdmin> {
+    const [admin] = await db.insert(orgAdmins).values(data).returning();
+    return admin;
+  }
+
+  async getOrgAdminByEmail(email: string): Promise<OrgAdmin | undefined> {
+    const [admin] = await db.select().from(orgAdmins).where(eq(orgAdmins.email, email.toLowerCase()));
+    return admin;
+  }
+
+  async getOrgAdminById(id: number): Promise<OrgAdmin | undefined> {
+    const [admin] = await db.select().from(orgAdmins).where(eq(orgAdmins.id, id));
+    return admin;
   }
 }
 

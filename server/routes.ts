@@ -2485,6 +2485,221 @@ If the user asks about FinSight Lite features, you can mention:
     res.json(lesson);
   });
 
+  // === ORG ADMIN AUTH ROUTES ===
+  const isOrgAdmin = (req: any, res: any, next: any) => {
+    if (!req.session?.orgAdminId) return res.status(401).json({ message: "Org admin not authenticated" });
+    next();
+  };
+
+  app.post("/api/org/auth/register", async (req, res) => {
+    try {
+      const { firstName, lastName, email, password, joinCode } = z.object({
+        firstName: z.string().min(1),
+        lastName: z.string().min(1),
+        email: z.string().email(),
+        password: z.string().min(6),
+        joinCode: z.string().min(1),
+      }).parse(req.body);
+
+      // Verify join code resolves to a real org environment
+      const env = await getOrgEnvironmentByJoinCode(joinCode);
+      if (!env) return res.status(400).json({ message: "Invalid organization join code" });
+
+      const org = await getOrganization(env.org_id);
+      if (!org) return res.status(400).json({ message: "Organization not found" });
+
+      const existing = await storage.getOrgAdminByEmail(email);
+      if (existing) return res.status(409).json({ message: "Email already in use" });
+
+      const passwordHash = await bcrypt.hash(password, 12);
+      const admin = await storage.createOrgAdmin({
+        firstName, lastName, email: email.toLowerCase(), passwordHash,
+        orgId: env.org_id, envId: env.id, role: "admin",
+      });
+      (req as any).session.orgAdminId = admin.id;
+      const { passwordHash: _, ...safe } = admin;
+      return res.json({ ...safe, orgName: org.name, envName: env.display_name });
+    } catch (e: any) {
+      return res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.post("/api/org/auth/login", async (req, res) => {
+    try {
+      const { email, password } = z.object({ email: z.string().email(), password: z.string() }).parse(req.body);
+      const admin = await storage.getOrgAdminByEmail(email);
+      if (!admin) return res.status(401).json({ message: "Invalid email or password" });
+      const valid = await bcrypt.compare(password, admin.passwordHash);
+      if (!valid) return res.status(401).json({ message: "Invalid email or password" });
+      (req as any).session.orgAdminId = admin.id;
+      const { passwordHash: _, ...safe } = admin;
+      // Fetch org and env names
+      const org = await getOrganization(admin.orgId);
+      const envs = await getOrgEnvironments(admin.orgId);
+      const env = envs.find(e => e.id === admin.envId);
+      return res.json({ ...safe, orgName: org?.name ?? "", envName: env?.display_name ?? "" });
+    } catch (e: any) {
+      return res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.post("/api/org/auth/logout", (req, res) => {
+    delete (req as any).session.orgAdminId;
+    res.json({ ok: true });
+  });
+
+  app.get("/api/org/auth/me", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+    const { passwordHash: _, ...safe } = admin;
+    const org = await getOrganization(admin.orgId);
+    const envs = await getOrgEnvironments(admin.orgId);
+    const env = envs.find(e => e.id === admin.envId);
+    res.json({ ...safe, orgName: org?.name ?? "", envName: env?.display_name ?? "" });
+  });
+
+  // === ORG ADMIN DATA ROUTES ===
+
+  app.get("/api/org-admin/overview", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+
+    const org = await getOrganization(admin.orgId);
+    const envs = await getOrgEnvironments(admin.orgId);
+    const env = envs.find(e => e.id === admin.envId);
+
+    // Count students enrolled in this environment
+    const { data: studentsData } = supabase
+      ? await supabase.from("org_students").select("id").eq("env_id", admin.envId)
+      : { data: [] };
+    const studentCount = studentsData?.length ?? 0;
+
+    // Count lessons for this env
+    const lessons = await getLessonsByOrg(admin.orgId);
+    const envLessons = lessons.filter((l: any) => l.env_id === admin.envId || !l.env_id);
+    const publishedLessons = envLessons.filter((l: any) => l.is_published).length;
+
+    res.json({
+      org: { id: org?.id, name: org?.name, type: org?.type, country: org?.country },
+      env: { id: env?.id, slug: env?.slug, displayName: env?.display_name, joinCode: env?.join_code, featuresEnabled: env?.features_enabled },
+      stats: { studentCount, totalLessons: envLessons.length, publishedLessons },
+    });
+  });
+
+  app.get("/api/org-admin/students", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+
+    if (!supabase) return res.json([]);
+    const { data, error } = await supabase
+      .from("org_students")
+      .select("*")
+      .eq("env_id", admin.envId)
+      .order("joined_at", { ascending: false });
+    if (error) return res.status(500).json({ message: error.message });
+    res.json(data ?? []);
+  });
+
+  app.delete("/api/org-admin/students/:studentUserId", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+    if (!supabase) return res.status(503).json({ message: "Supabase not available" });
+
+    const { error } = await supabase
+      .from("org_students")
+      .delete()
+      .eq("env_id", admin.envId)
+      .eq("student_user_id", req.params.studentUserId);
+    if (error) return res.status(500).json({ message: error.message });
+    res.json({ ok: true });
+  });
+
+  app.get("/api/org-admin/lessons", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+    const lessons = await getLessonsByOrg(admin.orgId);
+    res.json(lessons);
+  });
+
+  app.post("/api/org-admin/lessons", isOrgAdmin, async (req: any, res) => {
+    try {
+      const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+      if (!admin) return res.status(401).json({ message: "Not found" });
+      const body = z.object({
+        title: z.string().min(1),
+        instructor: z.string().optional(),
+        subject: z.string().optional(),
+        gradeLevel: z.string().optional(),
+        topic: z.string().optional(),
+        duration: z.string().optional(),
+        objectives: z.array(z.string()).default([]),
+        contentSections: z.array(z.object({ heading: z.string(), body: z.string(), examples: z.array(z.string()).optional() })).default([]),
+      }).parse(req.body);
+
+      const lesson = await createLessonPlan({
+        org_id: admin.orgId,
+        env_id: admin.envId,
+        title: body.title,
+        instructor: body.instructor ?? null,
+        subject: body.subject ?? null,
+        grade_level: body.gradeLevel ?? null,
+        topic: body.topic ?? null,
+        duration: body.duration ?? null,
+        objectives: body.objectives,
+        content_sections: body.contentSections,
+        is_published: false,
+      });
+      if (!lesson) return res.status(500).json({ message: "Failed to create lesson" });
+      res.json(lesson);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.patch("/api/org-admin/lessons/:id/publish", isOrgAdmin, async (req: any, res) => {
+    try {
+      const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+      if (!admin) return res.status(401).json({ message: "Not found" });
+      const { isPublished } = z.object({ isPublished: z.boolean() }).parse(req.body);
+      const lesson = await toggleLessonPublish(req.params.id, isPublished);
+      if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+      res.json(lesson);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.post("/api/org-admin/lessons/:id/questions", isOrgAdmin, async (req: any, res) => {
+    try {
+      const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+      if (!admin) return res.status(401).json({ message: "Not found" });
+      const body = z.object({
+        question: z.string().min(1),
+        optionA: z.string().min(1),
+        optionB: z.string().min(1),
+        optionC: z.string().min(1),
+        optionD: z.string().min(1),
+        correctAnswer: z.enum(["A", "B", "C", "D"]),
+        orderIndex: z.number().default(0),
+      }).parse(req.body);
+
+      const q = await createLessonQuizQuestion({
+        lesson_id: req.params.id,
+        question: body.question,
+        option_a: body.optionA,
+        option_b: body.optionB,
+        option_c: body.optionC,
+        option_d: body.optionD,
+        correct_answer: body.correctAnswer,
+        order_index: body.orderIndex,
+      });
+      if (!q) return res.status(500).json({ message: "Failed to create question" });
+      res.json(q);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
   app.post("/api/lessons/:id/complete", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.id;

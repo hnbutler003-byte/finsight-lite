@@ -226,6 +226,24 @@ export const classNotifications = pgTable("class_notifications", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// === ORGANIZATION ADMIN TABLE ===
+
+export const orgAdmins = pgTable("org_admins", {
+  id: serial("id").primaryKey(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").unique().notNull(),
+  passwordHash: text("password_hash").notNull(),
+  orgId: text("org_id").notNull(),
+  envId: text("env_id").notNull(),
+  role: text("role").default("admin").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertOrgAdminSchema = createInsertSchema(orgAdmins).omit({ id: true, createdAt: true });
+export type OrgAdmin = typeof orgAdmins.$inferSelect;
+export type InsertOrgAdmin = z.infer<typeof insertOrgAdminSchema>;
+
 // === MONEYLAB TABLES ===
 
 export const examPapers = pgTable("exam_papers", {

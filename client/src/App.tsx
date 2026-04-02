@@ -28,6 +28,11 @@ import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import DemoAccess from "@/pages/DemoAccess";
 import Lessons from "@/pages/Lessons";
+import OrgLogin from "@/pages/OrgLogin";
+import OrgRegister from "@/pages/OrgRegister";
+import OrgDashboard from "@/pages/OrgDashboard";
+import OrgStudents from "@/pages/OrgStudents";
+import OrgLessons from "@/pages/OrgLessons";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
@@ -72,6 +77,12 @@ function Router() {
         <Route path="/teacher/classes/:id" component={TeacherClassDetail} />
         <Route path="/teacher/classes" component={TeacherDashboard} />
         <Route path="/teacher">{() => <Redirect to="/teacher/login" />}</Route>
+        <Route path="/org/login" component={OrgLogin} />
+        <Route path="/org/register" component={OrgRegister} />
+        <Route path="/org/dashboard" component={OrgDashboard} />
+        <Route path="/org/students" component={OrgStudents} />
+        <Route path="/org/lessons" component={OrgLessons} />
+        <Route path="/org">{() => <Redirect to="/org/login" />}</Route>
         <Route path="/" component={AuthPage} />
         <Route component={AuthPage} />
       </Switch>
@@ -89,6 +100,12 @@ function Router() {
       <Route path="/teacher/classes/:id" component={TeacherClassDetail} />
       <Route path="/teacher/classes" component={TeacherDashboard} />
       <Route path="/teacher">{() => <Redirect to="/teacher/dashboard" />}</Route>
+      <Route path="/org/login" component={OrgLogin} />
+      <Route path="/org/register" component={OrgRegister} />
+      <Route path="/org/dashboard" component={OrgDashboard} />
+      <Route path="/org/students" component={OrgStudents} />
+      <Route path="/org/lessons" component={OrgLessons} />
+      <Route path="/org">{() => <Redirect to="/org/dashboard" />}</Route>
       <Route path="/" component={Dashboard} />
       <Route path="/budgets" component={Budgets} />
       <Route path="/trends" component={Trends} />
