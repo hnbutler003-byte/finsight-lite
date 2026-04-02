@@ -94,17 +94,22 @@ function CreateLessonModal({ onClose }: { onClose: () => void }) {
     setLoading(true);
     try {
       const validQuestions = questions.filter(q => q.question && q.optionA && q.optionB && q.optionC && q.optionD);
-      await Promise.all(validQuestions.map((q, i) =>
-        fetch(`/api/org-admin/lessons/${lessonId}/questions`, {
+      const results = await Promise.all(validQuestions.map(async (q, i) => {
+        const res = await fetch(`/api/org-admin/lessons/${lessonId}/questions`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({ ...q, orderIndex: i }),
-        })
-      ));
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ message: "Unknown error" }));
+          throw new Error(`Question ${i + 1}: ${err.message}`);
+        }
+        return res.json();
+      }));
       qc.invalidateQueries({ queryKey: ["/api/org-admin/lessons"] });
       qc.invalidateQueries({ queryKey: ["/api/org-admin/overview"] });
-      toast({ title: "Lesson created!", description: `Lesson saved with ${validQuestions.length} quiz question${validQuestions.length !== 1 ? "s" : ""}.` });
+      toast({ title: "Lesson created!", description: `Lesson saved with ${results.length} quiz question${results.length !== 1 ? "s" : ""}.` });
       onClose();
     } catch (e: any) {
       toast({ title: "Error saving questions", description: e.message, variant: "destructive" });
