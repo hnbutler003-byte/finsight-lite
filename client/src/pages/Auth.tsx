@@ -36,6 +36,7 @@ type Step =
   | "welcome";
 
 type Flow = "student" | "guest";
+type CodeType = "class" | "org" | null;
 
 export default function AuthPage() {
   const [step, setStep] = useState<Step>("entry");
@@ -43,6 +44,7 @@ export default function AuthPage() {
   const [name, setName] = useState("");
   const [classCode, setClassCode] = useState("");
   const [className, setClassName] = useState("");
+  const [codeType, setCodeType] = useState<CodeType>(null);
   const [resumeUsername, setResumeUsername] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState("");
   const [error, setError] = useState("");
@@ -56,11 +58,11 @@ export default function AuthPage() {
 
   const clearError = () => setError("");
 
-  // Validate class code against the server
+  // Validate class or org code against the server
   const handleValidateCode = async () => {
     const code = classCode.trim().toUpperCase();
     if (code.length < 3) {
-      setError("Enter a valid class code.");
+      setError("Enter a valid code.");
       return;
     }
     setIsValidatingCode(true);
@@ -72,8 +74,10 @@ export default function AuthPage() {
         setError(data.message || "Code not found.");
         return;
       }
-      setClassName(data.name);
+      setCodeType(data.type);
       setClassCode(code);
+      // For org codes, display org name + env; for class codes, show class name
+      setClassName(data.type === "org" ? `${data.name} — ${data.envName}` : data.name);
       setStep("student-name");
     } catch {
       setError("Could not check the code. Try again.");
@@ -125,11 +129,12 @@ export default function AuthPage() {
       const user = await register({ name: name.trim(), avatar: selectedAvatar });
       setCreatedUser(user);
 
-      // Auto-join class for student flow
+      // Auto-join class or org after registration (student flow)
       if (flow === "student" && classCode) {
         setIsJoiningClass(true);
         try {
-          await fetch("/api/student/join-class", {
+          const joinEndpoint = codeType === "org" ? "/api/org/join" : "/api/student/join-class";
+          await fetch(joinEndpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ code: classCode }),
@@ -289,8 +294,8 @@ export default function AuthPage() {
                     <KeyRound className="w-6 h-6 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-lg font-bold font-display">Enter Class Code</p>
-                    <p className="text-sm text-muted-foreground">Your teacher gave you a code</p>
+                    <p className="text-lg font-bold font-display">Enter a Code</p>
+                    <p className="text-sm text-muted-foreground">Class code or organization code</p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-violet-500 transition-colors shrink-0" />
                 </button>
@@ -329,10 +334,10 @@ export default function AuthPage() {
                   <KeyRound className="w-9 h-9 text-white" />
                 </div>
                 <h2 className="text-3xl font-bold font-display bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-pink-500">
-                  Enter Class Code
+                  Enter Your Code
                 </h2>
                 <p className="mt-2 text-muted-foreground font-medium">
-                  Ask your teacher for the code
+                  Enter your class code or organization code
                 </p>
               </div>
 

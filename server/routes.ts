@@ -2116,13 +2116,28 @@ If the user asks about FinSight Lite features, you can mention:
   });
 
   // === STUDENT SIDE - JOIN CLASS ===
-  // Public endpoint: validate a class code before a student registers
+  // Public endpoint: validate a code before a student registers.
+  // Checks both teacher class codes (PostgreSQL) and org environment join codes (Supabase).
   app.get("/api/classes/check-code/:code", async (req, res) => {
     try {
       const code = req.params.code.toUpperCase().trim();
+
+      // 1. Try teacher class code first
       const cls = await storage.getClassByCode(code);
-      if (!cls) return res.status(404).json({ message: "Class not found. Double-check the code." });
-      res.json({ id: cls.id, name: cls.name, subject: cls.subject });
+      if (cls) {
+        return res.json({ type: "class", id: cls.id, name: cls.name, subject: cls.subject });
+      }
+
+      // 2. Try org environment join code (Supabase)
+      const env = await getOrgEnvironmentByJoinCode(code);
+      if (env) {
+        const org = await getOrganization(env.org_id);
+        if (org && org.is_active) {
+          return res.json({ type: "org", orgId: org.id, envId: env.id, name: org.name, envName: env.display_name });
+        }
+      }
+
+      return res.status(404).json({ message: "Code not found. Double-check and try again." });
     } catch (e: any) {
       res.status(400).json({ message: e.message });
     }
