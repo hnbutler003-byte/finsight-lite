@@ -9,9 +9,11 @@ import {
   Star, Award, Loader2, ChevronRight, Clock, GraduationCap,
   Target, ListChecks, BookMarked, KeyRound, PiggyBank,
   TrendingUp, Wallet, Lightbulb, ShoppingCart, BarChart3,
-  Layers, ChevronDown, ChevronUp, Play, Lock
+  Layers, ChevronDown, ChevronUp, Play, Lock, Download, Video
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { jsPDF } from "jspdf";
+import { useAuth } from "@/hooks/use-auth";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,6 +37,7 @@ type Lesson = {
   grade_level?: string;
   topic?: string;
   duration?: string;
+  video_url?: string | null;
   objectives: string[];
   content_sections: ContentSection[];
   is_published: boolean;
@@ -435,6 +438,138 @@ const STATIC_MODULES: StaticModule[] = [
 
 const STORAGE_KEY = "finsight_static_completed";
 
+// ─── Certificate Generation ────────────────────────────────────────────────────
+
+function generateCertificate(studentName: string, contextName: string, completionDate: string) {
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const W = 297;
+  const H = 210;
+
+  doc.setFillColor(15, 23, 42);
+  doc.rect(0, 0, W, H, "F");
+
+  doc.setFillColor(30, 41, 59);
+  doc.roundedRect(10, 10, W - 20, H - 20, 6, 6, "F");
+
+  doc.setDrawColor(99, 102, 241);
+  doc.setLineWidth(1.5);
+  doc.roundedRect(10, 10, W - 20, H - 20, 6, 6, "S");
+
+  doc.setDrawColor(139, 92, 246);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(14, 14, W - 28, H - 28, 4, 4, "S");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(167, 139, 250);
+  doc.text("FINSIGHT LITE", W / 2, 32, { align: "center" });
+
+  doc.setFontSize(28);
+  doc.setTextColor(255, 255, 255);
+  doc.text("Certificate of Completion", W / 2, 55, { align: "center" });
+
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(148, 163, 184);
+  doc.text("This certificate is proudly presented to", W / 2, 72, { align: "center" });
+
+  doc.setFont("helvetica", "bolditalic");
+  doc.setFontSize(32);
+  doc.setTextColor(52, 211, 153);
+  doc.text(studentName || "Student", W / 2, 96, { align: "center" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(148, 163, 184);
+  doc.text("for successfully completing", W / 2, 112, { align: "center" });
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.setTextColor(251, 191, 36);
+  doc.text(contextName, W / 2, 126, { align: "center" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(100, 116, 139);
+  doc.text("with a score of 80% or above", W / 2, 138, { align: "center" });
+
+  doc.setDrawColor(99, 102, 241);
+  doc.setLineWidth(0.5);
+  doc.line(60, 148, W - 60, 148);
+
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Date of Completion: ${completionDate}`, W / 2, 158, { align: "center" });
+  doc.text("FinSight Lite — Financial Literacy for Caribbean Youth", W / 2, 166, { align: "center" });
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(24);
+  doc.setTextColor(99, 102, 241);
+  doc.text("★", 50, 170);
+  doc.text("★", W - 50, 170, { align: "right" });
+
+  const safeContext = contextName.replace(/[^a-z0-9]/gi, "_").slice(0, 40);
+  doc.save(`FinSight_Certificate_${safeContext}.pdf`);
+}
+
+// ─── Video Player Component ────────────────────────────────────────────────────
+
+function getYouTubeEmbedUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    let videoId: string | null = null;
+    if (u.hostname.includes("youtube.com")) {
+      videoId = u.searchParams.get("v");
+    } else if (u.hostname === "youtu.be") {
+      videoId = u.pathname.slice(1);
+    }
+    if (videoId) return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
+  } catch {}
+  return null;
+}
+
+function LessonVideoPlayer({ url }: { url: string }) {
+  const embedUrl = getYouTubeEmbedUrl(url);
+
+  if (embedUrl) {
+    return (
+      <Card className="glass-card rounded-glass border-0 overflow-hidden">
+        <div className="aspect-video w-full">
+          <iframe
+            src={embedUrl}
+            title="Lesson Video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="w-full h-full"
+          />
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="glass-card rounded-glass border-0">
+      <CardContent className="p-4 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center flex-shrink-0">
+          <Video className="w-5 h-5 text-teal-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-sm">Lesson Video</p>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">{url}</p>
+        </div>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs font-bold text-teal-400 hover:text-teal-300 shrink-0"
+        >
+          Open →
+        </a>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Module Card Component ─────────────────────────────────────────────────────
 
 function ModuleCard({
@@ -567,6 +702,7 @@ function ModuleCard({
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function Lessons() {
+  const { user } = useAuth();
   const [pageState, setPageState] = useState<PageState>("list");
   const [selectedLesson, setSelectedLesson] = useState<LessonWithQuestions | null>(null);
   const [activeModule, setActiveModule] = useState<StaticModule | null>(null);
@@ -905,6 +1041,11 @@ export default function Lessons() {
                 </Card>
               )}
 
+              {/* Lesson Video */}
+              {selectedLesson.video_url && (
+                <LessonVideoPlayer url={selectedLesson.video_url} />
+              )}
+
               {/* Content Sections */}
               {selectedLesson.content_sections.map((section, i) => (
                 <Card key={i} className="glass-card rounded-glass border-0">
@@ -1068,6 +1209,32 @@ export default function Lessons() {
                       <p className="font-display font-bold text-gray-800">Perfect Score! 🎉</p>
                       <p className="text-sm text-gray-600">Outstanding work — you've mastered this lesson.</p>
                     </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {pct >= 80 && (
+                <Card className="glass-card rounded-glass border-0 border-amber-500/30">
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                      <Award className="w-6 h-6 text-amber-400" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-sm">Certificate Earned!</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Download your certificate of completion for this lesson.</p>
+                    </div>
+                    <Button
+                      onClick={() => {
+                        const studentName = (user as any)?.firstName || (user as any)?.username || "Student";
+                        const contextName = selectedLesson.title;
+                        const completionDate = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+                        generateCertificate(studentName, contextName, completionDate);
+                      }}
+                      className="rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold shrink-0 shadow-lg"
+                      data-testid="button-download-certificate"
+                    >
+                      <Download className="w-4 h-4 mr-2" /> Download PDF
+                    </Button>
                   </CardContent>
                 </Card>
               )}

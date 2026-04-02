@@ -75,6 +75,7 @@ export type LessonPlan = {
   grade_level?: string | null;
   topic?: string | null;
   duration?: string | null;
+  video_url?: string | null;
   objectives: string[];
   content_sections: ContentSection[];
   is_published: boolean;
@@ -195,6 +196,9 @@ CREATE TABLE IF NOT EXISTS lesson_quiz_questions (
   correct_answer text NOT NULL,
   order_index integer NOT NULL DEFAULT 0
 );
+
+-- Add video_url column to lesson_plans (run if not already added)
+ALTER TABLE lesson_plans ADD COLUMN IF NOT EXISTS video_url text;
 `;
 
 export async function initSupabaseTables(): Promise<void> {
