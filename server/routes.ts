@@ -2679,7 +2679,7 @@ If the user asks about FinSight Lite features, you can mention:
         gradeLevel: z.string().optional(),
         topic: z.string().optional(),
         duration: z.string().optional(),
-        videoUrl: z.string().url().optional().or(z.literal("")),
+        videoUrl: z.string().optional(),
         objectives: z.array(z.string()).default([]),
         contentSections: z.array(z.object({ heading: z.string(), body: z.string(), examples: z.array(z.string()).optional() })).default([]),
       }).parse(req.body);

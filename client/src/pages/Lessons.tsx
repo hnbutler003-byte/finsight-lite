@@ -58,6 +58,7 @@ type StaticLesson = {
   description: string;
   icon: React.ReactNode;
   duration: string;
+  videoUrl?: string;
   objectives: string[];
   content_sections: ContentSection[];
   questions: QuizQuestion[];
@@ -440,7 +441,12 @@ const STORAGE_KEY = "finsight_static_completed";
 
 // ─── Certificate Generation ────────────────────────────────────────────────────
 
-function generateCertificate(studentName: string, contextName: string, completionDate: string) {
+function generateCertificate(
+  studentName: string,
+  contextName: string,
+  completionDate: string,
+  type: "lesson" | "module"
+) {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const W = 297;
   const H = 210;
@@ -481,7 +487,10 @@ function generateCertificate(studentName: string, contextName: string, completio
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
   doc.setTextColor(148, 163, 184);
-  doc.text("for successfully completing", W / 2, 112, { align: "center" });
+  const completionPhrase = type === "module"
+    ? "for successfully completing the module"
+    : "for successfully completing the lesson";
+  doc.text(completionPhrase, W / 2, 112, { align: "center" });
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
@@ -491,7 +500,10 @@ function generateCertificate(studentName: string, contextName: string, completio
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(100, 116, 139);
-  doc.text("with a score of 80% or above", W / 2, 138, { align: "center" });
+  const scoreNote = type === "module"
+    ? "having completed all lessons in this module with 80% or above"
+    : "with a score of 80% or above";
+  doc.text(scoreNote, W / 2, 138, { align: "center" });
 
   doc.setDrawColor(99, 102, 241);
   doc.setLineWidth(0.5);
@@ -514,6 +526,8 @@ function generateCertificate(studentName: string, contextName: string, completio
 
 // ─── Video Player Component ────────────────────────────────────────────────────
 
+const HTML5_VIDEO_EXTS = [".mp4", ".webm", ".ogg"];
+
 function getYouTubeEmbedUrl(url: string): string | null {
   try {
     const u = new URL(url);
@@ -528,9 +542,26 @@ function getYouTubeEmbedUrl(url: string): string | null {
   return null;
 }
 
-function LessonVideoPlayer({ url }: { url: string }) {
-  const embedUrl = getYouTubeEmbedUrl(url);
+function LessonVideoPlayer({ url }: { url: string | null | undefined }) {
+  if (!url) return null;
 
+  if (url === "coming_soon") {
+    return (
+      <Card className="glass-card rounded-glass border-0">
+        <CardContent className="p-5 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center flex-shrink-0">
+            <Video className="w-5 h-5 text-violet-400" />
+          </div>
+          <div>
+            <p className="font-bold text-sm">Video Coming Soon</p>
+            <p className="text-xs text-muted-foreground mt-0.5">A video for this lesson will be available shortly.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const embedUrl = getYouTubeEmbedUrl(url);
   if (embedUrl) {
     return (
       <Card className="glass-card rounded-glass border-0 overflow-hidden">
@@ -543,6 +574,18 @@ function LessonVideoPlayer({ url }: { url: string }) {
             className="w-full h-full"
           />
         </div>
+      </Card>
+    );
+  }
+
+  const isHtml5 = HTML5_VIDEO_EXTS.some(ext => url.toLowerCase().endsWith(ext));
+  if (isHtml5) {
+    return (
+      <Card className="glass-card rounded-glass border-0 overflow-hidden">
+        <video controls className="w-full rounded-xl">
+          <source src={url} />
+          Your browser does not support video playback.
+        </video>
       </Card>
     );
   }
@@ -727,13 +770,12 @@ export default function Lessons() {
     queryKey: ["/api/lessons"],
   });
 
-  const markStaticDone = (lessonId: string) => {
-    setCompletedStatic(prev => {
-      if (prev.includes(lessonId)) return prev;
-      const next = [...prev, lessonId];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+  const markStaticDone = (lessonId: string): string[] => {
+    if (completedStatic.includes(lessonId)) return completedStatic;
+    const next = [...completedStatic, lessonId];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    setCompletedStatic(next);
+    return next;
   };
 
   const handleJoinCode = async () => {
@@ -805,6 +847,7 @@ export default function Lessons() {
       org_id: "static",
       title: staticLesson.title,
       duration: staticLesson.duration,
+      video_url: staticLesson.videoUrl ?? null,
       objectives: staticLesson.objectives,
       content_sections: staticLesson.content_sections,
       questions: staticLesson.questions,
@@ -848,8 +891,17 @@ export default function Lessons() {
           const finalCorrect = newAnswers.filter((a, i) => a === selectedLesson.questions[i]?.correct_answer).length;
           const total = selectedLesson.questions.length;
           const xpEarned = finalCorrect * 10;
-          markStaticDone(selectedLesson.id);
-          setQuizResults({ finalCorrect, total, xpEarned });
+          const scorePct = total > 0 ? Math.round((finalCorrect / total) * 100) : 0;
+          // Only mark as done if 80%+
+          let updatedCompleted = completedStatic;
+          if (scorePct >= 80) {
+            updatedCompleted = markStaticDone(selectedLesson.id);
+          }
+          // Detect module completion: all lessons in activeModule completed with 80%+
+          const moduleComplete = activeModule
+            ? activeModule.lessons.every(l => updatedCompleted.includes(l.id))
+            : false;
+          setQuizResults({ finalCorrect, total, xpEarned, moduleComplete });
           setPageState("results");
         } else {
           const result = await completeMutation.mutateAsync({ id: selectedLesson.id, answers: newAnswers });
@@ -1017,6 +1069,9 @@ export default function Lessons() {
                 </div>
               </div>
 
+              {/* Lesson Video */}
+              <LessonVideoPlayer url={selectedLesson.video_url} />
+
               {/* Learning Objectives */}
               {selectedLesson.objectives.length > 0 && (
                 <Card className="glass-card rounded-glass border-0">
@@ -1039,11 +1094,6 @@ export default function Lessons() {
                     </ul>
                   </CardContent>
                 </Card>
-              )}
-
-              {/* Lesson Video */}
-              {selectedLesson.video_url && (
-                <LessonVideoPlayer url={selectedLesson.video_url} />
               )}
 
               {/* Content Sections */}
@@ -1178,6 +1228,9 @@ export default function Lessons() {
                 {selectedLesson.isStatic && pct >= 80 && (
                   <p className="text-green-400 font-bold text-sm mt-1">✓ Lesson marked as complete</p>
                 )}
+                {quizResults?.moduleComplete && activeModule && (
+                  <p className="text-amber-400 font-bold text-sm mt-1">🏅 Module "{activeModule.title}" fully completed!</p>
+                )}
               </div>
 
               <div className="grid grid-cols-3 gap-3">
@@ -1213,24 +1266,50 @@ export default function Lessons() {
                 </Card>
               )}
 
+              {quizResults?.moduleComplete && activeModule && (
+                <Card className="glass-card rounded-glass border-0" style={{ borderColor: "rgba(251,191,36,0.3)" }}>
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                      <Trophy className="w-6 h-6 text-amber-400" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-sm">Module Complete! 🏅</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Download your module certificate of completion.</p>
+                    </div>
+                    <Button
+                      onClick={() => {
+                        const studentName = user?.firstName ?? user?.username ?? "Student";
+                        const contextName = activeModule.title;
+                        const completionDate = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+                        generateCertificate(studentName, contextName, completionDate, "module");
+                      }}
+                      className="rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold shrink-0 shadow-lg"
+                      data-testid="button-download-module-certificate"
+                    >
+                      <Download className="w-4 h-4 mr-2" /> Module Certificate
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
               {pct >= 80 && (
-                <Card className="glass-card rounded-glass border-0 border-amber-500/30">
+                <Card className="glass-card rounded-glass border-0" style={{ borderColor: "rgba(251,191,36,0.2)" }}>
                   <CardContent className="p-5 flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
                       <Award className="w-6 h-6 text-amber-400" />
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="font-bold text-sm">Certificate Earned!</p>
+                      <p className="font-bold text-sm">Lesson Certificate Earned!</p>
                       <p className="text-xs text-muted-foreground mt-0.5">Download your certificate of completion for this lesson.</p>
                     </div>
                     <Button
                       onClick={() => {
-                        const studentName = (user as any)?.firstName || (user as any)?.username || "Student";
+                        const studentName = user?.firstName ?? user?.username ?? "Student";
                         const contextName = selectedLesson.title;
                         const completionDate = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-                        generateCertificate(studentName, contextName, completionDate);
+                        generateCertificate(studentName, contextName, completionDate, "lesson");
                       }}
-                      className="rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold shrink-0 shadow-lg"
+                      className="rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-bold shrink-0 shadow-lg"
                       data-testid="button-download-certificate"
                     >
                       <Download className="w-4 h-4 mr-2" /> Download PDF
