@@ -60,15 +60,15 @@ export default function OrgDashboard() {
             <>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                  { label: "Env Students", value: overview?.stats?.studentCount ?? 0, icon: Users, color: "blue" },
-                  { label: "Org Students", value: overview?.stats?.orgStudentCount ?? 0, icon: Building2, color: "indigo" },
-                  { label: "Environments", value: overview?.stats?.environmentCount ?? 0, icon: Layers, color: "violet" },
-                  { label: "Published Lessons", value: overview?.stats?.publishedLessons ?? 0, icon: BookOpen, color: "blue" },
+                  { label: "Env Students", value: overview?.stats?.studentCount ?? 0, icon: Users, iconClass: "text-blue-600", bgClass: "bg-blue-100 dark:bg-blue-900/30" },
+                  { label: "Org Students", value: overview?.stats?.orgStudentCount ?? 0, icon: Building2, iconClass: "text-indigo-600", bgClass: "bg-indigo-100 dark:bg-indigo-900/30" },
+                  { label: "Environments", value: overview?.stats?.environmentCount ?? 0, icon: Layers, iconClass: "text-violet-600", bgClass: "bg-violet-100 dark:bg-violet-900/30" },
+                  { label: "Published Lessons", value: overview?.stats?.publishedLessons ?? 0, icon: BookOpen, iconClass: "text-blue-600", bgClass: "bg-blue-100 dark:bg-blue-900/30" },
                 ].map(stat => (
                   <Card key={stat.label} className="glass-card rounded-glass">
                     <CardContent className="p-5 flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-2xl bg-${stat.color}-100 dark:bg-${stat.color}-900/30 flex items-center justify-center shrink-0`}>
-                        <stat.icon className={`w-5 h-5 text-${stat.color}-600`} />
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${stat.bgClass}`}>
+                        <stat.icon className={`w-5 h-5 ${stat.iconClass}`} />
                       </div>
                       <div>
                         <p className="text-xl font-display font-bold">{stat.value}</p>
