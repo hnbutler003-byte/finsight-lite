@@ -2566,23 +2566,43 @@ If the user asks about FinSight Lite features, you can mention:
 
     const org = await getOrganization(admin.orgId);
     const envs = await getOrgEnvironments(admin.orgId);
-    const env = envs.find(e => e.id === admin.envId);
+    const currentEnv = envs.find(e => e.id === admin.envId);
 
-    // Count students enrolled in this environment
-    const { data: studentsData } = supabase
-      ? await supabase.from("org_students").select("id").eq("env_id", admin.envId)
-      : { data: [] };
-    const studentCount = studentsData?.length ?? 0;
+    // Count students across ALL environments in this org
+    let orgStudentCount = 0;
+    let envStudentCount = 0;
+    if (supabase) {
+      const { data: allStudents } = await supabase.from("org_students").select("id,env_id").eq("org_id", admin.orgId);
+      orgStudentCount = allStudents?.length ?? 0;
+      envStudentCount = allStudents?.filter((s: any) => s.env_id === admin.envId).length ?? 0;
+    }
 
-    // Count lessons for this env
+    // Count lessons for this org
     const lessons = await getLessonsByOrg(admin.orgId);
     const envLessons = lessons.filter((l: any) => l.env_id === admin.envId || !l.env_id);
     const publishedLessons = envLessons.filter((l: any) => l.is_published).length;
 
+    // Per-environment summary
+    const envSummaries = await Promise.all(envs.map(async (env) => {
+      let count = 0;
+      if (supabase) {
+        const { data } = await supabase.from("org_students").select("id").eq("env_id", env.id);
+        count = data?.length ?? 0;
+      }
+      return { id: env.id, slug: env.slug, displayName: env.display_name, joinCode: env.join_code, studentCount: count };
+    }));
+
     res.json({
       org: { id: org?.id, name: org?.name, type: org?.type, country: org?.country },
-      env: { id: env?.id, slug: env?.slug, displayName: env?.display_name, joinCode: env?.join_code, featuresEnabled: env?.features_enabled },
-      stats: { studentCount, totalLessons: envLessons.length, publishedLessons },
+      env: { id: currentEnv?.id, slug: currentEnv?.slug, displayName: currentEnv?.display_name, joinCode: currentEnv?.join_code, featuresEnabled: currentEnv?.features_enabled },
+      stats: {
+        studentCount: envStudentCount,
+        orgStudentCount,
+        environmentCount: envs.length,
+        totalLessons: envLessons.length,
+        publishedLessons,
+      },
+      environments: envSummaries,
     });
   });
 
@@ -2594,10 +2614,28 @@ If the user asks about FinSight Lite features, you can mention:
     const { data, error } = await supabase
       .from("org_students")
       .select("*")
-      .eq("env_id", admin.envId)
+      .eq("org_id", admin.orgId)
       .order("joined_at", { ascending: false });
     if (error) return res.status(500).json({ message: error.message });
-    res.json(data ?? []);
+
+    const orgStudents = data ?? [];
+
+    // Enrich with local user profile data (name, avatar, XP, level) from PostgreSQL
+    const enriched = await Promise.all(orgStudents.map(async (s: any) => {
+      const user = await storage.getUser(s.student_user_id).catch(() => null);
+      const xpData = await storage.getUserXp(s.student_user_id).catch(() => null);
+      return {
+        ...s,
+        displayName: user?.firstName ?? s.student_user_id,
+        username: (user as any)?.username ?? null,
+        avatar: (user as any)?.avatar ?? null,
+        xp: xpData?.totalXp ?? 0,
+        level: xpData?.level ?? 1,
+        streak: xpData?.currentStreak ?? 0,
+      };
+    }));
+
+    res.json(enriched);
   });
 
   app.delete("/api/org-admin/students/:studentUserId", isOrgAdmin, async (req: any, res) => {
@@ -2605,10 +2643,11 @@ If the user asks about FinSight Lite features, you can mention:
     if (!admin) return res.status(401).json({ message: "Not found" });
     if (!supabase) return res.status(503).json({ message: "Supabase not available" });
 
+    // Scope deletion to this org only (not just env) so admin can remove from all environments
     const { error } = await supabase
       .from("org_students")
       .delete()
-      .eq("env_id", admin.envId)
+      .eq("org_id", admin.orgId)
       .eq("student_user_id", req.params.studentUserId);
     if (error) return res.status(500).json({ message: error.message });
     res.json({ ok: true });
@@ -2660,6 +2699,11 @@ If the user asks about FinSight Lite features, you can mention:
     try {
       const admin = await storage.getOrgAdminById(req.session.orgAdminId);
       if (!admin) return res.status(401).json({ message: "Not found" });
+      // Verify lesson belongs to this admin's org before mutating
+      const existing = await getLessonWithQuestions(req.params.id);
+      if (!existing || existing.org_id !== admin.orgId) {
+        return res.status(403).json({ message: "Access denied — lesson does not belong to your organization" });
+      }
       const { isPublished } = z.object({ isPublished: z.boolean() }).parse(req.body);
       const lesson = await toggleLessonPublish(req.params.id, isPublished);
       if (!lesson) return res.status(404).json({ message: "Lesson not found" });
@@ -2673,6 +2717,11 @@ If the user asks about FinSight Lite features, you can mention:
     try {
       const admin = await storage.getOrgAdminById(req.session.orgAdminId);
       if (!admin) return res.status(401).json({ message: "Not found" });
+      // Verify lesson belongs to this admin's org before adding questions
+      const existing = await getLessonWithQuestions(req.params.id);
+      if (!existing || existing.org_id !== admin.orgId) {
+        return res.status(403).json({ message: "Access denied — lesson does not belong to your organization" });
+      }
       const body = z.object({
         question: z.string().min(1),
         optionA: z.string().min(1),

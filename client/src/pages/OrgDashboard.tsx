@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useOrgAuth } from "@/hooks/use-org-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Users, BookOpen, Globe, Copy, Check, Loader2, Building2, BarChart3 } from "lucide-react";
+import { Users, BookOpen, Globe, Copy, Check, Loader2, Building2, BarChart3, Layers } from "lucide-react";
 import { useState } from "react";
 
 export default function OrgDashboard() {
@@ -58,20 +58,21 @@ export default function OrgDashboard() {
             <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                  { label: "Enrolled Students", value: overview?.stats?.studentCount ?? 0, icon: Users, color: "blue" },
-                  { label: "Total Lessons", value: overview?.stats?.totalLessons ?? 0, icon: BookOpen, color: "indigo" },
-                  { label: "Published Lessons", value: overview?.stats?.publishedLessons ?? 0, icon: BarChart3, color: "violet" },
+                  { label: "Env Students", value: overview?.stats?.studentCount ?? 0, icon: Users, color: "blue" },
+                  { label: "Org Students", value: overview?.stats?.orgStudentCount ?? 0, icon: Building2, color: "indigo" },
+                  { label: "Environments", value: overview?.stats?.environmentCount ?? 0, icon: Layers, color: "violet" },
+                  { label: "Published Lessons", value: overview?.stats?.publishedLessons ?? 0, icon: BookOpen, color: "blue" },
                 ].map(stat => (
                   <Card key={stat.label} className="glass-card rounded-glass">
-                    <CardContent className="p-6 flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-2xl bg-${stat.color}-100 dark:bg-${stat.color}-900/30 flex items-center justify-center shrink-0`}>
-                        <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
+                    <CardContent className="p-5 flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-2xl bg-${stat.color}-100 dark:bg-${stat.color}-900/30 flex items-center justify-center shrink-0`}>
+                        <stat.icon className={`w-5 h-5 text-${stat.color}-600`} />
                       </div>
                       <div>
-                        <p className="text-2xl font-display font-bold">{stat.value}</p>
-                        <p className="text-sm text-muted-foreground font-medium">{stat.label}</p>
+                        <p className="text-xl font-display font-bold">{stat.value}</p>
+                        <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -80,27 +81,6 @@ export default function OrgDashboard() {
 
               {overview?.env && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card className="glass-card rounded-glass">
-                    <CardContent className="p-6 space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                          <Globe className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <h3 className="font-display font-bold text-lg">Environment Info</h3>
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground font-medium">Display Name</span>
-                          <span className="font-bold">{overview.env.displayName}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground font-medium">Slug</span>
-                          <span className="font-mono text-xs bg-muted px-2 py-1 rounded-lg">{overview.env.slug}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
                   <Card className="glass-card rounded-glass">
                     <CardContent className="p-6 space-y-4">
                       <div className="flex items-center gap-3">
@@ -124,14 +104,69 @@ export default function OrgDashboard() {
                       </div>
                     </CardContent>
                   </Card>
+
+                  <Card className="glass-card rounded-glass">
+                    <CardContent className="p-6 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                          <Globe className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <h3 className="font-display font-bold text-lg">Environment Info</h3>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground font-medium">Display Name</span>
+                          <span className="font-bold">{overview.env.displayName}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground font-medium">Slug</span>
+                          <span className="font-mono text-xs bg-muted px-2 py-1 rounded-lg">{overview.env.slug}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground font-medium">Total Lessons</span>
+                          <span className="font-bold">{overview.stats?.totalLessons ?? 0}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
+              )}
+
+              {overview?.environments && overview.environments.length > 1 && (
+                <Card className="glass-card rounded-glass">
+                  <CardContent className="p-6 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                        <Layers className="w-5 h-5 text-violet-600" />
+                      </div>
+                      <h3 className="font-display font-bold text-lg">All Environments</h3>
+                    </div>
+                    <div className="space-y-2">
+                      {overview.environments.map((env: any) => (
+                        <div key={env.id} className={`flex items-center justify-between p-3 rounded-2xl border-2 ${env.id === admin.envId ? "border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/10" : "border-input"}`}>
+                          <div>
+                            <p className="font-bold text-sm">{env.displayName}</p>
+                            <p className="text-xs text-muted-foreground font-mono">{env.joinCode}</p>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Users className="w-4 h-4 text-muted-foreground" />
+                            <span className="font-bold">{env.studentCount}</span>
+                            {env.id === admin.envId && (
+                              <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-lg font-bold">Current</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               )}
 
               {overview?.org && (
                 <Card className="glass-card rounded-glass">
                   <CardContent className="p-6 space-y-3">
                     <h3 className="font-display font-bold text-lg">Organization Details</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                       {[
                         { label: "Name", value: overview.org.name },
                         { label: "Type", value: overview.org.type?.replace("_", " ") },

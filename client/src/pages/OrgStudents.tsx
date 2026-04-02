@@ -4,16 +4,28 @@ import { Button } from "@/components/ui/button";
 import { useOrgAuth } from "@/hooks/use-org-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Users, Loader2, Trash2, UserCheck, AlertCircle } from "lucide-react";
+import { Users, Loader2, Trash2, Zap, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
-type OrgStudent = {
+type EnrichedStudent = {
   id: string;
   org_id: string;
   env_id: string;
   student_user_id: string;
   joined_at: string;
+  displayName: string;
+  username: string | null;
+  avatar: string | null;
+  xp: number;
+  level: number;
+  streak: number;
+};
+
+const AVATAR_MAP: Record<string, string> = {
+  lion: "🦁", dolphin: "🐬", parrot: "🦜", turtle: "🐢",
+  star: "⭐", butterfly: "🦋", octopus: "🐙", artist: "🎨",
+  rocket: "🚀", wave: "🌊", palm: "🌴", gamer: "🎮",
 };
 
 function formatDate(dateStr: string) {
@@ -27,7 +39,7 @@ export default function OrgStudents() {
   const qc = useQueryClient();
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  const { data: students, isLoading } = useQuery<OrgStudent[]>({
+  const { data: students, isLoading } = useQuery<EnrichedStudent[]>({
     queryKey: ["/api/org-admin/students"],
     queryFn: () => fetch("/api/org-admin/students", { credentials: "include" }).then(r => r.json()),
     enabled: !!admin,
@@ -68,7 +80,7 @@ export default function OrgStudents() {
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
               <h1 className="font-display font-bold text-3xl">Students</h1>
-              <p className="text-muted-foreground mt-1">Enrolled in {admin.envName}</p>
+              <p className="text-muted-foreground mt-1">Enrolled in {admin.orgName}</p>
             </div>
             <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/30 rounded-2xl px-4 py-2 border border-blue-100 dark:border-blue-800">
               <Users className="w-4 h-4 text-blue-600" />
@@ -101,12 +113,20 @@ export default function OrgStudents() {
                   className="flex items-center gap-4 p-4 rounded-2xl border-2 hover:border-blue-200 dark:hover:border-blue-800 transition-all"
                   data-testid={`row-student-${s.student_user_id}`}
                 >
-                  <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                    <UserCheck className="w-5 h-5 text-blue-600" />
+                  <div className="w-11 h-11 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0 text-xl">
+                    {s.avatar ? (AVATAR_MAP[s.avatar] ?? "🧑‍🎓") : "🧑‍🎓"}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm truncate">{s.student_user_id}</p>
-                    <p className="text-xs text-muted-foreground">Joined {formatDate(s.joined_at)}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-bold text-sm">{s.displayName}</p>
+                      {s.username && <span className="text-xs text-muted-foreground">@{s.username}</span>}
+                      <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-lg font-bold">Lv {s.level}</span>
+                      {s.streak > 0 && <span className="text-xs text-amber-600 font-bold">🔥 {s.streak}</span>}
+                    </div>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-blue-500" />{s.xp} XP</span>
+                      <span>Joined {formatDate(s.joined_at)}</span>
+                    </div>
                   </div>
 
                   {confirmDelete === s.student_user_id ? (
