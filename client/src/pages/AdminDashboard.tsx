@@ -84,7 +84,7 @@ function DataTable({
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-300" />
           <Input
             value={q}
             onChange={e => { setQ(e.target.value); setPage(1); }}
@@ -152,7 +152,7 @@ function MetricCard({ label, value, icon: Icon, color }: { label: string; value:
           <Icon className="w-6 h-6 text-white" />
         </div>
         <div>
-          <p className="text-slate-400 text-sm">{label}</p>
+          <p className="text-slate-200 text-sm font-medium">{label}</p>
           <p className="text-white text-2xl font-bold">{value}</p>
         </div>
       </CardContent>
@@ -183,7 +183,7 @@ function GlobalSearch() {
 
   return (
     <div className="relative flex-1 max-w-lg">
-      <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 z-10" />
+      <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-300 z-10" />
       <Input
         value={q}
         onChange={e => { setQ(e.target.value); setOpen(true); }}
@@ -192,7 +192,7 @@ function GlobalSearch() {
         className="pl-9 pr-8 bg-slate-800 border-slate-700 text-white placeholder:text-slate-300 w-full"
         data-testid="input-global-search"
       />
-      {q && <button onClick={() => { setQ(""); setOpen(false); }} className="absolute right-3 top-2.5 text-slate-400 hover:text-white"><X className="h-4 w-4" /></button>}
+      {q && <button onClick={() => { setQ(""); setOpen(false); }} className="absolute right-3 top-2.5 text-slate-300 hover:text-white"><X className="h-4 w-4" /></button>}
       {open && q.length > 1 && (
         <div className="absolute top-full mt-1 left-0 right-0 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 max-h-72 overflow-y-auto">
           {allResults.length === 0 ? (
@@ -201,10 +201,10 @@ function GlobalSearch() {
             <div key={i} className="px-4 py-2.5 flex items-center gap-3 hover:bg-slate-700 cursor-pointer border-b border-slate-700/50 last:border-0">
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded text-white uppercase ${typeColor[r.type]}`}>{r.type}</span>
               <span className="text-white text-sm">{r.name}</span>
-              {r.email && <span className="text-slate-400 text-xs">{r.email}</span>}
-              {r.school && <span className="text-slate-400 text-xs">• {r.school}</span>}
-              {r.code && <span className="text-slate-400 text-xs">• Code: {r.code}</span>}
-              {r.country && <span className="text-slate-400 text-xs">• {r.country}</span>}
+              {r.email && <span className="text-slate-300 text-xs">{r.email}</span>}
+              {r.school && <span className="text-slate-300 text-xs">• {r.school}</span>}
+              {r.code && <span className="text-slate-300 text-xs">• Code: {r.code}</span>}
+              {r.country && <span className="text-slate-300 text-xs">• {r.country}</span>}
             </div>
           ))}
         </div>
@@ -389,7 +389,7 @@ function OrgDialog({ existing, onClose }: { existing?: any; onClose: () => void 
         </div>
       </div>
       <div className="flex justify-end gap-2 pt-2">
-        <Button variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white">Cancel</Button>
+        <Button variant="ghost" onClick={onClose} className="text-slate-300 hover:text-white">Cancel</Button>
         <Button onClick={() => save.mutate()} disabled={save.isPending || !form.name}
           className="bg-indigo-600 hover:bg-indigo-700" data-testid="button-save-org">
           {save.isPending ? "Saving…" : existing ? "Save Changes" : "Create Organization"}
@@ -475,11 +475,11 @@ function EnvDialog({ orgId, onClose }: { orgId: string; onClose: () => void }) {
         <div className="flex gap-2 items-center">
           <input type="color" value={form.theme_color} onChange={e => setForm(p => ({ ...p, theme_color: e.target.value }))}
             className="w-10 h-10 rounded border border-slate-600 bg-slate-700 cursor-pointer" data-testid="input-env-color" />
-          <span className="text-slate-400 text-sm font-mono">{form.theme_color}</span>
+          <span className="text-slate-300 text-sm font-mono">{form.theme_color}</span>
         </div>
       </div>
       <div className="flex justify-end gap-2 pt-2">
-        <Button variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white">Cancel</Button>
+        <Button variant="ghost" onClick={onClose} className="text-slate-300 hover:text-white">Cancel</Button>
         <Button onClick={() => save.mutate()} disabled={save.isPending || !form.display_name || !form.slug}
           className="bg-indigo-600 hover:bg-indigo-700" data-testid="button-save-env">
           {save.isPending ? "Creating…" : "Create Environment"}
@@ -539,7 +539,7 @@ function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => vo
       <div className="flex gap-2 mb-4">
         {(["meta", "content", "quiz"] as const).map((s, i) => (
           <button key={s} onClick={() => setStep(s)}
-            className={`flex-1 py-1.5 rounded text-xs font-bold border transition-colors ${step === s ? "bg-indigo-600 border-indigo-500 text-white" : "border-slate-600 text-slate-400 hover:text-white"}`}>
+            className={`flex-1 py-1.5 rounded text-xs font-bold border transition-colors ${step === s ? "bg-indigo-600 border-indigo-500 text-white" : "border-slate-600 text-slate-300 hover:text-white"}`}>
             {i + 1}. {s === "meta" ? "Details" : s === "content" ? "Content" : "Quiz"}
           </button>
         ))}
@@ -602,7 +602,7 @@ function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => vo
 
       {step === "content" && (
         <div className="space-y-4">
-          <p className="text-slate-400 text-xs">Add content sections — definitions, explanations, examples.</p>
+          <p className="text-slate-300 text-xs">Add content sections — definitions, explanations, examples.</p>
           {sections.map((sec, i) => (
             <div key={i} className="space-y-2 p-3 rounded-lg bg-slate-800 border border-slate-700">
               <div className="flex items-center justify-between">
@@ -625,7 +625,7 @@ function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => vo
             <Plus className="w-3 h-3" /> Add section
           </button>
           <div className="flex justify-between pt-1">
-            <Button variant="ghost" onClick={() => setStep("meta")} className="text-slate-400 hover:text-white">← Back</Button>
+            <Button variant="ghost" onClick={() => setStep("meta")} className="text-slate-300 hover:text-white">← Back</Button>
             <Button onClick={() => setStep("quiz")} className="bg-indigo-600 hover:bg-indigo-700">Next: Quiz →</Button>
           </div>
         </div>
@@ -633,7 +633,7 @@ function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => vo
 
       {step === "quiz" && (
         <div className="space-y-4">
-          <p className="text-slate-400 text-xs">Add multiple-choice quiz questions. Select the correct answer for each.</p>
+          <p className="text-slate-300 text-xs">Add multiple-choice quiz questions. Select the correct answer for each.</p>
           {questions.map((q, qi) => (
             <div key={qi} className="space-y-2 p-3 rounded-lg bg-slate-800 border border-slate-700">
               <div className="flex items-center justify-between">
@@ -671,7 +671,7 @@ function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => vo
             <Plus className="w-3 h-3" /> Add question
           </button>
           <div className="flex justify-between pt-1">
-            <Button variant="ghost" onClick={() => setStep("content")} className="text-slate-400 hover:text-white">← Back</Button>
+            <Button variant="ghost" onClick={() => setStep("content")} className="text-slate-300 hover:text-white">← Back</Button>
             <Button onClick={() => save.mutate()} disabled={save.isPending || !meta.title} className="bg-indigo-600 hover:bg-indigo-700" data-testid="button-save-lesson">
               {save.isPending ? "Saving…" : "Create Lesson"}
             </Button>
@@ -722,7 +722,7 @@ function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
     credit_union: "bg-teal-900 text-teal-300",
     government: "bg-purple-900 text-purple-300",
     ngo: "bg-green-900 text-green-300",
-    other: "bg-slate-700 text-slate-400",
+    other: "bg-slate-700 text-slate-300",
   };
 
   return (
@@ -745,7 +745,7 @@ function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
               ? <span className="flex items-center gap-1 text-xs text-emerald-400"><CheckCircle2 className="w-3 h-3" /> Active</span>
               : <span className="flex items-center gap-1 text-xs text-red-400"><XCircle className="w-3 h-3" /> Inactive</span>}
           </div>
-          <p className="text-slate-400 text-xs mt-0.5">
+          <p className="text-slate-300 text-xs mt-0.5">
             {org.city ? `${org.city}, ` : ""}{org.country} · {org.max_students} students max
             {org.contact_email ? ` · ${org.contact_email}` : ""}
           </p>
@@ -756,10 +756,10 @@ function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
             data-testid={`button-toggle-org-${org.id}`}>
             {org.is_active ? "Deactivate" : "Activate"}
           </button>
-          <button onClick={() => onEdit(org)} className="text-slate-400 hover:text-white p-1.5" data-testid={`button-edit-org-${org.id}`}>
+          <button onClick={() => onEdit(org)} className="text-slate-300 hover:text-white p-1.5" data-testid={`button-edit-org-${org.id}`}>
             <Pencil className="w-4 h-4" />
           </button>
-          <button onClick={() => setExpanded(e => !e)} className="text-slate-400 hover:text-white p-1.5" data-testid={`button-expand-org-${org.id}`}>
+          <button onClick={() => setExpanded(e => !e)} className="text-slate-300 hover:text-white p-1.5" data-testid={`button-expand-org-${org.id}`}>
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
@@ -827,20 +827,20 @@ function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
                     <div className={`w-2 h-8 rounded-full flex-shrink-0 ${lesson.is_published ? "bg-teal-500" : "bg-slate-600"}`} />
                     <div className="flex-1 min-w-0">
                       <p className="text-white text-sm font-medium truncate" data-testid={`text-lesson-title-${lesson.id}`}>{lesson.title}</p>
-                      <p className="text-slate-400 text-xs">
+                      <p className="text-slate-300 text-xs">
                         {lesson.subject ? `${lesson.subject} · ` : ""}
                         {lesson.grade_level ? `Grade ${lesson.grade_level} · ` : ""}
                         {lesson.instructor || ""}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${lesson.is_published ? "bg-teal-900/60 text-teal-300" : "bg-slate-700 text-slate-400"}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${lesson.is_published ? "bg-teal-900/60 text-teal-300" : "bg-slate-700 text-slate-300"}`}>
                         {lesson.is_published ? "Published" : "Draft"}
                       </span>
                       <button
                         onClick={() => togglePublish.mutate({ id: lesson.id, is_published: !lesson.is_published })}
                         disabled={togglePublish.isPending}
-                        className={`p-1.5 rounded transition-colors ${lesson.is_published ? "text-teal-400 hover:text-slate-400 hover:bg-slate-700" : "text-slate-400 hover:text-teal-400 hover:bg-teal-900/30"}`}
+                        className={`p-1.5 rounded transition-colors ${lesson.is_published ? "text-teal-400 hover:text-slate-300 hover:bg-slate-700" : "text-slate-300 hover:text-teal-400 hover:bg-teal-900/30"}`}
                         title={lesson.is_published ? "Unpublish" : "Publish"}
                         data-testid={`button-toggle-lesson-${lesson.id}`}
                       >
@@ -920,7 +920,7 @@ export default function AdminDashboard() {
     onError: (e: any) => toast({ title: "Link failed", description: e.message, variant: "destructive" }),
   });
 
-  if (isLoading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center"><p className="text-slate-400">Loading...</p></div>;
+  if (isLoading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center"><p className="text-slate-300">Loading...</p></div>;
   if (!admin) { setLocation("/admin/login"); return null; }
 
   const downloadCSV = (type: string) => {
@@ -941,9 +941,9 @@ export default function AdminDashboard() {
         </div>
         <GlobalSearch />
         <div className="flex items-center gap-3 flex-shrink-0 ml-auto">
-          <span className="text-slate-400 text-sm hidden md:block">{admin.email}</span>
+          <span className="text-slate-300 text-sm hidden md:block">{admin.email}</span>
           <Button variant="ghost" size="sm" onClick={() => logout.mutate()}
-            className="text-slate-400 hover:text-white hover:bg-slate-700" data-testid="button-admin-logout">
+            className="text-slate-300 hover:text-white hover:bg-slate-700" data-testid="button-admin-logout">
             <LogOut className="w-4 h-4 mr-1" /> Logout
           </Button>
         </div>
@@ -959,8 +959,8 @@ export default function AdminDashboard() {
                 data-testid={`tab-${tab.id}`}
                 className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === tab.id
-                    ? "border-indigo-500 text-indigo-400"
-                    : "border-transparent text-slate-400 hover:text-white hover:border-slate-600"
+                    ? "border-indigo-400 text-indigo-300"
+                    : "border-transparent text-slate-300 hover:text-white hover:border-slate-500"
                 }`}>
                 <Icon className="w-4 h-4" /> {tab.label}
               </button>
@@ -994,8 +994,8 @@ export default function AdminDashboard() {
                     <ResponsiveContainer width="100%" height={200}>
                       <LineChart data={growth}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                        <XAxis dataKey="week" tick={{ fill: "#94a3b8", fontSize: 10 }} />
-                        <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} />
+                        <XAxis dataKey="week" tick={{ fill: "#cbd5e1", fontSize: 10 }} />
+                        <YAxis tick={{ fill: "#cbd5e1", fontSize: 10 }} />
                         <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8 }} labelStyle={{ color: "#e2e8f0" }} />
                         <Line type="monotone" dataKey="count" stroke="#8b5cf6" strokeWidth={2} dot={false} />
                       </LineChart>
@@ -1010,8 +1010,8 @@ export default function AdminDashboard() {
                     <ResponsiveContainer width="100%" height={200}>
                       <BarChart data={lessonsChart}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                        <XAxis dataKey="week" tick={{ fill: "#94a3b8", fontSize: 10 }} />
-                        <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} />
+                        <XAxis dataKey="week" tick={{ fill: "#cbd5e1", fontSize: 10 }} />
+                        <YAxis tick={{ fill: "#cbd5e1", fontSize: 10 }} />
                         <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8 }} />
                         <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
                       </BarChart>
@@ -1026,8 +1026,8 @@ export default function AdminDashboard() {
                     <ResponsiveContainer width="100%" height={200}>
                       <BarChart data={schoolsChart} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                        <XAxis type="number" tick={{ fill: "#94a3b8", fontSize: 10 }} />
-                        <YAxis dataKey="name" type="category" tick={{ fill: "#94a3b8", fontSize: 10 }} width={80} />
+                        <XAxis type="number" tick={{ fill: "#cbd5e1", fontSize: 10 }} />
+                        <YAxis dataKey="name" type="category" tick={{ fill: "#cbd5e1", fontSize: 10 }} width={80} />
                         <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8 }} />
                         <Bar dataKey="students" fill="#10b981" radius={[0, 4, 4, 0]} />
                       </BarChart>
@@ -1047,7 +1047,7 @@ export default function AdminDashboard() {
                 <h2 className="text-2xl font-bold flex items-center gap-2">
                   <Globe className="w-6 h-6 text-indigo-400" /> Organizations
                 </h2>
-                <p className="text-slate-400 text-sm mt-0.5">Schools, credit unions and other partner organizations — powered by Supabase</p>
+                <p className="text-slate-300 text-sm mt-0.5">Schools, credit unions and other partner organizations — powered by Supabase</p>
               </div>
               <div className="flex items-center gap-3">
                 {supabaseStatus && (
@@ -1085,12 +1085,12 @@ export default function AdminDashboard() {
             ) : organizations.length === 0 ? (
               <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-10 text-center">
                 <Globe className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-                <p className="text-slate-400 font-medium">No organizations yet</p>
+                <p className="text-slate-300 font-medium">No organizations yet</p>
                 <p className="text-slate-300 text-sm mt-1">Add a school or organization to start managing their student environments.</p>
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex gap-4 text-sm text-slate-400 px-1">
+                <div className="flex gap-4 text-sm text-slate-300 px-1">
                   <span><strong className="text-white">{organizations.length}</strong> total</span>
                   <span><strong className="text-emerald-400">{organizations.filter((o: any) => o.is_active).length}</strong> active</span>
                   <span><strong className="text-amber-400">{organizations.filter((o: any) => o.subscription_tier === "premium").length}</strong> premium</span>
@@ -1148,7 +1148,7 @@ export default function AdminDashboard() {
                   <div className="flex gap-2">
                     <Dialog open={schoolDialog.open && schoolDialog.existing?.id === v} onOpenChange={o => setSchoolDialog(o ? { open: true, existing: row } : { open: false })}>
                       <DialogTrigger asChild>
-                        <button className="text-slate-400 hover:text-white p-1" data-testid={`button-edit-school-${v}`}><Pencil className="w-4 h-4" /></button>
+                        <button className="text-slate-300 hover:text-white p-1" data-testid={`button-edit-school-${v}`}><Pencil className="w-4 h-4" /></button>
                       </DialogTrigger>
                       <DialogContent className="bg-slate-800 border-slate-700 text-white">
                         <DialogHeader><DialogTitle>Edit School</DialogTitle></DialogHeader>
@@ -1201,7 +1201,7 @@ export default function AdminDashboard() {
                         <SelectValue placeholder="Unlinked" />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-800 border-slate-700 text-slate-200">
-                        <SelectItem value="none" className="text-slate-400 text-xs">Unlinked</SelectItem>
+                        <SelectItem value="none" className="text-slate-300 text-xs">Unlinked</SelectItem>
                         {allOrgEnvs.map((env: any) => (
                           <SelectItem key={env.id} value={env.id} className="text-xs">
                             {env.org_name} — {env.display_name}
@@ -1231,7 +1231,7 @@ export default function AdminDashboard() {
               searchKeys={["studentName", "username", "className", "schoolName", "teacherName"]}
               columns={[
                 { key: "studentName", label: "Student Name" },
-                { key: "username", label: "Username", render: v => <span className="text-slate-400 text-xs font-mono">{v}</span> },
+                { key: "username", label: "Username", render: v => <span className="text-slate-300 text-xs font-mono">{v}</span> },
                 { key: "className", label: "Class" },
                 { key: "schoolName", label: "School" },
                 { key: "teacherName", label: "Teacher" },
@@ -1288,7 +1288,7 @@ export default function AdminDashboard() {
                         <SelectValue placeholder="Unlinked" />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-800 border-slate-700 text-slate-200">
-                        <SelectItem value="none" className="text-slate-400 text-xs">Unlinked</SelectItem>
+                        <SelectItem value="none" className="text-slate-300 text-xs">Unlinked</SelectItem>
                         {allOrgEnvs.map((env: any) => (
                           <SelectItem key={env.id} value={env.id} className="text-xs">
                             {env.org_name} — {env.display_name}
@@ -1341,7 +1341,7 @@ export default function AdminDashboard() {
                   <div className="flex gap-2">
                     <Dialog open={sponsorDialog.open && sponsorDialog.existing?.id === v} onOpenChange={o => setSponsorDialog(o ? { open: true, existing: row } : { open: false })}>
                       <DialogTrigger asChild>
-                        <button className="text-slate-400 hover:text-white p-1" data-testid={`button-edit-sponsor-${v}`}><Pencil className="w-4 h-4" /></button>
+                        <button className="text-slate-300 hover:text-white p-1" data-testid={`button-edit-sponsor-${v}`}><Pencil className="w-4 h-4" /></button>
                       </DialogTrigger>
                       <DialogContent className="bg-slate-800 border-slate-700 text-white">
                         <DialogHeader><DialogTitle>Edit Sponsor</DialogTitle></DialogHeader>
@@ -1368,7 +1368,7 @@ export default function AdminDashboard() {
                 { key: "type", label: "Type", render: v => <Badge className="bg-amber-900 text-amber-300 capitalize">{v}</Badge> },
                 { key: "className", label: "Class" },
                 { key: "teacherName", label: "Teacher" },
-                { key: "description", label: "Description", render: v => <span className="text-slate-400 text-xs">{String(v).slice(0, 60)}{String(v).length > 60 ? "..." : ""}</span> },
+                { key: "description", label: "Description", render: v => <span className="text-slate-300 text-xs">{String(v).slice(0, 60)}{String(v).length > 60 ? "..." : ""}</span> },
                 { key: "startDate", label: "Start", render: v => fmtDate(v) },
                 { key: "endDate", label: "End", render: v => fmtDate(v) },
                 { key: "targetValue", label: "Target", render: v => v ? `$${v}` : "—" },
@@ -1398,7 +1398,7 @@ export default function AdminDashboard() {
                         <Icon className="w-5 h-5 text-white" />
                       </div>
                       <h3 className="font-semibold text-white mb-1">{r.label}</h3>
-                      <p className="text-slate-400 text-sm mb-4">{r.desc}</p>
+                      <p className="text-slate-300 text-sm mb-4">{r.desc}</p>
                       <Button onClick={() => downloadCSV(r.type)}
                         className="w-full bg-indigo-600 hover:bg-indigo-700 text-sm" data-testid={`button-report-${r.type}`}>
                         <Download className="w-4 h-4 mr-1" /> Download CSV
@@ -1412,10 +1412,10 @@ export default function AdminDashboard() {
               <CardContent className="p-5">
                 <h3 className="font-semibold text-white mb-2">Quick Stats Summary</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                  <div><p className="text-slate-400">Total Students</p><p className="text-white font-bold text-xl">{students.length}</p></div>
-                  <div><p className="text-slate-400">Total Teachers</p><p className="text-white font-bold text-xl">{teachers.length}</p></div>
-                  <div><p className="text-slate-400">Avg Quiz Score</p><p className="text-emerald-400 font-bold text-xl">{students.length > 0 ? Math.round(students.reduce((s: number, st: any) => s + st.quizScore, 0) / students.length) : 0}%</p></div>
-                  <div><p className="text-slate-400">Avg Lessons Done</p><p className="text-violet-400 font-bold text-xl">{students.length > 0 ? (students.reduce((s: number, st: any) => s + st.lessonsCompleted, 0) / students.length).toFixed(1) : 0}/6</p></div>
+                  <div><p className="text-slate-200 font-medium">Total Students</p><p className="text-white font-bold text-xl">{students.length}</p></div>
+                  <div><p className="text-slate-200 font-medium">Total Teachers</p><p className="text-white font-bold text-xl">{teachers.length}</p></div>
+                  <div><p className="text-slate-200 font-medium">Avg Quiz Score</p><p className="text-emerald-400 font-bold text-xl">{students.length > 0 ? Math.round(students.reduce((s: number, st: any) => s + st.quizScore, 0) / students.length) : 0}%</p></div>
+                  <div><p className="text-slate-200 font-medium">Avg Lessons Done</p><p className="text-violet-400 font-bold text-xl">{students.length > 0 ? (students.reduce((s: number, st: any) => s + st.lessonsCompleted, 0) / students.length).toFixed(1) : 0}/6</p></div>
                 </div>
               </CardContent>
             </Card>
@@ -1438,7 +1438,7 @@ export default function AdminDashboard() {
                 </SelectContent>
               </Select>
             </div>
-            <p className="text-slate-400 text-sm">Viewing table: <span className="text-indigo-400 font-mono">{dbTable}</span> — {dbRows.length} rows (max 500)</p>
+            <p className="text-slate-300 text-sm">Viewing table: <span className="text-indigo-400 font-mono">{dbTable}</span> — {dbRows.length} rows (max 500)</p>
             {dbRows.length === 0 ? (
               <div className="rounded-lg border border-slate-700 bg-slate-800 p-8 text-center text-slate-300">No records in this table</div>
             ) : (
@@ -1455,7 +1455,7 @@ export default function AdminDashboard() {
                     {dbRows.slice(0, 200).map((row, i) => (
                       <tr key={i} className="border-b border-slate-800 hover:bg-slate-800/50">
                         {Object.values(row).map((v: any, j) => (
-                          <td key={j} className="px-3 py-2 text-slate-400 whitespace-nowrap font-mono max-w-[200px] truncate">
+                          <td key={j} className="px-3 py-2 text-slate-300 whitespace-nowrap font-mono max-w-[200px] truncate">
                             {v === null ? <span className="text-slate-600">null</span> : v instanceof Date ? fmtDate(v) : typeof v === 'object' ? JSON.stringify(v).slice(0, 80) : String(v).slice(0, 80)}
                           </td>
                         ))}
