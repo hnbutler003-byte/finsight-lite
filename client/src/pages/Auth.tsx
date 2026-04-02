@@ -13,12 +13,24 @@ const AVATARS = [
   { id: "star",      emoji: "🌟", label: "Star" },
   { id: "butterfly", emoji: "🦋", label: "Butterfly" },
   { id: "octopus",   emoji: "🐙", label: "Octopus" },
-  { id: "artist",    emoji: "🎨", label: "Artist" },
   { id: "rocket",    emoji: "🚀", label: "Rocket" },
   { id: "wave",      emoji: "🌊", label: "Wave" },
   { id: "palm",      emoji: "🌴", label: "Palm Tree" },
-  { id: "gamer",     emoji: "🎮", label: "Gamer" },
+  { id: "crab",      emoji: "🦀", label: "Crab" },
+  { id: "fish",      emoji: "🐠", label: "Fish" },
+  { id: "whale",     emoji: "🐳", label: "Whale" },
+  { id: "flamingo",  emoji: "🦩", label: "Flamingo" },
+  { id: "sun",       emoji: "☀️",  label: "Sun" },
+  { id: "moon",      emoji: "🌙", label: "Moon" },
+  { id: "flower",    emoji: "🌺", label: "Flower" },
+  { id: "seedling",  emoji: "🌱", label: "Seedling" },
+  { id: "mountain",  emoji: "🏔️",  label: "Mountain" },
+  { id: "coral",     emoji: "🪸", label: "Coral" },
+  { id: "coconut",   emoji: "🥥", label: "Coconut" },
+  { id: "compass",   emoji: "🧭", label: "Compass" },
 ];
+
+const randomAvatar = () => AVATARS[Math.floor(Math.random() * AVATARS.length)];
 
 type Step =
   | "entry"
@@ -27,7 +39,6 @@ type Step =
   | "student-resume"
   | "student-name"
   | "guest-name"
-  | "avatar"
   | "welcome";
 
 type Flow = "student" | "guest";
@@ -41,7 +52,7 @@ export default function AuthPage() {
   const [className, setClassName]     = useState("");
   const [codeType, setCodeType]       = useState<CodeType>(null);
   const [resumeUsername, setResumeUsername] = useState("");
-  const [selectedAvatar, setSelectedAvatar] = useState("");
+  const [assignedAvatar, setAssignedAvatar] = useState<typeof AVATARS[0] | null>(null);
   const [error, setError]             = useState("");
   const [isValidatingCode, setIsValidatingCode] = useState(false);
   const [isResuming, setIsResuming]   = useState(false);
@@ -88,18 +99,14 @@ export default function AuthPage() {
     finally { setIsResuming(false); }
   };
 
-  const handleNameNext = () => {
+  const handleNameNext = async () => {
     if (!name.trim()) { setError("Please enter your name!"); return; }
     if (name.trim().length > 30) { setError("Name must be 30 characters or less."); return; }
     setError("");
-    setStep("avatar");
-  };
-
-  const handleRegister = async () => {
-    if (!selectedAvatar) { setError("Pick one to continue!"); return; }
-    setError("");
+    const av = randomAvatar();
+    setAssignedAvatar(av);
     try {
-      const user = await register({ name: name.trim(), avatar: selectedAvatar });
+      const user = await register({ name: name.trim(), avatar: av.id });
       setCreatedUser(user);
       if (flow === "student" && classCode) {
         setIsJoiningClass(true);
@@ -334,10 +341,11 @@ export default function AuthPage() {
 
               <Button
                 onClick={handleNameNext}
-                className="w-full h-12 font-bold rounded-2xl bg-violet-600 hover:bg-violet-500 text-white transition-all"
+                disabled={isRegistering || isJoiningClass || !name.trim()}
+                className="w-full h-12 font-bold rounded-2xl bg-violet-600 hover:bg-violet-500 text-white transition-all disabled:opacity-50"
                 data-testid="button-next"
               >
-                Next <ArrowRight className="ml-2 w-4 h-4" />
+                {isRegistering || isJoiningClass ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Let's go! 🚀</>}
               </Button>
             </div>
 
@@ -371,10 +379,11 @@ export default function AuthPage() {
 
               <Button
                 onClick={handleNameNext}
-                className="w-full h-12 font-bold rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-900 transition-all"
+                disabled={isRegistering || isJoiningClass || !name.trim()}
+                className="w-full h-12 font-bold rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-900 transition-all disabled:opacity-50"
                 data-testid="button-next"
               >
-                Next <ArrowRight className="ml-2 w-4 h-4" />
+                {isRegistering || isJoiningClass ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Let's go! 🚀</>}
               </Button>
             </div>
 
@@ -384,68 +393,12 @@ export default function AuthPage() {
           </div>
         )}
 
-        {/* ── AVATAR SELECTION — the reward moment ── */}
-        {step === "avatar" && (
-          <div className="space-y-6 animate-bounce-in">
-            <div className="text-center space-y-2">
-              <div className="text-5xl mb-1 animate-float">🎭</div>
-              <h1 className="text-3xl font-bold text-white">Pick your vibe!</h1>
-              <p className="text-white/50 text-sm">
-                Choose your avatar, <span className="text-violet-300 font-semibold">{name.trim()}</span> ✨
-              </p>
-            </div>
-
-            <div className="grid grid-cols-4 gap-2.5">
-              {AVATARS.map((av) => (
-                <button
-                  key={av.id}
-                  onClick={() => { setSelectedAvatar(av.id); clearError(); }}
-                  className={`flex flex-col items-center gap-1 py-3 rounded-2xl border transition-all duration-200 ${
-                    selectedAvatar === av.id
-                      ? "border-violet-500 bg-violet-500/20 scale-105 shadow-lg shadow-violet-500/20"
-                      : "border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 hover:scale-105"
-                  }`}
-                  data-testid={`button-avatar-${av.id}`}
-                >
-                  <span className="text-3xl leading-none">{av.emoji}</span>
-                  <span className="text-[9px] font-bold text-white/40 uppercase tracking-wide">{av.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {error && <p className="text-red-400 text-sm text-center" data-testid="text-auth-error">{error}</p>}
-
-            <div className="space-y-2">
-              <Button
-                onClick={handleRegister}
-                disabled={isRegistering || isJoiningClass || !selectedAvatar}
-                className="w-full h-12 font-bold rounded-2xl bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 text-white transition-all disabled:opacity-40"
-                data-testid="button-start"
-              >
-                {isRegistering || isJoiningClass
-                  ? <Loader2 className="w-5 h-5 animate-spin" />
-                  : selectedAvatar
-                    ? <>Let's go! 🚀</>
-                    : "Pick one to continue"}
-              </Button>
-
-              <button
-                onClick={() => { clearError(); setStep(flow === "student" ? "student-name" : "guest-name"); }}
-                className="flex items-center gap-1 text-sm text-white/30 hover:text-white/60 transition-colors mx-auto"
-                data-testid="button-back"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" /> Back
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* ── WELCOME ── */}
         {step === "welcome" && createdUser && (
           <div className="space-y-8 text-center animate-bounce-in">
             <div className="space-y-3">
               <div className="text-7xl animate-float">
-                {AVATARS.find(a => a.id === createdUser.avatar)?.emoji || "🌟"}
+                {assignedAvatar?.emoji || AVATARS.find(a => a.id === createdUser.avatar)?.emoji || "🌟"}
               </div>
               <h1 className="text-3xl font-bold text-white">You're in!</h1>
               <p className="text-white/50 text-sm">
