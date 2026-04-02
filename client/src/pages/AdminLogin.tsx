@@ -49,7 +49,7 @@ export default function AdminLogin() {
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="admin@finsightlite.com"
+                  placeholder="Enter your email"
                   className="mt-1 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 focus:border-indigo-500"
                   required
                   data-testid="input-admin-email"
@@ -77,9 +77,7 @@ export default function AdminLogin() {
                 {login.isPending ? "Signing in..." : "Sign In"}
               </Button>
             </form>
-            <p className="text-slate-500 text-xs text-center mt-4">
-              Default: admin@finsightlite.com / admin123
-            </p>
+
           </CardContent>
         </Card>
       </div>
