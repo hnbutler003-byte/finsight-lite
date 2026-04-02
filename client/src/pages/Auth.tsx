@@ -148,41 +148,41 @@ export default function AuthPage() {
             <div className="space-y-3">
               <button
                 onClick={() => { clearError(); setFlow("student"); setStep("student-access"); }}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-violet-500/40 transition-all group text-left"
+                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-white/8 border border-white/20 hover:bg-white/14 hover:border-violet-400/60 transition-all group text-left"
                 data-testid="button-student"
               >
                 <span className="text-3xl">👩🏽‍🎓</span>
                 <div className="flex-1">
                   <p className="text-white font-semibold">I'm a Student</p>
-                  <p className="text-white/40 text-sm">Join a class or organisation</p>
+                  <p className="text-white/55 text-sm">Join a class or organisation</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-white/30 group-hover:text-violet-400 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-violet-400 transition-colors" />
               </button>
 
               <button
                 onClick={() => setLocation("/teacher/login")}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-blue-500/40 transition-all group text-left"
+                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-white/8 border border-white/20 hover:bg-white/14 hover:border-blue-400/60 transition-all group text-left"
                 data-testid="button-teacher"
               >
                 <span className="text-3xl">👩🏽‍🏫</span>
                 <div className="flex-1">
                   <p className="text-white font-semibold">I'm a Teacher</p>
-                  <p className="text-white/40 text-sm">Manage classes and students</p>
+                  <p className="text-white/55 text-sm">Manage classes and students</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-white/30 group-hover:text-blue-400 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-blue-400 transition-colors" />
               </button>
 
               <button
                 onClick={() => { clearError(); setFlow("guest"); setStep("guest-name"); }}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-amber-500/40 transition-all group text-left"
+                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-white/8 border border-white/20 hover:bg-white/14 hover:border-amber-400/60 transition-all group text-left"
                 data-testid="button-guest"
               >
                 <span className="text-3xl">⚡</span>
                 <div className="flex-1">
                   <p className="text-white font-semibold">Continue as Guest</p>
-                  <p className="text-white/40 text-sm">Jump in with no sign-up</p>
+                  <p className="text-white/55 text-sm">Jump in with no sign-up</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-white/30 group-hover:text-amber-400 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-amber-400 transition-colors" />
               </button>
             </div>
           </div>
@@ -199,36 +199,36 @@ export default function AuthPage() {
             <div className="space-y-3">
               <button
                 onClick={() => { clearError(); setStep("student-code"); }}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-violet-500/40 transition-all group text-left"
+                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-white/8 border border-white/20 hover:bg-white/14 hover:border-violet-400/60 transition-all group text-left"
                 data-testid="button-enter-code"
               >
-                <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center shrink-0">
-                  <KeyRound className="w-5 h-5 text-violet-400" />
+                <div className="w-10 h-10 rounded-xl bg-violet-500/30 flex items-center justify-center shrink-0">
+                  <KeyRound className="w-5 h-5 text-violet-300" />
                 </div>
                 <div className="flex-1">
                   <p className="text-white font-semibold">Enter a Code</p>
-                  <p className="text-white/40 text-sm">Class or organisation code</p>
+                  <p className="text-white/55 text-sm">Class or organisation code</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-white/30 group-hover:text-violet-400 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-violet-400 transition-colors" />
               </button>
 
               <button
                 onClick={() => { clearError(); setStep("student-resume"); }}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-emerald-500/40 transition-all group text-left"
+                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-white/8 border border-white/20 hover:bg-white/14 hover:border-emerald-400/60 transition-all group text-left"
                 data-testid="button-resume"
               >
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
-                  <RotateCcw className="w-5 h-5 text-emerald-400" />
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/30 flex items-center justify-center shrink-0">
+                  <RotateCcw className="w-5 h-5 text-emerald-300" />
                 </div>
                 <div className="flex-1">
                   <p className="text-white font-semibold">Already have a username</p>
-                  <p className="text-white/40 text-sm">Log back into your account</p>
+                  <p className="text-white/55 text-sm">Log back into your account</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-white/30 group-hover:text-emerald-400 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-emerald-400 transition-colors" />
               </button>
             </div>
 
-            <button onClick={() => setStep("entry")} className="flex items-center gap-1 text-sm text-white/30 hover:text-white/60 transition-colors mx-auto" data-testid="button-back-entry">
+            <button onClick={() => setStep("entry")} className="flex items-center gap-1 text-sm text-white/50 hover:text-white/80 transition-colors mx-auto" data-testid="button-back-entry">
               <ArrowLeft className="w-3.5 h-3.5" /> Back
             </button>
           </div>
@@ -249,7 +249,7 @@ export default function AuthPage() {
                 onChange={(e) => { setClassCode(e.target.value.toUpperCase()); clearError(); }}
                 onKeyDown={(e) => e.key === "Enter" && handleValidateCode()}
                 placeholder="e.g. ABC123"
-                className="h-14 text-2xl text-center font-mono tracking-[0.3em] uppercase rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:border-violet-500/60 focus:bg-white/8"
+                className="h-14 text-2xl text-center font-mono tracking-[0.3em] uppercase rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-violet-400 focus:bg-white/12"
                 maxLength={8}
                 autoFocus
                 data-testid="input-class-code"
@@ -267,7 +267,7 @@ export default function AuthPage() {
               </Button>
             </div>
 
-            <button onClick={() => { setStep("student-access"); clearError(); }} className="flex items-center gap-1 text-sm text-white/30 hover:text-white/60 transition-colors mx-auto" data-testid="button-back-access">
+            <button onClick={() => { setStep("student-access"); clearError(); }} className="flex items-center gap-1 text-sm text-white/50 hover:text-white/80 transition-colors mx-auto" data-testid="button-back-access">
               <ArrowLeft className="w-3.5 h-3.5" /> Back
             </button>
           </div>
@@ -288,7 +288,7 @@ export default function AuthPage() {
                 onChange={(e) => { setResumeUsername(e.target.value); clearError(); }}
                 onKeyDown={(e) => e.key === "Enter" && handleResume()}
                 placeholder="e.g. Alex_4291"
-                className="h-12 text-lg font-mono rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:border-emerald-500/60"
+                className="h-12 text-lg font-mono rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-emerald-400"
                 autoFocus
                 data-testid="input-resume-username"
               />
@@ -308,7 +308,7 @@ export default function AuthPage() {
               </Button>
             </div>
 
-            <button onClick={() => { setStep("student-access"); clearError(); }} className="flex items-center gap-1 text-sm text-white/30 hover:text-white/60 transition-colors mx-auto" data-testid="button-back-access-2">
+            <button onClick={() => { setStep("student-access"); clearError(); }} className="flex items-center gap-1 text-sm text-white/50 hover:text-white/80 transition-colors mx-auto" data-testid="button-back-access-2">
               <ArrowLeft className="w-3.5 h-3.5" /> Back
             </button>
           </div>
@@ -332,7 +332,7 @@ export default function AuthPage() {
                 onChange={(e) => { setName(e.target.value); clearError(); }}
                 onKeyDown={(e) => e.key === "Enter" && handleNameNext()}
                 placeholder="e.g. Alex, Keisha, Jamal…"
-                className="h-12 text-lg rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:border-violet-500/60"
+                className="h-12 text-lg rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-violet-400"
                 autoFocus
                 data-testid="input-name"
               />
@@ -349,7 +349,7 @@ export default function AuthPage() {
               </Button>
             </div>
 
-            <button onClick={() => { setStep("student-code"); clearError(); }} className="flex items-center gap-1 text-sm text-white/30 hover:text-white/60 transition-colors mx-auto" data-testid="button-back-code">
+            <button onClick={() => { setStep("student-code"); clearError(); }} className="flex items-center gap-1 text-sm text-white/50 hover:text-white/80 transition-colors mx-auto" data-testid="button-back-code">
               <ArrowLeft className="w-3.5 h-3.5" /> Back
             </button>
           </div>
@@ -370,7 +370,7 @@ export default function AuthPage() {
                 onChange={(e) => { setName(e.target.value); clearError(); }}
                 onKeyDown={(e) => e.key === "Enter" && handleNameNext()}
                 placeholder="e.g. Alex, Keisha, Jamal…"
-                className="h-12 text-lg rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:border-amber-500/60"
+                className="h-12 text-lg rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-amber-400"
                 autoFocus
                 data-testid="input-name"
               />
@@ -387,7 +387,7 @@ export default function AuthPage() {
               </Button>
             </div>
 
-            <button onClick={() => { setStep("entry"); clearError(); }} className="flex items-center gap-1 text-sm text-white/30 hover:text-white/60 transition-colors mx-auto" data-testid="button-back-entry-2">
+            <button onClick={() => { setStep("entry"); clearError(); }} className="flex items-center gap-1 text-sm text-white/50 hover:text-white/80 transition-colors mx-auto" data-testid="button-back-entry-2">
               <ArrowLeft className="w-3.5 h-3.5" /> Back
             </button>
           </div>
@@ -408,7 +408,7 @@ export default function AuthPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl bg-white/5 border border-white/10 p-5 space-y-2">
+            <div className="rounded-2xl bg-white/8 border border-white/25 p-5 space-y-2">
               <p className="text-white/40 text-xs uppercase tracking-widest font-bold flex items-center justify-center gap-1.5">
                 <PartyPopper className="w-3.5 h-3.5" /> Your username
               </p>

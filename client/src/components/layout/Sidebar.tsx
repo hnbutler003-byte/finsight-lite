@@ -31,6 +31,9 @@ const AVATAR_EMOJIS: Record<string, string> = {
   lion: "🦁", dolphin: "🐬", parrot: "🦜", turtle: "🐢",
   star: "🌟", butterfly: "🦋", octopus: "🐙", artist: "🎨",
   rocket: "🚀", wave: "🌊", palm: "🌴", gamer: "🎮",
+  crab: "🦀", fish: "🐠", whale: "🐳", flamingo: "🦩",
+  sun: "☀️", moon: "🌙", flower: "🌺", seedling: "🌱",
+  mountain: "🏔️", coral: "🪸", coconut: "🥥", compass: "🧭",
 };
 
 const NAV_ITEMS = [

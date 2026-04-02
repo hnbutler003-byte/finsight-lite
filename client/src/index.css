@@ -59,8 +59,8 @@
   --destructive-border:     hsl(0 80% 50%);
 
   /* --- Form primitives --- */
-  --border: 270 20% 88%;
-  --input:  270 20% 88%;
+  --border: 270 20% 76%;
+  --input:  270 20% 76%;
   --ring:   262 83% 58%;
 
   /* --- Border radius --- */
@@ -81,9 +81,9 @@
   --shadow-glow-teal:    0 0 20px hsl(190 80% 55% / 0.35);
 
   /* --- Glassmorphism layers --- */
-  --glass-bg:         rgba(255, 255, 255, 0.82);
-  --glass-bg-heavy:   rgba(255, 255, 255, 0.92);
-  --glass-border:     rgba(255, 255, 255, 0.55);
+  --glass-bg:         rgba(255, 255, 255, 0.88);
+  --glass-bg-heavy:   rgba(255, 255, 255, 0.96);
+  --glass-border:     rgba(180, 160, 220, 0.45);
   --glass-blur:       16px;
   --glass-blur-heavy: 24px;
 
@@ -135,18 +135,18 @@
   --accent-foreground: 190 80% 80%;
 
   --muted:            262 30% 18%;
-  --muted-foreground: 270 15% 60%;
+  --muted-foreground: 270 15% 68%;
 
   --destructive:            0 62% 40%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 262 30% 20%;
-  --input:  262 30% 20%;
+  --border: 262 30% 32%;
+  --input:  262 30% 32%;
   --ring:   262 83% 65%;
 
   --glass-bg:       rgba(255, 255, 255, 0.10);
   --glass-bg-heavy: rgba(255, 255, 255, 0.18);
-  --glass-border:   rgba(255, 255, 255, 0.20);
+  --glass-border:   rgba(255, 255, 255, 0.30);
 
   --sidebar:                    262 60% 8%;
   --sidebar-foreground:         270 20% 88%;
@@ -177,6 +177,22 @@
   :focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
+  }
+}
+
+/* ── 5b. GLOBAL INPUT BASELINE ───────────────────────────── */
+@layer base {
+  /* Ensure all native inputs always have a clearly visible border */
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    border-color: hsl(var(--border));
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: hsl(var(--muted-foreground) / 0.75);
   }
 }
 
