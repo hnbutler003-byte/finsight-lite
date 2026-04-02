@@ -110,7 +110,7 @@ export default function Trends() {
         <div className="max-w-6xl mx-auto p-6 lg:p-10 space-y-8">
           <div>
             <h1 className="font-display text-3xl font-bold text-white" data-testid="text-page-title">Spending Trends</h1>
-            <p className="text-white/70 mt-1">Month-over-month comparison of your income and spending</p>
+            <p className="text-white/85 mt-1">Month-over-month comparison of your income and spending</p>
           </div>
 
           {/* Spending Alerts */}

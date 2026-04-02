@@ -68,7 +68,7 @@ export default function Budgets() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl font-display font-bold text-white">Monthly Budgets</h1>
-              <p className="text-white/70">Set limits and reach your saving goals.</p>
+              <p className="text-white/85">Set limits and reach your saving goals.</p>
             </div>
             
             <TooltipProvider>

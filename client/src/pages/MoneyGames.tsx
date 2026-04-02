@@ -1786,7 +1786,7 @@ export default function MoneyGames() {
                 {activeGame ? GAMES.find(g => g.id === activeGame)?.title : "Money Games"}
               </h1>
               {!activeGame && (
-                <p className="text-white/70 mt-1 ml-15">Learn money skills the fun way!</p>
+                <p className="text-white/85 mt-1 ml-15">Learn money skills the fun way!</p>
               )}
             </div>
             <div className="w-48">

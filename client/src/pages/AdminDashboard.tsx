@@ -89,11 +89,11 @@ function DataTable({
             value={q}
             onChange={e => { setQ(e.target.value); setPage(1); }}
             placeholder="Search..."
-            className="pl-8 h-9 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 text-sm"
+            className="pl-8 h-9 bg-slate-800 border-slate-700 text-white placeholder:text-slate-300 text-sm"
             data-testid="input-table-search"
           />
         </div>
-        <span className="text-slate-500 text-sm">{filtered.length} record{filtered.length !== 1 ? "s" : ""}</span>
+        <span className="text-slate-300 text-sm">{filtered.length} record{filtered.length !== 1 ? "s" : ""}</span>
       </div>
       <div className="overflow-x-auto rounded-lg border border-slate-700">
         <table className="w-full text-sm">
@@ -112,7 +112,7 @@ function DataTable({
           </thead>
           <tbody>
             {paginated.length === 0 ? (
-              <tr><td colSpan={columns.length} className="px-4 py-8 text-center text-slate-500">No records found</td></tr>
+              <tr><td colSpan={columns.length} className="px-4 py-8 text-center text-slate-300">No records found</td></tr>
             ) : paginated.map((row, i) => (
               <tr key={i} className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
                 {columns.map(col => (
@@ -126,7 +126,7 @@ function DataTable({
         </table>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-slate-500 text-xs">Page {page} of {totalPages}</span>
+        <span className="text-slate-300 text-xs">Page {page} of {totalPages}</span>
         <div className="flex gap-1">
           <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
             className="bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 h-8 px-2">
@@ -189,14 +189,14 @@ function GlobalSearch() {
         onChange={e => { setQ(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         placeholder="Search students, teachers, schools, sponsors..."
-        className="pl-9 pr-8 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 w-full"
+        className="pl-9 pr-8 bg-slate-800 border-slate-700 text-white placeholder:text-slate-300 w-full"
         data-testid="input-global-search"
       />
       {q && <button onClick={() => { setQ(""); setOpen(false); }} className="absolute right-3 top-2.5 text-slate-400 hover:text-white"><X className="h-4 w-4" /></button>}
       {open && q.length > 1 && (
         <div className="absolute top-full mt-1 left-0 right-0 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 max-h-72 overflow-y-auto">
           {allResults.length === 0 ? (
-            <p className="px-4 py-3 text-slate-500 text-sm">No results found</p>
+            <p className="px-4 py-3 text-slate-300 text-sm">No results found</p>
           ) : allResults.map((r, i) => (
             <div key={i} className="px-4 py-2.5 flex items-center gap-3 hover:bg-slate-700 cursor-pointer border-b border-slate-700/50 last:border-0">
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded text-white uppercase ${typeColor[r.type]}`}>{r.type}</span>
@@ -339,7 +339,7 @@ function OrgDialog({ existing, onClose }: { existing?: any; onClose: () => void 
         <div className="col-span-2">
           <Label className="text-slate-300 text-xs mb-1 block">Organization Name *</Label>
           <Input value={form.name} onChange={f("name")} placeholder="e.g. St. Anne's High School"
-            className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500" data-testid="input-org-name" />
+            className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-300" data-testid="input-org-name" />
         </div>
         <div>
           <Label className="text-slate-300 text-xs mb-1 block">Type</Label>
@@ -417,7 +417,7 @@ function EnvCard({ env }: { env: any }) {
       <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: env.theme_color ?? "#7c3aed" }} />
       <div className="flex-1 min-w-0">
         <p className="text-white text-sm font-medium truncate" data-testid={`text-env-name-${env.id}`}>{env.display_name}</p>
-        <p className="text-slate-500 text-xs font-mono">{env.slug}</p>
+        <p className="text-slate-300 text-xs font-mono">{env.slug}</p>
       </div>
       {env.join_code && (
         <button
@@ -462,13 +462,13 @@ function EnvDialog({ orgId, onClose }: { orgId: string; onClose: () => void }) {
         <Label className="text-slate-300 text-xs mb-1 block">Display Name *</Label>
         <Input value={form.display_name} onChange={e => setForm(p => ({ ...p, display_name: e.target.value }))}
           placeholder="e.g. Grade 10 - Block A"
-          className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500" data-testid="input-env-name" />
+          className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-300" data-testid="input-env-name" />
       </div>
       <div>
         <Label className="text-slate-300 text-xs mb-1 block">Slug (URL-safe, lowercase) *</Label>
         <Input value={form.slug} onChange={e => setForm(p => ({ ...p, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,"") }))}
           placeholder="e.g. grade10-block-a"
-          className="bg-slate-700 border-slate-600 text-white font-mono placeholder:text-slate-500" data-testid="input-env-slug" />
+          className="bg-slate-700 border-slate-600 text-white font-mono placeholder:text-slate-300" data-testid="input-env-slug" />
       </div>
       <div>
         <Label className="text-slate-300 text-xs mb-1 block">Theme Color</Label>
@@ -581,7 +581,7 @@ function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => vo
                   <Input value={obj} onChange={e => setObjectives(p => p.map((x, j) => j === i ? e.target.value : x))}
                     placeholder={`Objective ${i + 1}`} className="bg-slate-700 border-slate-600 text-white text-sm flex-1" />
                   {objectives.length > 1 && (
-                    <button onClick={() => setObjectives(p => p.filter((_, j) => j !== i))} className="text-slate-500 hover:text-red-400 px-1">
+                    <button onClick={() => setObjectives(p => p.filter((_, j) => j !== i))} className="text-slate-300 hover:text-red-400 px-1">
                       <Minus className="w-4 h-4" />
                     </button>
                   )}
@@ -608,7 +608,7 @@ function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => vo
               <div className="flex items-center justify-between">
                 <span className="text-slate-300 text-xs font-bold">Section {i + 1}</span>
                 {sections.length > 1 && (
-                  <button onClick={() => setSections(p => p.filter((_, j) => j !== i))} className="text-slate-500 hover:text-red-400">
+                  <button onClick={() => setSections(p => p.filter((_, j) => j !== i))} className="text-slate-300 hover:text-red-400">
                     <Minus className="w-4 h-4" />
                   </button>
                 )}
@@ -639,7 +639,7 @@ function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => vo
               <div className="flex items-center justify-between">
                 <span className="text-slate-300 text-xs font-bold">Q{qi + 1}</span>
                 {questions.length > 1 && (
-                  <button onClick={() => setQuestions(p => p.filter((_, j) => j !== qi))} className="text-slate-500 hover:text-red-400">
+                  <button onClick={() => setQuestions(p => p.filter((_, j) => j !== qi))} className="text-slate-300 hover:text-red-400">
                     <Minus className="w-4 h-4" />
                   </button>
                 )}
@@ -663,7 +663,7 @@ function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => vo
                   );
                 })}
               </div>
-              <p className="text-xs text-slate-500">Click an option to mark it correct</p>
+              <p className="text-xs text-slate-300">Click an option to mark it correct</p>
             </div>
           ))}
           <button onClick={() => setQuestions(p => [...p, { question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "A" }])}
@@ -786,9 +786,9 @@ function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
               </Dialog>
             </div>
             {envsLoading ? (
-              <p className="text-slate-500 text-xs">Loading environments…</p>
+              <p className="text-slate-300 text-xs">Loading environments…</p>
             ) : envs.length === 0 ? (
-              <p className="text-slate-500 text-xs italic">No environments yet. Add one to assign students to this organization.</p>
+              <p className="text-slate-300 text-xs italic">No environments yet. Add one to assign students to this organization.</p>
             ) : (
               <div className="space-y-2">
                 {envs.map((env: any) => (
@@ -817,9 +817,9 @@ function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
               </Dialog>
             </div>
             {lessonsLoading ? (
-              <p className="text-slate-500 text-xs">Loading lessons…</p>
+              <p className="text-slate-300 text-xs">Loading lessons…</p>
             ) : lessons.length === 0 ? (
-              <p className="text-slate-500 text-xs italic">No lesson plans yet. Add one to deliver curriculum to students.</p>
+              <p className="text-slate-300 text-xs italic">No lesson plans yet. Add one to deliver curriculum to students.</p>
             ) : (
               <div className="space-y-2">
                 {lessons.map((lesson: any) => (
@@ -990,7 +990,7 @@ export default function AdminDashboard() {
               <Card className="bg-slate-800 border-slate-700 lg:col-span-1">
                 <CardHeader><CardTitle className="text-slate-200 text-base">Student Growth (by week)</CardTitle></CardHeader>
                 <CardContent>
-                  {growth.length === 0 ? <p className="text-slate-500 text-sm text-center py-8">No data yet</p> : (
+                  {growth.length === 0 ? <p className="text-slate-300 text-sm text-center py-8">No data yet</p> : (
                     <ResponsiveContainer width="100%" height={200}>
                       <LineChart data={growth}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -1006,7 +1006,7 @@ export default function AdminDashboard() {
               <Card className="bg-slate-800 border-slate-700 lg:col-span-1">
                 <CardHeader><CardTitle className="text-slate-200 text-base">Games Played / Week</CardTitle></CardHeader>
                 <CardContent>
-                  {lessonsChart.length === 0 ? <p className="text-slate-500 text-sm text-center py-8">No data yet</p> : (
+                  {lessonsChart.length === 0 ? <p className="text-slate-300 text-sm text-center py-8">No data yet</p> : (
                     <ResponsiveContainer width="100%" height={200}>
                       <BarChart data={lessonsChart}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -1022,7 +1022,7 @@ export default function AdminDashboard() {
               <Card className="bg-slate-800 border-slate-700 lg:col-span-1">
                 <CardHeader><CardTitle className="text-slate-200 text-base">Most Active Schools</CardTitle></CardHeader>
                 <CardContent>
-                  {schoolsChart.length === 0 ? <p className="text-slate-500 text-sm text-center py-8">No data yet</p> : (
+                  {schoolsChart.length === 0 ? <p className="text-slate-300 text-sm text-center py-8">No data yet</p> : (
                     <ResponsiveContainer width="100%" height={200}>
                       <BarChart data={schoolsChart} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -1086,7 +1086,7 @@ export default function AdminDashboard() {
               <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-10 text-center">
                 <Globe className="w-10 h-10 text-slate-600 mx-auto mb-3" />
                 <p className="text-slate-400 font-medium">No organizations yet</p>
-                <p className="text-slate-500 text-sm mt-1">Add a school or organization to start managing their student environments.</p>
+                <p className="text-slate-300 text-sm mt-1">Add a school or organization to start managing their student environments.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -1440,7 +1440,7 @@ export default function AdminDashboard() {
             </div>
             <p className="text-slate-400 text-sm">Viewing table: <span className="text-indigo-400 font-mono">{dbTable}</span> — {dbRows.length} rows (max 500)</p>
             {dbRows.length === 0 ? (
-              <div className="rounded-lg border border-slate-700 bg-slate-800 p-8 text-center text-slate-500">No records in this table</div>
+              <div className="rounded-lg border border-slate-700 bg-slate-800 p-8 text-center text-slate-300">No records in this table</div>
             ) : (
               <div className="overflow-x-auto rounded-lg border border-slate-700">
                 <table className="w-full text-xs">

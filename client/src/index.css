@@ -50,8 +50,8 @@
 
   /* --- Muted / subtle --- */
   --muted:            270 25% 93%;
-  --muted-foreground: 262 15% 45%;
-  --muted-border:     hsl(270 20% 85%);
+  --muted-foreground: 262 20% 30%;
+  --muted-border:     hsl(270 20% 82%);
 
   /* --- Semantic --- */
   --destructive:            0 80% 60%;

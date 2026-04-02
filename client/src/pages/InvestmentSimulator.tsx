@@ -145,7 +145,7 @@ export default function InvestmentSimulator() {
                 <GraduationCap className="w-8 h-8 text-primary" />
                 Investment Simulator
               </h1>
-              <p className="text-white/70">Learn how investing works with virtual money — no real risk!</p>
+              <p className="text-white/85">Learn how investing works with virtual money — no real risk!</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 bg-green-50 dark:bg-green-950/30 px-4 py-2 rounded-xl border border-green-200 dark:border-green-800">
@@ -190,7 +190,7 @@ export default function InvestmentSimulator() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-display font-bold text-white">Money & Investing Lessons</h2>
-                  <p className="text-sm text-white/70">Complete these lessons to understand how money and investing work.</p>
+                  <p className="text-sm text-white/85">Complete these lessons to understand how money and investing work.</p>
                 </div>
                 <Badge variant="secondary" className="text-sm px-3 py-1" data-testid="badge-progress">
                   {completedCount}/{totalModules} Complete

@@ -196,12 +196,12 @@ export default function Lessons() {
                 <h1 className="font-display text-3xl lg:text-4xl font-bold text-white" data-testid="text-lessons-title">
                   My Lessons
                 </h1>
-                <p className="text-white/70 mt-1">Curriculum from your school — read, learn, and quiz yourself.</p>
+                <p className="text-white/85 mt-1">Curriculum from your school — read, learn, and quiz yourself.</p>
               </div>
 
               {isLoading ? (
                 <div className="flex justify-center py-16">
-                  <Loader2 className="w-8 h-8 animate-spin text-white/60" />
+                  <Loader2 className="w-8 h-8 animate-spin text-white/75" />
                 </div>
               ) : lessons.length === 0 ? (
                 <div className="space-y-4">
@@ -302,7 +302,7 @@ export default function Lessons() {
                 </Button>
                 <div>
                   <h1 className="font-display text-2xl font-bold text-white" data-testid="text-lesson-title">{selectedLesson.title}</h1>
-                  <div className="flex items-center gap-3 text-white/60 text-sm flex-wrap mt-0.5">
+                  <div className="flex items-center gap-3 text-white/75 text-sm flex-wrap mt-0.5">
                     {selectedLesson.instructor && <span>{selectedLesson.instructor}</span>}
                     {selectedLesson.subject && <span>· {selectedLesson.subject}</span>}
                     {selectedLesson.grade_level && <span>· Grade {selectedLesson.grade_level}</span>}
@@ -396,7 +396,7 @@ export default function Lessons() {
                 </Button>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-white/70">
+                    <span className="text-sm font-bold text-white/85">
                       Question {currentQ + 1} / {selectedLesson.questions.length}
                     </span>
                     <span className="text-sm font-bold text-amber-400 flex items-center gap-1">
@@ -467,7 +467,7 @@ export default function Lessons() {
 
               <div className="text-white">
                 <h1 className="font-display text-3xl font-bold">Quiz Complete!</h1>
-                <p className="text-white/70 mt-2">{selectedLesson.title}</p>
+                <p className="text-white/85 mt-2">{selectedLesson.title}</p>
               </div>
 
               <div className="grid grid-cols-3 gap-3">

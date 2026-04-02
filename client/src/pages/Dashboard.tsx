@@ -105,7 +105,7 @@ export default function Dashboard() {
               <h1 className="text-3xl lg:text-4xl font-display font-bold text-white" data-testid="text-dashboard-title">
                 My Money
               </h1>
-              <p className="text-white/70 mt-1" data-testid="text-dashboard-greeting">
+              <p className="text-white/85 mt-1" data-testid="text-dashboard-greeting">
                 Hey {user?.firstName || "there"}! Here's your money at a glance.
               </p>
             </div>

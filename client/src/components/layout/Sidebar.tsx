@@ -250,7 +250,7 @@ export function Sidebar() {
             FinSight Lite
           </span>
         </h1>
-        <p className="text-[10px] text-white/60 uppercase font-bold tracking-widest mt-1 flex items-center gap-1">
+        <p className="text-[10px] text-white/75 uppercase font-bold tracking-widest mt-1 flex items-center gap-1">
           <Sparkles className="w-3 h-3 text-amber-400" />
           by FinSight Ltd.
         </p>
@@ -285,7 +285,7 @@ export function Sidebar() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold truncate text-white">{user?.firstName || "Player"}</p>
-            <p className="text-xs text-white/60 truncate">{(user as any)?.username}</p>
+            <p className="text-xs text-white/75 truncate">{(user as any)?.username}</p>
           </div>
         </div>
         <Button
