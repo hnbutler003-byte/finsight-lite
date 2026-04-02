@@ -1,0 +1,119 @@
+1. VIDEO INTEGRATION (Lesson-Level)
+Core Requirement:
+
+Add a video component to lessons within the “My Lessons” tab.
+
+Functionality:
+Each lesson should support an optional video section
+Display video at the top of the lesson view
+If no video exists, hide the section cleanly (no empty space)
+Implementation Approach (IMPORTANT):
+
+Since we do NOT have pre-made videos:
+
+Phase 1 (Immediate – REQUIRED):
+
+Support embedding videos via:
+YouTube links OR
+Uploaded video URLs
+Add a placeholder option:
+“Video coming soon” OR AI-generated summary text
+
+Phase 2 (Optional – Advanced):
+
+Integrate AI video tools to generate simple explainer videos using:
+Text-to-video OR
+AI avatar narration
+Suggested Tools for AI Video Generation (DO NOT implement yet, just suggest in comments):
+Synthesia
+Pictory
+Runway
+UI Requirements:
+Video player should be:
+Responsive
+Clearly visible
+Styled consistently with lesson cards
+Include:
+Play button
+Title of video
+🏆 2. CERTIFICATE GENERATION SYSTEM
+Core Requirement:
+
+Allow students to download a certificate upon completing a full module (not individual lessons).
+
+Completion Logic:
+A certificate is unlocked ONLY when:
+All lessons in a module are completed
+(Optional) Minimum quiz score achieved
+Certificate Features:
+
+Generate a downloadable PDF certificate that includes:
+
+Student name
+Module name (e.g., “Budgeting Basics”)
+Completion date
+FinSight Lite branding
+Signature line (can be placeholder)
+Implementation Options:
+
+Option A (Simple – REQUIRED):
+
+Generate certificate dynamically using:
+HTML → PDF conversion
+
+Option B (Advanced – OPTIONAL):
+
+Store certificates in user profile
+Allow re-download anytime
+Suggested Libraries:
+jsPDF
+html2canvas
+PDFKit
+UI Requirements:
+“Download Certificate” button appears ONLY when eligible
+Add visual celebration:
+Badge OR
+“Module Completed 🎉”
+⚙️ 3. SYSTEM DESIGN CONSIDERATIONS
+Do NOT break existing lesson/module structure
+Ensure:
+Scalable for schools and multiple users
+Clean separation between lessons and modules
+Prepare for:
+Future teacher dashboards
+Progress tracking
+🔌 4. REQUIRED: SUGGEST EXTERNAL ADD-ONS
+
+At the end of implementation, provide a list of recommended external tools or integrations to improve performance, scalability, or user experience.
+
+Suggestions should include:
+
+Performance / Hosting
+CDN options
+Video hosting optimization
+Analytics
+Student engagement tracking tools
+Gamification
+Tools or frameworks to improve engagement
+Security
+Data protection tools for student data
+🎯 FINAL OUTPUT GOAL
+
+After implementation:
+
+Lessons can optionally include videos
+Students can complete modules and download certificates
+Platform feels more interactive, credible, and school-ready
+Suggestions for scaling and optimization are clearly provided
+✨ BONUS (If possible)
+Add:
+“Watch Video” indicator on lessons
+Certificate preview before download
+Smooth animations for completion states
+💡 Strategic Note (for you, not the agent)
+
+Don’t stress about “AI generating videos” right now.
+The real move is:
+
+👉 Enable the infrastructure first (embedding + placeholders)
+👉 Then layer in AI video later
