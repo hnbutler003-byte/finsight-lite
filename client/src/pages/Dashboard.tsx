@@ -111,7 +111,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-3">
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="w-[160px] bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl text-white font-medium shadow-lg focus:ring-2 focus:ring-white/40 data-[placeholder]:text-white/50" data-testid="select-currency">
+                <SelectTrigger className="w-[160px] bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl text-white font-medium shadow-lg focus:ring-2 focus:ring-white/40 data-[placeholder]:text-white/75" data-testid="select-currency">
                   <SelectValue placeholder="Currency" />
                 </SelectTrigger>
                 <SelectContent>
@@ -173,8 +173,16 @@ export default function Dashboard() {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <RechartsTooltip formatter={(value) => `${selectedCurrency.symbol}${Number(value).toFixed(2)}`} />
-                      <Legend verticalAlign="bottom" height={36} />
+                      <RechartsTooltip
+                        formatter={(value) => `${selectedCurrency.symbol}${Number(value).toFixed(2)}`}
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                          color: "hsl(var(--foreground))",
+                        }}
+                      />
+                      <Legend verticalAlign="bottom" height={36} wrapperStyle={{ color: "#cbd5e1" }} />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (

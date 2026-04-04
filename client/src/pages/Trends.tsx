@@ -160,16 +160,17 @@ export default function Trends() {
               <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={chartData} barGap={4}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#cbd5e1" }} />
+                  <YAxis tick={{ fontSize: 12, fill: "#cbd5e1" }} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "hsl(var(--card))",
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
+                      color: "hsl(var(--foreground))",
                     }}
                   />
-                  <Legend />
+                  <Legend wrapperStyle={{ color: "#cbd5e1" }} />
                   <Bar dataKey="Income" fill="#10b981" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Expenses" fill="#ef4444" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -186,16 +187,17 @@ export default function Trends() {
               <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={categoryChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#cbd5e1" }} />
+                  <YAxis tick={{ fontSize: 12, fill: "#cbd5e1" }} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "hsl(var(--card))",
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
+                      color: "hsl(var(--foreground))",
                     }}
                   />
-                  <Legend />
+                  <Legend wrapperStyle={{ color: "#cbd5e1" }} />
                   {Array.from(topCategories).map((cat, i) => (
                     <Bar key={cat} dataKey={cat} stackId="a" fill={categoryColors[i % categoryColors.length]} />
                   ))}
@@ -207,13 +209,13 @@ export default function Trends() {
           {/* Budget Comparison */}
           {trends?.budgetComparison && trends.budgetComparison.length > 0 && (
             <div className="glass-card rounded-glass p-6" data-testid="section-budget-comparison">
-              <h2 className="font-display text-lg font-bold mb-4 text-gray-800">Budget vs Actual</h2>
+              <h2 className="font-display text-lg font-bold mb-4">Budget vs Actual</h2>
               <div className="space-y-4">
                 {trends.budgetComparison.map((b) => (
                   <div key={b.category} className="space-y-2" data-testid={`budget-comparison-${b.category}`}>
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{b.category}</span>
-                      <span className={`font-semibold ${b.percentUsed > 100 ? "text-red-600" : b.percentUsed > 80 ? "text-amber-600" : "text-green-600"}`}>
+                      <span className={`font-semibold ${b.percentUsed > 100 ? "text-red-500 dark:text-red-400" : b.percentUsed > 80 ? "text-amber-500 dark:text-amber-400" : "text-green-500 dark:text-green-400"}`}>
                         ${b.spent.toFixed(2)} / ${b.budgeted.toFixed(2)} ({b.percentUsed}%)
                       </span>
                     </div>

@@ -250,6 +250,11 @@
   box-shadow: var(--shadow-glow-coral), inset 0 1px 0 hsl(var(--coral) / 0.20);
 }
 
+.dark .glass-card-coral {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, hsl(var(--coral) / 0.22) 100%);
+  border-color: hsl(var(--coral) / 0.35);
+}
+
 .glass-card-teal {
   background: linear-gradient(135deg, rgba(255,255,255,0.80) 0%, hsl(190 80% 50% / 0.18) 100%);
   backdrop-filter: blur(12px);

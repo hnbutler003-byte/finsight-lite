@@ -75,7 +75,7 @@ export default function Reports() {
             </div>
             <div className="flex gap-3">
               <Select value={exportPeriod} onValueChange={setExportPeriod}>
-                <SelectTrigger className="w-[160px] bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl text-white font-medium shadow-lg focus:ring-2 focus:ring-white/40 data-[placeholder]:text-white/50" data-testid="select-period">
+                <SelectTrigger className="w-[160px] bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl text-white font-medium shadow-lg focus:ring-2 focus:ring-white/40 data-[placeholder]:text-white/75" data-testid="select-period">
                   <SelectValue placeholder="Period" />
                 </SelectTrigger>
                 <SelectContent>
@@ -86,7 +86,7 @@ export default function Reports() {
                 </SelectContent>
               </Select>
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="w-[200px] bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl text-white font-medium shadow-lg focus:ring-2 focus:ring-white/40 data-[placeholder]:text-white/50" data-testid="select-currency">
+                <SelectTrigger className="w-[200px] bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl text-white font-medium shadow-lg focus:ring-2 focus:ring-white/40 data-[placeholder]:text-white/75" data-testid="select-currency">
                   <SelectValue placeholder="Select Currency" />
                 </SelectTrigger>
                 <SelectContent>

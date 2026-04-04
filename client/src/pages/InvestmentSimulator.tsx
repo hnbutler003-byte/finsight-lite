@@ -155,7 +155,7 @@ export default function InvestmentSimulator() {
                 </span>
               </div>
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="w-[200px] bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl text-white font-medium shadow-lg focus:ring-2 focus:ring-white/40 data-[placeholder]:text-white/50" data-testid="select-currency">
+                <SelectTrigger className="w-[200px] bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl text-white font-medium shadow-lg focus:ring-2 focus:ring-white/40 data-[placeholder]:text-white/75" data-testid="select-currency">
                   <SelectValue placeholder="Filter by Currency" />
                 </SelectTrigger>
                 <SelectContent>
@@ -246,7 +246,7 @@ export default function InvestmentSimulator() {
                         Mark as Complete
                       </Button>
                     ) : (
-                      <div className="flex items-center gap-2 text-green-600">
+                      <div className="flex items-center gap-2 text-green-500 dark:text-green-400">
                         <CheckCircle2 className="w-5 h-5" />
                         <span className="font-medium">You've completed this lesson!</span>
                       </div>
@@ -306,10 +306,10 @@ export default function InvestmentSimulator() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Card className="glass-card rounded-glass">
                   <CardContent className="p-4 flex items-center gap-3">
-                    <Wallet className="w-8 h-8 text-blue-600" />
+                    <Wallet className="w-8 h-8 text-blue-500 dark:text-blue-400" />
                     <div>
                       <p className="text-xs text-muted-foreground">Your Virtual Cash</p>
-                      <p className="text-lg font-bold text-blue-600" data-testid="text-market-balance">
+                      <p className="text-lg font-bold text-blue-500 dark:text-blue-400" data-testid="text-market-balance">
                         {currSymbol}{virtualBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </p>
                     </div>
@@ -317,10 +317,10 @@ export default function InvestmentSimulator() {
                 </Card>
                 <Card className="glass-card rounded-glass">
                   <CardContent className="p-4 flex items-center gap-3">
-                    <TrendingUp className="w-8 h-8 text-green-600" />
+                    <TrendingUp className="w-8 h-8 text-green-500 dark:text-green-400" />
                     <div>
                       <p className="text-xs text-muted-foreground">Portfolio Value</p>
-                      <p className="text-lg font-bold text-green-600">
+                      <p className="text-lg font-bold text-green-500 dark:text-green-400">
                         {currSymbol}{totalPortfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </p>
                     </div>
@@ -328,10 +328,10 @@ export default function InvestmentSimulator() {
                 </Card>
                 <Card className="glass-card rounded-glass">
                   <CardContent className="p-4 flex items-center gap-3">
-                    <Briefcase className="w-8 h-8 text-purple-600" />
+                    <Briefcase className="w-8 h-8 text-purple-500 dark:text-purple-400" />
                     <div>
                       <p className="text-xs text-muted-foreground">Total Value</p>
-                      <p className="text-lg font-bold text-purple-600">
+                      <p className="text-lg font-bold text-purple-500 dark:text-purple-400">
                         {currSymbol}{(virtualBalance + totalPortfolioValue).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </p>
                     </div>
@@ -401,7 +401,7 @@ export default function InvestmentSimulator() {
                 <Card className="glass-card rounded-glass">
                   <CardContent className="p-4">
                     <p className="text-xs text-muted-foreground">Virtual Cash</p>
-                    <p className="text-xl font-bold text-blue-600" data-testid="text-portfolio-cash">
+                    <p className="text-xl font-bold text-blue-500 dark:text-blue-400" data-testid="text-portfolio-cash">
                       {currSymbol}{virtualBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </p>
                   </CardContent>
@@ -409,7 +409,7 @@ export default function InvestmentSimulator() {
                 <Card className="glass-card rounded-glass">
                   <CardContent className="p-4">
                     <p className="text-xs text-muted-foreground">Invested Value</p>
-                    <p className="text-xl font-bold text-green-600">
+                    <p className="text-xl font-bold text-green-500 dark:text-green-400">
                       {currSymbol}{totalPortfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </p>
                   </CardContent>
@@ -417,7 +417,7 @@ export default function InvestmentSimulator() {
                 <Card className="glass-card rounded-glass">
                   <CardContent className="p-4">
                     <p className="text-xs text-muted-foreground">Net Worth</p>
-                    <p className="text-xl font-bold text-purple-600">
+                    <p className="text-xl font-bold text-purple-500 dark:text-purple-400">
                       {currSymbol}{(virtualBalance + totalPortfolioValue).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </p>
                   </CardContent>

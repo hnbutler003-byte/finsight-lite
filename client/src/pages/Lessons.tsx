@@ -1130,8 +1130,8 @@ export default function Lessons() {
                 <Card className="glass-card-coral rounded-glass border-0">
                   <CardContent className="p-6 flex items-center justify-between gap-4">
                     <div>
-                      <h3 className="font-display font-bold text-lg text-gray-800">Ready to test yourself?</h3>
-                      <p className="text-sm text-gray-600 mt-0.5">
+                      <h3 className="font-display font-bold text-lg text-foreground">Ready to test yourself?</h3>
+                      <p className="text-sm text-muted-foreground mt-0.5">
                         {selectedLesson.questions.length} questions · Earn {selectedLesson.questions.length * 10} XP
                       </p>
                     </div>
@@ -1259,8 +1259,8 @@ export default function Lessons() {
                   <CardContent className="p-4 flex items-center gap-3">
                     <Trophy className="w-8 h-8 text-amber-500 flex-shrink-0" />
                     <div className="text-left">
-                      <p className="font-display font-bold text-gray-800">Perfect Score! 🎉</p>
-                      <p className="text-sm text-gray-600">Outstanding work — you've mastered this lesson.</p>
+                      <p className="font-display font-bold text-foreground">Perfect Score! 🎉</p>
+                      <p className="text-sm text-muted-foreground">Outstanding work — you've mastered this lesson.</p>
                     </div>
                   </CardContent>
                 </Card>

@@ -13,12 +13,12 @@ interface ChatMessage {
 }
 
 const QUICK_PROMPTS = [
-  { label: "How do I start saving?", icon: PiggyBank, color: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800" },
-  { label: "What are stocks?", icon: TrendingUp, color: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800" },
-  { label: "Help me set a savings goal", icon: Target, color: "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800" },
-  { label: "What's compound interest?", icon: Lightbulb, color: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800" },
-  { label: "Needs vs wants — explain!", icon: HelpCircle, color: "bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-800" },
-  { label: "Give me a money challenge!", icon: Sparkles, color: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800" },
+  { label: "How do I start saving?", icon: PiggyBank, color: "bg-green-100 dark:bg-green-800/60 text-green-800 dark:text-green-100 border-green-200 dark:border-green-600" },
+  { label: "What are stocks?", icon: TrendingUp, color: "bg-blue-100 dark:bg-blue-800/60 text-blue-800 dark:text-blue-100 border-blue-200 dark:border-blue-600" },
+  { label: "Help me set a savings goal", icon: Target, color: "bg-violet-100 dark:bg-violet-800/60 text-violet-800 dark:text-violet-100 border-violet-200 dark:border-violet-600" },
+  { label: "What's compound interest?", icon: Lightbulb, color: "bg-amber-100 dark:bg-amber-800/60 text-amber-800 dark:text-amber-100 border-amber-200 dark:border-amber-600" },
+  { label: "Needs vs wants — explain!", icon: HelpCircle, color: "bg-pink-100 dark:bg-pink-800/60 text-pink-800 dark:text-pink-100 border-pink-200 dark:border-pink-600" },
+  { label: "Give me a money challenge!", icon: Sparkles, color: "bg-orange-100 dark:bg-orange-800/60 text-orange-800 dark:text-orange-100 border-orange-200 dark:border-orange-600" },
 ];
 
 export default function MoneyGuide() {
@@ -131,7 +131,7 @@ export default function MoneyGuide() {
       <Sidebar />
       <main className="flex-1 flex flex-col h-screen p-4 lg:p-6">
         <div className="glass-card-heavy rounded-glass flex-1 flex flex-col overflow-hidden">
-        <div className="border-b border-gray-200/60 p-4 lg:p-6 flex items-center justify-between">
+        <div className="border-b border-border/50 p-4 lg:p-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-purple-300/50 dark:shadow-purple-900/50">
               <Bot className="w-6 h-6" />
@@ -140,7 +140,7 @@ export default function MoneyGuide() {
               <h1 className="font-display text-xl lg:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-pink-500" data-testid="text-guide-title">
                 Money Guide
               </h1>
-              <p className="text-xs text-gray-500 font-semibold flex items-center gap-1">
+              <p className="text-xs text-muted-foreground font-semibold flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-amber-400" />
                 Your AI money mentor
               </p>
@@ -170,7 +170,7 @@ export default function MoneyGuide() {
                 <h2 className="text-2xl lg:text-3xl font-display font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-pink-500">
                   Hey {userName}! 👋
                 </h2>
-                <p className="text-gray-600 max-w-md mx-auto font-medium">
+                <p className="text-foreground/80 max-w-md mx-auto font-medium">
                   I'm your Money Guide — ask me anything about saving, budgeting, investing, or money in general. No question is too simple!
                 </p>
               </div>
@@ -215,7 +215,7 @@ export default function MoneyGuide() {
                         <span className="text-sm font-medium">Thinking...</span>
                       </div>
                     ) : (
-                      <div className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</div>
+                      <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">{msg.content}</div>
                     )}
                   </div>
                   {msg.role === "user" && (
@@ -230,7 +230,7 @@ export default function MoneyGuide() {
           )}
         </div>
 
-        <div className="border-t border-gray-200/60 p-4 lg:p-6">
+        <div className="border-t border-border/50 p-4 lg:p-6">
           <form onSubmit={handleSubmit} className="flex gap-3 max-w-3xl mx-auto">
             <input
               ref={inputRef}
@@ -239,7 +239,7 @@ export default function MoneyGuide() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask me anything about money..."
               disabled={isStreaming}
-              className="flex-1 rounded-2xl border border-white/50 bg-white/50 backdrop-blur-sm text-gray-800 px-4 py-3 text-sm font-medium placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 disabled:opacity-50"
+              className="flex-1 rounded-2xl border border-white/30 bg-white/15 backdrop-blur-sm text-foreground px-4 py-3 text-sm font-medium placeholder:text-muted-foreground/80 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 disabled:opacity-50"
               data-testid="input-chat"
             />
             <Button
@@ -255,7 +255,7 @@ export default function MoneyGuide() {
               )}
             </Button>
           </form>
-          <p className="text-center text-[10px] text-gray-400 mt-2 font-medium">
+          <p className="text-center text-xs text-muted-foreground mt-2 font-medium">
             Money Guide gives educational info only — not real financial advice!
           </p>
         </div>
