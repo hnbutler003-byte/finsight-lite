@@ -1791,7 +1791,7 @@ export default function MoneyGames() {
             </div>
             <div className="w-48">
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 text-white font-medium shadow-lg focus:ring-2 focus:ring-white/40 data-[placeholder]:text-white/50" data-testid="select-currency-games">
+                <SelectTrigger className="rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 text-white font-medium shadow-lg focus:ring-2 focus:ring-white/40 data-[placeholder]:text-white/75" data-testid="select-currency-games">
                   <SelectValue placeholder="Currency" />
                 </SelectTrigger>
                 <SelectContent>

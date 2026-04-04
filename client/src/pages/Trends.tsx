@@ -169,6 +169,8 @@ export default function Trends() {
                       borderRadius: "8px",
                       color: "hsl(var(--foreground))",
                     }}
+                    labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
+                    itemStyle={{ color: "hsl(var(--foreground))" }}
                   />
                   <Legend wrapperStyle={{ color: "#cbd5e1" }} />
                   <Bar dataKey="Income" fill="#10b981" radius={[4, 4, 0, 0]} />
@@ -196,6 +198,8 @@ export default function Trends() {
                       borderRadius: "8px",
                       color: "hsl(var(--foreground))",
                     }}
+                    labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
+                    itemStyle={{ color: "hsl(var(--foreground))" }}
                   />
                   <Legend wrapperStyle={{ color: "#cbd5e1" }} />
                   {Array.from(topCategories).map((cat, i) => (
