@@ -14,6 +14,7 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { jsPDF } from "jspdf";
 import { useAuth } from "@/hooks/use-auth";
+import { Link } from "wouter";
 import faLogoUrl from "@assets/The_Financial_Academy_1776381894734.webp";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -901,6 +902,10 @@ function ModuleCard({
 
 export default function Lessons() {
   const { user } = useAuth();
+  const certificateFullName = (() => {
+    const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
+    return fullName || user?.username || "Student";
+  })();
   const [pageState, setPageState] = useState<PageState>("list");
   const [selectedLesson, setSelectedLesson] = useState<LessonWithQuestions | null>(null);
   const [activeModule, setActiveModule] = useState<StaticModule | null>(null);
@@ -1430,14 +1435,15 @@ export default function Lessons() {
                     <div className="flex-1 text-left">
                       <p className="font-bold text-sm">Module Complete! 🏅</p>
                       <p className="text-xs text-muted-foreground mt-0.5">Download your module certificate of completion.</p>
+                      <p className="text-xs text-muted-foreground mt-1.5">
+                        Certificate name: <span className="font-semibold text-white" data-testid="text-certificate-name-module">{certificateFullName}</span>
+                        {" · "}
+                        <Link href="/settings" className="underline text-teal-300 hover:text-teal-200" data-testid="link-edit-name-module">Edit name</Link>
+                      </p>
                     </div>
                     <Button
                       onClick={() => {
-                        const fullName = [user?.firstName, user?.lastName]
-                          .filter(Boolean)
-                          .join(" ")
-                          .trim();
-                        const studentName = fullName || user?.username || "Student";
+                        const studentName = certificateFullName;
                         const contextName = activeModule.title;
                         const completionDate = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
                         generateCertificate(studentName, contextName, completionDate, "module");
@@ -1468,14 +1474,15 @@ export default function Lessons() {
                           ? "Download your official Financial Academy certificate of module completion."
                           : "Download your certificate of completion for this lesson."}
                       </p>
+                      <p className="text-xs text-muted-foreground mt-1.5">
+                        Certificate name: <span className="font-semibold text-white" data-testid="text-certificate-name-lesson">{certificateFullName}</span>
+                        {" · "}
+                        <Link href="/settings" className="underline text-teal-300 hover:text-teal-200" data-testid="link-edit-name-lesson">Edit name</Link>
+                      </p>
                     </div>
                     <Button
                       onClick={async () => {
-                        const fullName = [user?.firstName, user?.lastName]
-                          .filter(Boolean)
-                          .join(" ")
-                          .trim();
-                        const studentName = fullName || user?.username || "Student";
+                        const studentName = certificateFullName;
                         const contextName = selectedLesson.title;
                         const completionDate = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
                         if (isFinancialAcademyLesson(selectedLesson)) {
