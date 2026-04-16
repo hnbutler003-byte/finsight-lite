@@ -33,6 +33,11 @@ type Lesson = {
   id: string;
   org_id: string;
   org_name?: string | null;
+  org_logo_url?: string | null;
+  org_signature_left_name?: string | null;
+  org_signature_left_role?: string | null;
+  org_signature_right_name?: string | null;
+  org_signature_right_role?: string | null;
   title: string;
   instructor?: string;
   subject?: string;
@@ -44,6 +49,14 @@ type Lesson = {
   content_sections: ContentSection[];
   is_published: boolean;
   created_at: string;
+};
+
+type FinancialAcademyBranding = {
+  logoUrl?: string | null;
+  leftName?: string | null;
+  leftRole?: string | null;
+  rightName?: string | null;
+  rightRole?: string | null;
 };
 
 const FINANCIAL_ACADEMY_NAME = "The Financial Academy";
@@ -559,8 +572,14 @@ function generateCertificate(
 async function generateFinancialAcademyCertificate(
   studentFullName: string,
   moduleName: string,
-  completionDate: string
+  completionDate: string,
+  branding?: FinancialAcademyBranding
 ) {
+  const leftName = (branding?.leftName?.trim() || "Lakeisha Deveaux");
+  const leftRole = (branding?.leftRole?.trim() || "GENERAL INSTRUCTOR");
+  const rightName = (branding?.rightName?.trim() || "Annie Brown");
+  const rightRole = (branding?.rightRole?.trim() || "ASSISTANT INSTRUCTOR");
+  const logoSource = branding?.logoUrl?.trim() || faLogoUrl;
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const W = 297;
   const H = 210;
@@ -579,8 +598,8 @@ async function generateFinancialAcademyCertificate(
   doc.setLineWidth(0.4);
   doc.rect(12, 12, W - 24, H - 24, "S");
 
-  // Logo (header seal)
-  const logo = await loadImageAsPngDataUrl(faLogoUrl);
+  // Logo (header seal) — uses org-uploaded logo if present, else default
+  const logo = await loadImageAsPngDataUrl(logoSource);
   if (logo) {
     const logoW = 38;
     const logoH = 38;
@@ -641,14 +660,14 @@ async function generateFinancialAcademyCertificate(
   doc.setFont("times", "bold");
   doc.setFontSize(13);
   doc.setTextColor(30, 30, 30);
-  doc.text("Lakeisha Deveaux", leftX, sigY, { align: "center" });
-  doc.text("Annie Brown", rightX, sigY, { align: "center" });
+  doc.text(leftName, leftX, sigY, { align: "center" });
+  doc.text(rightName, rightX, sigY, { align: "center" });
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(110, 110, 110);
-  doc.text("GENERAL INSTRUCTOR", leftX, sigY + 5, { align: "center" });
-  doc.text("ASSISTANT INSTRUCTOR", rightX, sigY + 5, { align: "center" });
+  doc.text(leftRole, leftX, sigY + 5, { align: "center" });
+  doc.text(rightRole, rightX, sigY + 5, { align: "center" });
 
   // Footer tagline
   doc.setFont("times", "italic");
@@ -1460,7 +1479,13 @@ export default function Lessons() {
                         const contextName = selectedLesson.title;
                         const completionDate = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
                         if (isFinancialAcademyLesson(selectedLesson)) {
-                          await generateFinancialAcademyCertificate(studentName, contextName, completionDate);
+                          await generateFinancialAcademyCertificate(studentName, contextName, completionDate, {
+                            logoUrl: selectedLesson.org_logo_url,
+                            leftName: selectedLesson.org_signature_left_name,
+                            leftRole: selectedLesson.org_signature_left_role,
+                            rightName: selectedLesson.org_signature_right_name,
+                            rightRole: selectedLesson.org_signature_right_role,
+                          });
                         } else {
                           generateCertificate(studentName, contextName, completionDate, "lesson");
                         }

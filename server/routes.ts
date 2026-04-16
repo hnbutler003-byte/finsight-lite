@@ -38,6 +38,7 @@ import {
   getOrgEnvironmentById,
   enrollStudentInOrg,
   getPublishedLessonsByEnv,
+  type Organization,
 } from "./supabase";
 
 const upload = multer({ 
@@ -2484,7 +2485,15 @@ If the user asks about FinSight Lite features, you can mention:
     const hasAccess = userId ? await studentHasLessonAccess(userId, lesson) : false;
     if (!hasAccess) return res.status(403).json({ message: "Access denied" });
     const org = lesson.org_id ? await getOrganization(lesson.org_id) : null;
-    res.json({ ...lesson, org_name: org?.name ?? null });
+    res.json({
+      ...lesson,
+      org_name: org?.name ?? null,
+      org_logo_url: org?.logo_url ?? null,
+      org_signature_left_name: org?.signature_left_name ?? null,
+      org_signature_left_role: org?.signature_left_role ?? null,
+      org_signature_right_name: org?.signature_right_name ?? null,
+      org_signature_right_role: org?.signature_right_role ?? null,
+    });
   });
 
   // === ORG ADMIN AUTH ROUTES ===
@@ -2661,6 +2670,59 @@ If the user asks about FinSight Lite features, you can mention:
       .eq("student_user_id", req.params.studentUserId);
     if (error) return res.status(500).json({ message: error.message });
     res.json({ ok: true });
+  });
+
+  // Certificate branding (logo + signatures) — Task #16
+  app.get("/api/org-admin/branding", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+    const org = await getOrganization(admin.orgId);
+    if (!org) return res.status(404).json({ message: "Organization not found" });
+    res.json({
+      logoUrl: org.logo_url ?? null,
+      signatureLeftName: org.signature_left_name ?? null,
+      signatureLeftRole: org.signature_left_role ?? null,
+      signatureRightName: org.signature_right_name ?? null,
+      signatureRightRole: org.signature_right_role ?? null,
+    });
+  });
+
+  app.patch("/api/org-admin/branding", isOrgAdmin, async (req: any, res) => {
+    try {
+      const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+      if (!admin) return res.status(401).json({ message: "Not found" });
+      const body = z.object({
+        logoUrl: z.string().max(8_000_000).nullable().optional(),
+        signatureLeftName: z.string().max(80).nullable().optional(),
+        signatureLeftRole: z.string().max(80).nullable().optional(),
+        signatureRightName: z.string().max(80).nullable().optional(),
+        signatureRightRole: z.string().max(80).nullable().optional(),
+      }).parse(req.body);
+
+      // Reject anything that's not a data URL or http(s) URL
+      if (body.logoUrl && !/^(data:image\/(png|jpeg|jpg|webp|gif|svg\+xml);base64,|https?:\/\/)/i.test(body.logoUrl)) {
+        return res.status(400).json({ message: "Logo must be an image data URL or http(s) URL" });
+      }
+
+      const updates: Partial<Organization> = {};
+      if (body.logoUrl !== undefined) updates.logo_url = body.logoUrl;
+      if (body.signatureLeftName !== undefined) updates.signature_left_name = body.signatureLeftName;
+      if (body.signatureLeftRole !== undefined) updates.signature_left_role = body.signatureLeftRole;
+      if (body.signatureRightName !== undefined) updates.signature_right_name = body.signatureRightName;
+      if (body.signatureRightRole !== undefined) updates.signature_right_role = body.signatureRightRole;
+
+      const org = await updateOrganization(admin.orgId, updates);
+      if (!org) return res.status(500).json({ message: "Failed to update organization branding" });
+      res.json({
+        logoUrl: org.logo_url ?? null,
+        signatureLeftName: org.signature_left_name ?? null,
+        signatureLeftRole: org.signature_left_role ?? null,
+        signatureRightName: org.signature_right_name ?? null,
+        signatureRightRole: org.signature_right_role ?? null,
+      });
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
   });
 
   app.get("/api/org-admin/lessons", isOrgAdmin, async (req: any, res) => {

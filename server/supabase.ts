@@ -32,7 +32,11 @@ export type Organization = {
   website?: string;
   contact_name?: string;
   contact_email?: string;
-  logo_url?: string;
+  logo_url?: string | null;
+  signature_left_name?: string | null;
+  signature_left_role?: string | null;
+  signature_right_name?: string | null;
+  signature_right_role?: string | null;
   is_active: boolean;
   subscription_tier: "free" | "standard" | "premium";
   max_students: number;
@@ -199,13 +203,60 @@ CREATE TABLE IF NOT EXISTS lesson_quiz_questions (
 
 -- Add video_url column to lesson_plans (run if not already added)
 ALTER TABLE lesson_plans ADD COLUMN IF NOT EXISTS video_url text;
+
+-- Add certificate branding columns to organizations (Task #16)
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_left_name text;
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_left_role text;
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_right_name text;
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_right_role text;
 `;
+
+async function applyBrandingColumnsViaPg(): Promise<boolean> {
+  const url = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
+  if (!url) return false;
+  try {
+    const { Client } = await import("pg");
+    const client = new Client({
+      connectionString: url,
+      ssl: url.includes("supabase.") ? { rejectUnauthorized: false } : undefined,
+    });
+    await client.connect();
+    try {
+      await client.query(`
+        ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_left_name text;
+        ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_left_role text;
+        ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_right_name text;
+        ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_right_role text;
+      `);
+      return true;
+    } finally {
+      await client.end().catch(() => {});
+    }
+  } catch (e: any) {
+    console.warn("[Supabase] Auto-migrate failed:", e?.message ?? e);
+    return false;
+  }
+}
 
 export async function initSupabaseTables(): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.from("organizations").select("id").limit(1);
   if (!error) {
     console.log("[Supabase] ✓ Connected — tables verified.");
+    // Verify Task #16 branding columns exist; auto-apply if a direct DB URL is configured
+    const probe = await supabase.from("organizations").select("signature_left_name").limit(1);
+    if (probe.error && (probe.error.code === "42703" || probe.error.message?.includes("signature_left_name"))) {
+      const applied = await applyBrandingColumnsViaPg();
+      if (applied) {
+        console.log("[Supabase] ✓ Applied certificate branding columns on organizations.");
+      } else {
+        console.warn("[Supabase] ⚠ Missing certificate branding columns on organizations. Run:\n" +
+          "  ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_left_name text;\n" +
+          "  ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_left_role text;\n" +
+          "  ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_right_name text;\n" +
+          "  ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_right_role text;");
+      }
+    }
   } else if (
     error.message?.includes("not found") ||
     error.message?.includes("schema cache") ||

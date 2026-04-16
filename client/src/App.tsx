@@ -34,6 +34,7 @@ import OrgRegister from "@/pages/OrgRegister";
 import OrgDashboard from "@/pages/OrgDashboard";
 import OrgStudents from "@/pages/OrgStudents";
 import OrgLessons from "@/pages/OrgLessons";
+import OrgBranding from "@/pages/OrgBranding";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
@@ -83,6 +84,7 @@ function Router() {
         <Route path="/org/dashboard" component={OrgDashboard} />
         <Route path="/org/students" component={OrgStudents} />
         <Route path="/org/lessons" component={OrgLessons} />
+        <Route path="/org/branding" component={OrgBranding} />
         <Route path="/org">{() => <Redirect to="/org/login" />}</Route>
         <Route path="/" component={AuthPage} />
         <Route component={AuthPage} />
@@ -106,6 +108,7 @@ function Router() {
       <Route path="/org/dashboard" component={OrgDashboard} />
       <Route path="/org/students" component={OrgStudents} />
       <Route path="/org/lessons" component={OrgLessons} />
+      <Route path="/org/branding" component={OrgBranding} />
       <Route path="/org">{() => <Redirect to="/org/dashboard" />}</Route>
       <Route path="/" component={Dashboard} />
       <Route path="/budgets" component={Budgets} />
