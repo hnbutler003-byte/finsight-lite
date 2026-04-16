@@ -2483,7 +2483,8 @@ If the user asks about FinSight Lite features, you can mention:
     if (!lesson.is_published) return res.status(403).json({ message: "Lesson not published" });
     const hasAccess = userId ? await studentHasLessonAccess(userId, lesson) : false;
     if (!hasAccess) return res.status(403).json({ message: "Access denied" });
-    res.json(lesson);
+    const org = lesson.org_id ? await getOrganization(lesson.org_id) : null;
+    res.json({ ...lesson, org_name: org?.name ?? null });
   });
 
   // === ORG ADMIN AUTH ROUTES ===

@@ -14,6 +14,7 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { jsPDF } from "jspdf";
 import { useAuth } from "@/hooks/use-auth";
+import faLogoUrl from "@assets/The_Financial_Academy_1776381894734.webp";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -31,6 +32,7 @@ type QuizQuestion = {
 type Lesson = {
   id: string;
   org_id: string;
+  org_name?: string | null;
   title: string;
   instructor?: string;
   subject?: string;
@@ -43,6 +45,33 @@ type Lesson = {
   is_published: boolean;
   created_at: string;
 };
+
+const FINANCIAL_ACADEMY_NAME = "The Financial Academy";
+
+function isFinancialAcademyLesson(lesson: Lesson | null): boolean {
+  return !!lesson && !lesson.org_id?.startsWith("static") && lesson.org_name === FINANCIAL_ACADEMY_NAME;
+}
+
+async function loadImageAsPngDataUrl(src: string): Promise<string | null> {
+  try {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("Failed to load image"));
+      img.src = src;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0);
+    return canvas.toDataURL("image/png");
+  } catch {
+    return null;
+  }
+}
 type LessonWithQuestions = Lesson & { questions: QuizQuestion[]; isStatic?: boolean };
 
 type PageState = "list" | "reading" | "quiz" | "results";
@@ -522,6 +551,110 @@ function generateCertificate(
 
   const safeContext = contextName.replace(/[^a-z0-9]/gi, "_").slice(0, 40);
   doc.save(`FinSight_Certificate_${safeContext}.pdf`);
+}
+
+async function generateFinancialAcademyCertificate(
+  studentFullName: string,
+  moduleName: string,
+  completionDate: string
+) {
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const W = 297;
+  const H = 210;
+
+  // White background
+  doc.setFillColor(255, 255, 255);
+  doc.rect(0, 0, W, H, "F");
+
+  // Outer gold border
+  doc.setDrawColor(212, 175, 55);
+  doc.setLineWidth(2);
+  doc.rect(8, 8, W - 16, H - 16, "S");
+
+  // Inner thin border
+  doc.setDrawColor(212, 175, 55);
+  doc.setLineWidth(0.4);
+  doc.rect(12, 12, W - 24, H - 24, "S");
+
+  // Logo (header seal)
+  const logo = await loadImageAsPngDataUrl(faLogoUrl);
+  if (logo) {
+    const logoW = 38;
+    const logoH = 38;
+    doc.addImage(logo, "PNG", (W - logoW) / 2, 18, logoW, logoH);
+  }
+
+  // Title block
+  doc.setFont("times", "bold");
+  doc.setFontSize(38);
+  doc.setTextColor(212, 175, 55);
+  doc.text("CERTIFICATE", W / 2, 72, { align: "center" });
+
+  doc.setFont("times", "normal");
+  doc.setFontSize(16);
+  doc.setTextColor(60, 60, 60);
+  doc.text("OF COMPLETION", W / 2, 82, { align: "center" });
+
+  doc.setFontSize(11);
+  doc.setTextColor(110, 110, 110);
+  doc.text("IS PRESENTED TO :", W / 2, 92, { align: "center" });
+
+  // Student name
+  doc.setFont("times", "bolditalic");
+  doc.setFontSize(34);
+  doc.setTextColor(30, 30, 30);
+  const safeName = (studentFullName || "Student").trim();
+  doc.text(safeName, W / 2, 116, { align: "center" });
+
+  // Decorative underline below name
+  doc.setDrawColor(212, 175, 55);
+  doc.setLineWidth(0.5);
+  const nameWidth = doc.getTextWidth(safeName);
+  const underlineHalf = Math.min(Math.max(nameWidth / 2 + 10, 50), 110);
+  doc.line(W / 2 - underlineHalf, 121, W / 2 + underlineHalf, 121);
+
+  // Body sentence
+  doc.setFont("times", "normal");
+  doc.setFontSize(13);
+  doc.setTextColor(50, 50, 50);
+  const bodyLine = `for successfully completing the "${moduleName}".`;
+  doc.text(bodyLine, W / 2, 134, { align: "center" });
+
+  // Completion date
+  doc.setFontSize(10);
+  doc.setTextColor(110, 110, 110);
+  doc.text(`Date of Completion: ${completionDate}`, W / 2, 144, { align: "center" });
+
+  // Signature blocks
+  const sigY = 178;
+  const leftX = 70;
+  const rightX = W - 70;
+
+  doc.setDrawColor(60, 60, 60);
+  doc.setLineWidth(0.4);
+  doc.line(leftX - 35, sigY - 6, leftX + 35, sigY - 6);
+  doc.line(rightX - 35, sigY - 6, rightX + 35, sigY - 6);
+
+  doc.setFont("times", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(30, 30, 30);
+  doc.text("Lakeisha Deveaux", leftX, sigY, { align: "center" });
+  doc.text("Annie Brown", rightX, sigY, { align: "center" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(110, 110, 110);
+  doc.text("GENERAL INSTRUCTOR", leftX, sigY + 5, { align: "center" });
+  doc.text("ASSISTANT INSTRUCTOR", rightX, sigY + 5, { align: "center" });
+
+  // Footer tagline
+  doc.setFont("times", "italic");
+  doc.setFontSize(9);
+  doc.setTextColor(140, 140, 140);
+  doc.text('The Financial Academy — "Smart Finances, Secure Future."', W / 2, H - 14, { align: "center" });
+
+  const safeMod = moduleName.replace(/[^a-z0-9]/gi, "_").slice(0, 40);
+  doc.save(`Financial_Academy_Certificate_${safeMod}.pdf`);
 }
 
 // ─── Video Player Component ────────────────────────────────────────────────────
@@ -1299,15 +1432,27 @@ export default function Lessons() {
                       <Award className="w-6 h-6 text-amber-400" />
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="font-bold text-sm">Lesson Certificate Earned!</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Download your certificate of completion for this lesson.</p>
+                      <p className="font-bold text-sm">
+                        {isFinancialAcademyLesson(selectedLesson)
+                          ? "Financial Academy Certificate Earned!"
+                          : "Lesson Certificate Earned!"}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {isFinancialAcademyLesson(selectedLesson)
+                          ? "Download your official Financial Academy certificate of completion."
+                          : "Download your certificate of completion for this lesson."}
+                      </p>
                     </div>
                     <Button
-                      onClick={() => {
+                      onClick={async () => {
                         const studentName = user?.firstName ?? user?.username ?? "Student";
                         const contextName = selectedLesson.title;
                         const completionDate = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-                        generateCertificate(studentName, contextName, completionDate, "lesson");
+                        if (isFinancialAcademyLesson(selectedLesson)) {
+                          await generateFinancialAcademyCertificate(studentName, contextName, completionDate);
+                        } else {
+                          generateCertificate(studentName, contextName, completionDate, "lesson");
+                        }
                       }}
                       className="rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-bold shrink-0 shadow-lg"
                       data-testid="button-download-certificate"
