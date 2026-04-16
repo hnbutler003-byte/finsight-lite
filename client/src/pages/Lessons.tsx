@@ -49,7 +49,10 @@ type Lesson = {
 const FINANCIAL_ACADEMY_NAME = "The Financial Academy";
 
 function isFinancialAcademyLesson(lesson: Lesson | null): boolean {
-  return !!lesson && !lesson.org_id?.startsWith("static") && lesson.org_name === FINANCIAL_ACADEMY_NAME;
+  if (!lesson) return false;
+  if (lesson.org_id?.startsWith("static")) return false;
+  const name = lesson.org_name?.trim().toLowerCase();
+  return name === FINANCIAL_ACADEMY_NAME.toLowerCase();
 }
 
 async function loadImageAsPngDataUrl(src: string): Promise<string | null> {
@@ -1434,18 +1437,22 @@ export default function Lessons() {
                     <div className="flex-1 text-left">
                       <p className="font-bold text-sm">
                         {isFinancialAcademyLesson(selectedLesson)
-                          ? "Financial Academy Certificate Earned!"
+                          ? "Financial Academy Module Certificate Earned!"
                           : "Lesson Certificate Earned!"}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {isFinancialAcademyLesson(selectedLesson)
-                          ? "Download your official Financial Academy certificate of completion."
+                          ? "Download your official Financial Academy certificate of module completion."
                           : "Download your certificate of completion for this lesson."}
                       </p>
                     </div>
                     <Button
                       onClick={async () => {
-                        const studentName = user?.firstName ?? user?.username ?? "Student";
+                        const fullName = [user?.firstName, (user as { lastName?: string } | undefined)?.lastName]
+                          .filter(Boolean)
+                          .join(" ")
+                          .trim();
+                        const studentName = fullName || user?.username || "Student";
                         const contextName = selectedLesson.title;
                         const completionDate = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
                         if (isFinancialAcademyLesson(selectedLesson)) {
