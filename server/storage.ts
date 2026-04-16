@@ -160,6 +160,15 @@ export class DatabaseStorage implements IStorage {
   upsertUser(user: UpsertUser): Promise<User> {
     return authStorage.upsertUser(user);
   }
+  getUserByUsername(username: string): Promise<User | undefined> {
+    return authStorage.getUserByUsername(username);
+  }
+  updateProfile(
+    id: string,
+    data: { firstName?: string | null; lastName?: string | null }
+  ): Promise<User | undefined> {
+    return authStorage.updateProfile(id, data);
+  }
 
   // Chat methods
   async getConversation(id: number): Promise<Conversation | undefined> {

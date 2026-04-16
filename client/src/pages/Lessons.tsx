@@ -1414,7 +1414,11 @@ export default function Lessons() {
                     </div>
                     <Button
                       onClick={() => {
-                        const studentName = user?.firstName ?? user?.username ?? "Student";
+                        const fullName = [user?.firstName, user?.lastName]
+                          .filter(Boolean)
+                          .join(" ")
+                          .trim();
+                        const studentName = fullName || user?.username || "Student";
                         const contextName = activeModule.title;
                         const completionDate = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
                         generateCertificate(studentName, contextName, completionDate, "module");
@@ -1448,7 +1452,7 @@ export default function Lessons() {
                     </div>
                     <Button
                       onClick={async () => {
-                        const fullName = [user?.firstName, (user as { lastName?: string } | undefined)?.lastName]
+                        const fullName = [user?.firstName, user?.lastName]
                           .filter(Boolean)
                           .join(" ")
                           .trim();

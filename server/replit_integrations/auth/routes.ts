@@ -79,6 +79,40 @@ export function registerAuthRoutes(app: Express): void {
     return res.json(req.user);
   });
 
+  app.patch("/api/auth/profile", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ message: "Not signed in." });
+
+      const normalize = (val: unknown): string | null | undefined => {
+        if (val === undefined) return undefined;
+        if (val === null) return null;
+        if (typeof val !== "string") return undefined;
+        const trimmed = val.trim();
+        if (trimmed.length === 0) return null;
+        if (trimmed.length > 50) {
+          throw new Error("Names must be 50 characters or less.");
+        }
+        return trimmed;
+      };
+
+      const firstName = normalize(req.body?.firstName);
+      const lastName = normalize(req.body?.lastName);
+
+      if (firstName === undefined && lastName === undefined) {
+        return res.status(400).json({ message: "No changes submitted." });
+      }
+
+      const updated = await authStorage.updateProfile(userId, { firstName, lastName });
+      if (!updated) return res.status(404).json({ message: "User not found." });
+      return res.json(updated);
+    } catch (error: any) {
+      console.error("Update profile error:", error);
+      const message = typeof error?.message === "string" ? error.message : "Failed to update profile.";
+      return res.status(400).json({ message });
+    }
+  });
+
   app.post("/api/auth/logout", (req, res) => {
     req.session.destroy((err) => {
       if (err) {

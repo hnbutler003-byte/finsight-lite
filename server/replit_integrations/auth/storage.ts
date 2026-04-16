@@ -6,6 +6,10 @@ export interface IAuthStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  updateProfile(
+    id: string,
+    data: { firstName?: string | null; lastName?: string | null }
+  ): Promise<User | undefined>;
 }
 
 class AuthStorage implements IAuthStorage {
@@ -30,6 +34,21 @@ class AuthStorage implements IAuthStorage {
           updatedAt: new Date(),
         },
       })
+      .returning();
+    return user;
+  }
+
+  async updateProfile(
+    id: string,
+    data: { firstName?: string | null; lastName?: string | null }
+  ): Promise<User | undefined> {
+    const update: Record<string, unknown> = { updatedAt: new Date() };
+    if (data.firstName !== undefined) update.firstName = data.firstName;
+    if (data.lastName !== undefined) update.lastName = data.lastName;
+    const [user] = await db
+      .update(users)
+      .set(update)
+      .where(eq(users.id, id))
       .returning();
     return user;
   }

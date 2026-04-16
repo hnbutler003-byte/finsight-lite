@@ -20,6 +20,7 @@ import {
   BookMarked,
   Building2,
   ChevronRight,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ const NAV_ITEMS = [
   { label: "Money Guide", href: "/guide", icon: Bot, color: "text-purple-500", bg: "bg-purple-100 dark:bg-purple-900/30" },
   { label: "MoneyLab", href: "/moneylab", icon: FlaskConical, color: "text-teal-500", bg: "bg-teal-100 dark:bg-teal-900/30" },
   { label: "Lessons", href: "/lessons", icon: BookMarked, color: "text-cyan-500", bg: "bg-cyan-100 dark:bg-cyan-900/30" },
+  { label: "Settings", href: "/settings", icon: SettingsIcon, color: "text-slate-400", bg: "bg-slate-100 dark:bg-slate-900/30" },
 ];
 
 function JoinClassModal({ onClose }: { onClose: () => void }) {

@@ -28,6 +28,7 @@ import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import DemoAccess from "@/pages/DemoAccess";
 import Lessons from "@/pages/Lessons";
+import Settings from "@/pages/Settings";
 import OrgLogin from "@/pages/OrgLogin";
 import OrgRegister from "@/pages/OrgRegister";
 import OrgDashboard from "@/pages/OrgDashboard";
@@ -119,6 +120,7 @@ function Router() {
       <Route path="/moneylab/tutor" component={MoneyLabTutor} />
       <Route path="/moneylab/leaderboard" component={MoneyLabLeaderboard} />
       <Route path="/lessons" component={Lessons} />
+      <Route path="/settings" component={Settings} />
       <Route path="/transactions">{() => <Redirect to="/" />}</Route>
       <Route path="/reports">{() => <Redirect to="/" />}</Route>
       <Route component={NotFound} />
