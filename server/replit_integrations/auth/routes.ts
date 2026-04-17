@@ -12,16 +12,28 @@ function generateUsername(name: string): string {
 export function registerAuthRoutes(app: Express): void {
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { name, avatar } = req.body;
+      const { name, lastName, avatar } = req.body;
 
       if (!name || typeof name !== "string" || name.trim().length === 0) {
         return res.status(400).json({ message: "Please enter your name." });
       }
-      if (name.trim().length > 30) {
-        return res.status(400).json({ message: "Name must be 30 characters or less." });
+      if (name.trim().length > 50) {
+        return res.status(400).json({ message: "Name must be 50 characters or less." });
       }
       if (!avatar || typeof avatar !== "string") {
         return res.status(400).json({ message: "Please pick an avatar." });
+      }
+
+      let lastNameValue: string | null = null;
+      if (lastName !== undefined && lastName !== null) {
+        if (typeof lastName !== "string") {
+          return res.status(400).json({ message: "Last name must be text." });
+        }
+        const trimmedLast = lastName.trim();
+        if (trimmedLast.length > 50) {
+          return res.status(400).json({ message: "Last name must be 50 characters or less." });
+        }
+        lastNameValue = trimmedLast.length === 0 ? null : trimmedLast;
       }
 
       let username = "";
@@ -41,6 +53,7 @@ export function registerAuthRoutes(app: Express): void {
         username,
         avatar,
         firstName: name.trim(),
+        lastName: lastNameValue,
       });
 
       // Explicitly save session before responding so subsequent requests in the

@@ -48,6 +48,7 @@ export default function AuthPage() {
   const [step, setStep]               = useState<Step>("entry");
   const [flow, setFlow]               = useState<Flow>("guest");
   const [name, setName]               = useState("");
+  const [lastName, setLastName]       = useState("");
   const [classCode, setClassCode]     = useState("");
   const [className, setClassName]     = useState("");
   const [codeType, setCodeType]       = useState<CodeType>(null);
@@ -101,12 +102,17 @@ export default function AuthPage() {
 
   const handleNameNext = async () => {
     if (!name.trim()) { setError("Please enter your name!"); return; }
-    if (name.trim().length > 30) { setError("Name must be 30 characters or less."); return; }
+    if (name.trim().length > 50) { setError("First name must be 50 characters or less."); return; }
+    if (lastName.trim().length > 50) { setError("Last name must be 50 characters or less."); return; }
     setError("");
     const av = randomAvatar();
     setAssignedAvatar(av);
     try {
-      const user = await register({ name: name.trim(), avatar: av.id });
+      const user = await register({
+        name: name.trim(),
+        lastName: lastName.trim() ? lastName.trim() : undefined,
+        avatar: av.id,
+      });
       setCreatedUser(user);
       if (flow === "student" && classCode) {
         setIsJoiningClass(true);
@@ -331,11 +337,22 @@ export default function AuthPage() {
                 value={name}
                 onChange={(e) => { setName(e.target.value); clearError(); }}
                 onKeyDown={(e) => e.key === "Enter" && handleNameNext()}
-                placeholder="e.g. Alex, Keisha, Jamal…"
+                placeholder="First name (e.g. Alex, Keisha, Jamal…)"
                 className="h-12 text-lg rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-violet-400"
                 autoFocus
                 data-testid="input-name"
               />
+              <Input
+                value={lastName}
+                onChange={(e) => { setLastName(e.target.value); clearError(); }}
+                onKeyDown={(e) => e.key === "Enter" && handleNameNext()}
+                placeholder="Last name (optional)"
+                className="h-12 text-lg rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-violet-400"
+                data-testid="input-last-name"
+              />
+              <p className="text-white/30 text-xs text-center">
+                Adding your last name helps your certificate look official.
+              </p>
 
               {error && <p className="text-red-400 text-sm text-center" data-testid="text-auth-error">{error}</p>}
 
@@ -369,10 +386,18 @@ export default function AuthPage() {
                 value={name}
                 onChange={(e) => { setName(e.target.value); clearError(); }}
                 onKeyDown={(e) => e.key === "Enter" && handleNameNext()}
-                placeholder="e.g. Alex, Keisha, Jamal…"
+                placeholder="First name (e.g. Alex, Keisha, Jamal…)"
                 className="h-12 text-lg rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-amber-400"
                 autoFocus
                 data-testid="input-name"
+              />
+              <Input
+                value={lastName}
+                onChange={(e) => { setLastName(e.target.value); clearError(); }}
+                onKeyDown={(e) => e.key === "Enter" && handleNameNext()}
+                placeholder="Last name (optional)"
+                className="h-12 text-lg rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-amber-400"
+                data-testid="input-last-name"
               />
 
               {error && <p className="text-red-400 text-sm text-center" data-testid="text-auth-error">{error}</p>}
