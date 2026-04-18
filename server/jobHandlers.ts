@@ -3,7 +3,7 @@ import { storage } from "./storage";
 import { openai } from "./replit_integrations/chat/routes";
 import { objectStorageClient } from "./replit_integrations/object_storage";
 import { db } from "./db";
-import { emailContacts, extractedQuestions, gameSessions, transactions, userXp, userLearningProgress, userBadges, learningModules } from "@shared/schema";
+import { emailContacts, extractedQuestions, gameSessions, transactions, userXp, userLearningProgress, userBadges, learningModules, teachers, users } from "@shared/schema";
 import { and, eq, gte, sql, inArray, lte } from "drizzle-orm";
 import { sendEmail, escapeHtml, appBaseUrl } from "./email";
 
@@ -286,7 +286,48 @@ Rules:
       };
     }
 
+    async function bootstrapStudentContacts() {
+      const students = orgId
+        ? await storage.getStudentsByOrgId(orgId).catch(() => [])
+        : await db.select().from(users).catch(() => []);
+      for (const s of students as Array<{ id: string; email: string | null }>) {
+        if (!s.email) continue;
+        const [existing] = await db.select().from(emailContacts).where(
+          and(eq(emailContacts.userKind, "student"), eq(emailContacts.userId, s.id)),
+        );
+        if (existing) {
+          if (!existing.orgId) await db.update(emailContacts).set({ orgId, updatedAt: new Date() }).where(eq(emailContacts.id, existing.id));
+          continue;
+        }
+        await db.insert(emailContacts).values({
+          userKind: "student", userId: s.id, email: s.email,
+          verified: true, classNotifications: true, weeklyDigest: true, orgId,
+        });
+      }
+    }
+    async function bootstrapTeacherContacts() {
+      const teacherList = orgId
+        ? await storage.getTeachersByOrgId(orgId).catch(() => [])
+        : await db.select().from(teachers).catch(() => []);
+      for (const t of teacherList as Array<{ id: number; email: string | null }>) {
+        if (!t.email) continue;
+        const teacherUserId = String(t.id);
+        const [existing] = await db.select().from(emailContacts).where(
+          and(eq(emailContacts.userKind, "teacher"), eq(emailContacts.userId, teacherUserId)),
+        );
+        if (existing) {
+          if (!existing.orgId) await db.update(emailContacts).set({ orgId, updatedAt: new Date() }).where(eq(emailContacts.id, existing.id));
+          continue;
+        }
+        await db.insert(emailContacts).values({
+          userKind: "teacher", userId: teacherUserId, email: t.email,
+          verified: true, classNotifications: true, weeklyDigest: true, orgId,
+        });
+      }
+    }
+
     if (audience === "student") {
+      await bootstrapStudentContacts();
       const conds = [
         eq(emailContacts.userKind, "student"),
         eq(emailContacts.weeklyDigest, true),
@@ -339,6 +380,7 @@ Rules:
         enqueued++;
       }
     } else if (audience === "teacher") {
+      await bootstrapTeacherContacts();
       const conds = [
         eq(emailContacts.userKind, "teacher"),
         eq(emailContacts.weeklyDigest, true),

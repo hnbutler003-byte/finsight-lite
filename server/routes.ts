@@ -2003,7 +2003,22 @@ If the user asks about FinSight Lite features, you can mention:
           let [contact] = await emailDb.select().from(emailContacts).where(
             andEmail(eqEmail(emailContacts.userKind, "student"), eqEmail(emailContacts.userId, en.studentId)),
           );
-          if (!contact || !contact.verified || !contact.classNotifications) continue;
+          if (!contact) {
+            const acctEmail = en.student?.email;
+            if (!acctEmail) continue;
+            const [created] = await emailDb.insert(emailContacts).values({
+              userKind: "student",
+              userId: en.studentId,
+              email: acctEmail,
+              verified: true,
+              classNotifications: true,
+              weeklyDigest: true,
+              orgId: teacher?.orgId ?? null,
+            }).returning();
+            contact = created;
+          } else if (!contact.classNotifications) {
+            continue;
+          }
           if (!contact.orgId && teacher?.orgId) {
             await emailDb.update(emailContacts).set({ orgId: teacher.orgId, updatedAt: new Date() })
               .where(eqEmail(emailContacts.id, contact.id));
