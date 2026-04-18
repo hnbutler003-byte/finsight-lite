@@ -330,11 +330,15 @@ export async function registerRoutes(
   // Transactions
   app.get(api.transactions.list.path, isAuthenticated, async (req, res) => {
     const userId = (req.user as any).id;
+    // Cap list size to keep responses fast as data grows.
+    // Default 200 for normal pages; explicit limit allows up to 2000 for CSV/PDF exports.
+    const requested = req.query.limit ? Number(req.query.limit) : 200;
+    const limit = Math.min(Math.max(requested, 1), 2000);
     const filters = {
       startDate: req.query.startDate as string,
       endDate: req.query.endDate as string,
       categoryId: req.query.categoryId ? Number(req.query.categoryId) : undefined,
-      limit: req.query.limit ? Number(req.query.limit) : undefined,
+      limit,
     };
     const transactions = await storage.getTransactions(userId, filters);
     res.json(transactions);
@@ -1158,7 +1162,9 @@ Rules:
 
   app.get("/api/learn/modules", isAuthenticated, async (_req, res) => {
     try {
-      const modules = await storage.getLearningModules();
+      const { cached } = await import("./cache");
+      // Static, rarely-changing content — cache for 5 minutes
+      const modules = await cached("learn:modules", 5 * 60_000, () => storage.getLearningModules());
       res.json(modules);
     } catch (err: any) {
       res.status(500).json({ message: err.message });
@@ -1328,7 +1334,9 @@ Rules:
       const { examPapers } = await import("@shared/schema");
       const { db } = await import("./db");
       const { eq, desc } = await import("drizzle-orm");
-      const allPapers = await db.select().from(examPapers).where(eq(examPapers.status, "completed")).orderBy(desc(examPapers.createdAt));
+      const requested = req.query.limit ? Number(req.query.limit) : 100;
+      const limit = Math.min(Math.max(requested, 1), 200);
+      const allPapers = await db.select().from(examPapers).where(eq(examPapers.status, "completed")).orderBy(desc(examPapers.createdAt)).limit(limit);
       res.json(allPapers);
     } catch (err: any) {
       res.status(500).json({ message: err.message });
@@ -1423,6 +1431,10 @@ Rules:
         lastPlayedAt: now,
       });
 
+      // New score affects leaderboards — invalidate cached results
+      const { cacheInvalidate } = await import("./cache");
+      cacheInvalidate("moneylab:leaderboard:");
+
       // Check badges
       const earnedBadges: string[] = [];
       const allSessions = await storage.getGameSessions(userId);
@@ -1480,8 +1492,14 @@ Rules:
   app.get("/api/moneylab/leaderboard", isAuthenticated, async (req, res) => {
     try {
       const period = (req.query.period as string) || "all";
-      const limit = parseInt(req.query.limit as string) || 20;
-      const leaderboard = await storage.getLeaderboard({ period, limit });
+      const requested = parseInt(req.query.limit as string) || 20;
+      const limit = Math.min(Math.max(requested, 1), 100);
+      const { cached } = await import("./cache");
+      const leaderboard = await cached(
+        `moneylab:leaderboard:${period}:${limit}`,
+        15_000,
+        () => storage.getLeaderboard({ period, limit }),
+      );
       res.json(leaderboard);
     } catch (err: any) {
       res.status(500).json({ message: err.message });

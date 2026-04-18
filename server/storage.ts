@@ -36,7 +36,7 @@ import {
   type UserBadge, type InsertUserBadge,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, asc, sql, gte, lte } from "drizzle-orm";
+import { eq, and, desc, asc, sql, gte, lte, inArray } from "drizzle-orm";
 import { authStorage, type IAuthStorage } from "./replit_integrations/auth/storage";
 import { conversations, messages } from "@shared/models/chat";
 
@@ -267,29 +267,31 @@ export class DatabaseStorage implements IStorage {
     .leftJoin(categories, eq(budgets.categoryId, categories.id))
     .where(eq(budgets.userId, userId));
 
-    const results: BudgetResponse[] = [];
+    if (budgetList.length === 0) return [];
 
-    for (const b of budgetList) {
-      const [spentResult] = await db.select({
-        total: sql<number>`sum(${transactions.amount})`
-      })
-      .from(transactions)
-      .where(and(
-        eq(transactions.userId, userId),
-        eq(transactions.categoryId, b.budget.categoryId),
-        // Simple month-to-date calculation for "monthly" budgets
-        sql`extract(month from ${transactions.date}) = extract(month from now())`,
-        sql`extract(year from ${transactions.date}) = extract(year from now())`
-      ));
+    // Single grouped query for spent-this-month per category (avoids N+1)
+    const spentRows = await db.select({
+      categoryId: transactions.categoryId,
+      total: sql<number>`sum(${transactions.amount})`,
+    })
+    .from(transactions)
+    .where(and(
+      eq(transactions.userId, userId),
+      sql`extract(month from ${transactions.date}) = extract(month from now())`,
+      sql`extract(year from ${transactions.date}) = extract(year from now())`
+    ))
+    .groupBy(transactions.categoryId);
 
-      results.push({
-        ...b.budget,
-        category: b.category,
-        spent: Number(spentResult?.total || 0)
-      });
+    const spentByCategory = new Map<number, number>();
+    for (const r of spentRows) {
+      if (r.categoryId != null) spentByCategory.set(r.categoryId, Number(r.total || 0));
     }
 
-    return results;
+    return budgetList.map(b => ({
+      ...b.budget,
+      category: b.category,
+      spent: spentByCategory.get(b.budget.categoryId) || 0,
+    }));
   }
 
   async createBudget(budget: InsertBudget): Promise<Budget> {
@@ -780,11 +782,18 @@ export class DatabaseStorage implements IStorage {
 
   async getClassesByTeacher(teacherId: number): Promise<(Class & { enrollmentCount: number })[]> {
     const classList = await db.select().from(classes).where(eq(classes.teacherId, teacherId)).orderBy(desc(classes.createdAt));
-    const result = await Promise.all(classList.map(async (cls) => {
-      const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(classEnrollments).where(eq(classEnrollments.classId, cls.id));
-      return { ...cls, enrollmentCount: Number(count) };
-    }));
-    return result;
+    if (classList.length === 0) return [];
+    // Single grouped count query (avoids N+1)
+    const counts = await db.select({
+      classId: classEnrollments.classId,
+      count: sql<number>`count(*)`,
+    })
+    .from(classEnrollments)
+    .where(inArray(classEnrollments.classId, classList.map(c => c.id)))
+    .groupBy(classEnrollments.classId);
+    const countByClass = new Map<number, number>();
+    for (const c of counts) countByClass.set(c.classId, Number(c.count));
+    return classList.map(cls => ({ ...cls, enrollmentCount: countByClass.get(cls.id) || 0 }));
   }
 
   async createClass(data: { teacherId: number; name: string; subject: string; sponsorName?: string }): Promise<Class> {
@@ -858,27 +867,52 @@ export class DatabaseStorage implements IStorage {
     const studentIds = enrollments.map(e => e.studentId);
     if (studentIds.length === 0) return { students: [], avgXp: 0, avgLessons: 0, totalGames: 0 };
 
-    const studentData = await Promise.all(studentIds.map(async (sid) => {
-      const xp = await this.getUserXp(sid);
-      const lessons = await this.getUserLearningProgress(sid);
-      const sessions = await this.getGameSessions(sid);
-      const badges = await this.getUserBadges(sid);
+    // Batch all per-student data into 4 queries (instead of 4 * N)
+    const [allXp, allProgress, sessionAggs, badgeCounts] = await Promise.all([
+      db.select().from(userXp).where(inArray(userXp.userId, studentIds)),
+      db.select().from(userLearningProgress).where(inArray(userLearningProgress.userId, studentIds)),
+      db.select({
+        userId: gameSessions.userId,
+        gamesPlayed: sql<number>`count(*)`,
+        correctSum: sql<number>`sum(${gameSessions.correctAnswers})`,
+        totalSum: sql<number>`sum(${gameSessions.totalQuestions})`,
+      }).from(gameSessions).where(inArray(gameSessions.userId, studentIds)).groupBy(gameSessions.userId),
+      db.select({
+        userId: userBadges.userId,
+        count: sql<number>`count(*)`,
+      }).from(userBadges).where(inArray(userBadges.userId, studentIds)).groupBy(userBadges.userId),
+    ]);
+
+    const xpByUser = new Map(allXp.map(x => [x.userId, x]));
+    const lessonsByUser = new Map<string, number>();
+    for (const p of allProgress) {
+      if (p.completed) lessonsByUser.set(p.userId, (lessonsByUser.get(p.userId) || 0) + 1);
+    }
+    const sessionsByUser = new Map(sessionAggs.map(s => [s.userId, s]));
+    const badgesByUser = new Map(badgeCounts.map(b => [b.userId, Number(b.count)]));
+
+    const studentData = studentIds.map(sid => {
+      const xp = xpByUser.get(sid);
+      const sess = sessionsByUser.get(sid);
       const student = enrollments.find(e => e.studentId === sid)?.student;
+      const totalSum = Number(sess?.totalSum || 0);
+      const correctSum = Number(sess?.correctSum || 0);
+      const gamesPlayed = Number(sess?.gamesPlayed || 0);
       return {
         id: sid,
         name: student?.firstName || student?.username || sid,
         avatar: student?.avatar || 'star',
         username: student?.username || sid,
-        xp: xp.totalXp,
-        level: xp.level,
-        streak: xp.currentStreak,
-        lessonsCompleted: lessons.filter(l => l.completed).length,
+        xp: xp?.totalXp || 0,
+        level: xp?.level || 1,
+        streak: xp?.currentStreak || 0,
+        lessonsCompleted: lessonsByUser.get(sid) || 0,
         totalLessons: 6,
-        gamesPlayed: sessions.length,
-        avgScore: sessions.length > 0 ? Math.round(sessions.reduce((sum, s) => sum + (s.correctAnswers / Math.max(s.totalQuestions, 1)) * 100, 0) / sessions.length) : 0,
-        badges: badges.length,
+        gamesPlayed,
+        avgScore: totalSum > 0 ? Math.round((correctSum / totalSum) * 100) : 0,
+        badges: badgesByUser.get(sid) || 0,
       };
-    }));
+    });
 
     const avgXp = studentData.length > 0 ? Math.round(studentData.reduce((s, d) => s + d.xp, 0) / studentData.length) : 0;
     const avgLessons = studentData.length > 0 ? Math.round(studentData.reduce((s, d) => s + d.lessonsCompleted, 0) / studentData.length) : 0;
