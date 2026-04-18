@@ -2004,7 +2004,8 @@ If the user asks about FinSight Lite features, you can mention:
             andEmail(eqEmail(emailContacts.userKind, "student"), eqEmail(emailContacts.userId, en.studentId)),
           );
           if (!contact) {
-            const acctEmail = en.student?.email;
+            const acctEmail = en.student?.email
+              || (en.student?.username && en.student.username.includes("@") ? en.student.username : null);
             if (!acctEmail) continue;
             const [created] = await emailDb.insert(emailContacts).values({
               userKind: "student",
@@ -2016,7 +2017,7 @@ If the user asks about FinSight Lite features, you can mention:
               orgId: teacher?.orgId ?? null,
             }).returning();
             contact = created;
-          } else if (!contact.classNotifications) {
+          } else if (!contact.classNotifications || !contact.verified) {
             continue;
           }
           if (!contact.orgId && teacher?.orgId) {
@@ -3380,8 +3381,13 @@ If the user asks about FinSight Lite features, you can mention:
   app.post("/api/email/webhooks/resend", expressJson({ limit: "1mb" }), async (req: any, res) => {
     try {
       const secret = process.env.RESEND_WEBHOOK_SECRET;
-      if (secret) {
-        const provided = req.headers["x-webhook-secret"] || req.headers["resend-webhook-secret"];
+      if (!secret) {
+        if (process.env.NODE_ENV === "production") {
+          return res.status(503).json({ message: "Webhook secret not configured" });
+        }
+        console.warn("[email] RESEND_WEBHOOK_SECRET not set; accepting webhook in non-production only");
+      } else {
+        const provided = req.headers["x-webhook-secret"] || req.headers["resend-webhook-secret"] || req.headers["svix-signature"];
         if (provided !== secret) return res.status(401).json({ message: "Invalid signature" });
       }
       const ev = req.body || {};

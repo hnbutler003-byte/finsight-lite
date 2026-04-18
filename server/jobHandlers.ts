@@ -290,8 +290,10 @@ Rules:
       const students = orgId
         ? await storage.getStudentsByOrgId(orgId).catch(() => [])
         : await db.select().from(users).catch(() => []);
-      for (const s of students as Array<{ id: string; email: string | null }>) {
-        if (!s.email) continue;
+      for (const s of students as Array<{ id: string; email?: string | null; username?: string | null }>) {
+        const candidate = s.email || (s.username && s.username.includes("@") ? s.username : null);
+        if (!candidate) continue;
+        const email = candidate;
         const [existing] = await db.select().from(emailContacts).where(
           and(eq(emailContacts.userKind, "student"), eq(emailContacts.userId, s.id)),
         );
@@ -300,7 +302,7 @@ Rules:
           continue;
         }
         await db.insert(emailContacts).values({
-          userKind: "student", userId: s.id, email: s.email,
+          userKind: "student", userId: s.id, email,
           verified: true, classNotifications: true, weeklyDigest: true, orgId,
         });
       }
