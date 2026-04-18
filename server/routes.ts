@@ -2079,13 +2079,17 @@ If the user asks about FinSight Lite features, you can mention:
 
   // === BACKGROUND JOBS ===
   // Owner can poll their own job; admins can read any
-  app.get("/api/jobs/:id", isAuthenticated, async (req: any, res) => {
+  // Job status — accessible to either authenticated users (their own jobs) or
+  // admin sessions. Admin sessions don't carry req.user, so isAuthenticated
+  // alone would lock them out of polling export jobs.
+  app.get("/api/jobs/:id", async (req: any, res) => {
+    const isAdminUser = !!req.session?.isAdmin;
+    const userId = req.user?.id ? String(req.user.id) : null;
+    if (!isAdminUser && !userId) return res.status(401).json({ message: "Unauthorized" });
     const id = parseInt(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ message: "Bad id" });
     const job = await getJob(id);
     if (!job) return res.status(404).json({ message: "Not found" });
-    const userId = String(req.user?.id);
-    const isAdminUser = !!req.session?.isAdmin;
     if (job.ownerId && job.ownerId !== userId && !isAdminUser) {
       return res.status(403).json({ message: "Forbidden" });
     }

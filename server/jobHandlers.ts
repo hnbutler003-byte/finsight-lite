@@ -59,7 +59,27 @@ export function registerJobHandlers() {
   // === Paper extraction (MoneyLab upload) ===
   registerJobHandler("extract-paper", async (job) => {
     const { paperId, fileB64, ext, subject } = job.payload;
+    try {
+      return await runExtractPaper(paperId, fileB64, ext, subject, job.attempts >= job.maxAttempts);
+    } catch (err) {
+      // On the *terminal* attempt, sync paper status so the UI doesn't show
+      // it stuck at 'processing' forever.
+      if (job.attempts >= job.maxAttempts) {
+        try {
+          await storage.updateExamPaper(paperId, { status: "failed" });
+        } catch { /* ignore */ }
+      }
+      throw err;
+    }
+  });
 
+  async function runExtractPaper(
+    paperId: number,
+    fileB64: string,
+    ext: string,
+    subject: string,
+    _isFinalAttempt: boolean,
+  ) {
     // Idempotency: if a previous attempt partially inserted questions and then
     // crashed before completion, wipe them so a retry doesn't double-insert.
     await db.delete(extractedQuestions).where(eq(extractedQuestions.paperId, paperId));
@@ -93,8 +113,9 @@ export function registerJobHandlers() {
     }
 
     if (!extractedText.trim()) {
-      await storage.updateExamPaper(paperId, { status: "failed" });
-      return { paperId, ok: false, reason: "no text extracted" };
+      // Throw so the worker records this as a failed job (not a successful
+      // one with ok:false). The outer try/catch will sync exam_papers status.
+      throw new Error("No text could be extracted from the uploaded file");
     }
 
     const extractionResponse = await openai.chat.completions.create({
@@ -164,7 +185,7 @@ Rules:
     });
 
     return { paperId, questionCount: questions.length, subject: detectedSubject };
-  });
+  }
 
   // === Admin CSV export — writes to private object storage ===
   registerJobHandler("admin-csv-export", async (job) => {
@@ -174,8 +195,8 @@ Rules:
     if (type === "students") data = (await storage.getAdminStudents()) as AdminRow[];
     else if (type === "teachers") data = (await storage.getAdminTeachers()) as AdminRow[];
     else if (type === "classes") data = (await storage.getAdminClasses()) as AdminRow[];
-    else if (type === "schools") data = (await (storage as unknown as { getSchools: () => Promise<AdminRow[]> }).getSchools()) as AdminRow[];
-    else if (type === "sponsors") data = (await (storage as unknown as { getSponsors: () => Promise<AdminRow[]> }).getSponsors()) as AdminRow[];
+    else if (type === "schools") data = (await storage.getSchools()) as AdminRow[];
+    else if (type === "sponsors") data = (await storage.getSponsors()) as AdminRow[];
 
     const fileName = `${type}-${new Date().toISOString().slice(0, 10)}.csv`;
     let csv = "";
