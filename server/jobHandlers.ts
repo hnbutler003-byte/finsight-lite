@@ -291,6 +291,7 @@ Rules:
         ? await storage.getStudentsByOrgId(orgId).catch(() => [])
         : await db.select().from(users).catch(() => []);
       for (const s of students as Array<{ id: string; email?: string | null; username?: string | null }>) {
+        const verifiedSource = !!s.email;
         const candidate = s.email || (s.username && s.username.includes("@") ? s.username : null);
         if (!candidate) continue;
         const email = candidate;
@@ -303,7 +304,7 @@ Rules:
         }
         await db.insert(emailContacts).values({
           userKind: "student", userId: s.id, email,
-          verified: true, classNotifications: true, weeklyDigest: true, orgId,
+          verified: verifiedSource, classNotifications: true, weeklyDigest: true, orgId,
         });
       }
     }
