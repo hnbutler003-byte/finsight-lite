@@ -23,16 +23,7 @@ const DEFAULT_LEFT_NAME = "Lakeisha Deveaux";
 const DEFAULT_LEFT_ROLE = "GENERAL INSTRUCTOR";
 const DEFAULT_RIGHT_NAME = "Annie Brown";
 const DEFAULT_RIGHT_ROLE = "ASSISTANT INSTRUCTOR";
-const MAX_LOGO_BYTES = 2 * 1024 * 1024; // 2MB pre-encoding
-
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ""));
-    reader.onerror = () => reject(new Error("Failed to read file"));
-    reader.readAsDataURL(file);
-  });
-}
+const MAX_LOGO_BYTES = 5 * 1024 * 1024; // 5 MB
 
 export default function OrgBranding() {
   const { admin, isLoading: authLoading } = useOrgAuth();
@@ -41,6 +32,7 @@ export default function OrgBranding() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [leftName, setLeftName] = useState("");
   const [leftRole, setLeftRole] = useState("");
   const [rightName, setRightName] = useState("");
@@ -65,13 +57,16 @@ export default function OrgBranding() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const body = {
-        logoUrl: logoUrl,
+      const body: Record<string, string | null> = {
         signatureLeftName: leftName.trim() || null,
         signatureLeftRole: leftRole.trim() || null,
         signatureRightName: rightName.trim() || null,
         signatureRightRole: rightRole.trim() || null,
       };
+      // Only send logoUrl when it actually changed — avoids resubmitting large legacy data URLs
+      if (logoUrl !== (branding?.logoUrl ?? null)) {
+        body.logoUrl = logoUrl;
+      }
       const r = await apiRequest("PATCH", "/api/org-admin/branding", body);
       return r.json();
     },
@@ -103,16 +98,29 @@ export default function OrgBranding() {
       return;
     }
     if (file.size > MAX_LOGO_BYTES) {
-      toast({ title: "Image too large", description: "Logo must be 2 MB or smaller.", variant: "destructive" });
+      toast({ title: "Image too large", description: "Logo must be 5 MB or smaller.", variant: "destructive" });
       return;
     }
     try {
-      const dataUrl = await fileToDataUrl(file);
-      setLogoUrl(dataUrl);
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("logo", file);
+      const res = await fetch("/api/org-admin/branding/logo", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(err.message || "Upload failed");
+      }
+      const { url } = (await res.json()) as { url: string };
+      setLogoUrl(url);
       setDirty(true);
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     } finally {
+      setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -148,7 +156,7 @@ export default function OrgBranding() {
                     <h3 className="font-display font-bold text-lg">Logo</h3>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Shown at the top of every certificate. PNG with transparent background works best. Max 2 MB.
+                    Shown at the top of every certificate. PNG with transparent background works best. Max 5 MB.
                   </p>
 
                   <div className="flex items-start gap-6 flex-wrap">
@@ -171,7 +179,7 @@ export default function OrgBranding() {
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept="image/png,image/jpeg,image/webp"
+                        accept="image/png,image/jpeg,image/webp,image/gif"
                         className="hidden"
                         onChange={onPickFile}
                         data-testid="input-logo-file"
@@ -180,10 +188,14 @@ export default function OrgBranding() {
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         className="rounded-2xl"
+                        disabled={uploading}
                         data-testid="button-upload-logo"
                       >
-                        <Upload className="w-4 h-4 mr-2" />
-                        {logoUrl ? "Replace logo" : "Upload logo"}
+                        {uploading ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading…</>
+                        ) : (
+                          <><Upload className="w-4 h-4 mr-2" /> {logoUrl ? "Replace logo" : "Upload logo"}</>
+                        )}
                       </Button>
                       {logoUrl && (
                         <Button

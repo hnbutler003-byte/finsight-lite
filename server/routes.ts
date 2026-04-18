@@ -6,8 +6,27 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
+import crypto from "crypto";
 import * as XLSX from "xlsx";
 import bcrypt from "bcryptjs";
+import {
+  ObjectStorageService,
+  objectStorageClient,
+} from "./replit_integrations/object_storage";
+
+const logoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (/^image\/(png|jpe?g|webp|gif)$/i.test(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Logo must be a PNG, JPG, WebP, or GIF image"));
+    }
+  },
+});
+
+const objectStorage = new ObjectStorageService();
 
 import { registerChatRoutes } from "./replit_integrations/chat";
 import { registerImageRoutes } from "./replit_integrations/image";
@@ -76,6 +95,21 @@ export async function registerRoutes(
   // Auth setup
   await setupAuth(app);
   registerAuthRoutes(app);
+
+  // Serve public assets stored in object storage (logos, etc.)
+  app.get("/public-objects/:filePath(*)", async (req, res) => {
+    try {
+      const filePath = req.params.filePath;
+      const file = await objectStorage.searchPublicObject(filePath);
+      if (!file) return res.status(404).json({ error: "Object not found" });
+      await objectStorage.downloadObject(file, res, 60 * 60 * 24 * 30);
+    } catch (err) {
+      console.error("Error serving public object:", err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Failed to serve object" });
+      }
+    }
+  });
 
   // OpenAI integration routes
   registerChatRoutes(app);
@@ -2692,16 +2726,21 @@ If the user asks about FinSight Lite features, you can mention:
       const admin = await storage.getOrgAdminById(req.session.orgAdminId);
       if (!admin) return res.status(401).json({ message: "Not found" });
       const body = z.object({
-        logoUrl: z.string().max(8_000_000).nullable().optional(),
+        // New uploads return short /public-objects/... URLs; legacy base64 logos are not
+        // resubmitted from the client (OrgBranding only sends logoUrl when changed)
+        logoUrl: z.string().max(2048).nullable().optional(),
         signatureLeftName: z.string().max(80).nullable().optional(),
         signatureLeftRole: z.string().max(80).nullable().optional(),
         signatureRightName: z.string().max(80).nullable().optional(),
         signatureRightRole: z.string().max(80).nullable().optional(),
       }).parse(req.body);
 
-      // Reject anything that's not a data URL or http(s) URL
-      if (body.logoUrl && !/^(data:image\/(png|jpeg|jpg|webp|gif|svg\+xml);base64,|https?:\/\/)/i.test(body.logoUrl)) {
-        return res.status(400).json({ message: "Logo must be an image data URL or http(s) URL" });
+      // Accept object-storage public URLs, http(s) URLs, or legacy data URLs
+      if (
+        body.logoUrl &&
+        !/^(\/public-objects\/|data:image\/(png|jpeg|jpg|webp|gif|svg\+xml);base64,|https?:\/\/)/i.test(body.logoUrl)
+      ) {
+        return res.status(400).json({ message: "Logo must be an uploaded file URL or http(s) URL" });
       }
 
       const updates: Partial<Organization> = {};
@@ -2724,6 +2763,64 @@ If the user asks about FinSight Lite features, you can mention:
       res.status(400).json({ message: e.message });
     }
   });
+
+  // Upload a logo file to object storage — returns a public URL the client saves via PATCH /branding
+  const handleLogoUpload = (req: any, res: any, next: any) => {
+    logoUpload.single("logo")(req, res, (err: any) => {
+      if (err) {
+        const status = err?.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+        return res.status(status).json({ message: err.message || "Logo upload failed" });
+      }
+      next();
+    });
+  };
+  app.post(
+    "/api/org-admin/branding/logo",
+    isOrgAdmin,
+    handleLogoUpload,
+    async (req: any, res) => {
+      try {
+        const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+        if (!admin) return res.status(401).json({ message: "Not found" });
+        if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+        const mimeToExt: Record<string, string> = {
+          "image/png": "png",
+          "image/jpeg": "jpg",
+          "image/jpg": "jpg",
+          "image/webp": "webp",
+          "image/gif": "gif",
+        };
+        const ext = mimeToExt[req.file.mimetype.toLowerCase()] || "png";
+        const filename = `${admin.orgId}-${Date.now()}-${crypto.randomBytes(6).toString("hex")}.${ext}`;
+
+        // Store in the first configured public search path so it's served by /public-objects/<key>
+        const publicPaths = objectStorage.getPublicObjectSearchPaths();
+        const targetDir = publicPaths[0]; // e.g. "/<bucket>/public"
+        const objectKey = `logos/${filename}`;
+        const fullPath = `${targetDir.replace(/\/$/, "")}/${objectKey}`;
+        const [, bucketName, ...rest] = fullPath.split("/");
+        const objectName = rest.join("/");
+
+        await objectStorageClient
+          .bucket(bucketName)
+          .file(objectName)
+          .save(req.file.buffer, {
+            contentType: req.file.mimetype,
+            resumable: false,
+            metadata: {
+              cacheControl: "public, max-age=2592000",
+            },
+          });
+
+        const url = `/public-objects/${objectKey}`;
+        res.status(201).json({ url });
+      } catch (e: any) {
+        console.error("Logo upload failed:", e);
+        res.status(500).json({ message: e.message || "Logo upload failed" });
+      }
+    },
+  );
 
   app.get("/api/org-admin/lessons", isOrgAdmin, async (req: any, res) => {
     const admin = await storage.getOrgAdminById(req.session.orgAdminId);
