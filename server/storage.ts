@@ -862,20 +862,27 @@ export class DatabaseStorage implements IStorage {
     await db.delete(classEnrollments).where(and(eq(classEnrollments.classId, classId), eq(classEnrollments.studentId, studentId)));
   }
 
-  async getClassProgressSummary(classId: number): Promise<any> {
-    const enrollments = await this.getEnrollmentsByClass(classId);
-    const studentIds = enrollments.map(e => e.studentId);
-    if (studentIds.length === 0) return { students: [], avgXp: 0, avgLessons: 0, totalGames: 0 };
+  async getClassProgressSummary(classId: number, opts?: { limit?: number; offset?: number }): Promise<any> {
+    const allEnrollments = await this.getEnrollmentsByClass(classId);
+    const totalStudents = allEnrollments.length;
+    if (totalStudents === 0) return { students: [], avgXp: 0, avgLessons: 0, totalGames: 0, totalStudents: 0 };
 
-    // Batch all per-student data into 4 queries (instead of 4 * N)
+    // Apply pagination on the enrollment list (default keeps prior behavior; route layer caps).
+    const offset = Math.max(0, opts?.offset ?? 0);
+    const limit = opts?.limit ?? totalStudents;
+    const enrollments = allEnrollments.slice(offset, offset + limit);
+    const studentIds = enrollments.map(e => e.studentId);
+    if (studentIds.length === 0) return { students: [], avgXp: 0, avgLessons: 0, totalGames: 0, totalStudents };
+
+    // Batch all per-student data into 4 queries (instead of 4 * N).
+    // avgScore mirrors the prior mean-of-session-percentages semantics via SQL avg().
     const [allXp, allProgress, sessionAggs, badgeCounts] = await Promise.all([
       db.select().from(userXp).where(inArray(userXp.userId, studentIds)),
       db.select().from(userLearningProgress).where(inArray(userLearningProgress.userId, studentIds)),
       db.select({
         userId: gameSessions.userId,
         gamesPlayed: sql<number>`count(*)`,
-        correctSum: sql<number>`sum(${gameSessions.correctAnswers})`,
-        totalSum: sql<number>`sum(${gameSessions.totalQuestions})`,
+        avgScorePct: sql<number>`avg(${gameSessions.correctAnswers}::float / nullif(${gameSessions.totalQuestions}, 0)) * 100`,
       }).from(gameSessions).where(inArray(gameSessions.userId, studentIds)).groupBy(gameSessions.userId),
       db.select({
         userId: userBadges.userId,
@@ -895,9 +902,8 @@ export class DatabaseStorage implements IStorage {
       const xp = xpByUser.get(sid);
       const sess = sessionsByUser.get(sid);
       const student = enrollments.find(e => e.studentId === sid)?.student;
-      const totalSum = Number(sess?.totalSum || 0);
-      const correctSum = Number(sess?.correctSum || 0);
       const gamesPlayed = Number(sess?.gamesPlayed || 0);
+      const avgScore = sess?.avgScorePct != null ? Math.round(Number(sess.avgScorePct)) : 0;
       return {
         id: sid,
         name: student?.firstName || student?.username || sid,
@@ -909,7 +915,7 @@ export class DatabaseStorage implements IStorage {
         lessonsCompleted: lessonsByUser.get(sid) || 0,
         totalLessons: 6,
         gamesPlayed,
-        avgScore: totalSum > 0 ? Math.round((correctSum / totalSum) * 100) : 0,
+        avgScore,
         badges: badgesByUser.get(sid) || 0,
       };
     });
@@ -917,8 +923,7 @@ export class DatabaseStorage implements IStorage {
     const avgXp = studentData.length > 0 ? Math.round(studentData.reduce((s, d) => s + d.xp, 0) / studentData.length) : 0;
     const avgLessons = studentData.length > 0 ? Math.round(studentData.reduce((s, d) => s + d.lessonsCompleted, 0) / studentData.length) : 0;
     const totalGames = studentData.reduce((s, d) => s + d.gamesPlayed, 0);
-
-    return { students: studentData, avgXp, avgLessons, totalGames };
+    return { students: studentData, avgXp, avgLessons, totalGames, totalStudents };
   }
 
   async getChallengesByClass(classId: number): Promise<Challenge[]> {

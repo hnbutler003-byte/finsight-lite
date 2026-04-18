@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, numeric, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, numeric, varchar, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -31,7 +31,10 @@ export const transactions = pgTable("transactions", {
   isAutoSynced: boolean("is_auto_synced").default(false),
   documentUploadId: integer("document_upload_id").references(() => documentUploads.id),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  userDateIdx: index("idx_transactions_user_date").on(t.userId, t.date),
+  userCategoryIdx: index("idx_transactions_user_category").on(t.userId, t.categoryId),
+}));
 
 export const budgets = pgTable("budgets", {
   id: serial("id").primaryKey(),
@@ -201,7 +204,10 @@ export const classEnrollments = pgTable("class_enrollments", {
   classId: integer("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
   studentId: varchar("student_id").notNull().references(() => users.id),
   joinedAt: timestamp("joined_at").defaultNow(),
-});
+}, (t) => ({
+  classIdx: index("idx_class_enrollments_class").on(t.classId),
+  studentIdx: index("idx_class_enrollments_student").on(t.studentId),
+}));
 
 export const challenges = pgTable("challenges", {
   id: serial("id").primaryKey(),
@@ -256,7 +262,10 @@ export const examPapers = pgTable("exam_papers", {
   status: text("status", { enum: ["processing", "completed", "failed"] }).default("processing").notNull(),
   questionCount: integer("question_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  statusCreatedIdx: index("idx_exam_papers_status_created").on(t.status, t.createdAt),
+  userIdx: index("idx_exam_papers_user").on(t.userId),
+}));
 
 export const extractedQuestions = pgTable("extracted_questions", {
   id: serial("id").primaryKey(),
@@ -280,7 +289,10 @@ export const gameSessions = pgTable("game_sessions", {
   timeSpent: integer("time_spent"),
   xpEarned: integer("xp_earned").default(0),
   completedAt: timestamp("completed_at").defaultNow(),
-});
+}, (t) => ({
+  userCompletedIdx: index("idx_game_sessions_user_completed").on(t.userId, t.completedAt),
+  completedIdx: index("idx_game_sessions_completed").on(t.completedAt),
+}));
 
 export const userXp = pgTable("user_xp", {
   id: serial("id").primaryKey(),
@@ -297,7 +309,9 @@ export const userBadges = pgTable("user_badges", {
   userId: varchar("user_id").notNull().references(() => users.id),
   badgeId: text("badge_id").notNull(),
   earnedAt: timestamp("earned_at").defaultNow(),
-});
+}, (t) => ({
+  userIdx: index("idx_user_badges_user").on(t.userId),
+}));
 
 // === RELATIONS ===
 

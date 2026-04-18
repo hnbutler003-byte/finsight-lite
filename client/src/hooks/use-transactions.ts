@@ -19,7 +19,9 @@ export function useTransactions(filters?: { startDate?: string; endDate?: string
       if (filters?.startDate) searchParams.append("startDate", filters.startDate);
       if (filters?.endDate) searchParams.append("endDate", filters.endDate);
       if (filters?.categoryId) searchParams.append("categoryId", filters.categoryId);
-      if (filters?.limit) searchParams.append("limit", String(filters.limit));
+      // Default to the server's hard cap so existing pages keep showing the same data.
+      // Override with explicit `limit` for smaller widgets (e.g. dashboard recents).
+      searchParams.append("limit", String(filters?.limit ?? 200));
 
       const res = await fetch(`${url}?${searchParams.toString()}`, { credentials: "include" });
       

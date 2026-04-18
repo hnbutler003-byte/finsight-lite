@@ -330,10 +330,10 @@ export async function registerRoutes(
   // Transactions
   app.get(api.transactions.list.path, isAuthenticated, async (req, res) => {
     const userId = (req.user as any).id;
-    // Cap list size to keep responses fast as data grows.
-    // Default 200 for normal pages; explicit limit allows up to 2000 for CSV/PDF exports.
-    const requested = req.query.limit ? Number(req.query.limit) : 200;
-    const limit = Math.min(Math.max(requested, 1), 2000);
+    // Defensive limit parsing — invalid input falls back to safe default of 50.
+    // Cap list size at 200 to keep responses fast as data grows.
+    const raw = Number(req.query.limit);
+    const limit = Number.isFinite(raw) && raw > 0 ? Math.min(Math.floor(raw), 200) : 50;
     const filters = {
       startDate: req.query.startDate as string,
       endDate: req.query.endDate as string,
@@ -1334,8 +1334,8 @@ Rules:
       const { examPapers } = await import("@shared/schema");
       const { db } = await import("./db");
       const { eq, desc } = await import("drizzle-orm");
-      const requested = req.query.limit ? Number(req.query.limit) : 100;
-      const limit = Math.min(Math.max(requested, 1), 200);
+      const raw = Number(req.query.limit);
+      const limit = Number.isFinite(raw) && raw > 0 ? Math.min(Math.floor(raw), 200) : 50;
       const allPapers = await db.select().from(examPapers).where(eq(examPapers.status, "completed")).orderBy(desc(examPapers.createdAt)).limit(limit);
       res.json(allPapers);
     } catch (err: any) {
@@ -1492,8 +1492,8 @@ Rules:
   app.get("/api/moneylab/leaderboard", isAuthenticated, async (req, res) => {
     try {
       const period = (req.query.period as string) || "all";
-      const requested = parseInt(req.query.limit as string) || 20;
-      const limit = Math.min(Math.max(requested, 1), 100);
+      const raw = Number(req.query.limit);
+      const limit = Number.isFinite(raw) && raw > 0 ? Math.min(Math.floor(raw), 100) : 20;
       const { cached } = await import("./cache");
       const leaderboard = await cached(
         `moneylab:leaderboard:${period}:${limit}`,
@@ -1807,7 +1807,12 @@ If the user asks about FinSight Lite features, you can mention:
     const id = parseInt(req.params.id);
     const cls = await storage.getClassById(id);
     if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
-    const summary = await storage.getClassProgressSummary(id);
+    // Defensive pagination — default 50, hard cap 200.
+    const rawLimit = Number(req.query.limit);
+    const rawOffset = Number(req.query.offset);
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(Math.floor(rawLimit), 200) : 50;
+    const offset = Number.isFinite(rawOffset) && rawOffset >= 0 ? Math.floor(rawOffset) : 0;
+    const summary = await storage.getClassProgressSummary(id, { limit, offset });
     res.json(summary);
   });
 

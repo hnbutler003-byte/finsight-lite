@@ -244,7 +244,7 @@ export default function TeacherClassDetail() {
 
   const { data: progress, isLoading: progressLoading } = useQuery<{ students: StudentData[]; avgXp: number; avgLessons: number; totalGames: number }>({
     queryKey: [`/api/teacher/classes/${classId}/students`],
-    queryFn: () => fetch(`/api/teacher/classes/${classId}/students`, { credentials: "include" }).then(r => r.json()),
+    queryFn: () => fetch(`/api/teacher/classes/${classId}/students?limit=200`, { credentials: "include" }).then(r => r.json()),
     enabled: !!teacher && activeTab === "students",
   });
 

@@ -278,9 +278,20 @@ export async function getOrganizations(): Promise<Organization[]> {
 
 export async function getOrganization(id: string): Promise<Organization | null> {
   if (!supabase) return null;
-  const { data, error } = await supabase.from("organizations").select("*").eq("id", id).single();
-  if (error) return null;
-  return data;
+  const { cached } = await import("./cache");
+  // Org branding is read on nearly every authenticated page render but rarely changes.
+  return await cached(`org:${id}`, 5 * 60_000, async () => {
+    const { data, error } = await supabase!.from("organizations").select("*").eq("id", id).single();
+    if (error) return null as any;
+    return data;
+  });
+}
+
+export function invalidateOrganizationCache(id?: string): void {
+  // Lazily required to avoid a top-level import cycle.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { cacheInvalidate } = require("./cache");
+  cacheInvalidate(id ? `org:${id}` : "org:");
 }
 
 export async function getOrganizationByName(name: string): Promise<Organization | null> {
