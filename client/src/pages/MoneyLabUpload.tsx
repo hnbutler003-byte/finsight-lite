@@ -26,7 +26,22 @@ export default function MoneyLabUpload() {
     queryKey: ["/api/moneylab/papers"],
   });
 
-  const [activeJobId, setActiveJobId] = useState<number | null>(null);
+  // Persist the active job id so a refresh / navigation away doesn't lose
+  // the live status surface — the user can come back and still see the
+  // current queued/processing/done/failed state.
+  const JOB_KEY = "moneylab.activeJobId";
+  const [activeJobId, setActiveJobIdState] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
+    const v = window.localStorage.getItem(JOB_KEY);
+    return v ? Number(v) || null : null;
+  });
+  const setActiveJobId = (v: number | null) => {
+    setActiveJobIdState(v);
+    if (typeof window !== "undefined") {
+      if (v == null) window.localStorage.removeItem(JOB_KEY);
+      else window.localStorage.setItem(JOB_KEY, String(v));
+    }
+  };
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
