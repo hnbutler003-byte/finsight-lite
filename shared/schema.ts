@@ -373,7 +373,7 @@ export type OrgAiQuota = typeof orgAiQuotas.$inferSelect;
 
 export const tutorExplanations = pgTable("tutor_explanations", {
   id: serial("id").primaryKey(),
-  questionHash: varchar("question_hash", { length: 64 }).notNull(),
+  questionHash: varchar("question_hash", { length: 64 }).notNull().unique(),
   modelVersion: text("model_version").notNull(),
   explanation: text("explanation").notNull(),
   hits: integer("hits").default(0).notNull(),

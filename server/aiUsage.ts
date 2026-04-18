@@ -59,6 +59,137 @@ export type QuotaCheck =
   | { ok: true }
   | { ok: false; scope: "user" | "org"; kind: AiKind; used: number; limit: number };
 
+// Stable 32-bit hash for advisory lock keys.
+function lockKey(parts: string[]): number {
+  let h = 0;
+  const s = parts.join(":");
+  for (let i = 0; i < s.length; i++) {
+    h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  }
+  return h;
+}
+
+export type ReserveResult =
+  | { ok: true; reservationId: number; model?: string }
+  | { ok: false; scope: "user" | "org"; kind: AiKind; used: number; limit: number };
+
+/**
+ * Atomically check daily quota and reserve a usage row in a single transaction.
+ * Uses a Postgres advisory lock per (org, kind) so concurrent callers cannot
+ * race past the quota check before any of them have written a usage event.
+ *
+ * Tokens are filled in later via `finalizeUsage`.
+ */
+export async function reserveQuota(args: {
+  userId?: string | null;
+  orgId?: string | null;
+  envId?: string | null;
+  kind: AiKind;
+  model?: string;
+}): Promise<ReserveResult> {
+  const since = startOfUtcDay();
+  const { perUser, perOrg } = await getOrgLimits(args.orgId);
+  const orgKey = args.orgId ?? "_global_";
+
+  return await db.transaction(async (tx) => {
+    // Serialize concurrent quota decisions for this org+kind for the duration of the txn.
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(${lockKey([orgKey, args.kind])})`);
+
+    if (args.userId) {
+      const [row] = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(aiUsageEvents)
+        .where(and(
+          eq(aiUsageEvents.userId, args.userId),
+          eq(aiUsageEvents.kind, args.kind),
+          eq(aiUsageEvents.cached, false),
+          gte(aiUsageEvents.createdAt, since),
+        ));
+      const used = row?.count ?? 0;
+      const limit = perUser[args.kind];
+      if (used >= limit) return { ok: false, scope: "user", kind: args.kind, used, limit } as ReserveResult;
+    }
+
+    if (args.orgId) {
+      const [row] = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(aiUsageEvents)
+        .where(and(
+          eq(aiUsageEvents.orgId, args.orgId),
+          eq(aiUsageEvents.kind, args.kind),
+          eq(aiUsageEvents.cached, false),
+          gte(aiUsageEvents.createdAt, since),
+        ));
+      const used = row?.count ?? 0;
+      const limit = perOrg[args.kind];
+      if (used >= limit) return { ok: false, scope: "org", kind: args.kind, used, limit } as ReserveResult;
+    }
+
+    const [inserted] = await tx.insert(aiUsageEvents).values({
+      userId: args.userId ?? null,
+      orgId: args.orgId ?? null,
+      envId: args.envId ?? null,
+      kind: args.kind,
+      model: args.model ?? null,
+      cached: false,
+      tokensIn: 0,
+      tokensOut: 0,
+    }).returning({ id: aiUsageEvents.id });
+
+    return { ok: true, reservationId: inserted.id, model: args.model } as ReserveResult;
+  });
+}
+
+/** Update tokens on an existing reservation row. Best-effort; logs on failure. */
+export async function finalizeUsage(reservationId: number, args: {
+  tokensIn?: number; tokensOut?: number; model?: string;
+}): Promise<void> {
+  try {
+    await db.update(aiUsageEvents).set({
+      tokensIn: Math.max(0, Math.floor(args.tokensIn ?? 0)),
+      tokensOut: Math.max(0, Math.floor(args.tokensOut ?? 0)),
+      ...(args.model ? { model: args.model } : {}),
+    }).where(eq(aiUsageEvents.id, reservationId));
+  } catch (e) {
+    console.error("[aiUsage] finalizeUsage failed:", (e as Error).message);
+  }
+}
+
+/** Best-effort rollback of a reservation if the model call fails before producing any output. */
+export async function releaseReservation(reservationId: number): Promise<void> {
+  try {
+    await db.delete(aiUsageEvents).where(eq(aiUsageEvents.id, reservationId));
+  } catch (e) {
+    console.error("[aiUsage] releaseReservation failed:", (e as Error).message);
+  }
+}
+
+/** Insert a free/cached usage row (does not count against quota). */
+export async function recordCachedUsage(args: {
+  userId?: string | null;
+  orgId?: string | null;
+  envId?: string | null;
+  kind: AiKind;
+  model?: string;
+}): Promise<void> {
+  try {
+    await db.insert(aiUsageEvents).values({
+      userId: args.userId ?? null,
+      orgId: args.orgId ?? null,
+      envId: args.envId ?? null,
+      kind: args.kind,
+      model: args.model ?? null,
+      cached: true,
+      tokensIn: 0,
+      tokensOut: 0,
+    });
+  } catch (e) {
+    console.error("[aiUsage] recordCachedUsage failed:", (e as Error).message);
+  }
+}
+
+// Legacy wrappers — preserved in case other call sites import them, but the
+// recommended pattern is reserveQuota → finalizeUsage.
 export async function checkQuota(args: {
   userId?: string | null;
   orgId?: string | null;
@@ -66,10 +197,8 @@ export async function checkQuota(args: {
 }): Promise<QuotaCheck> {
   const since = startOfUtcDay();
   const { perUser, perOrg } = await getOrgLimits(args.orgId);
-
   if (args.userId) {
-    const [row] = await db
-      .select({ count: sql<number>`count(*)::int` })
+    const [row] = await db.select({ count: sql<number>`count(*)::int` })
       .from(aiUsageEvents)
       .where(and(
         eq(aiUsageEvents.userId, args.userId),
@@ -81,10 +210,8 @@ export async function checkQuota(args: {
     const limit = perUser[args.kind];
     if (used >= limit) return { ok: false, scope: "user", kind: args.kind, used, limit };
   }
-
   if (args.orgId) {
-    const [row] = await db
-      .select({ count: sql<number>`count(*)::int` })
+    const [row] = await db.select({ count: sql<number>`count(*)::int` })
       .from(aiUsageEvents)
       .where(and(
         eq(aiUsageEvents.orgId, args.orgId),
@@ -96,7 +223,6 @@ export async function checkQuota(args: {
     const limit = perOrg[args.kind];
     if (used >= limit) return { ok: false, scope: "org", kind: args.kind, used, limit };
   }
-
   return { ok: true };
 }
 
@@ -235,6 +361,75 @@ export async function getOrgUsageToday(orgId: string): Promise<{
     out.totalTokens += r.tokens;
   }
   return out;
+}
+
+/** Per-day usage series for the current calendar month (UTC). Used for chart. */
+export async function getOrgUsageThisMonth(orgId: string): Promise<{
+  monthStart: string;
+  series: Array<{
+    day: string;
+    guide_chat: number;
+    tutor_explain: number;
+    ai_insights: number;
+    cached: number;
+    tokens: number;
+    total: number;
+  }>;
+  totals: {
+    guide_chat: number;
+    tutor_explain: number;
+    ai_insights: number;
+    cached: number;
+    tokens: number;
+    total: number;
+  };
+}> {
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+
+  const rows = await db.execute(sql`
+    SELECT
+      to_char(date_trunc('day', created_at AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS day,
+      kind,
+      cached,
+      COUNT(*)::int AS count,
+      COALESCE(SUM(tokens_in + tokens_out), 0)::int AS tokens
+    FROM ai_usage_events
+    WHERE org_id = ${orgId} AND created_at >= ${monthStart}
+    GROUP BY day, kind, cached
+    ORDER BY day ASC
+  `);
+
+  const byDay = new Map<string, any>();
+  const totals = { guide_chat: 0, tutor_explain: 0, ai_insights: 0, cached: 0, tokens: 0, total: 0 };
+
+  for (const r of (rows as any).rows ?? []) {
+    const day = r.day as string;
+    if (!byDay.has(day)) {
+      byDay.set(day, { day, guide_chat: 0, tutor_explain: 0, ai_insights: 0, cached: 0, tokens: 0, total: 0 });
+    }
+    const bucket = byDay.get(day);
+    const kind = r.kind as AiKind;
+    const count = Number(r.count) || 0;
+    const tokens = Number(r.tokens) || 0;
+    if (r.cached) {
+      bucket.cached += count;
+      totals.cached += count;
+    } else {
+      bucket[kind] = (bucket[kind] || 0) + count;
+      bucket.total += count;
+      totals[kind] += count;
+      totals.total += count;
+    }
+    bucket.tokens += tokens;
+    totals.tokens += tokens;
+  }
+
+  return {
+    monthStart: monthStart.toISOString(),
+    series: Array.from(byDay.values()),
+    totals,
+  };
 }
 
 export async function getOrgQuotaSettings(orgId: string): Promise<{

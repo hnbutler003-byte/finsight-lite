@@ -34,6 +34,12 @@ export default function OrgDashboard() {
     enabled: !!admin,
   });
 
+  const { data: aiUsageMonthly } = useQuery<any>({
+    queryKey: ["/api/org-admin/ai-usage-monthly"],
+    queryFn: () => fetch("/api/org-admin/ai-usage-monthly", { credentials: "include" }).then(r => r.json()),
+    enabled: !!admin,
+  });
+
   const { toast } = useToast();
   const [editingQuotas, setEditingQuotas] = useState(false);
   const [quotaForm, setQuotaForm] = useState<Record<string, string>>({});
@@ -263,6 +269,54 @@ export default function OrgDashboard() {
                         );
                       })}
                     </div>
+
+                    {aiUsageMonthly?.series && (
+                      <div className="rounded-2xl border-2 border-input p-4 space-y-3" data-testid="chart-monthly-usage">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <p className="text-sm font-bold">This month so far</p>
+                          <p className="text-xs text-muted-foreground">
+                            <span className="font-bold text-violet-600">{(aiUsageMonthly.totals?.total ?? 0).toLocaleString()}</span> live calls ·{" "}
+                            <span className="font-bold text-emerald-600">{(aiUsageMonthly.totals?.cached ?? 0).toLocaleString()}</span> cached ·{" "}
+                            <span className="font-bold">{(aiUsageMonthly.totals?.tokens ?? 0).toLocaleString()}</span> tokens
+                          </p>
+                        </div>
+                        {aiUsageMonthly.series.length === 0 ? (
+                          <p className="text-xs text-muted-foreground py-4 text-center">No AI activity yet this month.</p>
+                        ) : (() => {
+                          const maxTotal = Math.max(1, ...aiUsageMonthly.series.map((d: any) => d.total + (d.cached || 0)));
+                          return (
+                            <div className="flex items-end gap-1 h-32" data-testid="bars-monthly">
+                              {aiUsageMonthly.series.map((d: any) => {
+                                const stackTotal = (d.guide_chat + d.tutor_explain + d.ai_insights);
+                                const cachedH = ((d.cached || 0) / maxTotal) * 100;
+                                const guideH = (d.guide_chat / maxTotal) * 100;
+                                const tutorH = (d.tutor_explain / maxTotal) * 100;
+                                const insightH = (d.ai_insights / maxTotal) * 100;
+                                const dayLabel = d.day.slice(8, 10);
+                                return (
+                                  <div key={d.day} className="flex-1 flex flex-col items-center gap-1 group" title={`${d.day}: ${stackTotal} live, ${d.cached} cached, ${d.tokens} tokens`}>
+                                    <div className="w-full flex flex-col-reverse h-28 rounded-md overflow-hidden bg-muted">
+                                      <div style={{ height: `${guideH}%` }} className="bg-violet-500" />
+                                      <div style={{ height: `${tutorH}%` }} className="bg-blue-500" />
+                                      <div style={{ height: `${insightH}%` }} className="bg-amber-500" />
+                                      <div style={{ height: `${cachedH}%` }} className="bg-emerald-400/60" />
+                                    </div>
+                                    <span className="text-[10px] text-muted-foreground">{dayLabel}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
+                        <div className="flex items-center gap-3 flex-wrap text-[11px] text-muted-foreground">
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-violet-500" /> Guide</span>
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-blue-500" /> Tutor</span>
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber-500" /> Insights</span>
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-emerald-400/60" /> Cached (free)</span>
+                        </div>
+                      </div>
+                    )}
+
                     {editingQuotas && (
                       <div className="rounded-2xl border-2 border-input p-4 space-y-3" data-testid="quota-editor">
                         <p className="text-sm font-bold">Daily limits (per student / per org)</p>

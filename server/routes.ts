@@ -34,13 +34,16 @@ import { registerAudioRoutes } from "./replit_integrations/audio";
 import { openai } from "./replit_integrations/chat/routes";
 import { enqueueJob, getJob, listRecentJobs } from "./jobs";
 import {
-  checkQuota as checkAiQuota,
-  recordUsage as recordAiUsage,
+  reserveQuota,
+  finalizeUsage,
+  releaseReservation,
+  recordCachedUsage,
   quotaErrorMessage,
   hashTutorQuestion,
   getCachedExplanation,
   setCachedExplanation,
   getOrgUsageToday,
+  getOrgUsageThisMonth,
   getOrgQuotaSettings,
   updateOrgQuotaSettings,
 } from "./aiUsage";
@@ -292,10 +295,13 @@ export async function registerRoutes(
       const orgIds = await getStudentOrgIds(userId).catch(() => [] as string[]);
       const orgId = orgIds[0] ?? null;
 
-      const quota = await checkAiQuota({ userId, orgId, kind: "ai_insights" });
-      if (!quota.ok) {
-        return res.status(429).json({ message: quotaErrorMessage(quota), quota });
+      const model = "gpt-4o-mini";
+      const reservation = await reserveQuota({ userId, orgId, kind: "ai_insights", model });
+      if (!reservation.ok) {
+        return res.status(429).json({ message: quotaErrorMessage(reservation), quota: reservation });
       }
+      let finalized = false;
+      try {
 
       const transactions = await storage.getTransactions(userId, { limit: 100 });
       const budgets = await storage.getBudgets(userId);
@@ -335,21 +341,23 @@ export async function registerRoutes(
       
       Keep the tone helpful and Caribbean-focused.`;
 
-      const model = "gpt-4o-mini";
       const response = await openai.chat.completions.create({
         model,
         messages: [{ role: "system", content: "You are a senior financial advisor specializing in Caribbean economies and personal finance." }, { role: "user", content: prompt }],
         response_format: { type: "json_object" }
       });
 
-      await recordAiUsage({
-        userId, orgId, kind: "ai_insights", model,
+      await finalizeUsage(reservation.reservationId, {
         tokensIn: response.usage?.prompt_tokens ?? 0,
         tokensOut: response.usage?.completion_tokens ?? 0,
       });
+      finalized = true;
 
       const content = response.choices[0].message.content || "{}";
       res.json(JSON.parse(content));
+      } finally {
+        if (!finalized) await releaseReservation(reservation.reservationId);
+      }
     } catch (err: any) {
       console.error("AI Insight error:", err?.message || "Unknown error");
       res.status(500).json({ message: "Failed to generate insights" });
@@ -1491,14 +1499,16 @@ Rules:
         }
         res.write(`data: ${JSON.stringify({ done: true, cached: true })}\n\n`);
         res.end();
-        await recordAiUsage({ userId, orgId, kind: "tutor_explain", model, cached: true });
+        await recordCachedUsage({ userId, orgId, kind: "tutor_explain", model });
         return;
       }
 
-      const quota = await checkAiQuota({ userId, orgId, kind: "tutor_explain" });
-      if (!quota.ok) {
-        return res.status(429).json({ message: quotaErrorMessage(quota), quota });
+      const reservation = await reserveQuota({ userId, orgId, kind: "tutor_explain", model });
+      if (!reservation.ok) {
+        return res.status(429).json({ message: quotaErrorMessage(reservation), quota: reservation });
       }
+      let finalized = false;
+      try {
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
@@ -1577,10 +1587,13 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
       // Cache the raw model output (with [STUDENT_NAME] placeholder) so future
       // students can have it personalized to them on serve.
       await setCachedExplanation(questionHash, modelVersion, fullContent.trim());
-      await recordAiUsage({
-        userId, orgId, kind: "tutor_explain", model,
-        tokensIn: promptTokens, tokensOut: completionTokens,
+      await finalizeUsage(reservation.reservationId, {
+        tokensIn: promptTokens, tokensOut: completionTokens, model,
       });
+      finalized = true;
+      } finally {
+        if (!finalized) await releaseReservation(reservation.reservationId);
+      }
     } catch (err: any) {
       console.error("Tutor explain error:", err);
       if (res.headersSent) {
@@ -1626,10 +1639,18 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
       const orgIds = await getStudentOrgIds(userId).catch(() => [] as string[]);
       const orgId = orgIds[0] ?? null;
 
-      const quota = await checkAiQuota({ userId, orgId, kind: "guide_chat" });
-      if (!quota.ok) {
-        return res.status(429).json({ message: quotaErrorMessage(quota), quota });
+      // Tier model: short single-turn replies use the cheaper model; longer
+      // conversations stay on gpt-4o for quality.
+      const totalChars = sanitizedMessages.reduce((sum: number, m: any) => sum + m.content.length, 0);
+      const useMini = sanitizedMessages.length <= 2 && totalChars < 1500;
+      const model = useMini ? "gpt-4o-mini" : "gpt-4o";
+
+      const reservation = await reserveQuota({ userId, orgId, kind: "guide_chat", model });
+      if (!reservation.ok) {
+        return res.status(429).json({ message: quotaErrorMessage(reservation), quota: reservation });
       }
+      let finalized = false;
+      try {
 
       const systemPrompt = `You are "Money Guide" — FinSight Lite's AI-powered financial mentor for kids and teens aged 10–17 in The Bahamas and the Caribbean.
 
@@ -1701,12 +1722,6 @@ If the user asks about FinSight Lite features, you can mention:
         ...sanitizedMessages,
       ];
 
-      // Tier model: short single-turn replies use the cheaper model; longer
-      // conversations stay on gpt-4o for quality.
-      const totalChars = sanitizedMessages.reduce((sum: number, m: any) => sum + m.content.length, 0);
-      const useMini = sanitizedMessages.length <= 2 && totalChars < 1500;
-      const model = useMini ? "gpt-4o-mini" : "gpt-4o";
-
       const stream = await openai.chat.completions.create({
         model,
         messages: chatMessages,
@@ -1731,10 +1746,13 @@ If the user asks about FinSight Lite features, you can mention:
 
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();
-      await recordAiUsage({
-        userId, orgId, kind: "guide_chat", model,
-        tokensIn: promptTokens, tokensOut: completionTokens,
+      await finalizeUsage(reservation.reservationId, {
+        tokensIn: promptTokens, tokensOut: completionTokens, model,
       });
+      finalized = true;
+      } finally {
+        if (!finalized) await releaseReservation(reservation.reservationId);
+      }
     } catch (error) {
       console.error("Guide chat error:", error);
       if (res.headersSent) {
@@ -2791,6 +2809,17 @@ If the user asks about FinSight Lite features, you can mention:
     }
   });
 
+  app.get("/api/org-admin/ai-usage-monthly", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+    try {
+      const usage = await getOrgUsageThisMonth(admin.orgId);
+      res.json(usage);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
   app.get("/api/org-admin/ai-quotas", isOrgAdmin, async (req: any, res) => {
     const admin = await storage.getOrgAdminById(req.session.orgAdminId);
     if (!admin) return res.status(401).json({ message: "Not found" });
@@ -2806,15 +2835,20 @@ If the user asks about FinSight Lite features, you can mention:
     const admin = await storage.getOrgAdminById(req.session.orgAdminId);
     if (!admin) return res.status(401).json({ message: "Not found" });
     try {
-      const allowed = [
-        "guide_chat_per_user", "tutor_explain_per_user", "ai_insights_per_user",
-        "guide_chat_per_org", "tutor_explain_per_org", "ai_insights_per_org",
-      ];
-      const updates: any = {};
-      for (const key of allowed) {
-        if (key in req.body) updates[key] = req.body[key];
+      const limitField = z.union([z.number().int().min(1).max(100000), z.null()]).optional();
+      const QuotaPatch = z.object({
+        guide_chat_per_user: limitField,
+        tutor_explain_per_user: limitField,
+        ai_insights_per_user: limitField,
+        guide_chat_per_org: limitField,
+        tutor_explain_per_org: limitField,
+        ai_insights_per_org: limitField,
+      }).strict();
+      const parsed = QuotaPatch.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid quota values", errors: parsed.error.flatten() });
       }
-      await updateOrgQuotaSettings(admin.orgId, updates);
+      await updateOrgQuotaSettings(admin.orgId, parsed.data as any);
       const settings = await getOrgQuotaSettings(admin.orgId);
       res.json(settings);
     } catch (err: any) {
