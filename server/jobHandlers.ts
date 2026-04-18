@@ -3,8 +3,8 @@ import { storage } from "./storage";
 import { openai } from "./replit_integrations/chat/routes";
 import { objectStorageClient } from "./replit_integrations/object_storage";
 import { db } from "./db";
-import { emailContacts, extractedQuestions, gameSessions, transactions, userXp } from "@shared/schema";
-import { and, eq, gte, sql } from "drizzle-orm";
+import { emailContacts, extractedQuestions, gameSessions, transactions, userXp, userLearningProgress, userBadges, learningModules } from "@shared/schema";
+import { and, eq, gte, sql, inArray, lte } from "drizzle-orm";
 import { sendEmail, escapeHtml, appBaseUrl } from "./email";
 
 function parsePrivatePath(relPath: string): { bucket: string; object: string } {
@@ -244,10 +244,47 @@ Rules:
   // === Weekly digest fan-out ===
   registerJobHandler("weekly-digest", async (job) => {
     const { weekStart, audience, orgId } = job.payload;
-    const since = new Date(weekStart);
+    const periodEnd = new Date(weekStart);
+    const since = new Date(periodEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
     let enqueued = 0;
     const baseUrl = appBaseUrl();
     const orgFilter = orgId ? eq(emailContacts.orgId, orgId) : undefined;
+
+    async function studentWeekStats(userId: string) {
+      const xp = await storage.getUserXp(userId).catch(() => null);
+      const [{ count: txCount = 0 } = { count: 0 }] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(transactions)
+        .where(and(eq(transactions.userId, userId), gte(transactions.createdAt, since), lte(transactions.createdAt, periodEnd)));
+      const [{ count: gameCount = 0 } = { count: 0 }] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(gameSessions)
+        .where(and(eq(gameSessions.userId, userId), gte(gameSessions.completedAt, since), lte(gameSessions.completedAt, periodEnd)));
+      const lessonRows = await db
+        .select({ title: learningModules.title })
+        .from(userLearningProgress)
+        .leftJoin(learningModules, eq(userLearningProgress.moduleId, learningModules.id))
+        .where(and(
+          eq(userLearningProgress.userId, userId),
+          eq(userLearningProgress.completed, true),
+          gte(userLearningProgress.completedAt, since),
+          lte(userLearningProgress.completedAt, periodEnd),
+        ));
+      const badgeRows = await db
+        .select({ id: userBadges.id })
+        .from(userBadges)
+        .where(and(eq(userBadges.userId, userId), gte(userBadges.earnedAt, since), lte(userBadges.earnedAt, periodEnd)));
+      return {
+        totalXp: xp?.totalXp ?? 0,
+        level: xp?.level ?? 1,
+        streak: xp?.currentStreak ?? 0,
+        txCount,
+        gameCount,
+        lessonsCompleted: lessonRows.length,
+        lessonTitles: lessonRows.map((r) => r.title).filter(Boolean) as string[],
+        badgesEarned: badgeRows.length,
+      };
+    }
 
     if (audience === "student") {
       const conds = [
@@ -258,16 +295,8 @@ Rules:
       if (orgFilter) conds.push(orgFilter);
       const contacts = await db.select().from(emailContacts).where(and(...conds));
       for (const c of contacts) {
-        const xp = await storage.getUserXp(c.userId).catch(() => null);
-        const [{ count: txCount = 0 } = { count: 0 }] = await db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(transactions)
-          .where(and(eq(transactions.userId, c.userId), gte(transactions.createdAt, since)));
-        const [{ count: gameCount = 0 } = { count: 0 }] = await db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(gameSessions)
-          .where(and(eq(gameSessions.userId, c.userId), gte(gameSessions.completedAt, since)));
-        const html = renderStudentDigest({ totalXp: xp?.totalXp ?? 0, level: xp?.level ?? 1, streak: xp?.currentStreak ?? 0, txCount, gameCount, baseUrl });
+        const stats = await studentWeekStats(c.userId);
+        const html = renderStudentDigest({ ...stats, baseUrl });
         await enqueueJob({
           kind: "send-email",
           payload: {
@@ -291,13 +320,15 @@ Rules:
       if (orgFilter) conds.push(orgFilter);
       const contacts = await db.select().from(emailContacts).where(and(...conds));
       for (const c of contacts) {
-        const xp = await storage.getUserXp(c.userId).catch(() => null);
-        const html = renderGuardianDigest({ studentName: c.userId, totalXp: xp?.totalXp ?? 0, level: xp?.level ?? 1, baseUrl });
+        const stats = await studentWeekStats(c.userId);
+        const student = await storage.getUser(c.userId).catch(() => null);
+        const studentName = student?.firstName || student?.email || "Your student";
+        const html = renderGuardianDigest({ studentName, ...stats, baseUrl });
         await enqueueJob({
           kind: "send-email",
           payload: {
             to: c.email,
-            subject: "Weekly progress for your student",
+            subject: `Weekly progress for ${studentName}`,
             html,
             kind: "weekly_digest",
             orgId: c.orgId,
@@ -318,7 +349,61 @@ Rules:
       for (const c of contacts) {
         const teacherId = parseInt(c.userId, 10);
         const classes = isFinite(teacherId) ? await storage.getClassesByTeacher(teacherId) : [];
-        const html = renderTeacherDigest({ classCount: classes.length, baseUrl });
+        const classSummaries: Array<{ name: string; total: number; active: number; lessons: number; flagged: string[] }> = [];
+        for (const cls of classes) {
+          const enrollments = await storage.getEnrollmentsByClass(cls.id);
+          const studentIds = enrollments.map((e) => e.studentId);
+          if (studentIds.length === 0) {
+            classSummaries.push({ name: cls.name, total: 0, active: 0, lessons: 0, flagged: [] });
+            continue;
+          }
+          const activeRows = await db
+            .select({ userId: gameSessions.userId })
+            .from(gameSessions)
+            .where(and(inArray(gameSessions.userId, studentIds), gte(gameSessions.completedAt, since), lte(gameSessions.completedAt, periodEnd)))
+            .groupBy(gameSessions.userId);
+          const activeFromTx = await db
+            .select({ userId: transactions.userId })
+            .from(transactions)
+            .where(and(inArray(transactions.userId, studentIds), gte(transactions.createdAt, since), lte(transactions.createdAt, periodEnd)))
+            .groupBy(transactions.userId);
+          const activeFromLessons = await db
+            .select({ userId: userLearningProgress.userId })
+            .from(userLearningProgress)
+            .where(and(
+              inArray(userLearningProgress.userId, studentIds),
+              eq(userLearningProgress.completed, true),
+              gte(userLearningProgress.completedAt, since),
+              lte(userLearningProgress.completedAt, periodEnd),
+            ))
+            .groupBy(userLearningProgress.userId);
+          const activeIds = new Set<string>([
+            ...activeRows.map((r) => r.userId),
+            ...activeFromTx.map((r) => r.userId),
+            ...activeFromLessons.map((r) => r.userId),
+          ]);
+          const [{ count: lessons = 0 } = { count: 0 }] = await db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(userLearningProgress)
+            .where(and(
+              inArray(userLearningProgress.userId, studentIds),
+              eq(userLearningProgress.completed, true),
+              gte(userLearningProgress.completedAt, since),
+              lte(userLearningProgress.completedAt, periodEnd),
+            ));
+          const flagged = enrollments
+            .filter((e) => !activeIds.has(e.studentId))
+            .map((e) => e.student?.firstName || e.student?.email || e.studentId)
+            .slice(0, 8);
+          classSummaries.push({
+            name: cls.name,
+            total: enrollments.length,
+            active: activeIds.size,
+            lessons,
+            flagged,
+          });
+        }
+        const html = renderTeacherDigest({ classes: classSummaries, baseUrl });
         await enqueueJob({
           kind: "send-email",
           payload: {
@@ -351,29 +436,64 @@ function shell(title: string, body: string, baseUrl: string): string {
   </div></body></html>`;
 }
 
-function renderStudentDigest(d: { totalXp: number; level: number; streak: number; txCount: number; gameCount: number; baseUrl: string }) {
+type StudentStats = {
+  totalXp: number; level: number; streak: number;
+  txCount: number; gameCount: number;
+  lessonsCompleted: number; lessonTitles: string[]; badgesEarned: number;
+};
+
+function renderStudentDigest(d: StudentStats & { baseUrl: string }) {
+  const lessonsList = d.lessonTitles.length
+    ? `<p style="margin:8px 0 0;font-size:13px;color:#374151">Lessons: ${d.lessonTitles.map(escapeHtml).join(", ")}</p>`
+    : "";
   return shell("Your weekly recap", `
-    <p>Here's how your money learning went this week.</p>
+    <p>Here's how your money learning went over the last 7 days.</p>
     <ul style="line-height:1.8;color:#111827">
-      <li><b>${d.totalXp}</b> total XP (Level ${d.level})</li>
-      <li><b>${d.streak}</b> day streak</li>
-      <li><b>${d.txCount}</b> transactions logged</li>
-      <li><b>${d.gameCount}</b> games played</li>
+      <li><b>${d.lessonsCompleted}</b> lesson${d.lessonsCompleted === 1 ? "" : "s"} completed this week</li>
+      <li><b>${d.badgesEarned}</b> new badge${d.badgesEarned === 1 ? "" : "s"} earned</li>
+      <li><b>${d.gameCount}</b> game${d.gameCount === 1 ? "" : "s"} played</li>
+      <li><b>${d.txCount}</b> transaction${d.txCount === 1 ? "" : "s"} logged</li>
+      <li><b>${d.totalXp}</b> total XP · Level <b>${d.level}</b> · ${d.streak}-day streak</li>
     </ul>
-    <p><a href="${escapeHtml(d.baseUrl)}" style="background:#2563eb;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block">Open dashboard</a></p>
+    ${lessonsList}
+    <p style="margin-top:16px"><a href="${escapeHtml(d.baseUrl)}" style="background:#2563eb;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block">Open dashboard</a></p>
   `, d.baseUrl);
 }
 
-function renderGuardianDigest(d: { studentName: string; totalXp: number; level: number; baseUrl: string }) {
-  return shell("Weekly progress update", `
-    <p>Your student reached <b>Level ${d.level}</b> with <b>${d.totalXp}</b> total XP this week on FinSight Lite.</p>
+function renderGuardianDigest(d: StudentStats & { studentName: string; baseUrl: string }) {
+  const lessonsList = d.lessonTitles.length
+    ? `<p style="margin:8px 0 0;font-size:13px;color:#374151">Lessons covered: ${d.lessonTitles.map(escapeHtml).join(", ")}</p>`
+    : "";
+  return shell(`Weekly progress for ${d.studentName}`, `
+    <p>Here is what <b>${escapeHtml(d.studentName)}</b> did on FinSight Lite over the last 7 days:</p>
+    <ul style="line-height:1.8;color:#111827">
+      <li><b>${d.lessonsCompleted}</b> lesson${d.lessonsCompleted === 1 ? "" : "s"} completed</li>
+      <li><b>${d.badgesEarned}</b> new badge${d.badgesEarned === 1 ? "" : "s"} earned</li>
+      <li><b>${d.gameCount}</b> game${d.gameCount === 1 ? "" : "s"} played</li>
+      <li><b>${d.txCount}</b> transaction${d.txCount === 1 ? "" : "s"} logged</li>
+      <li>Now at <b>Level ${d.level}</b> with <b>${d.totalXp}</b> total XP (${d.streak}-day streak)</li>
+    </ul>
+    ${lessonsList}
   `, d.baseUrl);
 }
 
-function renderTeacherDigest(d: { classCount: number; baseUrl: string }) {
+function renderTeacherDigest(d: { classes: Array<{ name: string; total: number; active: number; lessons: number; flagged: string[] }>; baseUrl: string }) {
+  const body = d.classes.length === 0
+    ? `<p>You don't have any classes yet. Create one to start tracking student progress.</p>`
+    : d.classes.map((c) => `
+      <div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin:10px 0">
+        <div style="font-weight:600;margin-bottom:6px">${escapeHtml(c.name)}</div>
+        <div style="font-size:13px;color:#374151;line-height:1.7">
+          <b>${c.active}</b> of <b>${c.total}</b> students active this week ·
+          <b>${c.lessons}</b> lesson${c.lessons === 1 ? "" : "s"} completed
+        </div>
+        ${c.flagged.length ? `<div style="font-size:12px;color:#b45309;margin-top:8px">No activity: ${c.flagged.map(escapeHtml).join(", ")}</div>` : ""}
+      </div>
+    `).join("");
   return shell("Your class recap", `
-    <p>You have <b>${d.classCount}</b> active class${d.classCount === 1 ? "" : "es"} this week.</p>
-    <p><a href="${escapeHtml(d.baseUrl)}/teacher" style="background:#2563eb;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block">Open teacher dashboard</a></p>
+    <p>Here's how your classes did over the last 7 days.</p>
+    ${body}
+    <p style="margin-top:16px"><a href="${escapeHtml(d.baseUrl)}/teacher" style="background:#2563eb;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block">Open teacher dashboard</a></p>
   `, d.baseUrl);
 }
 

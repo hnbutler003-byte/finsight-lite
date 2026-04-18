@@ -3362,6 +3362,37 @@ If the user asks about FinSight Lite features, you can mention:
     }
   });
 
+  app.post("/api/email/webhooks/resend", expressJson({ limit: "1mb" }), async (req: any, res) => {
+    try {
+      const secret = process.env.RESEND_WEBHOOK_SECRET;
+      if (secret) {
+        const provided = req.headers["x-webhook-secret"] || req.headers["resend-webhook-secret"];
+        if (provided !== secret) return res.status(401).json({ message: "Invalid signature" });
+      }
+      const ev = req.body || {};
+      const type: string = ev.type || ev.event || "";
+      const data = ev.data || ev || {};
+      const providerId: string | undefined = data.email_id || data.id || data.message_id;
+      if (!providerId) return res.json({ ok: true, ignored: "no provider id" });
+      const map: Record<string, "delivered" | "bounced" | "complained" | "opened" | "failed" | "sent"> = {
+        "email.delivered": "delivered",
+        "email.bounced": "bounced",
+        "email.complained": "complained",
+        "email.opened": "opened",
+        "email.failed": "failed",
+        "email.sent": "sent",
+      };
+      const status = map[type];
+      if (!status) return res.json({ ok: true, ignored: type });
+      await emailDb.update(emailEvents)
+        .set({ status })
+        .where(eqEmail(emailEvents.providerId, providerId));
+      res.json({ ok: true });
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
   app.get("/api/email/verify", async (req, res) => {
     const token = String(req.query.token ?? "");
     if (!token) return res.status(400).send("Missing token");
