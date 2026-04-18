@@ -278,13 +278,16 @@ export async function getOrganizations(): Promise<Organization[]> {
 
 export async function getOrganization(id: string): Promise<Organization | null> {
   if (!supabase) return null;
-  const { cached } = await import("./cache");
-  // Org branding is read on nearly every authenticated page render but rarely changes.
-  return await cached<Organization | null>(`org:${id}`, 5 * 60_000, async () => {
-    const { data, error } = await supabase!.from("organizations").select("*").eq("id", id).single();
-    if (error) return null;
-    return data as Organization;
-  });
+  const { cacheGet, cacheSet } = await import("./cache");
+  const key = `org:${id}`;
+  const hit = cacheGet<Organization>(key);
+  if (hit) return hit;
+  const { data, error } = await supabase.from("organizations").select("*").eq("id", id).single();
+  // Don't cache transient errors / missing rows — retry on next request instead of
+  // serving stale "not found" for the full TTL.
+  if (error || !data) return null;
+  cacheSet(key, data as Organization, 5 * 60_000);
+  return data as Organization;
 }
 
 export async function invalidateOrganizationCache(id?: string): Promise<void> {
