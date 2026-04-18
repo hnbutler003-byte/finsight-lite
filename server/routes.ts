@@ -33,6 +33,15 @@ import { registerImageRoutes } from "./replit_integrations/image";
 import { registerAudioRoutes } from "./replit_integrations/audio";
 import { openai } from "./replit_integrations/chat/routes";
 import { enqueueJob, getJob, listRecentJobs } from "./jobs";
+import {
+  checkQuota as checkAiQuota,
+  recordUsage as recordAiUsage,
+  quotaErrorMessage,
+  hashTutorQuestion,
+  getCachedExplanation,
+  setCachedExplanation,
+  getOrgUsageThisMonth,
+} from "./aiUsage";
 import { streamPrivateObjectToResponse } from "./jobHandlers";
 import { isVeryfiConfigured, parseWithVeryfi } from "./veryfi";
 import {
@@ -277,6 +286,15 @@ export async function registerRoutes(
   app.get("/api/ai/insights", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
+
+      const orgIds = await getStudentOrgIds(userId).catch(() => [] as string[]);
+      const orgId = orgIds[0] ?? null;
+
+      const quota = await checkAiQuota({ userId, orgId, kind: "ai_insights" });
+      if (!quota.ok) {
+        return res.status(429).json({ message: quotaErrorMessage(quota), quota });
+      }
+
       const transactions = await storage.getTransactions(userId, { limit: 100 });
       const budgets = await storage.getBudgets(userId);
       const selectedCurrency = req.query.currency as string || "BSD";
@@ -315,11 +333,14 @@ export async function registerRoutes(
       
       Keep the tone helpful and Caribbean-focused.`;
 
+      const model = "gpt-4o-mini";
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model,
         messages: [{ role: "system", content: "You are a senior financial advisor specializing in Caribbean economies and personal finance." }, { role: "user", content: prompt }],
         response_format: { type: "json_object" }
       });
+
+      await recordAiUsage({ userId, orgId, kind: "ai_insights", model });
 
       const content = response.choices[0].message.content || "{}";
       res.json(JSON.parse(content));
@@ -1435,19 +1456,51 @@ Rules:
   app.post("/api/moneylab/tutor/explain", isAuthenticated, async (req, res) => {
     try {
       const { questionText, options, correctAnswer, subject } = req.body;
+      const userId = (req.user as any).id;
       const userName = (req.user as any).firstName || "friend";
 
       if (!questionText) {
         return res.status(400).json({ message: "Question text is required" });
       }
 
+      const orgIds = await getStudentOrgIds(userId).catch(() => [] as string[]);
+      const orgId = orgIds[0] ?? null;
+
+      const model = "gpt-4o-mini";
+      const modelVersion = `${model}-v1`;
+      const questionHash = hashTutorQuestion({ questionText, options, correctAnswer, subject });
+
+      // Try cache first — cache hits don't count against quota.
+      const cached = await getCachedExplanation(questionHash, modelVersion);
+      if (cached) {
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+        // Substitute the placeholder with this student's name on serve
+        const personalized = cached.split("[STUDENT_NAME]").join(userName);
+        // Stream cached content in chunks for a smooth UX
+        const chunkSize = 64;
+        for (let i = 0; i < personalized.length; i += chunkSize) {
+          res.write(`data: ${JSON.stringify({ content: personalized.slice(i, i + chunkSize) })}\n\n`);
+        }
+        res.write(`data: ${JSON.stringify({ done: true, cached: true })}\n\n`);
+        res.end();
+        await recordAiUsage({ userId, orgId, kind: "tutor_explain", model, cached: true });
+        return;
+      }
+
+      const quota = await checkAiQuota({ userId, orgId, kind: "tutor_explain" });
+      if (!quota.ok) {
+        return res.status(429).json({ message: quotaErrorMessage(quota), quota });
+      }
+
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
+      const NAME_PLACEHOLDER = "[STUDENT_NAME]";
       const systemPrompt = `You are an AI Tutor for Caribbean high school students (ages 14-18). 
 You explain exam questions in simple, friendly language.
-The student's name is "${userName}".
 
 Your style:
 - Warm, encouraging, like a helpful older sibling
@@ -1459,12 +1512,14 @@ Your style:
 - End with a "Quick Tip" for remembering the concept
 
 Format:
-1. Start with "Hey ${userName}!" or similar greeting
+1. Start with "Hey ${NAME_PLACEHOLDER}!" as the greeting (use the literal string ${NAME_PLACEHOLDER} — do NOT substitute a name yourself).
 2. Explain what the question is asking
 3. Walk through why the correct answer is right
 4. Briefly mention why other options are wrong
 5. Give a real-world example
-6. End with a memorable tip`;
+6. End with a memorable tip
+
+IMPORTANT: Use the exact placeholder ${NAME_PLACEHOLDER} wherever you would address the student. Do not use any other names. Do not invent names.`;
 
       const questionContext = `Subject: ${subject || "General"}
 Question: ${questionText}
@@ -1472,7 +1527,7 @@ ${options ? `Options: ${options.join(", ")}` : ""}
 ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
 
       const stream = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Please explain this exam question to me:\n\n${questionContext}` },
@@ -1482,14 +1537,34 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
         temperature: 0.7,
       });
 
+      // Buffer until we can safely substitute [STUDENT_NAME] across chunk boundaries
+      let fullContent = "";
+      let pending = "";
+      const PLACEHOLDER = "[STUDENT_NAME]";
+      const HOLDBACK = PLACEHOLDER.length - 1;
       for await (const chunk of stream) {
         const content = chunk.choices[0]?.delta?.content || "";
-        if (content) {
-          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        if (!content) continue;
+        fullContent += content;
+        pending += content;
+        // Emit everything except the trailing HOLDBACK chars (in case a placeholder is split)
+        if (pending.length > HOLDBACK) {
+          const emit = pending.slice(0, pending.length - HOLDBACK).split(PLACEHOLDER).join(userName);
+          pending = pending.slice(pending.length - HOLDBACK);
+          if (emit) res.write(`data: ${JSON.stringify({ content: emit })}\n\n`);
         }
+      }
+      if (pending) {
+        const emit = pending.split(PLACEHOLDER).join(userName);
+        res.write(`data: ${JSON.stringify({ content: emit })}\n\n`);
       }
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();
+
+      // Cache the raw model output (with [STUDENT_NAME] placeholder) so future
+      // students can have it personalized to them on serve.
+      await setCachedExplanation(questionHash, modelVersion, fullContent.trim());
+      await recordAiUsage({ userId, orgId, kind: "tutor_explain", model });
     } catch (err: any) {
       console.error("Tutor explain error:", err);
       if (res.headersSent) {
@@ -1516,6 +1591,7 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
   app.post("/api/guide/chat", isAuthenticated, async (req, res) => {
     try {
       const { messages: userMessages } = req.body;
+      const userId = (req.user as any).id;
       const userName = (req.user as any).firstName || "friend";
 
       if (!Array.isArray(userMessages) || userMessages.length === 0) {
@@ -1529,6 +1605,14 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
 
       if (sanitizedMessages.length === 0) {
         return res.status(400).json({ message: "No valid messages provided." });
+      }
+
+      const orgIds = await getStudentOrgIds(userId).catch(() => [] as string[]);
+      const orgId = orgIds[0] ?? null;
+
+      const quota = await checkAiQuota({ userId, orgId, kind: "guide_chat" });
+      if (!quota.ok) {
+        return res.status(429).json({ message: quotaErrorMessage(quota), quota });
       }
 
       const systemPrompt = `You are "Money Guide" — FinSight Lite's AI-powered financial mentor for kids and teens aged 10–17 in The Bahamas and the Caribbean.
@@ -1601,8 +1685,14 @@ If the user asks about FinSight Lite features, you can mention:
         ...sanitizedMessages,
       ];
 
+      // Tier model: short single-turn replies use the cheaper model; longer
+      // conversations stay on gpt-4o for quality.
+      const totalChars = sanitizedMessages.reduce((sum: number, m: any) => sum + m.content.length, 0);
+      const useMini = sanitizedMessages.length <= 2 && totalChars < 1500;
+      const model = useMini ? "gpt-4o-mini" : "gpt-4o";
+
       const stream = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model,
         messages: chatMessages,
         stream: true,
         max_completion_tokens: 1024,
@@ -1618,6 +1708,7 @@ If the user asks about FinSight Lite features, you can mention:
 
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();
+      await recordAiUsage({ userId, orgId, kind: "guide_chat", model });
     } catch (error) {
       console.error("Guide chat error:", error);
       if (res.headersSent) {
@@ -2661,6 +2752,17 @@ If the user asks about FinSight Lite features, you can mention:
       },
       environments: envSummaries,
     });
+  });
+
+  app.get("/api/org-admin/ai-usage", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+    try {
+      const usage = await getOrgUsageThisMonth(admin.orgId);
+      res.json(usage);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
   });
 
   app.get("/api/org-admin/students", isOrgAdmin, async (req: any, res) => {

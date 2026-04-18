@@ -337,6 +337,38 @@ export const jobs = pgTable("jobs", {
 
 export type Job = typeof jobs.$inferSelect;
 
+// === AI USAGE & TUTOR CACHE ===
+
+export const aiUsageEvents = pgTable("ai_usage_events", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id"),
+  orgId: text("org_id"),
+  envId: text("env_id"),
+  kind: text("kind", { enum: ["guide_chat", "tutor_explain", "ai_insights"] }).notNull(),
+  model: text("model"),
+  cached: boolean("cached").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => ({
+  userKindIdx: index("idx_ai_usage_user_kind_created").on(t.userId, t.kind, t.createdAt),
+  orgKindIdx: index("idx_ai_usage_org_kind_created").on(t.orgId, t.kind, t.createdAt),
+}));
+
+export type AiUsageEvent = typeof aiUsageEvents.$inferSelect;
+
+export const tutorExplanations = pgTable("tutor_explanations", {
+  id: serial("id").primaryKey(),
+  questionHash: varchar("question_hash", { length: 64 }).notNull(),
+  modelVersion: text("model_version").notNull(),
+  explanation: text("explanation").notNull(),
+  hits: integer("hits").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastUsedAt: timestamp("last_used_at").defaultNow().notNull(),
+}, (t) => ({
+  hashModelIdx: index("idx_tutor_explanations_hash_model").on(t.questionHash, t.modelVersion),
+}));
+
+export type TutorExplanation = typeof tutorExplanations.$inferSelect;
+
 // === RELATIONS ===
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
