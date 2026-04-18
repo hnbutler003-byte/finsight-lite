@@ -14,6 +14,22 @@ export interface JobPayloads {
   "admin-csv-export": {
     type: "students" | "teachers" | "classes" | "schools" | "sponsors";
   };
+  "send-email": {
+    to: string;
+    subject: string;
+    html: string;
+    text?: string;
+    kind: string;
+    orgId?: string | null;
+    userKind?: string | null;
+    userId?: string | null;
+    attachments?: { filename: string; content: string }[];
+  };
+  "weekly-digest": {
+    weekStart: string;
+    audience: "student" | "teacher" | "guardian";
+    orgId?: string | null;
+  };
 }
 
 export interface JobResults {
@@ -29,6 +45,16 @@ export interface JobResults {
     rowCount: number;
     objectPath: string;
     fileName: string;
+  };
+  "send-email": {
+    ok: boolean;
+    providerId?: string;
+    error?: string;
+  };
+  "weekly-digest": {
+    audience: "student" | "teacher" | "guardian";
+    weekStart: string;
+    enqueued: number;
   };
 }
 

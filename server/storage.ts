@@ -151,6 +151,9 @@ export interface IStorage extends IAuthStorage {
   createOrgAdmin(data: InsertOrgAdmin & { passwordHash: string }): Promise<OrgAdmin>;
   getOrgAdminByEmail(email: string): Promise<OrgAdmin | undefined>;
   getOrgAdminById(id: number): Promise<OrgAdmin | undefined>;
+  getStudentsByOrgId(orgId: string): Promise<User[]>;
+  getTeachersByOrgId(orgId: string): Promise<Teacher[]>;
+  getOrgAdminsByOrgId(orgId: string): Promise<OrgAdmin[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1369,6 +1372,25 @@ export class DatabaseStorage implements IStorage {
   async getOrgAdminById(id: number): Promise<OrgAdmin | undefined> {
     const [admin] = await db.select().from(orgAdmins).where(eq(orgAdmins.id, id));
     return admin;
+  }
+
+  async getStudentsByOrgId(orgId: string): Promise<User[]> {
+    const rows = await db
+      .selectDistinct({ user: users })
+      .from(classEnrollments)
+      .innerJoin(users, eq(classEnrollments.studentId, users.id))
+      .innerJoin(classes, eq(classEnrollments.classId, classes.id))
+      .innerJoin(teachers, eq(classes.teacherId, teachers.id))
+      .where(eq(teachers.orgId, orgId));
+    return rows.map((r) => r.user);
+  }
+
+  async getTeachersByOrgId(orgId: string): Promise<Teacher[]> {
+    return db.select().from(teachers).where(eq(teachers.orgId, orgId));
+  }
+
+  async getOrgAdminsByOrgId(orgId: string): Promise<OrgAdmin[]> {
+    return db.select().from(orgAdmins).where(eq(orgAdmins.orgId, orgId));
   }
 }
 

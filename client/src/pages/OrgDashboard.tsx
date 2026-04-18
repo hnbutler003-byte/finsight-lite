@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useOrgAuth } from "@/hooks/use-org-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Users, BookOpen, Globe, Copy, Check, Loader2, Building2, BarChart3, Layers, Sparkles, Settings2, Save } from "lucide-react";
+import { Users, BookOpen, Globe, Copy, Check, Loader2, Building2, BarChart3, Layers, Sparkles, Settings2, Save, Mail, Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,22 @@ export default function OrgDashboard() {
   });
 
   const { toast } = useToast();
+
+  const { data: emailStats } = useQuery<any>({
+    queryKey: ["/api/org/admin/email-stats"],
+    queryFn: () => fetch("/api/org/admin/email-stats", { credentials: "include" }).then(r => r.json()),
+    enabled: !!admin,
+    refetchInterval: 60_000,
+  });
+
+  const triggerDigest = useMutation({
+    mutationFn: async (audience: "student" | "teacher" | "guardian") => {
+      const r = await apiRequest("POST", "/api/org/admin/weekly-digest/run-now", { audience });
+      return r.json();
+    },
+    onSuccess: () => toast({ title: "Weekly digest queued" }),
+    onError: (e: any) => toast({ title: "Couldn't queue digest", description: e.message, variant: "destructive" }),
+  });
   const [editingQuotas, setEditingQuotas] = useState(false);
   const [quotaForm, setQuotaForm] = useState<Record<string, string>>({});
 
@@ -367,6 +383,68 @@ export default function OrgDashboard() {
                             {saveQuotas.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
                             Save limits
                           </Button>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {emailStats && (
+                <Card className="glass-card rounded-glass" data-testid="card-email-stats">
+                  <CardContent className="p-6 space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-blue-500/15 flex items-center justify-center">
+                          <Mail className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-display font-bold text-lg">Email deliverability (last 7 days)</h3>
+                          <p className="text-xs text-muted-foreground">Sent, delivered, bounced, opened, failed.</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" variant="outline" onClick={() => triggerDigest.mutate("student")} disabled={triggerDigest.isPending} data-testid="button-digest-student">
+                          <Send className="w-3 h-3 mr-1" /> Run student digest
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => triggerDigest.mutate("teacher")} disabled={triggerDigest.isPending} data-testid="button-digest-teacher">
+                          <Send className="w-3 h-3 mr-1" /> Teacher
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => triggerDigest.mutate("guardian")} disabled={triggerDigest.isPending} data-testid="button-digest-guardian">
+                          <Send className="w-3 h-3 mr-1" /> Guardian
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                      {[
+                        { k: "sent", label: "Sent", color: "text-blue-600" },
+                        { k: "delivered", label: "Delivered", color: "text-green-600" },
+                        { k: "opened", label: "Opened", color: "text-emerald-600" },
+                        { k: "bounced", label: "Bounced", color: "text-amber-600" },
+                        { k: "failed", label: "Failed", color: "text-rose-600" },
+                      ].map((row) => (
+                        <div key={row.k} className="rounded-2xl border bg-white/60 dark:bg-white/5 p-3">
+                          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">{row.label}</p>
+                          <p className={`text-2xl font-display font-bold ${row.color}`} data-testid={`text-email-${row.k}`}>
+                            {emailStats.totals?.[row.k] ?? 0}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                    {Array.isArray(emailStats.recent) && emailStats.recent.length > 0 && (
+                      <div className="text-xs">
+                        <p className="font-bold text-muted-foreground mb-2">Recent activity</p>
+                        <div className="space-y-1 max-h-48 overflow-y-auto">
+                          {emailStats.recent.slice(0, 10).map((e: any) => (
+                            <div key={e.id} className="flex justify-between gap-2 border-b border-border/40 pb-1">
+                              <span className="truncate">{e.recipient}</span>
+                              <span className="text-muted-foreground">{e.kind}</span>
+                              <span className={
+                                e.status === "sent" || e.status === "delivered" || e.status === "opened" ? "text-green-600" :
+                                e.status === "bounced" || e.status === "failed" ? "text-rose-600" : "text-muted-foreground"
+                              }>{e.status}</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}

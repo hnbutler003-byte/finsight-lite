@@ -568,6 +568,20 @@ function generateCertificate(
 
   const safeContext = contextName.replace(/[^a-z0-9]/gi, "_").slice(0, 40);
   doc.save(`FinSight_Certificate_${safeContext}.pdf`);
+
+  // Best-effort email a copy to the verified email + guardian.
+  try {
+    const dataUri = doc.output("datauristring");
+    const pdfBase64 = dataUri.split(",")[1];
+    if (pdfBase64) {
+      void fetch("/api/certificates/email", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pdfBase64, lessonTitle: contextName, kind: type, sendToGuardian: true }),
+      }).catch(() => {});
+    }
+  } catch {}
 }
 
 async function generateFinancialAcademyCertificate(

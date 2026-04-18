@@ -628,6 +628,65 @@ export type InsertChallenge = z.infer<typeof insertChallengeSchema>;
 export type ClassNotification = typeof classNotifications.$inferSelect;
 export type InsertClassNotification = z.infer<typeof insertClassNotificationSchema>;
 
+// === EMAIL DELIVERY TABLES ===
+
+export const emailContacts = pgTable("email_contacts", {
+  id: serial("id").primaryKey(),
+  userKind: text("user_kind", { enum: ["student", "teacher", "org_admin", "guardian"] }).notNull(),
+  userId: text("user_id").notNull(),
+  email: text("email").notNull(),
+  verified: boolean("verified").default(false).notNull(),
+  weeklyDigest: boolean("weekly_digest").default(true).notNull(),
+  classNotifications: boolean("class_notifications").default(true).notNull(),
+  orgId: text("org_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (t) => ({
+  userIdx: uniqueIndex("uniq_email_contacts_user").on(t.userKind, t.userId),
+  orgIdx: index("idx_email_contacts_org").on(t.orgId),
+}));
+
+export const emailVerificationTokens = pgTable("email_verification_tokens", {
+  id: serial("id").primaryKey(),
+  contactId: integer("contact_id").notNull().references(() => emailContacts.id, { onDelete: "cascade" }),
+  token: text("token").unique().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const emailEvents = pgTable("email_events", {
+  id: serial("id").primaryKey(),
+  orgId: text("org_id"),
+  userKind: text("user_kind"),
+  userId: text("user_id"),
+  kind: text("kind").notNull(),
+  recipient: text("recipient").notNull(),
+  subject: text("subject"),
+  status: text("status", { enum: ["queued", "sent", "delivered", "bounced", "complained", "opened", "failed"] }).notNull(),
+  providerId: text("provider_id"),
+  error: text("error"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (t) => ({
+  orgCreatedIdx: index("idx_email_events_org_created").on(t.orgId, t.createdAt),
+  providerIdx: index("idx_email_events_provider").on(t.providerId),
+}));
+
+export const weeklyDigestRuns = pgTable("weekly_digest_runs", {
+  id: serial("id").primaryKey(),
+  weekStart: text("week_start").notNull(),
+  audience: text("audience", { enum: ["student", "teacher", "guardian"] }).notNull(),
+  ranAt: timestamp("ran_at").defaultNow(),
+}, (t) => ({
+  weekAudienceIdx: uniqueIndex("uniq_weekly_digest_week_audience").on(t.weekStart, t.audience),
+}));
+
+export type EmailContact = typeof emailContacts.$inferSelect;
+export type InsertEmailContact = typeof emailContacts.$inferInsert;
+export type EmailVerificationToken = typeof emailVerificationTokens.$inferSelect;
+export type EmailEvent = typeof emailEvents.$inferSelect;
+export type InsertEmailEvent = typeof emailEvents.$inferInsert;
+
 // API Responses
 export type TransactionResponse = Transaction & { category?: Category };
 export type BudgetResponse = Budget & { 

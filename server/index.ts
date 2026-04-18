@@ -3,8 +3,11 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { seedDatabase } from "./seed";
-import { startJobWorker } from "./jobs";
+import { startJobWorker, enqueueJob } from "./jobs";
 import { registerJobHandlers } from "./jobHandlers";
+import { db } from "./db";
+import { weeklyDigestRuns } from "@shared/schema";
+import { and, eq } from "drizzle-orm";
 
 const app = express();
 const httpServer = createServer(app);
@@ -17,6 +20,7 @@ declare module "http" {
 
 app.use(
   express.json({
+    limit: "10mb",
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
@@ -62,11 +66,56 @@ app.use((req, res, next) => {
   next();
 });
 
+function getMostRecentSundayAt7pm(now: Date): Date {
+  const d = new Date(now);
+  const dow = d.getDay();
+  const daysSince = (dow + 0) % 7;
+  d.setDate(d.getDate() - daysSince);
+  d.setHours(19, 0, 0, 0);
+  if (d.getTime() > now.getTime()) d.setDate(d.getDate() - 7);
+  return d;
+}
+
+async function maybeRunWeeklyDigest() {
+  try {
+    const target = getMostRecentSundayAt7pm(new Date());
+    if (target.getTime() > Date.now()) return;
+    const weekStart = target.toISOString().slice(0, 10);
+    for (const audience of ["student", "teacher", "guardian"] as const) {
+      // Atomic claim: only one process inserts the (weekStart, audience) row.
+      const inserted = await db
+        .insert(weeklyDigestRuns)
+        .values({ weekStart, audience })
+        .onConflictDoNothing()
+        .returning();
+      if (inserted.length === 0) continue;
+      try {
+        await enqueueJob({ kind: "weekly-digest", payload: { weekStart, audience, orgId: null } });
+        log(`enqueued weekly-digest ${audience} for ${weekStart}`);
+      } catch (e) {
+        // Roll back the claim so it can retry next interval.
+        await db
+          .delete(weeklyDigestRuns)
+          .where(and(eq(weeklyDigestRuns.weekStart, weekStart), eq(weeklyDigestRuns.audience, audience)));
+        log(`weekly-digest ${audience} enqueue failed, claim rolled back: ${(e as Error).message}`);
+      }
+    }
+  } catch (e) {
+    log(`weekly digest scheduler error: ${(e as Error).message}`);
+  }
+}
+
+function startWeeklyDigestScheduler() {
+  setTimeout(() => { void maybeRunWeeklyDigest(); }, 30_000);
+  setInterval(() => { void maybeRunWeeklyDigest(); }, 15 * 60 * 1000);
+}
+
 (async () => {
   await registerRoutes(httpServer, app);
   await seedDatabase();
   registerJobHandlers();
   startJobWorker();
+  startWeeklyDigestScheduler();
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

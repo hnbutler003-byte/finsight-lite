@@ -1,10 +1,11 @@
-import { registerJobHandler, type JobPayloads } from "./jobs";
+import { registerJobHandler, enqueueJob, type JobPayloads } from "./jobs";
 import { storage } from "./storage";
 import { openai } from "./replit_integrations/chat/routes";
 import { objectStorageClient } from "./replit_integrations/object_storage";
 import { db } from "./db";
-import { extractedQuestions } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { emailContacts, extractedQuestions, gameSessions, transactions, userXp } from "@shared/schema";
+import { and, eq, gte, sql } from "drizzle-orm";
+import { sendEmail, escapeHtml, appBaseUrl } from "./email";
 
 function parsePrivatePath(relPath: string): { bucket: string; object: string } {
   const root = process.env.PRIVATE_OBJECT_DIR;
@@ -222,6 +223,158 @@ Rules:
 
     return { type, rowCount: data.length, objectPath, fileName };
   });
+
+  // === Generic email send ===
+  registerJobHandler("send-email", async (job) => {
+    const p = job.payload;
+    const result = await sendEmail({
+      to: p.to,
+      subject: p.subject,
+      html: p.html,
+      text: p.text,
+      kind: p.kind,
+      orgId: p.orgId ?? null,
+      userKind: p.userKind ?? null,
+      userId: p.userId ?? null,
+      attachments: p.attachments,
+    });
+    return { ok: result.ok, providerId: result.providerId, error: result.error };
+  });
+
+  // === Weekly digest fan-out ===
+  registerJobHandler("weekly-digest", async (job) => {
+    const { weekStart, audience, orgId } = job.payload;
+    const since = new Date(weekStart);
+    let enqueued = 0;
+    const baseUrl = appBaseUrl();
+    const orgFilter = orgId ? eq(emailContacts.orgId, orgId) : undefined;
+
+    if (audience === "student") {
+      const conds = [
+        eq(emailContacts.userKind, "student"),
+        eq(emailContacts.weeklyDigest, true),
+        eq(emailContacts.verified, true),
+      ];
+      if (orgFilter) conds.push(orgFilter);
+      const contacts = await db.select().from(emailContacts).where(and(...conds));
+      for (const c of contacts) {
+        const xp = await storage.getUserXp(c.userId).catch(() => null);
+        const [{ count: txCount = 0 } = { count: 0 }] = await db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(transactions)
+          .where(and(eq(transactions.userId, c.userId), gte(transactions.createdAt, since)));
+        const [{ count: gameCount = 0 } = { count: 0 }] = await db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(gameSessions)
+          .where(and(eq(gameSessions.userId, c.userId), gte(gameSessions.completedAt, since)));
+        const html = renderStudentDigest({ totalXp: xp?.totalXp ?? 0, level: xp?.level ?? 1, streak: xp?.currentStreak ?? 0, txCount, gameCount, baseUrl });
+        await enqueueJob({
+          kind: "send-email",
+          payload: {
+            to: c.email,
+            subject: "Your FinSight Lite weekly recap",
+            html,
+            kind: "weekly_digest",
+            orgId: c.orgId,
+            userKind: "student",
+            userId: c.userId,
+          },
+        });
+        enqueued++;
+      }
+    } else if (audience === "guardian") {
+      const conds = [
+        eq(emailContacts.userKind, "guardian"),
+        eq(emailContacts.weeklyDigest, true),
+        eq(emailContacts.verified, true),
+      ];
+      if (orgFilter) conds.push(orgFilter);
+      const contacts = await db.select().from(emailContacts).where(and(...conds));
+      for (const c of contacts) {
+        const xp = await storage.getUserXp(c.userId).catch(() => null);
+        const html = renderGuardianDigest({ studentName: c.userId, totalXp: xp?.totalXp ?? 0, level: xp?.level ?? 1, baseUrl });
+        await enqueueJob({
+          kind: "send-email",
+          payload: {
+            to: c.email,
+            subject: "Weekly progress for your student",
+            html,
+            kind: "weekly_digest",
+            orgId: c.orgId,
+            userKind: "guardian",
+            userId: c.userId,
+          },
+        });
+        enqueued++;
+      }
+    } else if (audience === "teacher") {
+      const conds = [
+        eq(emailContacts.userKind, "teacher"),
+        eq(emailContacts.weeklyDigest, true),
+        eq(emailContacts.verified, true),
+      ];
+      if (orgFilter) conds.push(orgFilter);
+      const contacts = await db.select().from(emailContacts).where(and(...conds));
+      for (const c of contacts) {
+        const teacherId = parseInt(c.userId, 10);
+        const classes = isFinite(teacherId) ? await storage.getClassesByTeacher(teacherId) : [];
+        const html = renderTeacherDigest({ classCount: classes.length, baseUrl });
+        await enqueueJob({
+          kind: "send-email",
+          payload: {
+            to: c.email,
+            subject: "Your FinSight Lite class recap",
+            html,
+            kind: "weekly_digest",
+            orgId: c.orgId,
+            userKind: "teacher",
+            userId: c.userId,
+          },
+        });
+        enqueued++;
+      }
+    }
+
+    return { audience, weekStart, enqueued };
+  });
+}
+
+function shell(title: string, body: string, baseUrl: string): string {
+  return `<!doctype html><html><body style="font-family:system-ui,Segoe UI,Arial;background:#f6f7fb;padding:24px">
+  <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;padding:24px;border:1px solid #e5e7eb">
+    <div style="font-size:14px;color:#6b7280;margin-bottom:8px">FinSight Lite</div>
+    <h1 style="font-size:20px;margin:0 0 16px">${escapeHtml(title)}</h1>
+    ${body}
+    <p style="margin-top:24px;font-size:12px;color:#6b7280">
+      <a href="${escapeHtml(baseUrl)}/settings" style="color:#6b7280">Manage email preferences</a>
+    </p>
+  </div></body></html>`;
+}
+
+function renderStudentDigest(d: { totalXp: number; level: number; streak: number; txCount: number; gameCount: number; baseUrl: string }) {
+  return shell("Your weekly recap", `
+    <p>Here's how your money learning went this week.</p>
+    <ul style="line-height:1.8;color:#111827">
+      <li><b>${d.totalXp}</b> total XP (Level ${d.level})</li>
+      <li><b>${d.streak}</b> day streak</li>
+      <li><b>${d.txCount}</b> transactions logged</li>
+      <li><b>${d.gameCount}</b> games played</li>
+    </ul>
+    <p><a href="${escapeHtml(d.baseUrl)}" style="background:#2563eb;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block">Open dashboard</a></p>
+  `, d.baseUrl);
+}
+
+function renderGuardianDigest(d: { studentName: string; totalXp: number; level: number; baseUrl: string }) {
+  return shell("Weekly progress update", `
+    <p>Your student reached <b>Level ${d.level}</b> with <b>${d.totalXp}</b> total XP this week on FinSight Lite.</p>
+  `, d.baseUrl);
+}
+
+function renderTeacherDigest(d: { classCount: number; baseUrl: string }) {
+  return shell("Your class recap", `
+    <p>You have <b>${d.classCount}</b> active class${d.classCount === 1 ? "" : "es"} this week.</p>
+    <p><a href="${escapeHtml(d.baseUrl)}/teacher" style="background:#2563eb;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block">Open teacher dashboard</a></p>
+  `, d.baseUrl);
 }
 
 // Re-export so route handlers can stream the resulting CSV.
