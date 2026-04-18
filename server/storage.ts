@@ -648,7 +648,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(gameSessions).where(eq(gameSessions.userId, userId)).orderBy(desc(gameSessions.completedAt));
   }
 
-  async getLeaderboard(filters?: { subject?: string; period?: string; limit?: number }): Promise<{ userId: string; userName: string; avatar: string; totalScore: number; gamesPlayed: number }[]> {
+  async getLeaderboard(filters?: { subject?: string; period?: string; limit?: number; offset?: number }): Promise<{ userId: string; userName: string; avatar: string; totalScore: number; gamesPlayed: number }[]> {
     let conditions: any[] = [];
 
     if (filters?.period === "weekly") {
@@ -666,8 +666,10 @@ export class DatabaseStorage implements IStorage {
     .innerJoin(users, eq(gameSessions.userId, users.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .groupBy(gameSessions.userId, users.firstName, users.avatar)
-    .orderBy(sql`sum(${gameSessions.score}) desc`)
-    .limit(filters?.limit || 20);
+    // Deterministic tie-break by userId so offset paging is stable across requests.
+    .orderBy(sql`sum(${gameSessions.score}) desc`, gameSessions.userId)
+    .limit(filters?.limit || 20)
+    .offset(filters?.offset || 0);
 
     return results.map(r => ({
       userId: r.userId,

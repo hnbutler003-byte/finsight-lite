@@ -1505,7 +1505,7 @@ Rules:
       const leaderboard = await cached(
         `moneylab:leaderboard:${period}:${limit}:${offset}`,
         15_000,
-        () => storage.getLeaderboard({ period, limit }),
+        () => storage.getLeaderboard({ period, limit, offset }),
       );
       res.json(leaderboard);
     } catch (err: any) {
