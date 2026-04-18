@@ -3387,8 +3387,31 @@ If the user asks about FinSight Lite features, you can mention:
         }
         console.warn("[email] RESEND_WEBHOOK_SECRET not set; accepting webhook in non-production only");
       } else {
-        const provided = req.headers["x-webhook-secret"] || req.headers["resend-webhook-secret"] || req.headers["svix-signature"];
-        if (provided !== secret) return res.status(401).json({ message: "Invalid signature" });
+        const svixId = req.headers["svix-id"] as string | undefined;
+        const svixTs = req.headers["svix-timestamp"] as string | undefined;
+        const svixSig = req.headers["svix-signature"] as string | undefined;
+        if (!svixId || !svixTs || !svixSig) {
+          return res.status(401).json({ message: "Missing Svix headers" });
+        }
+        const tsNum = Number(svixTs);
+        if (!Number.isFinite(tsNum) || Math.abs(Date.now() / 1000 - tsNum) > 300) {
+          return res.status(401).json({ message: "Stale or invalid timestamp" });
+        }
+        const rawBody = (req.rawBody as Buffer | undefined)?.toString("utf8") ?? JSON.stringify(req.body ?? {});
+        const signedPayload = `${svixId}.${svixTs}.${rawBody}`;
+        const keyB64 = secret.startsWith("whsec_") ? secret.slice(6) : secret;
+        let key: Buffer;
+        try { key = Buffer.from(keyB64, "base64"); }
+        catch { return res.status(500).json({ message: "Invalid webhook secret format" }); }
+        const expected = crypto.createHmac("sha256", key).update(signedPayload).digest("base64");
+        const expectedBuf = Buffer.from(expected);
+        const ok = svixSig.split(" ").some((entry) => {
+          const [version, sig] = entry.split(",");
+          if (version !== "v1" || !sig) return false;
+          const sigBuf = Buffer.from(sig);
+          return sigBuf.length === expectedBuf.length && crypto.timingSafeEqual(sigBuf, expectedBuf);
+        });
+        if (!ok) return res.status(401).json({ message: "Invalid signature" });
       }
       const ev = req.body || {};
       const type: string = ev.type || ev.event || "";

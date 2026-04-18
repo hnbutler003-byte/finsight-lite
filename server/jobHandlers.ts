@@ -244,7 +244,7 @@ Rules:
   // === Weekly digest fan-out ===
   registerJobHandler("weekly-digest", async (job) => {
     const { weekStart, audience, orgId } = job.payload;
-    const periodEnd = new Date(weekStart);
+    const periodEnd = new Date();
     const since = new Date(periodEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
     let enqueued = 0;
     const baseUrl = appBaseUrl();
