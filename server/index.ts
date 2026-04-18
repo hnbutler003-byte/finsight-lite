@@ -3,6 +3,8 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { seedDatabase } from "./seed";
+import { startJobWorker } from "./jobs";
+import { registerJobHandlers } from "./jobHandlers";
 
 const app = express();
 const httpServer = createServer(app);
@@ -63,6 +65,8 @@ app.use((req, res, next) => {
 (async () => {
   await registerRoutes(httpServer, app);
   await seedDatabase();
+  registerJobHandlers();
+  startJobWorker();
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

@@ -32,6 +32,7 @@ import { registerChatRoutes } from "./replit_integrations/chat";
 import { registerImageRoutes } from "./replit_integrations/image";
 import { registerAudioRoutes } from "./replit_integrations/audio";
 import { openai } from "./replit_integrations/chat/routes";
+import { enqueueJob, getJob, listRecentJobs } from "./jobs";
 import { isVeryfiConfigured, parseWithVeryfi } from "./veryfi";
 import {
   supabase,
@@ -1218,103 +1219,19 @@ Rules:
         fileType: ext.replace(".", ""),
       });
 
-      res.json({ paper, message: "Processing..." });
+      // Enqueue durable extraction job (survives server restarts, retries on failure)
+      const job = await enqueueJob({
+        kind: "extract-paper",
+        ownerId: userId,
+        payload: {
+          paperId: paper.id,
+          fileB64: file.buffer.toString("base64"),
+          ext,
+          subject,
+        },
+      });
 
-      // Background: extract questions
-      (async () => {
-        try {
-          let extractedText = "";
-
-          if (ext === ".pdf") {
-            const pdfParse = (await import("pdf-parse")).default;
-            const pdfData = await pdfParse(file.buffer);
-            extractedText = pdfData.text.slice(0, 30000);
-          } else {
-            // Image — use GPT-4o vision
-            const base64 = file.buffer.toString("base64");
-            const mimeType = ext === ".png" ? "image/png" : "image/jpeg";
-            const visionResponse = await openai.chat.completions.create({
-              model: "gpt-4o",
-              messages: [{
-                role: "user",
-                content: [
-                  { type: "text", text: "Extract all the text from this exam paper image. Include all questions, answer choices, and any other relevant text exactly as written." },
-                  { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64}` } },
-                ],
-              }],
-              max_completion_tokens: 4096,
-            });
-            extractedText = visionResponse.choices[0]?.message?.content || "";
-          }
-
-          if (!extractedText.trim()) {
-            await storage.updateExamPaper(paper.id, { status: "failed" } as any);
-            return;
-          }
-
-          // Use AI to extract structured questions
-          const extractionResponse = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-              {
-                role: "system",
-                content: `You are an exam question extractor. Extract multiple choice questions from exam paper text.
-Return ONLY valid JSON in this exact format:
-{
-  "subject": "detected subject name",
-  "questions": [
-    {
-      "question": "The question text",
-      "options": ["Option A", "Option B", "Option C", "Option D"],
-      "answer": "The correct answer text (must match one of the options exactly)",
-      "difficulty": "easy" | "medium" | "hard"
-    }
-  ]
-}
-Rules:
-- Extract ALL questions found in the text
-- Each question MUST have exactly 4 options
-- If the correct answer is not obvious, use your best judgment based on the subject matter
-- Detect the subject from context (Accounting, Commerce, Economics, Business Studies, etc.)
-- If a question is not multiple choice, convert it into a reasonable MCQ format
-- difficulty: easy = basic recall, medium = application, hard = analysis/evaluation`
-              },
-              { role: "user", content: extractedText }
-            ],
-            max_completion_tokens: 4096,
-            temperature: 0.3,
-            response_format: { type: "json_object" },
-          });
-
-          const parsed = JSON.parse(extractionResponse.choices[0]?.message?.content || "{}");
-          const questions = parsed.questions || [];
-          const detectedSubject = parsed.subject || subject;
-
-          for (let i = 0; i < questions.length; i++) {
-            const q = questions[i];
-            if (q.question && Array.isArray(q.options) && q.options.length >= 2 && q.answer) {
-              await storage.createExtractedQuestion({
-                paperId: paper.id,
-                questionText: q.question,
-                options: q.options.slice(0, 4),
-                correctAnswer: q.answer,
-                subject: detectedSubject,
-                difficulty: q.difficulty || "medium",
-                order: i + 1,
-              });
-            }
-          }
-
-          await storage.updateExamPaper(paper.id, {
-            status: "completed",
-            subject: detectedSubject,
-            questionCount: questions.length,
-          } as any);
-        } catch (err) {
-          console.error("Question extraction error:", err);
-          await storage.updateExamPaper(paper.id, { status: "failed" } as any);
-        }
-      })();
+      res.json({ paper, jobId: job.id, message: "Processing..." });
     } catch (err: any) {
       res.status(500).json({ message: err.message });
     }
@@ -2157,6 +2074,59 @@ If the user asks about FinSight Lite features, you can mention:
   app.get("/api/admin/db/:table", isAdmin, async (req, res) => {
     const rows = await storage.getAdminDbTable(req.params.table);
     res.json(rows);
+  });
+
+  // === BACKGROUND JOBS ===
+  // Owner can poll their own job; admins can read any
+  app.get("/api/jobs/:id", isAuthenticated, async (req: any, res) => {
+    const id = parseInt(req.params.id);
+    if (!Number.isFinite(id)) return res.status(400).json({ message: "Bad id" });
+    const job = await getJob(id);
+    if (!job) return res.status(404).json({ message: "Not found" });
+    const userId = String(req.user?.id);
+    const isAdminUser = !!req.session?.isAdmin;
+    if (job.ownerId && job.ownerId !== userId && !isAdminUser) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    // Don't ship giant payloads back to the browser
+    const { payload, result, ...safe } = job as any;
+    res.json({ ...safe, hasResult: !!result });
+  });
+
+  app.get("/api/admin/jobs", isAdmin, async (req, res) => {
+    const limit = Math.min(parseInt(String(req.query.limit ?? "50")) || 50, 200);
+    const kind = req.query.kind ? String(req.query.kind) : undefined;
+    const rows = await listRecentJobs({ limit, kind });
+    res.json(rows.map(({ payload, result, ...rest }: any) => ({ ...rest, hasResult: !!result })));
+  });
+
+  // Enqueue an admin CSV export job (large datasets)
+  app.post("/api/admin/exports/:type", isAdmin, async (req: any, res) => {
+    const type = req.params.type;
+    if (!["students", "teachers", "classes", "schools", "sponsors"].includes(type)) {
+      return res.status(400).json({ message: "Unknown export type" });
+    }
+    const job = await enqueueJob({
+      kind: "admin-csv-export",
+      ownerId: String(req.user?.id ?? "admin"),
+      payload: { type },
+    });
+    res.json({ jobId: job.id });
+  });
+
+  // Download the generated CSV from a finished export job
+  app.get("/api/admin/exports/:jobId/download", isAdmin, async (req, res) => {
+    const id = parseInt(req.params.jobId);
+    const job = await getJob(id);
+    if (!job) return res.status(404).json({ message: "Not found" });
+    if (job.kind !== "admin-csv-export") return res.status(400).json({ message: "Not an export job" });
+    if (job.status !== "completed") return res.status(409).json({ message: `Job not ready (status: ${job.status})` });
+    const result = (job.result ?? {}) as any;
+    const csv = result.csv ?? "";
+    const fileName = result.fileName ?? `${(job.payload as any)?.type ?? "export"}.csv`;
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.send(csv);
   });
 
   // Reports CSV

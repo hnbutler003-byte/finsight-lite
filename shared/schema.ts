@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, numeric, varchar, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, numeric, varchar, index, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -312,6 +312,30 @@ export const userBadges = pgTable("user_badges", {
 }, (t) => ({
   userIdx: index("idx_user_badges_user").on(t.userId),
 }));
+
+// === BACKGROUND JOBS ===
+
+export const jobs = pgTable("jobs", {
+  id: serial("id").primaryKey(),
+  kind: text("kind").notNull(),
+  payload: jsonb("payload").$type<Record<string, any>>().default({}).notNull(),
+  result: jsonb("result").$type<Record<string, any>>(),
+  status: text("status", { enum: ["queued", "processing", "completed", "failed"] }).default("queued").notNull(),
+  attempts: integer("attempts").default(0).notNull(),
+  maxAttempts: integer("max_attempts").default(3).notNull(),
+  lastError: text("last_error"),
+  ownerId: varchar("owner_id"),
+  scheduledAt: timestamp("scheduled_at").defaultNow().notNull(),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (t) => ({
+  statusScheduledIdx: index("idx_jobs_status_scheduled").on(t.status, t.scheduledAt),
+  ownerCreatedIdx: index("idx_jobs_owner_created").on(t.ownerId, t.createdAt),
+}));
+
+export type Job = typeof jobs.$inferSelect;
 
 // === RELATIONS ===
 
