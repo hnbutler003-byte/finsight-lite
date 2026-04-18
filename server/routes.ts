@@ -8,7 +8,9 @@ import multer from "multer";
 import path from "path";
 import crypto from "crypto";
 import * as XLSX from "xlsx";
+import Papa from "papaparse";
 import bcrypt from "bcryptjs";
+import { authStorage } from "./replit_integrations/auth/storage";
 import {
   ObjectStorageService,
   objectStorageClient,
@@ -2970,6 +2972,381 @@ If the user asks about FinSight Lite features, you can mention:
       .eq("student_user_id", req.params.studentUserId);
     if (error) return res.status(500).json({ message: error.message });
     res.json({ ok: true });
+  });
+
+  // === BULK STUDENT IMPORT (Task #28) ===
+
+  const VALID_AVATARS = [
+    "lion", "dolphin", "parrot", "turtle", "star", "butterfly",
+    "octopus", "artist", "rocket", "wave", "palm", "gamer",
+  ] as const;
+  const DEFAULT_AVATAR = "star";
+
+  type ParsedImportRow = {
+    rowNum: number;
+    firstName: string;
+    lastName: string | null;
+    username: string;
+    avatar: string;
+    email: string | null;
+    classCode: string | null;
+    classRef: { type: "class"; id: number; name: string } | { type: "org"; envId: string; name: string } | null;
+    status: "ok" | "error";
+    issues: string[];
+  };
+
+  type ImportSummary = {
+    rows: ParsedImportRow[];
+    summary: { total: number; ok: number; errors: number };
+  };
+
+  function pickHeader(obj: Record<string, string>, keys: string[]): string {
+    for (const k of keys) {
+      const found = Object.keys(obj).find((h) => h.toLowerCase().replace(/[\s_-]/g, "") === k);
+      if (found && obj[found]?.trim()) return obj[found].trim();
+    }
+    return "";
+  }
+
+  function deterministicUsername(firstName: string, rowNum: number, attempt: number): string {
+    const clean = firstName.trim().replace(/[^a-zA-Z0-9]/g, "");
+    const base = clean.length > 0 ? clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase() : "Player";
+    const trimmed = base.slice(0, 20);
+    return attempt === 0 ? `${trimmed}_${rowNum}` : `${trimmed}_${rowNum}_${attempt}`;
+  }
+
+  async function uniqueUsername(
+    firstName: string,
+    rowNum: number,
+    takenInBatch: Set<string>,
+  ): Promise<string> {
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const candidate = deterministicUsername(firstName, rowNum, attempt);
+      if (takenInBatch.has(candidate.toLowerCase())) continue;
+      const existing = await authStorage.getUserByUsername(candidate);
+      if (!existing) {
+        takenInBatch.add(candidate.toLowerCase());
+        return candidate;
+      }
+    }
+    // Extremely unlikely fallback — random suffix
+    const fallback = `Player_${rowNum}_${Math.floor(Math.random() * 100000)}`;
+    takenInBatch.add(fallback.toLowerCase());
+    return fallback;
+  }
+
+  async function parseAndValidateImport(
+    csvText: string,
+    adminOrgId: string,
+    adminEnvId: string,
+  ): Promise<ImportSummary> {
+    const parsed = Papa.parse<Record<string, string>>(csvText, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (h: string) => h.trim(),
+    });
+    const rows: ParsedImportRow[] = [];
+    const usernameBatch = new Set<string>();
+    const emailZ = z.string().email();
+
+    let rowNum = 1; // header is row 1
+    for (const raw of parsed.data) {
+      rowNum++;
+      if (!raw || typeof raw !== "object") continue;
+      const firstName = pickHeader(raw, ["firstname", "first", "name", "givenname"]);
+      const lastName = pickHeader(raw, ["lastname", "last", "surname", "familyname"]) || null;
+      const usernameInput = pickHeader(raw, ["username", "user", "handle"]);
+      const avatarInput = pickHeader(raw, ["avatar", "icon"]).toLowerCase();
+      const emailInput = pickHeader(raw, ["email", "emailaddress"]);
+      const classCodeInput = pickHeader(raw, ["classcode", "code", "joincode"]).toUpperCase();
+
+      const issues: string[] = [];
+      if (!firstName) issues.push("First name is required");
+      if (firstName && firstName.length > 50) issues.push("First name must be 50 characters or less");
+      if (lastName && lastName.length > 50) issues.push("Last name must be 50 characters or less");
+
+      let email: string | null = null;
+      if (emailInput) {
+        const r = emailZ.safeParse(emailInput);
+        if (!r.success) issues.push("Email is not a valid address");
+        else email = emailInput.toLowerCase();
+      }
+
+      const avatar = (VALID_AVATARS as readonly string[]).includes(avatarInput) ? avatarInput : DEFAULT_AVATAR;
+
+      let classRef: ParsedImportRow["classRef"] = null;
+      if (classCodeInput) {
+        const cls = await storage.getClassByCode(classCodeInput);
+        if (cls) {
+          // Verify the class belongs to a teacher in admin's org
+          const teacher = await storage.getTeacherById(cls.teacherId);
+          if (!teacher || teacher.orgId !== adminOrgId) {
+            issues.push(`Class code ${classCodeInput} is not part of your organization`);
+          } else {
+            classRef = { type: "class", id: cls.id, name: cls.name };
+          }
+        } else {
+          const env = await getOrgEnvironmentByJoinCode(classCodeInput);
+          if (env) {
+            if (env.org_id !== adminOrgId) {
+              issues.push(`Code ${classCodeInput} is not part of your organization`);
+            } else {
+              classRef = { type: "org", envId: env.id, name: env.display_name ?? env.slug ?? env.id };
+            }
+          } else {
+            issues.push(`Class code ${classCodeInput} not found`);
+          }
+        }
+      }
+
+      let username = "";
+      if (usernameInput) {
+        if (!/^[A-Za-z0-9_]{3,30}$/.test(usernameInput)) {
+          issues.push("Username must be 3–30 letters, numbers, or underscores");
+        } else if (usernameBatch.has(usernameInput.toLowerCase())) {
+          issues.push("Username appears more than once in this file");
+        } else {
+          const taken = await authStorage.getUserByUsername(usernameInput);
+          if (taken) issues.push(`Username "${usernameInput}" is already in use`);
+          else username = usernameInput;
+        }
+      }
+
+      const status: "ok" | "error" = issues.length === 0 ? "ok" : "error";
+      if (status === "ok" && !username) {
+        username = await uniqueUsername(firstName, rowNum, usernameBatch);
+      } else if (username) {
+        usernameBatch.add(username.toLowerCase());
+      }
+
+      rows.push({
+        rowNum,
+        firstName,
+        lastName,
+        username,
+        avatar,
+        email,
+        classCode: classCodeInput || null,
+        classRef,
+        status,
+        issues,
+      });
+    }
+
+    void adminEnvId; // env defaults handled at commit
+    const ok = rows.filter((r) => r.status === "ok").length;
+    return { rows, summary: { total: rows.length, ok, errors: rows.length - ok } };
+  }
+
+  app.post(
+    "/api/org-admin/students/import/preview",
+    isOrgAdmin,
+    upload.single("file"),
+    async (req: any, res) => {
+      try {
+        const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+        if (!admin) return res.status(401).json({ message: "Not found" });
+        if (!req.file) return res.status(400).json({ message: "Please attach a CSV file" });
+        const ext = path.extname(req.file.originalname).toLowerCase();
+        if (ext !== ".csv") return res.status(400).json({ message: "File must be a .csv" });
+
+        const env = await getOrgEnvironmentById(admin.envId);
+        void env;
+        const csvText = req.file.buffer.toString("utf8");
+        const result = await parseAndValidateImport(csvText, admin.orgId, admin.envId);
+        res.json(result);
+      } catch (e: any) {
+        res.status(400).json({ message: e.message });
+      }
+    },
+  );
+
+  app.post(
+    "/api/org-admin/students/import",
+    isOrgAdmin,
+    upload.single("file"),
+    async (req: any, res) => {
+      try {
+        const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+        if (!admin) return res.status(401).json({ message: "Not found" });
+        if (!req.file) return res.status(400).json({ message: "Please attach a CSV file" });
+        const ext = path.extname(req.file.originalname).toLowerCase();
+        if (ext !== ".csv") return res.status(400).json({ message: "File must be a .csv" });
+
+        const org = await getOrganization(admin.orgId);
+        const env = await getOrgEnvironmentById(admin.envId);
+        if (!org || !env) return res.status(400).json({ message: "Organization or environment not found" });
+
+        const csvText = req.file.buffer.toString("utf8");
+        const { rows } = await parseAndValidateImport(csvText, admin.orgId, admin.envId);
+
+        const created: { rowNum: number; userId: string; username: string; firstName: string; emailSent: boolean; enrolled: boolean }[] = [];
+        const skipped: { rowNum: number; reason: string }[] = [];
+
+        for (const row of rows) {
+          if (row.status !== "ok") {
+            skipped.push({ rowNum: row.rowNum, reason: row.issues.join("; ") });
+            continue;
+          }
+
+          // Last-mile uniqueness check — race window between preview/parse and now
+          const taken = await authStorage.getUserByUsername(row.username);
+          if (taken) {
+            skipped.push({ rowNum: row.rowNum, reason: `Username "${row.username}" was just taken — please re-import this row` });
+            continue;
+          }
+
+          let user;
+          try {
+            user = await authStorage.upsertUser({
+              username: row.username,
+              avatar: row.avatar,
+              firstName: row.firstName,
+              lastName: row.lastName,
+              email: row.email,
+            });
+          } catch (err) {
+            skipped.push({ rowNum: row.rowNum, reason: `Could not create account: ${(err as Error)?.message ?? "unknown error"}` });
+            continue;
+          }
+
+          // Always enroll in the admin's current org environment
+          const orgEnrollRes = await enrollStudentInOrg(admin.orgId, admin.envId, user.id).catch((err: unknown) => {
+            console.warn("[bulk-import] org enroll failed:", (err as Error)?.message);
+            return { success: false, alreadyEnrolled: false, enrollment: null };
+          });
+          let enrolled = orgEnrollRes.success;
+
+          // If a class code was provided, also enroll in that class (or alt org env)
+          if (row.classRef?.type === "class") {
+            try {
+              await storage.enrollStudent(row.classRef.id, user.id);
+            } catch (err) {
+              enrolled = false;
+              console.warn("[bulk-import] class enroll failed:", (err as Error)?.message);
+            }
+          } else if (row.classRef?.type === "org" && row.classRef.envId !== admin.envId) {
+            const altRes = await enrollStudentInOrg(admin.orgId, row.classRef.envId, user.id).catch((err: unknown) => {
+              console.warn("[bulk-import] alt-env enroll failed:", (err as Error)?.message);
+              return { success: false, alreadyEnrolled: false, enrollment: null };
+            });
+            if (!altRes.success) enrolled = false;
+          }
+
+          let emailSent = false;
+          if (row.email) {
+            await getOrCreateContact({
+              userKind: "student",
+              userId: user.id,
+              email: row.email,
+              orgId: admin.orgId,
+              verified: false,
+            }).catch(() => null);
+            const loginUrl = `${appBaseUrl()}/auth?u=${encodeURIComponent(row.username)}`;
+            const html = `<!doctype html><html><body style="font-family:system-ui,Arial;background:#f6f7fb;padding:24px">
+              <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;padding:24px;border:1px solid #e5e7eb">
+                <h1 style="font-size:20px;margin:0 0 12px">Welcome to FinSight Lite!</h1>
+                <p>Hi ${escapeHtml(row.firstName)}, your teacher at <strong>${escapeHtml(org.name)}</strong> has set up an account for you.</p>
+                <p><strong>Your username:</strong> <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px">${escapeHtml(row.username)}</code></p>
+                <p>Sign in with your username — no password needed. You'll pick your own avatar and start earning XP right away.</p>
+                <p><a href="${escapeHtml(loginUrl)}" style="background:#2563eb;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block">Sign in</a></p>
+                <p style="font-size:12px;color:#6b7280">If this wasn't expected, you can safely ignore this email.</p>
+              </div></body></html>`;
+            const sendRes = await sendEmail({
+              to: row.email,
+              subject: "Welcome to FinSight Lite",
+              html,
+              kind: "welcome",
+              orgId: admin.orgId,
+              userKind: "student",
+              userId: user.id,
+            }).catch((err: unknown) => ({ ok: false, error: (err as Error)?.message }));
+            emailSent = sendRes.ok === true;
+          }
+
+          created.push({
+            rowNum: row.rowNum,
+            userId: user.id,
+            username: row.username,
+            firstName: row.firstName,
+            emailSent,
+            enrolled,
+          });
+        }
+
+        res.json({
+          summary: {
+            total: rows.length,
+            created: created.length,
+            skipped: skipped.length,
+            emailed: created.filter((c) => c.emailSent).length,
+          },
+          created,
+          skipped,
+        });
+      } catch (e: any) {
+        res.status(400).json({ message: e.message });
+      }
+    },
+  );
+
+  // Org-wide student roster export
+  app.get("/api/org-admin/students.csv", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+    if (!supabase) return res.status(503).json({ message: "Supabase not available" });
+
+    const { data, error } = await supabase
+      .from("org_students")
+      .select("*")
+      .eq("org_id", admin.orgId)
+      .order("joined_at", { ascending: false });
+    if (error) return res.status(500).json({ message: error.message });
+
+    const envs = await getOrgEnvironments(admin.orgId);
+    const envMap: Record<string, string> = {};
+    for (const env of envs) envMap[env.id] = env.display_name ?? env.slug ?? env.id;
+
+    const orgStudents = data ?? [];
+    const enriched = await Promise.all(
+      orgStudents.map(async (s: any) => {
+        const user = await storage.getUser(s.student_user_id).catch(() => null);
+        const xp = await storage.getUserXp(s.student_user_id).catch(() => null);
+        return {
+          firstName: user?.firstName ?? "",
+          lastName: (user as any)?.lastName ?? "",
+          username: (user as any)?.username ?? "",
+          email: (user as any)?.email ?? "",
+          avatar: (user as any)?.avatar ?? "",
+          environment: envMap[s.env_id] ?? s.env_id,
+          xp: xp?.totalXp ?? 0,
+          level: xp?.level ?? 1,
+          streak: xp?.currentStreak ?? 0,
+          joinedAt: s.joined_at ?? "",
+        };
+      }),
+    );
+
+    const rows: (string | number)[][] = [
+      ["First Name", "Last Name", "Username", "Email", "Avatar", "Environment", "XP", "Level", "Streak", "Joined"],
+      ...enriched.map((e) => [
+        e.firstName, e.lastName, e.username, e.email, e.avatar, e.environment, e.xp, e.level, e.streak, e.joinedAt,
+      ]),
+    ];
+    const csvCell = (raw: string | number): string => {
+      const v = String(raw ?? "");
+      // Neutralize spreadsheet formula injection: prefix dangerous lead chars with a single quote
+      const safe = /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
+    const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n");
+    const orgName = (await getOrganization(admin.orgId))?.name ?? "organization";
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${orgName.replace(/[^a-z0-9]/gi, "_")}_students.csv"`,
+    );
+    res.send(csv);
   });
 
   // Certificate branding (logo + signatures) — Task #16

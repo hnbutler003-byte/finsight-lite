@@ -1,12 +1,39 @@
 import { OrgSidebar } from "@/components/layout/OrgSidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useOrgAuth } from "@/hooks/use-org-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Users, Loader2, Trash2, Zap, AlertCircle } from "lucide-react";
+import { Users, Loader2, Trash2, Zap, AlertCircle, Upload, Download, FileUp, CheckCircle2, XCircle, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useRef, useState } from "react";
+
+type ImportRow = {
+  rowNum: number;
+  firstName: string;
+  lastName: string | null;
+  username: string;
+  avatar: string;
+  email: string | null;
+  classCode: string | null;
+  classRef: { type: "class"; id: number; name: string } | { type: "org"; envId: string; name: string } | null;
+  status: "ok" | "error";
+  issues: string[];
+};
+
+type PreviewResponse = { rows: ImportRow[]; summary: { total: number; ok: number; errors: number } };
+type CommitResponse = {
+  summary: { total: number; created: number; skipped: number; emailed: number };
+  created: { rowNum: number; userId: string; username: string; firstName: string; emailSent: boolean; enrolled: boolean }[];
+  skipped: { rowNum: number; reason: string }[];
+};
+
+const SAMPLE_CSV = `firstName,lastName,avatar,email,classCode
+Alex,Bain,lion,alex@school.bs,
+Jordan,Knowles,dolphin,,ABC123
+Sky,Rolle,,,
+`;
 
 type EnrichedStudent = {
   id: string;
@@ -39,6 +66,11 @@ export default function OrgStudents() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<PreviewResponse | null>(null);
+  const [commitResult, setCommitResult] = useState<CommitResponse | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: students, isLoading } = useQuery<EnrichedStudent[]>({
     queryKey: ["/api/org-admin/students"],
@@ -83,12 +115,59 @@ export default function OrgStudents() {
               <h1 className="font-display font-bold text-3xl">Students</h1>
               <p className="text-muted-foreground mt-1">Enrolled in {admin.orgName}</p>
             </div>
-            <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/30 rounded-2xl px-4 py-2 border border-blue-100 dark:border-blue-800">
-              <Users className="w-4 h-4 text-blue-600" />
-              <span className="font-display font-bold text-lg text-blue-600">{students?.length ?? 0}</span>
-              <span className="text-sm text-muted-foreground font-medium">enrolled</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setImportFile(null);
+                  setPreview(null);
+                  setCommitResult(null);
+                  setImportOpen(true);
+                }}
+                className="rounded-2xl border-2 gap-2"
+                data-testid="button-open-import"
+              >
+                <Upload className="w-4 h-4" /> Import CSV
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => window.open("/api/org-admin/students.csv", "_blank")}
+                className="rounded-2xl border-2 gap-2"
+                disabled={!students?.length}
+                data-testid="button-export-students-csv"
+              >
+                <Download className="w-4 h-4" /> Export CSV
+              </Button>
+              <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/30 rounded-2xl px-4 py-2 border border-blue-100 dark:border-blue-800">
+                <Users className="w-4 h-4 text-blue-600" />
+                <span className="font-display font-bold text-lg text-blue-600" data-testid="text-student-count">{students?.length ?? 0}</span>
+                <span className="text-sm text-muted-foreground font-medium">enrolled</span>
+              </div>
             </div>
           </div>
+
+          <ImportStudentsDialog
+            open={importOpen}
+            onOpenChange={(open) => {
+              setImportOpen(open);
+              if (!open) {
+                setImportFile(null);
+                setPreview(null);
+                setCommitResult(null);
+              }
+            }}
+            file={importFile}
+            setFile={setImportFile}
+            preview={preview}
+            setPreview={setPreview}
+            commitResult={commitResult}
+            setCommitResult={setCommitResult}
+            fileInputRef={fileInputRef}
+            onSuccess={() => {
+              qc.invalidateQueries({ queryKey: ["/api/org-admin/students"] });
+              qc.invalidateQueries({ queryKey: ["/api/org-admin/overview"] });
+            }}
+          />
 
           {isLoading ? (
             <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>
@@ -171,5 +250,272 @@ export default function OrgStudents() {
         </div>
       </main>
     </div>
+  );
+}
+
+function ImportStudentsDialog({
+  open, onOpenChange, file, setFile, preview, setPreview, commitResult, setCommitResult, fileInputRef, onSuccess,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  file: File | null;
+  setFile: (f: File | null) => void;
+  preview: PreviewResponse | null;
+  setPreview: (p: PreviewResponse | null) => void;
+  commitResult: CommitResponse | null;
+  setCommitResult: (c: CommitResponse | null) => void;
+  fileInputRef: React.RefObject<HTMLInputElement>;
+  onSuccess: () => void;
+}) {
+  const { toast } = useToast();
+
+  const previewMutation = useMutation({
+    mutationFn: async (f: File) => {
+      const fd = new FormData();
+      fd.append("file", f);
+      const r = await fetch("/api/org-admin/students/import/preview", { method: "POST", credentials: "include", body: fd });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.message ?? "Preview failed");
+      return data as PreviewResponse;
+    },
+    onSuccess: (data) => setPreview(data),
+    onError: (e: any) => toast({ title: "Couldn't read CSV", description: e.message, variant: "destructive" }),
+  });
+
+  const commitMutation = useMutation({
+    mutationFn: async (f: File) => {
+      const fd = new FormData();
+      fd.append("file", f);
+      const r = await fetch("/api/org-admin/students/import", { method: "POST", credentials: "include", body: fd });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.message ?? "Import failed");
+      return data as CommitResponse;
+    },
+    onSuccess: (data) => {
+      setCommitResult(data);
+      onSuccess();
+      toast({
+        title: `Imported ${data.summary.created} student${data.summary.created === 1 ? "" : "s"}`,
+        description: data.summary.emailed > 0 ? `${data.summary.emailed} welcome email${data.summary.emailed === 1 ? "" : "s"} sent.` : undefined,
+      });
+    },
+    onError: (e: any) => toast({ title: "Import failed", description: e.message, variant: "destructive" }),
+  });
+
+  const handleFile = (f: File | null) => {
+    setFile(f);
+    setPreview(null);
+    setCommitResult(null);
+    if (f) previewMutation.mutate(f);
+  };
+
+  const downloadSample = () => {
+    const blob = new Blob([SAMPLE_CSV], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "students-import-sample.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Import students from CSV</DialogTitle>
+          <DialogDescription>
+            Upload a spreadsheet to create accounts in bulk. Each student will be enrolled in your current environment;
+            you can also drop them straight into a class with a class code.
+          </DialogDescription>
+        </DialogHeader>
+
+        {!commitResult && (
+          <div className="space-y-4">
+            <div className="rounded-2xl border-2 border-dashed border-blue-200 dark:border-blue-800 bg-blue-50/40 dark:bg-blue-950/10 p-5 text-sm space-y-2">
+              <div className="flex items-start gap-3">
+                <FileText className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="font-bold">Required column: <code className="bg-white dark:bg-zinc-800 px-1.5 py-0.5 rounded text-xs">firstName</code></p>
+                  <p className="text-muted-foreground text-xs mt-1">
+                    Optional: <code className="bg-white dark:bg-zinc-800 px-1 rounded text-[11px]">lastName</code>,{" "}
+                    <code className="bg-white dark:bg-zinc-800 px-1 rounded text-[11px]">avatar</code>,{" "}
+                    <code className="bg-white dark:bg-zinc-800 px-1 rounded text-[11px]">email</code>,{" "}
+                    <code className="bg-white dark:bg-zinc-800 px-1 rounded text-[11px]">classCode</code>,{" "}
+                    <code className="bg-white dark:bg-zinc-800 px-1 rounded text-[11px]">username</code>.
+                    Usernames are auto-generated when blank.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={downloadSample} className="rounded-xl shrink-0" data-testid="button-download-sample">
+                  <Download className="w-3.5 h-3.5 mr-1" /> Sample
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+                className="hidden"
+                data-testid="input-import-file"
+              />
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                variant="outline"
+                className="rounded-2xl border-2 gap-2"
+                data-testid="button-choose-file"
+              >
+                <FileUp className="w-4 h-4" /> {file ? "Choose a different file" : "Choose CSV file"}
+              </Button>
+              {file && <span className="text-sm text-muted-foreground truncate" data-testid="text-import-filename">{file.name}</span>}
+            </div>
+
+            {previewMutation.isPending && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" /> Reading and validating rows…
+              </div>
+            )}
+
+            {preview && (
+              <div className="space-y-3" data-testid="import-preview">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="rounded-2xl border-2 p-3 text-center">
+                    <p className="font-display font-bold text-2xl">{preview.summary.total}</p>
+                    <p className="text-xs text-muted-foreground">Total rows</p>
+                  </div>
+                  <div className="rounded-2xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/10 p-3 text-center">
+                    <p className="font-display font-bold text-2xl text-emerald-600">{preview.summary.ok}</p>
+                    <p className="text-xs text-muted-foreground">Ready to import</p>
+                  </div>
+                  <div className="rounded-2xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/10 p-3 text-center">
+                    <p className="font-display font-bold text-2xl text-red-600">{preview.summary.errors}</p>
+                    <p className="text-xs text-muted-foreground">Need fixing</p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border-2 max-h-72 overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted text-xs uppercase tracking-wide text-muted-foreground sticky top-0">
+                      <tr>
+                        <th className="text-left p-2 w-10">#</th>
+                        <th className="text-left p-2">Name</th>
+                        <th className="text-left p-2">Username</th>
+                        <th className="text-left p-2">Email</th>
+                        <th className="text-left p-2">Class</th>
+                        <th className="text-left p-2 w-20">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {preview.rows.map((r) => (
+                        <tr key={r.rowNum} className="border-t" data-testid={`row-import-${r.rowNum}`}>
+                          <td className="p-2 text-muted-foreground">{r.rowNum}</td>
+                          <td className="p-2 font-medium">{r.firstName}{r.lastName ? ` ${r.lastName}` : ""}</td>
+                          <td className="p-2 text-xs font-mono">{r.username || "—"}</td>
+                          <td className="p-2 text-xs">{r.email ?? <span className="text-muted-foreground">—</span>}</td>
+                          <td className="p-2 text-xs">{r.classRef?.name ?? <span className="text-muted-foreground">—</span>}</td>
+                          <td className="p-2">
+                            {r.status === "ok" ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> OK
+                              </span>
+                            ) : (
+                              <span title={r.issues.join("; ")} className="inline-flex items-center gap-1 text-xs font-bold text-red-600">
+                                <XCircle className="w-3.5 h-3.5" /> Error
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {preview.summary.errors > 0 && (
+                  <div className="text-xs text-muted-foreground">
+                    Hover the “Error” badge to see what to fix. Only OK rows will be imported.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {commitResult && (
+          <div className="space-y-3" data-testid="import-result">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-2xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/10 p-4 text-center">
+                <p className="font-display font-bold text-2xl text-emerald-600">{commitResult.summary.created}</p>
+                <p className="text-xs text-muted-foreground">Students created</p>
+              </div>
+              <div className="rounded-2xl border-2 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/10 p-4 text-center">
+                <p className="font-display font-bold text-2xl text-blue-600">{commitResult.summary.emailed}</p>
+                <p className="text-xs text-muted-foreground">Welcome emails sent</p>
+              </div>
+              <div className="rounded-2xl border-2 p-4 text-center">
+                <p className="font-display font-bold text-2xl">{commitResult.summary.skipped}</p>
+                <p className="text-xs text-muted-foreground">Skipped</p>
+              </div>
+            </div>
+
+            {commitResult.created.length > 0 && (
+              <div className="rounded-2xl border-2 max-h-64 overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted text-xs uppercase tracking-wide text-muted-foreground sticky top-0">
+                    <tr>
+                      <th className="text-left p-2">Name</th>
+                      <th className="text-left p-2">Username</th>
+                      <th className="text-left p-2 w-24">Enrolled</th>
+                      <th className="text-left p-2 w-24">Email</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {commitResult.created.map((c) => (
+                      <tr key={c.userId} className="border-t" data-testid={`row-imported-${c.userId}`}>
+                        <td className="p-2">{c.firstName}</td>
+                        <td className="p-2 font-mono text-xs">{c.username}</td>
+                        <td className="p-2 text-xs">{c.enrolled ? "Yes" : <span className="text-amber-600">Failed</span>}</td>
+                        <td className="p-2 text-xs">{c.emailSent ? "Sent" : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {commitResult.skipped.length > 0 && (
+              <details className="rounded-2xl border-2 p-3 text-sm">
+                <summary className="cursor-pointer font-bold text-red-600 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" /> {commitResult.skipped.length} skipped row{commitResult.skipped.length === 1 ? "" : "s"}
+                </summary>
+                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  {commitResult.skipped.map((s) => (
+                    <li key={s.rowNum}>Row {s.rowNum}: {s.reason}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </div>
+        )}
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-2xl" data-testid="button-close-import">
+            {commitResult ? "Done" : "Cancel"}
+          </Button>
+          {!commitResult && (
+            <Button
+              onClick={() => file && commitMutation.mutate(file)}
+              disabled={!file || !preview || preview.summary.ok === 0 || commitMutation.isPending}
+              className="rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 gap-2"
+              data-testid="button-confirm-import"
+            >
+              {commitMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              Import {preview ? preview.summary.ok : ""} student{preview?.summary.ok === 1 ? "" : "s"}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
