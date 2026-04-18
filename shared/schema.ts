@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, numeric, varchar, index, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, numeric, varchar, index, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -373,14 +373,14 @@ export type OrgAiQuota = typeof orgAiQuotas.$inferSelect;
 
 export const tutorExplanations = pgTable("tutor_explanations", {
   id: serial("id").primaryKey(),
-  questionHash: varchar("question_hash", { length: 64 }).notNull().unique(),
+  questionHash: varchar("question_hash", { length: 64 }).notNull(),
   modelVersion: text("model_version").notNull(),
   explanation: text("explanation").notNull(),
   hits: integer("hits").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   lastUsedAt: timestamp("last_used_at").defaultNow().notNull(),
 }, (t) => ({
-  hashModelIdx: index("idx_tutor_explanations_hash_model").on(t.questionHash, t.modelVersion),
+  hashModelIdx: uniqueIndex("idx_tutor_explanations_hash_model").on(t.questionHash, t.modelVersion),
 }));
 
 export type TutorExplanation = typeof tutorExplanations.$inferSelect;

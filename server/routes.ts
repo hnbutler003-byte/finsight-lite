@@ -2848,7 +2848,7 @@ If the user asks about FinSight Lite features, you can mention:
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid quota values", errors: parsed.error.flatten() });
       }
-      await updateOrgQuotaSettings(admin.orgId, parsed.data as any);
+      await updateOrgQuotaSettings(admin.orgId, parsed.data);
       const settings = await getOrgQuotaSettings(admin.orgId);
       res.json(settings);
     } catch (err: any) {

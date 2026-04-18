@@ -305,9 +305,11 @@ export async function setCachedExplanation(hash: string, modelVersion: string, e
       modelVersion,
       explanation,
       hits: 0,
+    }).onConflictDoNothing({
+      target: [tutorExplanations.questionHash, tutorExplanations.modelVersion],
     });
   } catch (e) {
-    // Likely a duplicate insert race; ignore.
+    console.error("[aiUsage] setCachedExplanation failed:", (e as Error).message);
   }
 }
 
@@ -400,25 +402,29 @@ export async function getOrgUsageThisMonth(orgId: string): Promise<{
     ORDER BY day ASC
   `);
 
-  const byDay = new Map<string, any>();
+  type DayBucket = { day: string; guide_chat: number; tutor_explain: number; ai_insights: number; cached: number; tokens: number; total: number };
+  type UsageRow = { day: string; kind: AiKind; cached: boolean; count: number | string; tokens: number | string };
+
+  const byDay = new Map<string, DayBucket>();
   const totals = { guide_chat: 0, tutor_explain: 0, ai_insights: 0, cached: 0, tokens: 0, total: 0 };
 
-  for (const r of (rows as any).rows ?? []) {
-    const day = r.day as string;
-    if (!byDay.has(day)) {
-      byDay.set(day, { day, guide_chat: 0, tutor_explain: 0, ai_insights: 0, cached: 0, tokens: 0, total: 0 });
+  const resultRows = (rows as { rows?: UsageRow[] }).rows ?? [];
+  for (const r of resultRows) {
+    const day = r.day;
+    let bucket = byDay.get(day);
+    if (!bucket) {
+      bucket = { day, guide_chat: 0, tutor_explain: 0, ai_insights: 0, cached: 0, tokens: 0, total: 0 };
+      byDay.set(day, bucket);
     }
-    const bucket = byDay.get(day);
-    const kind = r.kind as AiKind;
     const count = Number(r.count) || 0;
     const tokens = Number(r.tokens) || 0;
     if (r.cached) {
       bucket.cached += count;
       totals.cached += count;
     } else {
-      bucket[kind] = (bucket[kind] || 0) + count;
+      bucket[r.kind] += count;
       bucket.total += count;
-      totals[kind] += count;
+      totals[r.kind] += count;
       totals.total += count;
     }
     bucket.tokens += tokens;
@@ -447,34 +453,49 @@ export async function getOrgQuotaSettings(orgId: string): Promise<{
   };
 }
 
-export async function updateOrgQuotaSettings(orgId: string, updates: Partial<{
+export type QuotaUpdateInput = Partial<{
   guide_chat_per_user: number | null;
   tutor_explain_per_user: number | null;
   ai_insights_per_user: number | null;
   guide_chat_per_org: number | null;
   tutor_explain_per_org: number | null;
   ai_insights_per_org: number | null;
-}>): Promise<void> {
-  const dbValues: any = {
-    orgId,
-    updatedAt: new Date(),
-  };
-  const map: Record<string, string> = {
-    guide_chat_per_user: "guideChatPerUserDaily",
-    tutor_explain_per_user: "tutorExplainPerUserDaily",
-    ai_insights_per_user: "aiInsightsPerUserDaily",
-    guide_chat_per_org: "guideChatPerOrgDaily",
-    tutor_explain_per_org: "tutorExplainPerOrgDaily",
-    ai_insights_per_org: "aiInsightsPerOrgDaily",
-  };
-  for (const [key, col] of Object.entries(map)) {
+}>;
+
+type QuotaColumnKey =
+  | "guideChatPerUserDaily"
+  | "tutorExplainPerUserDaily"
+  | "aiInsightsPerUserDaily"
+  | "guideChatPerOrgDaily"
+  | "tutorExplainPerOrgDaily"
+  | "aiInsightsPerOrgDaily";
+
+const QUOTA_FIELD_MAP: Record<keyof QuotaUpdateInput, QuotaColumnKey> = {
+  guide_chat_per_user: "guideChatPerUserDaily",
+  tutor_explain_per_user: "tutorExplainPerUserDaily",
+  ai_insights_per_user: "aiInsightsPerUserDaily",
+  guide_chat_per_org: "guideChatPerOrgDaily",
+  tutor_explain_per_org: "tutorExplainPerOrgDaily",
+  ai_insights_per_org: "aiInsightsPerOrgDaily",
+};
+
+function normalizeQuotaValue(v: number | null | undefined): number | null {
+  if (v == null) return null;
+  const n = Math.floor(Number(v));
+  if (!Number.isFinite(n) || n < 1) return null;
+  return n;
+}
+
+export async function updateOrgQuotaSettings(orgId: string, updates: QuotaUpdateInput): Promise<void> {
+  const colUpdates: Partial<Record<QuotaColumnKey, number | null>> = {};
+  for (const key of Object.keys(QUOTA_FIELD_MAP) as Array<keyof QuotaUpdateInput>) {
     if (key in updates) {
-      const v = (updates as any)[key];
-      dbValues[col] = (v == null || v === "") ? null : Math.max(1, Math.floor(Number(v)));
+      colUpdates[QUOTA_FIELD_MAP[key]] = normalizeQuotaValue(updates[key]);
     }
   }
-  await db.insert(orgAiQuotas).values(dbValues).onConflictDoUpdate({
+  const now = new Date();
+  await db.insert(orgAiQuotas).values({ orgId, updatedAt: now, ...colUpdates }).onConflictDoUpdate({
     target: orgAiQuotas.orgId,
-    set: { ...dbValues, updatedAt: new Date() },
+    set: { ...colUpdates, updatedAt: now },
   });
 }
