@@ -3047,6 +3047,7 @@ If the user asks about FinSight Lite features, you can mention:
     });
     const rows: ParsedImportRow[] = [];
     const usernameBatch = new Set<string>();
+    const emailBatch = new Set<string>();
     const emailZ = z.string().email();
 
     let rowNum = 1; // header is row 1
@@ -3068,8 +3069,17 @@ If the user asks about FinSight Lite features, you can mention:
       let email: string | null = null;
       if (emailInput) {
         const r = emailZ.safeParse(emailInput);
-        if (!r.success) issues.push("Email is not a valid address");
-        else email = emailInput.toLowerCase();
+        if (!r.success) {
+          issues.push("Email is not a valid address");
+        } else {
+          const lowered = emailInput.toLowerCase();
+          if (emailBatch.has(lowered)) {
+            issues.push("This email appears more than once in the file");
+          } else {
+            emailBatch.add(lowered);
+            email = lowered;
+          }
+        }
       }
 
       const avatar = (VALID_AVATARS as readonly string[]).includes(avatarInput) ? avatarInput : DEFAULT_AVATAR;
