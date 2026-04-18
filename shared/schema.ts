@@ -346,6 +346,8 @@ export const aiUsageEvents = pgTable("ai_usage_events", {
   envId: text("env_id"),
   kind: text("kind", { enum: ["guide_chat", "tutor_explain", "ai_insights"] }).notNull(),
   model: text("model"),
+  tokensIn: integer("tokens_in").default(0).notNull(),
+  tokensOut: integer("tokens_out").default(0).notNull(),
   cached: boolean("cached").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (t) => ({
@@ -354,6 +356,20 @@ export const aiUsageEvents = pgTable("ai_usage_events", {
 }));
 
 export type AiUsageEvent = typeof aiUsageEvents.$inferSelect;
+
+// Per-org overrides for daily AI quotas. One row per org; missing = use defaults.
+export const orgAiQuotas = pgTable("org_ai_quotas", {
+  orgId: text("org_id").primaryKey(),
+  guideChatPerUserDaily: integer("guide_chat_per_user_daily"),
+  tutorExplainPerUserDaily: integer("tutor_explain_per_user_daily"),
+  aiInsightsPerUserDaily: integer("ai_insights_per_user_daily"),
+  guideChatPerOrgDaily: integer("guide_chat_per_org_daily"),
+  tutorExplainPerOrgDaily: integer("tutor_explain_per_org_daily"),
+  aiInsightsPerOrgDaily: integer("ai_insights_per_org_daily"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type OrgAiQuota = typeof orgAiQuotas.$inferSelect;
 
 export const tutorExplanations = pgTable("tutor_explanations", {
   id: serial("id").primaryKey(),

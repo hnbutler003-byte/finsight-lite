@@ -46,6 +46,16 @@ export default function MoneyLabTutor() {
         credentials: "include",
       });
 
+      if (!response.ok) {
+        let friendly = "Oops! Could not get an explanation right now. Try again!";
+        try {
+          const data = await response.json();
+          if (data?.message) friendly = data.message;
+        } catch {}
+        setExplanation(friendly);
+        return;
+      }
+
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let fullContent = "";

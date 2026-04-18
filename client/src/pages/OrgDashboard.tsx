@@ -3,8 +3,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useOrgAuth } from "@/hooks/use-org-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Users, BookOpen, Globe, Copy, Check, Loader2, Building2, BarChart3, Layers, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { Users, BookOpen, Globe, Copy, Check, Loader2, Building2, BarChart3, Layers, Sparkles, Settings2, Save } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useMutation } from "@tanstack/react-query";
 
 export default function OrgDashboard() {
   const { admin, isLoading: authLoading } = useOrgAuth();
@@ -21,6 +26,43 @@ export default function OrgDashboard() {
     queryKey: ["/api/org-admin/ai-usage"],
     queryFn: () => fetch("/api/org-admin/ai-usage", { credentials: "include" }).then(r => r.json()),
     enabled: !!admin,
+  });
+
+  const { data: aiQuotas } = useQuery<any>({
+    queryKey: ["/api/org-admin/ai-quotas"],
+    queryFn: () => fetch("/api/org-admin/ai-quotas", { credentials: "include" }).then(r => r.json()),
+    enabled: !!admin,
+  });
+
+  const { toast } = useToast();
+  const [editingQuotas, setEditingQuotas] = useState(false);
+  const [quotaForm, setQuotaForm] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (aiQuotas?.perUser && aiQuotas?.perOrg) {
+      setQuotaForm({
+        guide_chat_per_user: String(aiQuotas.perUser.guide_chat ?? ""),
+        tutor_explain_per_user: String(aiQuotas.perUser.tutor_explain ?? ""),
+        ai_insights_per_user: String(aiQuotas.perUser.ai_insights ?? ""),
+        guide_chat_per_org: String(aiQuotas.perOrg.guide_chat ?? ""),
+        tutor_explain_per_org: String(aiQuotas.perOrg.tutor_explain ?? ""),
+        ai_insights_per_org: String(aiQuotas.perOrg.ai_insights ?? ""),
+      });
+    }
+  }, [aiQuotas]);
+
+  const saveQuotas = useMutation({
+    mutationFn: async (payload: Record<string, number>) => {
+      const r = await apiRequest("PATCH", "/api/org-admin/ai-quotas", payload);
+      return r.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/org-admin/ai-quotas"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/org-admin/ai-usage"] });
+      setEditingQuotas(false);
+      toast({ title: "Daily limits updated" });
+    },
+    onError: (e: any) => toast({ title: "Failed to update limits", description: e.message, variant: "destructive" }),
   });
 
   if (authLoading) {
@@ -171,16 +213,27 @@ export default function OrgDashboard() {
               {aiUsage && (
                 <Card className="glass-card rounded-glass" data-testid="card-ai-usage">
                   <CardContent className="p-6 space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                        <Sparkles className="w-5 h-5 text-violet-600" />
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                          <Sparkles className="w-5 h-5 text-violet-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-display font-bold text-lg">AI Usage Today</h3>
+                          <p className="text-xs text-muted-foreground font-medium">
+                            Daily limits — resets at midnight UTC. Cached answers are free.
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-display font-bold text-lg">AI Usage This Month</h3>
-                        <p className="text-xs text-muted-foreground font-medium">
-                          Live calls count toward your limit. Cached answers are free.
-                        </p>
-                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingQuotas(v => !v)}
+                        data-testid="button-edit-quotas"
+                      >
+                        <Settings2 className="w-4 h-4 mr-1" />
+                        {editingQuotas ? "Hide limits" : "Edit limits"}
+                      </Button>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {[
@@ -188,25 +241,81 @@ export default function OrgDashboard() {
                         { key: "tutor_explain", label: "AI Tutor explanations" },
                         { key: "ai_insights", label: "AI Insights" },
                       ].map(({ key, label }) => {
-                        const row = aiUsage[key] ?? { live: 0, cached: 0, limit: 0 };
+                        const row = aiUsage[key] ?? { live: 0, cached: 0, limit: 0, tokens: 0 };
+                        const perUserLimit = aiUsage.perUserLimits?.[key] ?? 0;
                         const pct = row.limit > 0 ? Math.min(100, Math.round((row.live / row.limit) * 100)) : 0;
                         const barColor = pct >= 90 ? "bg-red-500" : pct >= 70 ? "bg-amber-500" : "bg-violet-500";
                         return (
                           <div key={key} className="rounded-2xl border-2 border-input p-3 space-y-2" data-testid={`ai-usage-${key}`}>
                             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{label}</p>
                             <p className="font-display font-bold text-xl">
-                              {row.live.toLocaleString()} <span className="text-sm text-muted-foreground font-medium">/ {row.limit.toLocaleString()}</span>
+                              {row.live.toLocaleString()} <span className="text-sm text-muted-foreground font-medium">/ {row.limit.toLocaleString()} org</span>
                             </p>
                             <div className="h-2 rounded-full bg-muted overflow-hidden">
                               <div className={`h-full ${barColor} transition-all`} style={{ width: `${pct}%` }} />
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              <span className="font-bold text-emerald-600">{row.cached.toLocaleString()}</span> cached (saved)
+                              <span className="font-bold text-emerald-600">{row.cached.toLocaleString()}</span> cached ·{" "}
+                              <span className="font-bold">{(row.tokens ?? 0).toLocaleString()}</span> tokens
                             </p>
+                            <p className="text-[11px] text-muted-foreground">Per student: {perUserLimit}/day</p>
                           </div>
                         );
                       })}
                     </div>
+                    {editingQuotas && (
+                      <div className="rounded-2xl border-2 border-input p-4 space-y-3" data-testid="quota-editor">
+                        <p className="text-sm font-bold">Daily limits (per student / per org)</p>
+                        <p className="text-xs text-muted-foreground">Leave a field blank to use the default.</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {[
+                            { key: "guide_chat", label: "Money Guide chat" },
+                            { key: "tutor_explain", label: "AI Tutor explanations" },
+                            { key: "ai_insights", label: "AI Insights" },
+                          ].map(({ key, label }) => (
+                            <div key={key} className="space-y-2">
+                              <p className="text-xs font-bold text-muted-foreground">{label}</p>
+                              <div className="flex gap-2 items-center">
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  placeholder="per student"
+                                  value={quotaForm[`${key}_per_user`] ?? ""}
+                                  onChange={(e) => setQuotaForm(f => ({ ...f, [`${key}_per_user`]: e.target.value }))}
+                                  data-testid={`input-quota-${key}-per-user`}
+                                />
+                                <span className="text-xs text-muted-foreground">/</span>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  placeholder="per org"
+                                  value={quotaForm[`${key}_per_org`] ?? ""}
+                                  onChange={(e) => setQuotaForm(f => ({ ...f, [`${key}_per_org`]: e.target.value }))}
+                                  data-testid={`input-quota-${key}-per-org`}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex justify-end">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              const payload: any = {};
+                              for (const [k, v] of Object.entries(quotaForm)) {
+                                payload[k] = v === "" ? null : Number(v);
+                              }
+                              saveQuotas.mutate(payload);
+                            }}
+                            disabled={saveQuotas.isPending}
+                            data-testid="button-save-quotas"
+                          >
+                            {saveQuotas.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                            Save limits
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}

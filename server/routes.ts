@@ -40,7 +40,9 @@ import {
   hashTutorQuestion,
   getCachedExplanation,
   setCachedExplanation,
-  getOrgUsageThisMonth,
+  getOrgUsageToday,
+  getOrgQuotaSettings,
+  updateOrgQuotaSettings,
 } from "./aiUsage";
 import { streamPrivateObjectToResponse } from "./jobHandlers";
 import { isVeryfiConfigured, parseWithVeryfi } from "./veryfi";
@@ -340,7 +342,11 @@ export async function registerRoutes(
         response_format: { type: "json_object" }
       });
 
-      await recordAiUsage({ userId, orgId, kind: "ai_insights", model });
+      await recordAiUsage({
+        userId, orgId, kind: "ai_insights", model,
+        tokensIn: response.usage?.prompt_tokens ?? 0,
+        tokensOut: response.usage?.completion_tokens ?? 0,
+      });
 
       const content = response.choices[0].message.content || "{}";
       res.json(JSON.parse(content));
@@ -1533,6 +1539,7 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
           { role: "user", content: `Please explain this exam question to me:\n\n${questionContext}` },
         ],
         stream: true,
+        stream_options: { include_usage: true },
         max_completion_tokens: 1024,
         temperature: 0.7,
       });
@@ -1540,9 +1547,15 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
       // Buffer until we can safely substitute [STUDENT_NAME] across chunk boundaries
       let fullContent = "";
       let pending = "";
+      let promptTokens = 0;
+      let completionTokens = 0;
       const PLACEHOLDER = "[STUDENT_NAME]";
       const HOLDBACK = PLACEHOLDER.length - 1;
       for await (const chunk of stream) {
+        if (chunk.usage) {
+          promptTokens = chunk.usage.prompt_tokens ?? 0;
+          completionTokens = chunk.usage.completion_tokens ?? 0;
+        }
         const content = chunk.choices[0]?.delta?.content || "";
         if (!content) continue;
         fullContent += content;
@@ -1564,7 +1577,10 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
       // Cache the raw model output (with [STUDENT_NAME] placeholder) so future
       // students can have it personalized to them on serve.
       await setCachedExplanation(questionHash, modelVersion, fullContent.trim());
-      await recordAiUsage({ userId, orgId, kind: "tutor_explain", model });
+      await recordAiUsage({
+        userId, orgId, kind: "tutor_explain", model,
+        tokensIn: promptTokens, tokensOut: completionTokens,
+      });
     } catch (err: any) {
       console.error("Tutor explain error:", err);
       if (res.headersSent) {
@@ -1695,11 +1711,18 @@ If the user asks about FinSight Lite features, you can mention:
         model,
         messages: chatMessages,
         stream: true,
+        stream_options: { include_usage: true },
         max_completion_tokens: 1024,
         temperature: 0.8,
       });
 
+      let promptTokens = 0;
+      let completionTokens = 0;
       for await (const chunk of stream) {
+        if (chunk.usage) {
+          promptTokens = chunk.usage.prompt_tokens ?? 0;
+          completionTokens = chunk.usage.completion_tokens ?? 0;
+        }
         const content = chunk.choices[0]?.delta?.content || "";
         if (content) {
           res.write(`data: ${JSON.stringify({ content })}\n\n`);
@@ -1708,7 +1731,10 @@ If the user asks about FinSight Lite features, you can mention:
 
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();
-      await recordAiUsage({ userId, orgId, kind: "guide_chat", model });
+      await recordAiUsage({
+        userId, orgId, kind: "guide_chat", model,
+        tokensIn: promptTokens, tokensOut: completionTokens,
+      });
     } catch (error) {
       console.error("Guide chat error:", error);
       if (res.headersSent) {
@@ -2758,8 +2784,39 @@ If the user asks about FinSight Lite features, you can mention:
     const admin = await storage.getOrgAdminById(req.session.orgAdminId);
     if (!admin) return res.status(401).json({ message: "Not found" });
     try {
-      const usage = await getOrgUsageThisMonth(admin.orgId);
+      const usage = await getOrgUsageToday(admin.orgId);
       res.json(usage);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/org-admin/ai-quotas", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+    try {
+      const settings = await getOrgQuotaSettings(admin.orgId);
+      res.json(settings);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.patch("/api/org-admin/ai-quotas", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+    try {
+      const allowed = [
+        "guide_chat_per_user", "tutor_explain_per_user", "ai_insights_per_user",
+        "guide_chat_per_org", "tutor_explain_per_org", "ai_insights_per_org",
+      ];
+      const updates: any = {};
+      for (const key of allowed) {
+        if (key in req.body) updates[key] = req.body[key];
+      }
+      await updateOrgQuotaSettings(admin.orgId, updates);
+      const settings = await getOrgQuotaSettings(admin.orgId);
+      res.json(settings);
     } catch (err: any) {
       res.status(500).json({ message: err.message });
     }

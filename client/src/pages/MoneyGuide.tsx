@@ -58,7 +58,17 @@ export default function MoneyGuide() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to get response");
+        let friendly = "Oops! I had a little hiccup. Try asking me again! 🤔";
+        try {
+          const data = await response.json();
+          if (data?.message) friendly = data.message;
+        } catch {}
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: "assistant", content: friendly };
+          return updated;
+        });
+        return;
       }
 
       const reader = response.body?.getReader();
