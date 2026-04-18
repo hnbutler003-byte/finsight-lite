@@ -3307,7 +3307,7 @@ If the user asks about FinSight Lite features, you can mention:
         orgId,
       });
       if (!existing) return res.status(400).json({ message: "Email required" });
-      const updates: any = { updatedAt: new Date() };
+      const updates: Partial<typeof emailContacts.$inferInsert> = { updatedAt: new Date() };
       if (typeof body.weeklyDigest === "boolean") updates.weeklyDigest = body.weeklyDigest;
       if (typeof body.classNotifications === "boolean") updates.classNotifications = body.classNotifications;
       if (body.email && body.email !== existing.email) {
@@ -3349,7 +3349,7 @@ If the user asks about FinSight Lite features, you can mention:
       const role = req.body?.role as ("self" | "guardian") | undefined;
       if (!ident) return res.status(401).json({ message: "Not authenticated" });
       const userKind = role === "guardian" ? "guardian" : ident.kind;
-      const userId = role === "guardian" ? ident.userId : ident.userId;
+      const userId = ident.userId;
       const [contact] = await emailDb.select().from(emailContacts).where(
         andEmail(eqEmail(emailContacts.userKind, userKind), eqEmail(emailContacts.userId, userId)),
       );
