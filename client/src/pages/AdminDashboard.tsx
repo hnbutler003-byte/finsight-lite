@@ -18,7 +18,7 @@ import {
   Shield, Users, GraduationCap, School, Building2, Trophy, Coins,
   LogOut, Search, Download, Plus, Trash2, Pencil, ChevronLeft, ChevronRight,
   LayoutDashboard, BookOpen, X, Globe, ChevronDown, ChevronUp,
-  CheckCircle2, XCircle, Layers, Medal, FileText, Eye, EyeOff, Minus, Copy, Check
+  CheckCircle2, XCircle, Layers, Medal, FileText, Eye, EyeOff, Minus, Copy, Check, Loader2
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -39,6 +39,7 @@ const TABS = [
   { id: "sponsors", label: "Sponsors", icon: Coins },
   { id: "challenges", label: "Challenges", icon: Trophy },
   { id: "reports", label: "Reports", icon: Download },
+  { id: "jobs", label: "Background Jobs", icon: Loader2 },
   { id: "dbviewer", label: "DB Viewer", icon: Building2 },
 ];
 
@@ -860,6 +861,91 @@ function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
 
 // ─── main dashboard ───────────────────────────────────────────────────────────
 
+function JobsPanel() {
+  const qc = useQueryClient();
+  const { data: jobs = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/jobs"],
+    refetchInterval: 4000,
+  });
+  const statusBadge = (s: string) => {
+    const cls =
+      s === "completed" ? "bg-emerald-700 text-emerald-100"
+      : s === "failed" ? "bg-red-700 text-red-100"
+      : s === "processing" ? "bg-amber-700 text-amber-100"
+      : "bg-slate-700 text-slate-200";
+    return <span className={`px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{s}</span>;
+  };
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Background Jobs</h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => qc.invalidateQueries({ queryKey: ["/api/admin/jobs"] })}
+          data-testid="button-refresh-jobs"
+          className="border-slate-700 text-slate-200 hover:bg-slate-700"
+        >
+          Refresh
+        </Button>
+      </div>
+      <p className="text-slate-300 text-sm">Recent background work — paper extractions and CSV exports.</p>
+      <Card className="bg-slate-800 border-slate-700">
+        <CardContent className="p-0">
+          {isLoading ? (
+            <p className="p-6 text-slate-300 text-sm">Loading…</p>
+          ) : jobs.length === 0 ? (
+            <p className="p-6 text-slate-300 text-sm">No jobs yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-900/50 text-slate-300">
+                  <tr>
+                    <th className="px-3 py-2 text-left">ID</th>
+                    <th className="px-3 py-2 text-left">Kind</th>
+                    <th className="px-3 py-2 text-left">Status</th>
+                    <th className="px-3 py-2 text-left">Attempts</th>
+                    <th className="px-3 py-2 text-left">Scheduled</th>
+                    <th className="px-3 py-2 text-left">Completed</th>
+                    <th className="px-3 py-2 text-left">Last error</th>
+                    <th className="px-3 py-2 text-left">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {jobs.map((j: any) => (
+                    <tr key={j.id} className="border-t border-slate-700 text-slate-100" data-testid={`row-job-${j.id}`}>
+                      <td className="px-3 py-2 font-mono">{j.id}</td>
+                      <td className="px-3 py-2">{j.kind}</td>
+                      <td className="px-3 py-2">{statusBadge(j.status)}</td>
+                      <td className="px-3 py-2">{j.attempts}/{j.maxAttempts}</td>
+                      <td className="px-3 py-2 text-slate-300">{fmtDate(j.scheduledAt)}</td>
+                      <td className="px-3 py-2 text-slate-300">{j.completedAt ? fmtDate(j.completedAt) : "—"}</td>
+                      <td className="px-3 py-2 text-red-300 max-w-xs truncate" title={j.lastError || ""}>{j.lastError || "—"}</td>
+                      <td className="px-3 py-2">
+                        {j.kind === "admin-csv-export" && j.status === "completed" && (
+                          <a
+                            href={`/api/admin/exports/${j.id}/download`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-indigo-300 hover:text-indigo-100 underline text-xs"
+                            data-testid={`link-download-job-${j.id}`}
+                          >
+                            Download
+                          </a>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const { admin, isLoading, logout } = useAdminAuth();
@@ -923,8 +1009,32 @@ export default function AdminDashboard() {
   if (isLoading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center"><p className="text-slate-300">Loading...</p></div>;
   if (!admin) { setLocation("/admin/login"); return null; }
 
-  const downloadCSV = (type: string) => {
-    window.open(`/api/admin/reports/${type}.csv`, "_blank");
+  const downloadCSV = async (type: string) => {
+    try {
+      const res = await apiRequest("POST", `/api/admin/exports/${type}`);
+      const { jobId } = (await res.json()) as { jobId: number };
+      toast({ title: "Export queued", description: `Preparing ${type}.csv in the background…` });
+      qc.invalidateQueries({ queryKey: ["/api/admin/jobs"] });
+      const start = Date.now();
+      // poll for up to 5 minutes
+      while (Date.now() - start < 5 * 60_000) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const j = await apiRequest("GET", `/api/jobs/${jobId}`).then((r) => r.json());
+        qc.invalidateQueries({ queryKey: ["/api/admin/jobs"] });
+        if (j.status === "completed") {
+          window.open(`/api/admin/exports/${jobId}/download`, "_blank");
+          toast({ title: "Export ready", description: `${type}.csv downloaded.` });
+          return;
+        }
+        if (j.status === "failed") {
+          toast({ title: "Export failed", description: j.lastError || "Unknown error", variant: "destructive" });
+          return;
+        }
+      }
+      toast({ title: "Still working", description: "Check the Background Jobs tab to download when ready." });
+    } catch (e: any) {
+      toast({ title: "Export failed", description: e.message, variant: "destructive" });
+    }
   };
 
   const dbTables = ["users", "teachers", "classes", "classEnrollments", "challenges", "classNotifications", "schools", "sponsors", "gameSessions", "userXp", "userBadges", "userLearningProgress"];
@@ -1421,6 +1531,9 @@ export default function AdminDashboard() {
             </Card>
           </div>
         )}
+
+        {/* ── Background Jobs ── */}
+        {activeTab === "jobs" && <JobsPanel />}
 
         {/* ── DB Viewer ── */}
         {activeTab === "dbviewer" && (

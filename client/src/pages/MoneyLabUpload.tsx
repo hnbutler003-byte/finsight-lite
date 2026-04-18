@@ -1,7 +1,7 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import {
@@ -26,6 +26,8 @@ export default function MoneyLabUpload() {
     queryKey: ["/api/moneylab/papers"],
   });
 
+  const [activeJobId, setActiveJobId] = useState<number | null>(null);
+
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
@@ -39,16 +41,41 @@ export default function MoneyLabUpload() {
         credentials: "include",
       });
       if (!res.ok) throw new Error(await res.text());
-      return res.json();
+      return res.json() as Promise<{ paper: any; jobId?: number }>;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/moneylab/papers"] });
       setTitle("");
       if (fileInputRef.current) fileInputRef.current.value = "";
-      setTimeout(() => queryClient.invalidateQueries({ queryKey: ["/api/moneylab/papers"] }), 5000);
-      setTimeout(() => queryClient.invalidateQueries({ queryKey: ["/api/moneylab/papers"] }), 15000);
+      if (data?.jobId) setActiveJobId(data.jobId);
     },
   });
+
+  // Poll the job until it leaves the active states; refresh the papers list when done.
+  const { data: jobStatus } = useQuery<{
+    id: number;
+    status: "queued" | "processing" | "completed" | "failed";
+    attempts: number;
+    maxAttempts: number;
+    lastError: string | null;
+  }>({
+    queryKey: ["/api/jobs", activeJobId],
+    queryFn: () => fetch(`/api/jobs/${activeJobId}`, { credentials: "include" }).then((r) => r.json()),
+    enabled: activeJobId !== null,
+    refetchInterval: (q) => {
+      const s = (q.state.data as any)?.status;
+      if (s === "completed" || s === "failed") return false;
+      return 2000;
+    },
+  });
+
+  useEffect(() => {
+    if (jobStatus?.status === "completed" || jobStatus?.status === "failed") {
+      queryClient.invalidateQueries({ queryKey: ["/api/moneylab/papers"] });
+      const t = setTimeout(() => setActiveJobId(null), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [jobStatus?.status, queryClient]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -143,8 +170,28 @@ export default function MoneyLabUpload() {
                 {uploadMutation.isPending ? (
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="w-12 h-12 text-teal-500 animate-spin" />
-                    <p className="font-bold text-teal-600">Uploading & extracting questions...</p>
-                    <p className="text-sm text-muted-foreground">This may take a few seconds</p>
+                    <p className="font-bold text-teal-600">Uploading...</p>
+                  </div>
+                ) : activeJobId && jobStatus && jobStatus.status !== "completed" && jobStatus.status !== "failed" ? (
+                  <div className="flex flex-col items-center gap-3" data-testid="status-job-active">
+                    <Loader2 className="w-12 h-12 text-amber-500 animate-spin" />
+                    <p className="font-bold text-amber-600 capitalize">{jobStatus.status} — extracting questions...</p>
+                    <p className="text-sm text-muted-foreground">
+                      Attempt {jobStatus.attempts} of {jobStatus.maxAttempts}. This runs in the background — you can stay here or come back later.
+                    </p>
+                  </div>
+                ) : activeJobId && jobStatus?.status === "failed" ? (
+                  <div className="flex flex-col items-center gap-3" data-testid="status-job-failed">
+                    <XCircle className="w-12 h-12 text-red-500" />
+                    <p className="font-bold text-red-600">Extraction failed</p>
+                    {jobStatus.lastError && (
+                      <p className="text-xs text-muted-foreground max-w-md break-words">{jobStatus.lastError}</p>
+                    )}
+                  </div>
+                ) : activeJobId && jobStatus?.status === "completed" ? (
+                  <div className="flex flex-col items-center gap-3" data-testid="status-job-completed">
+                    <CheckCircle2 className="w-12 h-12 text-green-500" />
+                    <p className="font-bold text-green-600">Done! Questions extracted.</p>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3">

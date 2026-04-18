@@ -33,6 +33,7 @@ import { registerImageRoutes } from "./replit_integrations/image";
 import { registerAudioRoutes } from "./replit_integrations/audio";
 import { openai } from "./replit_integrations/chat/routes";
 import { enqueueJob, getJob, listRecentJobs } from "./jobs";
+import { streamPrivateObjectToResponse } from "./jobHandlers";
 import { isVeryfiConfigured, parseWithVeryfi } from "./veryfi";
 import {
   supabase,
@@ -2095,7 +2096,8 @@ If the user asks about FinSight Lite features, you can mention:
 
   app.get("/api/admin/jobs", isAdmin, async (req, res) => {
     const limit = Math.min(parseInt(String(req.query.limit ?? "50")) || 50, 200);
-    const kind = req.query.kind ? String(req.query.kind) : undefined;
+    const kindParam = req.query.kind ? String(req.query.kind) : undefined;
+    const kind = (kindParam === "extract-paper" || kindParam === "admin-csv-export") ? kindParam : undefined;
     const rows = await listRecentJobs({ limit, kind });
     res.json(rows.map(({ payload, result, ...rest }: any) => ({ ...rest, hasResult: !!result })));
   });
@@ -2114,23 +2116,27 @@ If the user asks about FinSight Lite features, you can mention:
     res.json({ jobId: job.id });
   });
 
-  // Download the generated CSV from a finished export job
+  // Download the generated CSV from a finished export job (streamed from object storage)
   app.get("/api/admin/exports/:jobId/download", isAdmin, async (req, res) => {
     const id = parseInt(req.params.jobId);
     const job = await getJob(id);
     if (!job) return res.status(404).json({ message: "Not found" });
     if (job.kind !== "admin-csv-export") return res.status(400).json({ message: "Not an export job" });
     if (job.status !== "completed") return res.status(409).json({ message: `Job not ready (status: ${job.status})` });
-    const result = (job.result ?? {}) as any;
-    const csv = result.csv ?? "";
-    const fileName = result.fileName ?? `${(job.payload as any)?.type ?? "export"}.csv`;
-    res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
-    res.send(csv);
+    const result = job.result as { objectPath?: string; fileName?: string } | null;
+    const objectPath = result?.objectPath;
+    const payload = job.payload as { type?: string };
+    const fileName = result?.fileName ?? `${payload?.type ?? "export"}.csv`;
+    if (!objectPath) return res.status(500).json({ message: "Job result missing objectPath" });
+    await streamPrivateObjectToResponse(objectPath, res, fileName, "text/csv");
   });
 
-  // Reports CSV
+  // Legacy synchronous CSV export — kept for backward compatibility but
+  // marked deprecated. New callers should POST /api/admin/exports/:type and
+  // poll /api/jobs/:id, then GET /api/admin/exports/:jobId/download.
   app.get("/api/admin/reports/:type.csv", isAdmin, async (req, res) => {
+    res.setHeader("Deprecation", "true");
+    res.setHeader("Link", `</api/admin/exports/${req.params.type}>; rel="successor-version"`);
     let data: any[] = [];
     if (req.params.type === "students") data = await storage.getAdminStudents();
     else if (req.params.type === "teachers") data = await storage.getAdminTeachers();
