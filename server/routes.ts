@@ -2343,6 +2343,8 @@ If the user asks about FinSight Lite features, you can mention:
   app.patch("/api/admin/organizations/:id", isAdmin, async (req, res) => {
     const org = await updateOrganization(req.params.id, req.body);
     if (!org) return res.status(404).json({ message: "Organization not found" });
+    const { invalidateOrganizationCache } = await import("./supabase");
+    await invalidateOrganizationCache(req.params.id);
     res.json(org);
   });
 
@@ -2775,6 +2777,8 @@ If the user asks about FinSight Lite features, you can mention:
 
       const org = await updateOrganization(admin.orgId, updates);
       if (!org) return res.status(500).json({ message: "Failed to update organization branding" });
+      const { invalidateOrganizationCache } = await import("./supabase");
+      await invalidateOrganizationCache(admin.orgId);
       res.json({
         logoUrl: org.logo_url ?? null,
         signatureLeftName: org.signature_left_name ?? null,

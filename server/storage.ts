@@ -863,14 +863,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClassProgressSummary(classId: number, opts?: { limit?: number; offset?: number }): Promise<any> {
-    const allEnrollments = await this.getEnrollmentsByClass(classId);
-    const totalStudents = allEnrollments.length;
+    // Count total enrollments for pagination metadata, then fetch only the requested page.
+    // Both queries hit the (classId) index added in shared/schema.ts.
+    const offset = Math.max(0, opts?.offset ?? 0);
+    const paginated = opts?.limit !== undefined || opts?.offset !== undefined;
+    const limit = opts?.limit;
+
+    const [{ count: totalStudents }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(classEnrollments)
+      .where(eq(classEnrollments.classId, classId));
     if (totalStudents === 0) return { students: [], avgXp: 0, avgLessons: 0, totalGames: 0, totalStudents: 0 };
 
-    // Apply pagination on the enrollment list (default keeps prior behavior; route layer caps).
-    const offset = Math.max(0, opts?.offset ?? 0);
-    const limit = opts?.limit ?? totalStudents;
-    const enrollments = allEnrollments.slice(offset, offset + limit);
+    let enrollmentsQ = db
+      .select({ enrollment: classEnrollments, student: users })
+      .from(classEnrollments)
+      .innerJoin(users, eq(classEnrollments.studentId, users.id))
+      .where(eq(classEnrollments.classId, classId))
+      .orderBy(classEnrollments.joinedAt)
+      .$dynamic();
+    if (paginated) {
+      if (limit !== undefined) enrollmentsQ = enrollmentsQ.limit(limit);
+      if (offset > 0) enrollmentsQ = enrollmentsQ.offset(offset);
+    }
+    const rows = await enrollmentsQ;
+    const enrollments = rows.map(r => ({ ...r.enrollment, student: r.student }));
     const studentIds = enrollments.map(e => e.studentId);
     if (studentIds.length === 0) return { students: [], avgXp: 0, avgLessons: 0, totalGames: 0, totalStudents };
 

@@ -280,17 +280,15 @@ export async function getOrganization(id: string): Promise<Organization | null> 
   if (!supabase) return null;
   const { cached } = await import("./cache");
   // Org branding is read on nearly every authenticated page render but rarely changes.
-  return await cached(`org:${id}`, 5 * 60_000, async () => {
+  return await cached<Organization | null>(`org:${id}`, 5 * 60_000, async () => {
     const { data, error } = await supabase!.from("organizations").select("*").eq("id", id).single();
-    if (error) return null as any;
-    return data;
+    if (error) return null;
+    return data as Organization;
   });
 }
 
-export function invalidateOrganizationCache(id?: string): void {
-  // Lazily required to avoid a top-level import cycle.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { cacheInvalidate } = require("./cache");
+export async function invalidateOrganizationCache(id?: string): Promise<void> {
+  const { cacheInvalidate } = await import("./cache");
   cacheInvalidate(id ? `org:${id}` : "org:");
 }
 
