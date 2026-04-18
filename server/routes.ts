@@ -3133,7 +3133,6 @@ If the user asks about FinSight Lite features, you can mention:
       });
     }
 
-    void adminEnvId; // env defaults handled at commit
     const ok = rows.filter((r) => r.status === "ok").length;
     return { rows, summary: { total: rows.length, ok, errors: rows.length - ok } };
   }
@@ -3150,8 +3149,6 @@ If the user asks about FinSight Lite features, you can mention:
         const ext = path.extname(req.file.originalname).toLowerCase();
         if (ext !== ".csv") return res.status(400).json({ message: "File must be a .csv" });
 
-        const env = await getOrgEnvironmentById(admin.envId);
-        void env;
         const csvText = req.file.buffer.toString("utf8");
         const result = await parseAndValidateImport(csvText, admin.orgId, admin.envId);
         res.json(result);
@@ -3247,10 +3244,13 @@ If the user asks about FinSight Lite features, you can mention:
               <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;padding:24px;border:1px solid #e5e7eb">
                 <h1 style="font-size:20px;margin:0 0 12px">Welcome to FinSight Lite!</h1>
                 <p>Hi ${escapeHtml(row.firstName)}, your teacher at <strong>${escapeHtml(org.name)}</strong> has set up an account for you.</p>
-                <p><strong>Your username:</strong> <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px">${escapeHtml(row.username)}</code></p>
-                <p>Sign in with your username — no password needed. You'll pick your own avatar and start earning XP right away.</p>
-                <p><a href="${escapeHtml(loginUrl)}" style="background:#2563eb;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block">Sign in</a></p>
-                <p style="font-size:12px;color:#6b7280">If this wasn't expected, you can safely ignore this email.</p>
+                <p style="margin:16px 0;padding:12px;background:#f3f4f6;border-radius:8px">
+                  <strong>Your sign-in code (username):</strong><br>
+                  <code style="font-size:18px;background:#fff;padding:4px 10px;border-radius:4px;border:1px solid #e5e7eb;display:inline-block;margin-top:6px">${escapeHtml(row.username)}</code>
+                </p>
+                <p>Tap the button below to open FinSight Lite. Type your sign-in code if asked — that's all you need.</p>
+                <p><a href="${escapeHtml(loginUrl)}" style="background:#2563eb;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block">Sign in to FinSight Lite</a></p>
+                <p style="font-size:12px;color:#6b7280">Keep this code private — it's how the app knows it's really you. If this wasn't expected, you can safely ignore this email.</p>
               </div></body></html>`;
             const sendRes = await sendEmail({
               to: row.email,
@@ -3312,6 +3312,14 @@ If the user asks about FinSight Lite features, you can mention:
       orgStudents.map(async (s: any) => {
         const user = await storage.getUser(s.student_user_id).catch(() => null);
         const xp = await storage.getUserXp(s.student_user_id).catch(() => null);
+        const progress = await storage.getUserLearningProgress(s.student_user_id).catch(() => []);
+        const lessonsCompleted = progress.filter((p) => p.completed).length;
+        const completedDates = progress
+          .map((p) => p.completedAt)
+          .filter((d): d is Date => d != null)
+          .map((d) => new Date(d).getTime());
+        const lastActiveTs = completedDates.length > 0 ? Math.max(...completedDates) : null;
+        const lastActive = lastActiveTs != null ? new Date(lastActiveTs).toISOString() : "";
         return {
           firstName: user?.firstName ?? "",
           lastName: (user as any)?.lastName ?? "",
@@ -3322,15 +3330,17 @@ If the user asks about FinSight Lite features, you can mention:
           xp: xp?.totalXp ?? 0,
           level: xp?.level ?? 1,
           streak: xp?.currentStreak ?? 0,
+          lessonsCompleted,
+          lastActive,
           joinedAt: s.joined_at ?? "",
         };
       }),
     );
 
     const rows: (string | number)[][] = [
-      ["First Name", "Last Name", "Username", "Email", "Avatar", "Environment", "XP", "Level", "Streak", "Joined"],
+      ["First Name", "Last Name", "Username", "Email", "Avatar", "Environment", "XP", "Level", "Streak", "Lessons Completed", "Last Active", "Joined"],
       ...enriched.map((e) => [
-        e.firstName, e.lastName, e.username, e.email, e.avatar, e.environment, e.xp, e.level, e.streak, e.joinedAt,
+        e.firstName, e.lastName, e.username, e.email, e.avatar, e.environment, e.xp, e.level, e.streak, e.lessonsCompleted, e.lastActive, e.joinedAt,
       ]),
     ];
     const csvCell = (raw: string | number): string => {

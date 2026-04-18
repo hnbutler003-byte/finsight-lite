@@ -325,8 +325,9 @@ function ImportStudentsDialog({
         <DialogHeader>
           <DialogTitle>Import students from CSV</DialogTitle>
           <DialogDescription>
-            Upload a spreadsheet to create accounts in bulk. Each student will be enrolled in your current environment;
-            you can also drop them straight into a class with a class code.
+            Upload a spreadsheet to create accounts in bulk. Each student gets a unique sign-in code (their username),
+            which is shared via email when an address is provided and always shown in the import summary as a fallback.
+            Each student is enrolled in your current environment, and can also be dropped into a class with a class code.
           </DialogDescription>
         </DialogHeader>
 
@@ -458,6 +459,10 @@ function ImportStudentsDialog({
                 <p className="text-xs text-muted-foreground">Skipped</p>
               </div>
             </div>
+
+            <p className="text-xs text-muted-foreground" data-testid="text-credentials-note">
+              Each student's sign-in code is their <strong>username</strong> below. Share these with students who didn't get a welcome email.
+            </p>
 
             {commitResult.created.length > 0 && (
               <div className="rounded-2xl border-2 max-h-64 overflow-y-auto">
