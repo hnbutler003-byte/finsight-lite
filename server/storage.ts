@@ -209,27 +209,30 @@ export class DatabaseStorage implements IStorage {
     return newCategory;
   }
 
-  async getTransactions(userId: string, filters?: { 
-    startDate?: string, 
-    endDate?: string, 
+  async getTransactions(userId: string, filters?: {
+    startDate?: string,
+    endDate?: string,
     categoryId?: number,
-    limit?: number 
+    limit?: number,
+    offset?: number,
   }): Promise<(Transaction & { category: Category | null })[]> {
     let conditions = [eq(transactions.userId, userId)];
     if (filters?.startDate) conditions.push(gte(transactions.date, new Date(filters.startDate)));
     if (filters?.endDate) conditions.push(lte(transactions.date, new Date(filters.endDate)));
     if (filters?.categoryId) conditions.push(eq(transactions.categoryId, filters.categoryId));
 
-    const query = db.select({
+    let query = db.select({
       transaction: transactions,
-      category: categories
+      category: categories,
     })
     .from(transactions)
     .leftJoin(categories, eq(transactions.categoryId, categories.id))
     .where(and(...conditions))
-    .orderBy(desc(transactions.date));
+    .orderBy(desc(transactions.date))
+    .$dynamic();
 
-    if (filters?.limit) query.limit(filters.limit);
+    if (filters?.limit) query = query.limit(filters.limit);
+    if (filters?.offset) query = query.offset(filters.offset);
 
     const results = await query;
     return results.map(r => ({ ...r.transaction, category: r.category || undefined }));
@@ -259,38 +262,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBudgets(userId: string): Promise<(BudgetResponse)[]> {
-    const budgetList = await db.select({
+    // Single round trip: join budgets + category + a per-category spent-this-month subquery.
+    const spentSub = db.$with("spent_this_month").as(
+      db.select({
+        categoryId: transactions.categoryId,
+        total: sql<number>`sum(${transactions.amount})`.as("total"),
+      })
+      .from(transactions)
+      .where(and(
+        eq(transactions.userId, userId),
+        sql`extract(month from ${transactions.date}) = extract(month from now())`,
+        sql`extract(year from ${transactions.date}) = extract(year from now())`
+      ))
+      .groupBy(transactions.categoryId)
+    );
+
+    const rows = await db.with(spentSub).select({
       budget: budgets,
-      category: categories
+      category: categories,
+      spent: spentSub.total,
     })
     .from(budgets)
     .leftJoin(categories, eq(budgets.categoryId, categories.id))
+    .leftJoin(spentSub, eq(spentSub.categoryId, budgets.categoryId))
     .where(eq(budgets.userId, userId));
 
-    if (budgetList.length === 0) return [];
-
-    // Single grouped query for spent-this-month per category (avoids N+1)
-    const spentRows = await db.select({
-      categoryId: transactions.categoryId,
-      total: sql<number>`sum(${transactions.amount})`,
-    })
-    .from(transactions)
-    .where(and(
-      eq(transactions.userId, userId),
-      sql`extract(month from ${transactions.date}) = extract(month from now())`,
-      sql`extract(year from ${transactions.date}) = extract(year from now())`
-    ))
-    .groupBy(transactions.categoryId);
-
-    const spentByCategory = new Map<number, number>();
-    for (const r of spentRows) {
-      if (r.categoryId != null) spentByCategory.set(r.categoryId, Number(r.total || 0));
-    }
-
-    return budgetList.map(b => ({
-      ...b.budget,
-      category: b.category,
-      spent: spentByCategory.get(b.budget.categoryId) || 0,
+    return rows.map(r => ({
+      ...r.budget,
+      category: r.category,
+      spent: Number(r.spent || 0),
     }));
   }
 

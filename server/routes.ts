@@ -330,15 +330,18 @@ export async function registerRoutes(
   // Transactions
   app.get(api.transactions.list.path, isAuthenticated, async (req, res) => {
     const userId = (req.user as any).id;
-    // Defensive limit parsing — invalid input falls back to safe default of 50.
-    // Cap list size at 200 to keep responses fast as data grows.
-    const raw = Number(req.query.limit);
-    const limit = Number.isFinite(raw) && raw > 0 ? Math.min(Math.floor(raw), 200) : 50;
+    // Defensive limit/offset parsing — invalid input falls back to safe default.
+    // Cap list size at 200 per page; clients can page with offset to load older entries.
+    const rawLimit = Number(req.query.limit);
+    const rawOffset = Number(req.query.offset);
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(Math.floor(rawLimit), 200) : 50;
+    const offset = Number.isFinite(rawOffset) && rawOffset >= 0 ? Math.floor(rawOffset) : 0;
     const filters = {
       startDate: req.query.startDate as string,
       endDate: req.query.endDate as string,
       categoryId: req.query.categoryId ? Number(req.query.categoryId) : undefined,
       limit,
+      offset,
     };
     const transactions = await storage.getTransactions(userId, filters);
     res.json(transactions);
@@ -1334,9 +1337,11 @@ Rules:
       const { examPapers } = await import("@shared/schema");
       const { db } = await import("./db");
       const { eq, desc } = await import("drizzle-orm");
-      const raw = Number(req.query.limit);
-      const limit = Number.isFinite(raw) && raw > 0 ? Math.min(Math.floor(raw), 200) : 50;
-      const allPapers = await db.select().from(examPapers).where(eq(examPapers.status, "completed")).orderBy(desc(examPapers.createdAt)).limit(limit);
+      const rawLimit = Number(req.query.limit);
+      const rawOffset = Number(req.query.offset);
+      const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(Math.floor(rawLimit), 200) : 50;
+      const offset = Number.isFinite(rawOffset) && rawOffset >= 0 ? Math.floor(rawOffset) : 0;
+      const allPapers = await db.select().from(examPapers).where(eq(examPapers.status, "completed")).orderBy(desc(examPapers.createdAt)).limit(limit).offset(offset);
       res.json(allPapers);
     } catch (err: any) {
       res.status(500).json({ message: err.message });
@@ -1492,11 +1497,13 @@ Rules:
   app.get("/api/moneylab/leaderboard", isAuthenticated, async (req, res) => {
     try {
       const period = (req.query.period as string) || "all";
-      const raw = Number(req.query.limit);
-      const limit = Number.isFinite(raw) && raw > 0 ? Math.min(Math.floor(raw), 100) : 20;
+      const rawLimit = Number(req.query.limit);
+      const rawOffset = Number(req.query.offset);
+      const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(Math.floor(rawLimit), 100) : 20;
+      const offset = Number.isFinite(rawOffset) && rawOffset >= 0 ? Math.floor(rawOffset) : 0;
       const { cached } = await import("./cache");
       const leaderboard = await cached(
-        `moneylab:leaderboard:${period}:${limit}`,
+        `moneylab:leaderboard:${period}:${limit}:${offset}`,
         15_000,
         () => storage.getLeaderboard({ period, limit }),
       );

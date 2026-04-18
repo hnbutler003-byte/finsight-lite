@@ -17,6 +17,10 @@ export default function MoneyLabTutor() {
 
   const { data: papers, isLoading: papersLoading } = useQuery<any[]>({
     queryKey: ["/api/moneylab/papers/all"],
+    queryFn: async () => {
+      const res = await fetch("/api/moneylab/papers/all?limit=200", { credentials: "include" });
+      return res.json();
+    },
   });
 
   const { data: paperData } = useQuery<{ paper: any; questions: any[] }>({

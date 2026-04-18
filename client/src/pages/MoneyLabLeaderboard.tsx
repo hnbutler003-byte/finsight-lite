@@ -24,7 +24,7 @@ export default function MoneyLabLeaderboard() {
   }[]>({
     queryKey: ["/api/moneylab/leaderboard", period],
     queryFn: async () => {
-      const res = await fetch(`/api/moneylab/leaderboard?period=${period}`, { credentials: "include" });
+      const res = await fetch(`/api/moneylab/leaderboard?period=${period}&limit=100`, { credentials: "include" });
       return res.json();
     },
   });
