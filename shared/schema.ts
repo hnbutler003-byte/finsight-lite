@@ -385,6 +385,30 @@ export const tutorExplanations = pgTable("tutor_explanations", {
 
 export type TutorExplanation = typeof tutorExplanations.$inferSelect;
 
+// === AUDIT LOG ===
+
+export const auditLog = pgTable("audit_log", {
+  id: serial("id").primaryKey(),
+  actorType: text("actor_type", { enum: ["admin", "org_admin", "teacher", "student", "system"] }).notNull(),
+  actorId: text("actor_id"),
+  actorEmail: text("actor_email"),
+  action: text("action").notNull(),
+  targetType: text("target_type"),
+  targetId: text("target_id"),
+  orgId: text("org_id"),
+  meta: jsonb("meta").$type<Record<string, any>>().default({}),
+  ip: text("ip"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => ({
+  actorIdx: index("idx_audit_log_actor").on(t.actorType, t.actorId, t.createdAt),
+  actionIdx: index("idx_audit_log_action").on(t.action, t.createdAt),
+  createdIdx: index("idx_audit_log_created").on(t.createdAt),
+}));
+
+export type AuditLogEntry = typeof auditLog.$inferSelect;
+export const insertAuditLogSchema = createInsertSchema(auditLog).omit({ id: true, createdAt: true });
+export type InsertAuditLogEntry = z.infer<typeof insertAuditLogSchema>;
+
 // === RELATIONS ===
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({

@@ -1,6 +1,7 @@
 import { Express, json as expressJson } from "express";
 import { Server } from "http";
 import { storage } from "./storage";
+import { audit, listAuditLog } from "./audit";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { verifyGoogleToken, googleEnabled } from "./googleAuth";
 import { api } from "@shared/routes";
@@ -115,6 +116,18 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Health check (used for uptime monitoring)
+  app.get("/healthz", async (_req, res) => {
+    try {
+      const { db } = await import("./db");
+      const { sql } = await import("drizzle-orm");
+      await db.execute(sql`select 1`);
+      res.json({ ok: true, ts: Date.now() });
+    } catch (e: any) {
+      res.status(503).json({ ok: false, error: e?.message || "db unavailable" });
+    }
+  });
+
   // Auth setup
   await setupAuth(app);
   registerAuthRoutes(app);
@@ -2278,12 +2291,34 @@ If the user asks about FinSight Lite features, you can mention:
     try {
       const { email, password } = z.object({ email: z.string(), password: z.string() }).parse(req.body);
       if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+        await audit({ actorType: "admin", actorEmail: email, action: "admin.login.failed", req });
         return res.status(401).json({ message: "Invalid credentials" });
       }
       req.session.isAdmin = true;
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.login", req });
       res.json({ ok: true, email: ADMIN_EMAIL });
     } catch (e: any) {
       res.status(400).json({ message: e.message });
+    }
+  });
+
+  // Audit log query (admin only)
+  app.get("/api/admin/audit-log", isAdmin, async (req, res) => {
+    try {
+      const q = req.query as Record<string, string | undefined>;
+      const rows = await listAuditLog({
+        actorType: q.actorType as any,
+        actorId: q.actorId,
+        action: q.action,
+        orgId: q.orgId,
+        from: q.from,
+        to: q.to,
+        limit: q.limit ? Number(q.limit) : undefined,
+        offset: q.offset ? Number(q.offset) : undefined,
+      });
+      res.json(rows);
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
     }
   });
 
@@ -2386,17 +2421,20 @@ If the user asks about FinSight Lite features, you can mention:
   app.post("/api/admin/schools", isAdmin, async (req, res) => {
     try {
       const school = await storage.createSchool(req.body);
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "school.create", targetType: "school", targetId: school.id, meta: { name: school.name }, req });
       res.json(school);
     } catch (e: any) { res.status(400).json({ message: e.message }); }
   });
   app.patch("/api/admin/schools/:id", isAdmin, async (req, res) => {
     try {
       const school = await storage.updateSchool(parseInt(req.params.id), req.body);
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "school.update", targetType: "school", targetId: req.params.id, meta: req.body, req });
       res.json(school);
     } catch (e: any) { res.status(400).json({ message: e.message }); }
   });
   app.delete("/api/admin/schools/:id", isAdmin, async (req, res) => {
     await storage.deleteSchool(parseInt(req.params.id));
+    await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "school.delete", targetType: "school", targetId: req.params.id, req });
     res.json({ ok: true });
   });
 
@@ -2672,6 +2710,7 @@ If the user asks about FinSight Lite features, you can mention:
       }).parse(req.body);
       const org = await createOrganization({ ...body, is_active: true, logo_url: undefined });
       if (!org) return res.status(500).json({ message: "Failed to create organization" });
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "organization.create", targetType: "organization", targetId: org.id, orgId: org.id, meta: { name: body.name }, req });
       res.json(org);
     } catch (e: any) {
       res.status(400).json({ message: e.message });
@@ -2683,6 +2722,7 @@ If the user asks about FinSight Lite features, you can mention:
     if (!org) return res.status(404).json({ message: "Organization not found" });
     const { invalidateOrganizationCache } = await import("./supabase");
     await invalidateOrganizationCache(req.params.id);
+    await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "organization.update", targetType: "organization", targetId: req.params.id, orgId: req.params.id, meta: req.body, req });
     res.json(org);
   });
 
@@ -3163,6 +3203,7 @@ If the user asks about FinSight Lite features, you can mention:
       }
       await updateOrgQuotaSettings(admin.orgId, parsed.data);
       const settings = await getOrgQuotaSettings(admin.orgId);
+      await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org.ai-quotas.update", orgId: admin.orgId, meta: parsed.data, req });
       res.json(settings);
     } catch (err: any) {
       res.status(500).json({ message: err.message });
@@ -3221,6 +3262,7 @@ If the user asks about FinSight Lite features, you can mention:
       .eq("org_id", admin.orgId)
       .eq("student_user_id", req.params.studentUserId);
     if (error) return res.status(500).json({ message: error.message });
+    await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org.student.remove", targetType: "user", targetId: req.params.studentUserId, orgId: admin.orgId, req });
     res.json({ ok: true });
   });
 
@@ -3681,6 +3723,7 @@ If the user asks about FinSight Lite features, you can mention:
       if (!org) return res.status(500).json({ message: "Failed to update organization branding" });
       const { invalidateOrganizationCache } = await import("./supabase");
       await invalidateOrganizationCache(admin.orgId);
+      await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org.branding.update", targetType: "organization", targetId: admin.orgId, orgId: admin.orgId, meta: Object.keys(updates), req });
       res.json({
         logoUrl: org.logo_url ?? null,
         signatureLeftName: org.signature_left_name ?? null,

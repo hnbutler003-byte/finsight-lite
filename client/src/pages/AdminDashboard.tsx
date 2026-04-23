@@ -40,8 +40,109 @@ const TABS = [
   { id: "challenges", label: "Challenges", icon: Trophy },
   { id: "reports", label: "Reports", icon: Download },
   { id: "jobs", label: "Background Jobs", icon: Loader2 },
+  { id: "audit", label: "Audit Log", icon: FileText },
   { id: "dbviewer", label: "DB Viewer", icon: Building2 },
 ];
+
+function AuditLogPanel() {
+  const [actorType, setActorType] = useState<string>("all");
+  const [action, setAction] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
+  const params = new URLSearchParams();
+  if (actorType !== "all") params.set("actorType", actorType);
+  if (action) params.set("action", action);
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  params.set("limit", "200");
+
+  const { data: rows = [], isLoading, refetch } = useQuery<any[]>({
+    queryKey: ["/api/admin/audit-log", actorType, action, from, to],
+    queryFn: () => apiRequest("GET", `/api/admin/audit-log?${params.toString()}`).then(r => r.json()),
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h2 className="text-2xl font-bold text-white">Audit Log</h2>
+        <Button onClick={() => refetch()} className="bg-indigo-600 hover:bg-indigo-700" data-testid="button-audit-refresh">
+          Refresh
+        </Button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div>
+          <Label className="text-slate-300 text-xs mb-1 block">Actor type</Label>
+          <Select value={actorType} onValueChange={setActorType}>
+            <SelectTrigger className="bg-slate-800 border-slate-700 text-white" data-testid="select-audit-actor">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-800 border-slate-700">
+              <SelectItem value="all" className="text-white">All</SelectItem>
+              <SelectItem value="admin" className="text-white">Admin</SelectItem>
+              <SelectItem value="org_admin" className="text-white">Org admin</SelectItem>
+              <SelectItem value="teacher" className="text-white">Teacher</SelectItem>
+              <SelectItem value="student" className="text-white">Student</SelectItem>
+              <SelectItem value="system" className="text-white">System</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-slate-300 text-xs mb-1 block">Action contains</Label>
+          <Input value={action} onChange={e => setAction(e.target.value)} placeholder="e.g. branding"
+            className="bg-slate-800 border-slate-700 text-white" data-testid="input-audit-action" />
+        </div>
+        <div>
+          <Label className="text-slate-300 text-xs mb-1 block">From</Label>
+          <Input type="date" value={from} onChange={e => setFrom(e.target.value)}
+            className="bg-slate-800 border-slate-700 text-white" data-testid="input-audit-from" />
+        </div>
+        <div>
+          <Label className="text-slate-300 text-xs mb-1 block">To</Label>
+          <Input type="date" value={to} onChange={e => setTo(e.target.value)}
+            className="bg-slate-800 border-slate-700 text-white" data-testid="input-audit-to" />
+        </div>
+      </div>
+      <div className="overflow-x-auto rounded-lg border border-slate-700">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-slate-800 border-b border-slate-700">
+              <th className="text-left px-4 py-3 text-slate-300 font-semibold">When</th>
+              <th className="text-left px-4 py-3 text-slate-300 font-semibold">Actor</th>
+              <th className="text-left px-4 py-3 text-slate-300 font-semibold">Action</th>
+              <th className="text-left px-4 py-3 text-slate-300 font-semibold">Target</th>
+              <th className="text-left px-4 py-3 text-slate-300 font-semibold">Org</th>
+              <th className="text-left px-4 py-3 text-slate-300 font-semibold">Meta</th>
+              <th className="text-left px-4 py-3 text-slate-300 font-semibold">IP</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-300">Loading…</td></tr>
+            ) : rows.length === 0 ? (
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-300">No audit entries found</td></tr>
+            ) : rows.map((r: any) => (
+              <tr key={r.id} className="border-b border-slate-800 hover:bg-slate-800/50" data-testid={`row-audit-${r.id}`}>
+                <td className="px-4 py-2 text-slate-300 whitespace-nowrap">{new Date(r.createdAt).toLocaleString()}</td>
+                <td className="px-4 py-2 text-slate-300 whitespace-nowrap">
+                  <span className="text-xs uppercase tracking-wide text-indigo-300">{r.actorType}</span>
+                  <div className="text-xs text-slate-400">{r.actorEmail || r.actorId || "—"}</div>
+                </td>
+                <td className="px-4 py-2 text-white font-mono text-xs">{r.action}</td>
+                <td className="px-4 py-2 text-slate-300 text-xs">{r.targetType ? `${r.targetType}#${r.targetId}` : "—"}</td>
+                <td className="px-4 py-2 text-slate-300 text-xs">{r.orgId || "—"}</td>
+                <td className="px-4 py-2 text-slate-400 text-xs max-w-[280px] truncate font-mono">
+                  {r.meta ? JSON.stringify(r.meta) : "—"}
+                </td>
+                <td className="px-4 py-2 text-slate-400 text-xs">{r.ip || "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 // ─── reusable DataTable ──────────────────────────────────────────────────────
 
@@ -1534,6 +1635,9 @@ export default function AdminDashboard() {
 
         {/* ── Background Jobs ── */}
         {activeTab === "jobs" && <JobsPanel />}
+
+        {/* ── Audit Log ── */}
+        {activeTab === "audit" && <AuditLogPanel />}
 
         {/* ── DB Viewer ── */}
         {activeTab === "dbviewer" && (

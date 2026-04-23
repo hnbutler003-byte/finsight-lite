@@ -1,4 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
+import { initSentry, captureError, Sentry } from "./sentry";
+initSentry();
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
@@ -110,6 +112,51 @@ function startWeeklyDigestScheduler() {
   setInterval(() => { void maybeRunWeeklyDigest(); }, 15 * 60 * 1000);
 }
 
+// Uptime ping: scheduled self-check of /healthz every minute. On 3 consecutive
+// failures, emit an alert via the email helper (gated by ALERT_EMAIL).
+let healthFailures = 0;
+let healthAlertedAt = 0;
+async function uptimePing() {
+  try {
+    const port = parseInt(process.env.PORT || "5000", 10);
+    const url = `http://127.0.0.1:${port}/healthz`;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 5000);
+    const r = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (r.ok) {
+      healthFailures = 0;
+      return;
+    }
+    healthFailures++;
+  } catch {
+    healthFailures++;
+  }
+  if (healthFailures >= 3 && Date.now() - healthAlertedAt > 30 * 60 * 1000) {
+    healthAlertedAt = Date.now();
+    const to = process.env.ALERT_EMAIL;
+    if (to) {
+      try {
+        const { sendEmail } = await import("./email");
+        await sendEmail({
+          to,
+          subject: `[FinSight] Healthz failing (${healthFailures} consecutive)`,
+          html: `<p>FinSight Lite /healthz has failed ${healthFailures} consecutive checks.</p>`,
+        });
+        log(`uptime: alert email sent to ${to}`, "uptime");
+      } catch (e) {
+        log(`uptime: alert email failed: ${(e as Error).message}`, "uptime");
+      }
+    }
+    captureError(new Error(`healthz failing ${healthFailures}x`), { source: "uptime" });
+  }
+}
+
+function startUptimeScheduler() {
+  setTimeout(() => { void uptimePing(); }, 60_000);
+  setInterval(() => { void uptimePing(); }, 60_000);
+}
+
 (async () => {
   await registerRoutes(httpServer, app);
   await seedDatabase();
@@ -117,12 +164,27 @@ function startWeeklyDigestScheduler() {
   startJobWorker();
   startWeeklyDigestScheduler();
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
+    if (status >= 500) {
+      try {
+        captureError(err, { path: req.path, method: req.method });
+      } catch {
+        // ignore
+      }
+      console.error("[unhandled]", req.method, req.path, err);
+    }
     res.status(status).json({ message });
-    throw err;
+  });
+
+  process.on("unhandledRejection", (reason) => {
+    console.error("[unhandledRejection]", reason);
+    captureError(reason);
+  });
+  process.on("uncaughtException", (err) => {
+    console.error("[uncaughtException]", err);
+    captureError(err);
   });
 
   // importantly only setup vite in development and after
@@ -148,6 +210,7 @@ function startWeeklyDigestScheduler() {
     },
     () => {
       log(`serving on port ${port}`);
+      startUptimeScheduler();
     },
   );
 })();
