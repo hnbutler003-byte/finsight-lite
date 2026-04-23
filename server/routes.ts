@@ -3004,7 +3004,7 @@ If the user asks about FinSight Lite features, you can mention:
         firstName, lastName, email: email.toLowerCase(), passwordHash,
         orgId: env.org_id, envId: env.id, role: "admin",
       });
-      (req as any).session.orgAdminId = admin.id;
+      (req as any).session.orgAdminId = admin.id; (req as any).session.orgId = admin.orgId;
       // Audit: creation of an org_admin is a privileged role grant (the
       // closest equivalent in this codebase to "promote user to admin").
       await audit({
@@ -3030,7 +3030,7 @@ If the user asks about FinSight Lite features, you can mention:
       if (!admin.passwordHash) return res.status(401).json({ message: "This account uses Google sign-in. Please use the 'Sign in with Google' button." });
       const valid = await bcrypt.compare(password, admin.passwordHash);
       if (!valid) return res.status(401).json({ message: "Invalid email or password" });
-      (req as any).session.orgAdminId = admin.id;
+      (req as any).session.orgAdminId = admin.id; (req as any).session.orgId = admin.orgId;
       const { passwordHash: _, ...safe } = admin;
       // Fetch org and env names
       const org = await getOrganization(admin.orgId);
@@ -3084,7 +3084,7 @@ If the user asks about FinSight Lite features, you can mention:
         }
       }
 
-      (req as any).session.orgAdminId = admin.id;
+      (req as any).session.orgAdminId = admin.id; (req as any).session.orgId = admin.orgId;
       const { passwordHash: _, ...safe } = admin;
       const envs = await getOrgEnvironments(admin.orgId);
       const env = envs.find(e => e.id === admin.envId);
@@ -3130,7 +3130,7 @@ If the user asks about FinSight Lite features, you can mention:
             message: "This Google account is already registered with a different organization. Please sign in from that organization's portal instead.",
           });
         }
-        (req as any).session.orgAdminId = existing.id;
+        (req as any).session.orgAdminId = existing.id; (req as any).session.orgId = existing.orgId;
         const { passwordHash: _, ...safe } = existing;
         return res.json({ ...safe, orgName: org.name, envName: env.display_name });
       }
@@ -3144,7 +3144,7 @@ If the user asks about FinSight Lite features, you can mention:
         envId: env.id,
         role: "admin",
       });
-      (req as any).session.orgAdminId = admin.id;
+      (req as any).session.orgAdminId = admin.id; (req as any).session.orgId = admin.orgId;
       await audit({
         actorType: "org_admin", actorId: String(admin.id), actorEmail: admin.email,
         action: "org_admin.account.created",

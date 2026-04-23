@@ -54,6 +54,30 @@ export function sentryRequestContext(req: Request, _res: Response, next: NextFun
       // Org tag is non-PII (UUID).
       const orgId = sess.orgId || sess.passport?.user?.org_id;
       if (orgId) scope.setTag("org_id", String(orgId));
+
+      // Catch handler-level 5xx responses that returned without throwing
+      // (e.g. routes that locally try/catch and return res.status(500)).
+      // We don't have the original Error, but the path/method/status are
+      // enough to alert on and click through to logs.
+      _res.on("finish", () => {
+        try {
+          if (_res.statusCode >= 500 && _res.statusCode <= 599) {
+            const synthetic = new Error(
+              `HTTP ${_res.statusCode} ${req.method} ${req.originalUrl || req.url}`,
+            );
+            Sentry.withScope((s) => {
+              s.setLevel("error");
+              s.setTag("http.status_code", String(_res.statusCode));
+              s.setTag("http.method", req.method);
+              s.setTag("http.route", req.originalUrl || req.url);
+              if (orgId) s.setTag("org_id", String(orgId));
+              if (id) s.setUser({ id });
+              Sentry.captureException(synthetic);
+            });
+          }
+        } catch { /* never throw from finish */ }
+      });
+
       next();
     });
   } catch {
