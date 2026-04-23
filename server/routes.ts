@@ -196,15 +196,21 @@ export async function registerRoutes(
 
       // Enroll in class / org atomically
       if (resolvedClass) {
-        await storage.enrollStudent(resolvedClass.id, user.id).catch(() => {/* already enrolled */});
+        await storage.enrollStudent(resolvedClass.id, user.id).catch((err) => {
+          if (!/already|duplicate|unique/i.test(String(err))) console.warn("[Google Auth] enrollStudent:", err);
+        });
         if (resolvedClass.envId) {
           const env = await getOrgEnvironmentById(resolvedClass.envId);
           if (env) {
-            await enrollStudentInOrg(env.org_id, env.id, user.id).catch(() => {});
+            await enrollStudentInOrg(env.org_id, env.id, user.id).catch((err) => {
+              console.warn("[Google Auth] enrollStudentInOrg (class):", err);
+            });
           }
         }
       } else if (resolvedOrgEnv) {
-        await enrollStudentInOrg(resolvedOrgEnv.org_id, resolvedOrgEnv.id, user.id).catch(() => {});
+        await enrollStudentInOrg(resolvedOrgEnv.org_id, resolvedOrgEnv.id, user.id).catch((err) => {
+          console.warn("[Google Auth] enrollStudentInOrg (org):", err);
+        });
       }
 
       await new Promise<void>((resolve, reject) => {
@@ -3659,10 +3665,16 @@ If the user asks about FinSight Lite features, you can mention:
       if (body.signatureRightName !== undefined) updates.signature_right_name = body.signatureRightName;
       if (body.signatureRightRole !== undefined) updates.signature_right_role = body.signatureRightRole;
       if (body.allowedEmailDomains !== undefined) {
-        // Normalise: lowercase, strip leading @, no blanks
-        updates.allowed_email_domains = body.allowedEmailDomains
+        // Normalise: lowercase, strip leading @, no blanks; validate basic domain format
+        const domainRe = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z]{2,})+$/;
+        const normalised = body.allowedEmailDomains
           .map((d) => d.toLowerCase().replace(/^@/, "").trim())
           .filter(Boolean);
+        const invalid = normalised.filter((d) => !domainRe.test(d));
+        if (invalid.length > 0) {
+          return res.status(400).json({ message: `Invalid domain format: ${invalid.join(", ")}` });
+        }
+        updates.allowed_email_domains = normalised;
       }
 
       const org = await updateOrganization(admin.orgId, updates);
