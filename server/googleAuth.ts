@@ -24,6 +24,7 @@ export async function verifyGoogleToken(idToken: string): Promise<GoogleProfile>
   const ticket = await c.verifyIdToken({ idToken, audience: CLIENT_ID! });
   const p = ticket.getPayload();
   if (!p || !p.email || !p.sub) throw new Error("Invalid Google token — missing email or subject.");
+  if (!p.email_verified) throw new Error("Your Google email address has not been verified. Please verify it in your Google account and try again.");
   return {
     sub: p.sub,
     email: p.email.toLowerCase(),

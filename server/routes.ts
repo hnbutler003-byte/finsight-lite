@@ -123,8 +123,39 @@ export async function registerRoutes(
   app.post("/api/auth/google", async (req, res) => {
     try {
       if (!googleEnabled()) return res.status(503).json({ message: "Google sign-in is not configured." });
-      const { idToken } = z.object({ idToken: z.string().min(1) }).parse(req.body);
+      const { idToken, classCode } = z.object({
+        idToken: z.string().min(1),
+        classCode: z.string().optional(),
+      }).parse(req.body);
       const profile = await verifyGoogleToken(idToken);
+
+      // Resolve class or org by join code first (before creating user) so we can
+      // enforce allowed_email_domains before account creation.
+      let resolvedClass: Awaited<ReturnType<typeof storage.getClassByCode>> | null = null;
+      let resolvedOrgEnv: Awaited<ReturnType<typeof getOrgEnvironmentByJoinCode>> | null = null;
+      if (classCode) {
+        const code = classCode.toUpperCase().trim();
+        // Try class code first
+        resolvedClass = (await storage.getClassByCode(code)) ?? null;
+        if (!resolvedClass) {
+          // Try org environment join code
+          resolvedOrgEnv = (await getOrgEnvironmentByJoinCode(code)) ?? null;
+          if (!resolvedOrgEnv) {
+            return res.status(400).json({ message: "Invalid class or organization code." });
+          }
+          // Enforce allowed_email_domains for org joins
+          const org = await getOrganization(resolvedOrgEnv.org_id);
+          if (org?.allowed_email_domains && org.allowed_email_domains.length > 0) {
+            const emailDomain = profile.email.split("@")[1]?.toLowerCase() ?? "";
+            const allowed = org.allowed_email_domains.map((d: string) => d.toLowerCase());
+            if (!allowed.includes(emailDomain)) {
+              return res.status(403).json({
+                message: `Your email domain (@${emailDomain}) is not permitted for this organization. Allowed: ${org.allowed_email_domains.join(", ")}`,
+              });
+            }
+          }
+        }
+      }
 
       let user = await authStorage.getUserByEmail(profile.email);
       if (!user) {
@@ -145,6 +176,20 @@ export async function registerRoutes(
           profileImageUrl: profile.picture || null,
         });
       }
+
+      // Enroll in class / org atomically
+      if (resolvedClass) {
+        await storage.enrollStudent(resolvedClass.id, user.id).catch(() => {/* already enrolled */});
+        if (resolvedClass.envId) {
+          const env = await getOrgEnvironmentById(resolvedClass.envId);
+          if (env) {
+            await enrollStudentInOrg(env.org_id, env.id, user.id).catch(() => {});
+          }
+        }
+      } else if (resolvedOrgEnv) {
+        await enrollStudentInOrg(resolvedOrgEnv.org_id, resolvedOrgEnv.id, user.id).catch(() => {});
+      }
+
       await new Promise<void>((resolve, reject) => {
         req.session.userId = user!.id;
         req.session.save((err) => (err ? reject(err) : resolve()));
@@ -1893,7 +1938,7 @@ If the user asks about FinSight Lite features, you can mention:
           email: profile.email,
           schoolName,
           passwordHash: null,
-        } as any);
+        });
       }
       req.session.teacherId = teacher.id;
       const { passwordHash: _, ...safe } = teacher;
@@ -2913,9 +2958,21 @@ If the user asks about FinSight Lite features, you can mention:
           needsRegistration: true,
         });
       }
+
+      // Enforce allowed_email_domains for org admin login
+      const org = await getOrganization(admin.orgId);
+      if (org?.allowed_email_domains && org.allowed_email_domains.length > 0) {
+        const emailDomain = profile.email.split("@")[1]?.toLowerCase() ?? "";
+        const allowed = org.allowed_email_domains.map((d: string) => d.toLowerCase());
+        if (!allowed.includes(emailDomain)) {
+          return res.status(403).json({
+            message: `Your email domain (@${emailDomain}) is not permitted for this organization. Contact your administrator.`,
+          });
+        }
+      }
+
       (req as any).session.orgAdminId = admin.id;
       const { passwordHash: _, ...safe } = admin;
-      const org = await getOrganization(admin.orgId);
       const envs = await getOrgEnvironments(admin.orgId);
       const env = envs.find(e => e.id === admin.envId);
       return res.json({ ...safe, orgName: org?.name ?? "", envName: env?.display_name ?? "" });
@@ -2968,7 +3025,7 @@ If the user asks about FinSight Lite features, you can mention:
         orgId: env.org_id,
         envId: env.id,
         role: "admin",
-      } as any);
+      });
       (req as any).session.orgAdminId = admin.id;
       const { passwordHash: _, ...safe } = admin;
       return res.json({ ...safe, orgName: org.name, envName: env.display_name });
@@ -3546,6 +3603,7 @@ If the user asks about FinSight Lite features, you can mention:
       signatureLeftRole: org.signature_left_role ?? null,
       signatureRightName: org.signature_right_name ?? null,
       signatureRightRole: org.signature_right_role ?? null,
+      allowedEmailDomains: org.allowed_email_domains ?? [],
     });
   });
 
@@ -3561,6 +3619,7 @@ If the user asks about FinSight Lite features, you can mention:
         signatureLeftRole: z.string().max(80).nullable().optional(),
         signatureRightName: z.string().max(80).nullable().optional(),
         signatureRightRole: z.string().max(80).nullable().optional(),
+        allowedEmailDomains: z.array(z.string().max(253)).max(20).optional(),
       }).parse(req.body);
 
       // Accept object-storage public URLs, http(s) URLs, or legacy data URLs
@@ -3577,6 +3636,12 @@ If the user asks about FinSight Lite features, you can mention:
       if (body.signatureLeftRole !== undefined) updates.signature_left_role = body.signatureLeftRole;
       if (body.signatureRightName !== undefined) updates.signature_right_name = body.signatureRightName;
       if (body.signatureRightRole !== undefined) updates.signature_right_role = body.signatureRightRole;
+      if (body.allowedEmailDomains !== undefined) {
+        // Normalise: lowercase, strip leading @, no blanks
+        updates.allowed_email_domains = body.allowedEmailDomains
+          .map((d) => d.toLowerCase().replace(/^@/, "").trim())
+          .filter(Boolean);
+      }
 
       const org = await updateOrganization(admin.orgId, updates);
       if (!org) return res.status(500).json({ message: "Failed to update organization branding" });
@@ -3588,6 +3653,7 @@ If the user asks about FinSight Lite features, you can mention:
         signatureLeftRole: org.signature_left_role ?? null,
         signatureRightName: org.signature_right_name ?? null,
         signatureRightRole: org.signature_right_role ?? null,
+        allowedEmailDomains: org.allowed_email_domains ?? [],
       });
     } catch (e: any) {
       res.status(400).json({ message: e.message });

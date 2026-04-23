@@ -67,7 +67,7 @@ export default function AuthPage() {
 
   const clearError = () => setError("");
 
-  const handleGoogleSignIn = async (idToken: string) => {
+  const handleGoogleSignIn = async (idToken: string, classCode?: string) => {
     setIsGoogleLoading(true);
     setError("");
     try {
@@ -75,7 +75,7 @@ export default function AuthPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({ idToken, ...(classCode ? { classCode } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.message || "Google sign-in failed."); return; }
@@ -312,6 +312,26 @@ export default function AuthPage() {
               >
                 {isValidatingCode ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Continue <ArrowRight className="ml-2 w-4 h-4" /></>}
               </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/20" /></div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-transparent px-2 text-white/40">or sign in instantly</span>
+                </div>
+              </div>
+              <div className="rounded-2xl bg-white/8 border border-white/20 p-3">
+                <GoogleSignInButton
+                  onSuccess={async (idToken) => {
+                    const code = classCode.trim().toUpperCase();
+                    if (!code) { setError("Enter a code first."); return; }
+                    await handleGoogleSignIn(idToken, code);
+                  }}
+                  onError={(msg) => setError(msg || "Google sign-in failed.")}
+                  text="continue_with"
+                  theme="filled_black"
+                />
+                {isGoogleLoading && <div className="flex justify-center mt-2"><Loader2 className="w-5 h-5 animate-spin text-white/60" /></div>}
+              </div>
             </div>
 
             <button onClick={() => { setStep("student-access"); clearError(); }} className="flex items-center gap-1 text-sm text-white/50 hover:text-white/80 transition-colors mx-auto" data-testid="button-back-access">
