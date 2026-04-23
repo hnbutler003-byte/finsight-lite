@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, UserCog, Award, Mail, ShieldCheck, Users } from "lucide-react";
+import { Loader2, UserCog, Award, Mail, ShieldCheck, Users, Chrome } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 type EmailContact = {
   id: number;
@@ -100,6 +101,22 @@ export default function Settings() {
   const previewName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ") || user?.username || "Student";
   const contact = contactData?.contact;
   const guardian = contactData?.guardian;
+
+  const [googleLinkLoading, setGoogleLinkLoading] = useState(false);
+  const handleLinkGoogle = async (idToken: string) => {
+    setGoogleLinkLoading(true);
+    try {
+      const res = await apiRequest("POST", "/api/auth/google-link", { idToken });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      queryClient.invalidateQueries({ queryKey: ["/api/email/contact"] });
+      toast({ title: "Google account linked", description: `Linked to ${data.email}. You can now sign in with Google.` });
+    } catch (e: any) {
+      toast({ title: "Couldn't link Google", description: e.message, variant: "destructive" });
+    } finally {
+      setGoogleLinkLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen caribbean-bg">
@@ -243,6 +260,40 @@ export default function Settings() {
                       Send verification email
                     </Button>
                   )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card-heavy rounded-glass border-0">
+            <CardContent className="p-6 space-y-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500/20 flex items-center justify-center">
+                  <Chrome className="w-5 h-5 text-blue-300" />
+                </div>
+                <div>
+                  <h2 className="font-display font-bold text-lg text-white">Google Account</h2>
+                  <p className="text-sm text-white/70">Link your school Google account to sign in faster.</p>
+                </div>
+              </div>
+
+              {contact?.selfEmail ? (
+                <div className="rounded-2xl border border-white/15 bg-white/5 p-4 flex items-center gap-3">
+                  <ShieldCheck className="w-5 h-5 text-green-300 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-white/60 uppercase tracking-widest font-bold">Linked email</p>
+                    <p className="text-white font-medium" data-testid="text-google-linked-email">{contact.selfEmail}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-white/60">No Google account linked yet.</p>
+                  <GoogleSignInButton
+                    onSuccess={handleLinkGoogle}
+                    onError={(msg) => toast({ title: "Couldn't link Google", description: msg, variant: "destructive" })}
+                    text="signin_with"
+                  />
+                  {googleLinkLoading && <div className="flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-blue-300" /></div>}
                 </div>
               )}
             </CardContent>

@@ -37,6 +37,7 @@ export type Organization = {
   signature_left_role?: string | null;
   signature_right_name?: string | null;
   signature_right_role?: string | null;
+  allowed_email_domains?: string[] | null;
   is_active: boolean;
   subscription_tier: "free" | "standard" | "premium";
   max_students: number;
@@ -209,6 +210,9 @@ ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_left_name text;
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_left_role text;
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_right_name text;
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_right_role text;
+
+-- Add Google SSO domain allowlist (Task #29)
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS allowed_email_domains text[];
 `;
 
 async function applyBrandingColumnsViaPg(): Promise<boolean> {
@@ -227,6 +231,7 @@ async function applyBrandingColumnsViaPg(): Promise<boolean> {
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_left_role text;
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_right_name text;
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_right_role text;
+        ALTER TABLE organizations ADD COLUMN IF NOT EXISTS allowed_email_domains text[];
       `);
       return true;
     } finally {

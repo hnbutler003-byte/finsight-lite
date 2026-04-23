@@ -2,6 +2,7 @@ import { Express, json as expressJson } from "express";
 import { Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
+import { verifyGoogleToken, googleEnabled } from "./googleAuth";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import multer from "multer";
@@ -117,6 +118,62 @@ export async function registerRoutes(
   // Auth setup
   await setupAuth(app);
   registerAuthRoutes(app);
+
+  // ── Student Google sign-in ──────────────────────────────────────────────────
+  app.post("/api/auth/google", async (req, res) => {
+    try {
+      if (!googleEnabled()) return res.status(503).json({ message: "Google sign-in is not configured." });
+      const { idToken } = z.object({ idToken: z.string().min(1) }).parse(req.body);
+      const profile = await verifyGoogleToken(idToken);
+
+      let user = await authStorage.getUserByEmail(profile.email);
+      if (!user) {
+        const base = (profile.givenName || "Student").replace(/[^a-zA-Z0-9]/g, "");
+        const baseFormatted = base.charAt(0).toUpperCase() + base.slice(1).toLowerCase() || "Student";
+        let username = "";
+        for (let i = 0; i < 10; i++) {
+          const digits = Math.floor(1000 + Math.random() * 9000);
+          username = `${baseFormatted}_${digits}`;
+          if (!(await authStorage.getUserByUsername(username))) break;
+        }
+        user = await authStorage.upsertUser({
+          username,
+          avatar: "star",
+          firstName: profile.givenName || profile.name.split(" ")[0] || "Student",
+          lastName: profile.familyName || null,
+          email: profile.email,
+          profileImageUrl: profile.picture || null,
+        });
+      }
+      await new Promise<void>((resolve, reject) => {
+        req.session.userId = user!.id;
+        req.session.save((err) => (err ? reject(err) : resolve()));
+      });
+      return res.json(user);
+    } catch (e: any) {
+      console.error("[Google Auth] Student:", e.message);
+      return res.status(400).json({ message: e.message || "Google sign-in failed." });
+    }
+  });
+
+  // Link Google email to existing student account
+  app.post("/api/auth/google-link", isAuthenticated, async (req: any, res) => {
+    try {
+      if (!googleEnabled()) return res.status(503).json({ message: "Google sign-in is not configured." });
+      const { idToken } = z.object({ idToken: z.string().min(1) }).parse(req.body);
+      const profile = await verifyGoogleToken(idToken);
+
+      const existing = await authStorage.getUserByEmail(profile.email);
+      if (existing && existing.id !== req.user.id) {
+        return res.status(409).json({ message: "This Google account is already linked to another FinSight account." });
+      }
+      const updated = await authStorage.linkEmail(req.user.id, profile.email, profile.picture);
+      return res.json(updated);
+    } catch (e: any) {
+      console.error("[Google Auth] Link:", e.message);
+      return res.status(400).json({ message: e.message || "Google link failed." });
+    }
+  });
 
   // Serve public assets stored in object storage (logos, etc.)
   app.get("/public-objects/:filePath(*)", async (req, res) => {
@@ -1804,6 +1861,7 @@ If the user asks about FinSight Lite features, you can mention:
       const { email, password } = z.object({ email: z.string().email(), password: z.string() }).parse(req.body);
       const teacher = await storage.getTeacherByEmail(email);
       if (!teacher) return res.status(401).json({ message: "Invalid email or password" });
+      if (!teacher.passwordHash) return res.status(401).json({ message: "This account uses Google sign-in. Please use the 'Sign in with Google' button." });
       const valid = await bcrypt.compare(password, teacher.passwordHash);
       if (!valid) return res.status(401).json({ message: "Invalid email or password" });
       req.session.teacherId = teacher.id;
@@ -1817,6 +1875,33 @@ If the user asks about FinSight Lite features, you can mention:
   app.post("/api/teacher/auth/logout", (req, res) => {
     delete req.session.teacherId;
     res.json({ ok: true });
+  });
+
+  // Teacher Google sign-in (find or create teacher by verified email)
+  app.post("/api/teacher/auth/google", async (req, res) => {
+    try {
+      if (!googleEnabled()) return res.status(503).json({ message: "Google sign-in is not configured." });
+      const { idToken } = z.object({ idToken: z.string().min(1) }).parse(req.body);
+      const profile = await verifyGoogleToken(idToken);
+
+      let teacher = await storage.getTeacherByEmail(profile.email);
+      if (!teacher) {
+        const schoolName = profile.email.split("@")[1] ?? "Unknown School";
+        teacher = await storage.createTeacher({
+          firstName: profile.givenName || profile.name.split(" ")[0] || "Teacher",
+          lastName: profile.familyName || profile.name.split(" ").slice(1).join(" ") || "",
+          email: profile.email,
+          schoolName,
+          passwordHash: null,
+        } as any);
+      }
+      req.session.teacherId = teacher.id;
+      const { passwordHash: _, ...safe } = teacher;
+      return res.json(safe);
+    } catch (e: any) {
+      console.error("[Google Auth] Teacher:", e.message);
+      return res.status(400).json({ message: e.message || "Google sign-in failed." });
+    }
   });
 
   app.get("/api/teacher/auth/me", isTeacher, async (req: any, res) => {
@@ -2784,6 +2869,7 @@ If the user asks about FinSight Lite features, you can mention:
       const { email, password } = z.object({ email: z.string().email(), password: z.string() }).parse(req.body);
       const admin = await storage.getOrgAdminByEmail(email);
       if (!admin) return res.status(401).json({ message: "Invalid email or password" });
+      if (!admin.passwordHash) return res.status(401).json({ message: "This account uses Google sign-in. Please use the 'Sign in with Google' button." });
       const valid = await bcrypt.compare(password, admin.passwordHash);
       if (!valid) return res.status(401).json({ message: "Invalid email or password" });
       (req as any).session.orgAdminId = admin.id;
@@ -2811,6 +2897,85 @@ If the user asks about FinSight Lite features, you can mention:
     const envs = await getOrgEnvironments(admin.orgId);
     const env = envs.find(e => e.id === admin.envId);
     res.json({ ...safe, orgName: org?.name ?? "", envName: env?.display_name ?? "" });
+  });
+
+  // Org admin Google login (existing account)
+  app.post("/api/org/auth/google", async (req, res) => {
+    try {
+      if (!googleEnabled()) return res.status(503).json({ message: "Google sign-in is not configured." });
+      const { idToken } = z.object({ idToken: z.string().min(1) }).parse(req.body);
+      const profile = await verifyGoogleToken(idToken);
+
+      const admin = await storage.getOrgAdminByEmail(profile.email);
+      if (!admin) {
+        return res.status(401).json({
+          message: "No org admin account found for this Google account. Please register with your organization join code.",
+          needsRegistration: true,
+        });
+      }
+      (req as any).session.orgAdminId = admin.id;
+      const { passwordHash: _, ...safe } = admin;
+      const org = await getOrganization(admin.orgId);
+      const envs = await getOrgEnvironments(admin.orgId);
+      const env = envs.find(e => e.id === admin.envId);
+      return res.json({ ...safe, orgName: org?.name ?? "", envName: env?.display_name ?? "" });
+    } catch (e: any) {
+      console.error("[Google Auth] OrgAdmin login:", e.message);
+      return res.status(400).json({ message: e.message || "Google sign-in failed." });
+    }
+  });
+
+  // Org admin Google register (new account, requires join code)
+  app.post("/api/org/auth/google-register", async (req, res) => {
+    try {
+      if (!googleEnabled()) return res.status(503).json({ message: "Google sign-in is not configured." });
+      const { idToken, joinCode } = z.object({
+        idToken: z.string().min(1),
+        joinCode: z.string().min(1),
+      }).parse(req.body);
+      const profile = await verifyGoogleToken(idToken);
+
+      const env = await getOrgEnvironmentByJoinCode(joinCode);
+      if (!env) return res.status(400).json({ message: "Invalid organization join code." });
+
+      const org = await getOrganization(env.org_id);
+      if (!org) return res.status(400).json({ message: "Organization not found." });
+
+      // Enforce allowed email domains if configured
+      if (org.allowed_email_domains && org.allowed_email_domains.length > 0) {
+        const emailDomain = profile.email.split("@")[1]?.toLowerCase() ?? "";
+        const allowed = org.allowed_email_domains.map((d: string) => d.toLowerCase());
+        if (!allowed.includes(emailDomain)) {
+          return res.status(403).json({
+            message: `Your email domain (@${emailDomain}) is not allowed for this organization. Permitted domains: ${org.allowed_email_domains.join(", ")}`,
+          });
+        }
+      }
+
+      // If already registered, log them in
+      const existing = await storage.getOrgAdminByEmail(profile.email);
+      if (existing) {
+        (req as any).session.orgAdminId = existing.id;
+        const { passwordHash: _, ...safe } = existing;
+        return res.json({ ...safe, orgName: org.name, envName: env.display_name });
+      }
+
+      const admin = await storage.createOrgAdmin({
+        firstName: profile.givenName || profile.name.split(" ")[0] || "",
+        lastName: profile.familyName || profile.name.split(" ").slice(1).join(" ") || "",
+        email: profile.email,
+        passwordHash: null,
+        orgId: env.org_id,
+        envId: env.id,
+        role: "admin",
+      } as any);
+      (req as any).session.orgAdminId = admin.id;
+      const { passwordHash: _, ...safe } = admin;
+      return res.json({ ...safe, orgName: org.name, envName: env.display_name });
+    } catch (e: any) {
+      console.error("[Google Auth] OrgAdmin register:", e.message);
+      return res.status(400).json({ message: e.message || "Google registration failed." });
+    }
   });
 
   // === ORG ADMIN DATA ROUTES ===

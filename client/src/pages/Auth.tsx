@@ -4,6 +4,7 @@ import { Loader2, ArrowRight, ArrowLeft, KeyRound, RotateCcw, PartyPopper } from
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 const AVATARS = [
   { id: "lion",      emoji: "🦁", label: "Lion" },
@@ -62,8 +63,29 @@ export default function AuthPage() {
 
   const { register, isRegistering } = useAuth();
   const [, setLocation] = useLocation();
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const clearError = () => setError("");
+
+  const handleGoogleSignIn = async (idToken: string) => {
+    setIsGoogleLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ idToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.message || "Google sign-in failed."); return; }
+      window.location.href = "/";
+    } catch {
+      setError("Google sign-in failed. Please try again.");
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
 
   const handleValidateCode = async () => {
     const code = classCode.trim().toUpperCase();
@@ -232,6 +254,25 @@ export default function AuthPage() {
                 </div>
                 <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-emerald-400 transition-colors" />
               </button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/20" /></div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-transparent px-2 text-white/40">or</span>
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-white/8 border border-white/20 p-3">
+                <GoogleSignInButton
+                  onSuccess={handleGoogleSignIn}
+                  onError={(msg) => setError(msg || "Google sign-in failed.")}
+                  text="continue_with"
+                  theme="filled_black"
+                />
+                {isGoogleLoading && <div className="flex justify-center mt-2"><Loader2 className="w-5 h-5 animate-spin text-white/60" /></div>}
+              </div>
+
+              {error && <p className="text-red-400 text-sm text-center" data-testid="text-auth-error">{error}</p>}
             </div>
 
             <button onClick={() => setStep("entry")} className="flex items-center gap-1 text-sm text-white/50 hover:text-white/80 transition-colors mx-auto" data-testid="button-back-entry">

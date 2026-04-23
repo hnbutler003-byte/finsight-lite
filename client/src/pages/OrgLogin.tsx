@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Building2, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 export default function OrgLogin() {
   const [, setLocation] = useLocation();
@@ -13,6 +14,35 @@ export default function OrgLogin() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleGoogle = async (idToken: string) => {
+    setGoogleLoading(true);
+    try {
+      const res = await fetch("/api/org/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ idToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.needsRegistration) {
+          toast({ title: "No account found", description: "Please register first using your org join code.", variant: "destructive" });
+          setLocation("/org/register");
+        } else {
+          throw new Error(data.message);
+        }
+        return;
+      }
+      qc.setQueryData(["/api/org/auth/me"], data);
+      setLocation("/org/dashboard");
+    } catch (e: any) {
+      toast({ title: "Google sign-in failed", description: e.message, variant: "destructive" });
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +77,18 @@ export default function OrgLogin() {
         </div>
 
         <Card className="glass-card rounded-glass shadow-xl">
-          <CardContent className="p-8">
+          <CardContent className="p-8 space-y-5">
+            <GoogleSignInButton
+              onSuccess={handleGoogle}
+              onError={(msg) => toast({ title: "Google sign-in failed", description: msg, variant: "destructive" })}
+            />
+            {googleLoading && <div className="flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-blue-500" /></div>}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">or use email</span>
+              </div>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <label className="text-sm font-bold">Email Address</label>

@@ -1,0 +1,86 @@
+import { useEffect, useRef, useState } from "react";
+
+interface Props {
+  onSuccess: (idToken: string) => void;
+  onError?: (msg?: string) => void;
+  text?: "signin_with" | "signup_with" | "continue_with" | "signin";
+  theme?: "outline" | "filled_blue" | "filled_black";
+}
+
+export function GoogleSignInButton({
+  onSuccess,
+  onError,
+  text = "signin_with",
+  theme = "outline",
+}: Props) {
+  const btnRef = useRef<HTMLDivElement>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
+
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+
+  useEffect(() => {
+    if (!clientId) {
+      setUnavailable(true);
+      return;
+    }
+
+    const initialize = () => {
+      const g = (window as any).google?.accounts?.id;
+      if (!g) { setUnavailable(true); return; }
+      g.initialize({
+        client_id: clientId,
+        callback: (response: any) => {
+          if (response?.credential) {
+            onSuccess(response.credential);
+          } else {
+            onError?.("Google returned no credential.");
+          }
+        },
+        auto_select: false,
+        cancel_on_tap_outside: true,
+      });
+      if (btnRef.current) {
+        g.renderButton(btnRef.current, {
+          type: "standard",
+          theme,
+          size: "large",
+          text,
+          width: btnRef.current.offsetWidth || 320,
+          logo_alignment: "left",
+        });
+        setLoaded(true);
+      }
+    };
+
+    if ((window as any).google?.accounts?.id) {
+      initialize();
+    } else {
+      const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+      if (existing) {
+        existing.addEventListener("load", initialize);
+        return () => existing.removeEventListener("load", initialize);
+      }
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.onload = initialize;
+      script.onerror = () => setUnavailable(true);
+      document.head.appendChild(script);
+    }
+  }, [clientId]);
+
+  if (unavailable || !clientId) return null;
+
+  return (
+    <div className="w-full flex justify-center">
+      <div
+        ref={btnRef}
+        className="w-full"
+        style={{ minHeight: 44, opacity: loaded ? 1 : 0, transition: "opacity 0.2s" }}
+        data-testid="button-google-signin"
+      />
+    </div>
+  );
+}

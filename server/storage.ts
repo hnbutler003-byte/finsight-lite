@@ -122,7 +122,7 @@ export interface IStorage extends IAuthStorage {
   addUserBadge(badge: InsertUserBadge): Promise<UserBadge>;
 
   // Teacher Dashboard
-  createTeacher(data: InsertTeacher & { passwordHash: string }): Promise<Teacher>;
+  createTeacher(data: InsertTeacher & { passwordHash?: string | null }): Promise<Teacher>;
   getTeacherByEmail(email: string): Promise<Teacher | undefined>;
   getTeacherById(id: number): Promise<Teacher | undefined>;
   getClassesByTeacher(teacherId: number): Promise<(Class & { enrollmentCount: number })[]>;
@@ -148,7 +148,7 @@ export interface IStorage extends IAuthStorage {
   getClassAnalytics(classId: number): Promise<any>;
 
   // Org Admin
-  createOrgAdmin(data: InsertOrgAdmin & { passwordHash: string }): Promise<OrgAdmin>;
+  createOrgAdmin(data: InsertOrgAdmin & { passwordHash?: string | null }): Promise<OrgAdmin>;
   getOrgAdminByEmail(email: string): Promise<OrgAdmin | undefined>;
   getOrgAdminById(id: number): Promise<OrgAdmin | undefined>;
   getStudentsByOrgId(orgId: string): Promise<User[]>;
@@ -770,7 +770,7 @@ export class DatabaseStorage implements IStorage {
 
   // === TEACHER DASHBOARD ===
 
-  async createTeacher(data: InsertTeacher & { passwordHash: string }): Promise<Teacher> {
+  async createTeacher(data: InsertTeacher & { passwordHash?: string | null }): Promise<Teacher> {
     const [teacher] = await db.insert(teachers).values(data).returning();
     return teacher;
   }
@@ -1359,7 +1359,7 @@ export class DatabaseStorage implements IStorage {
 
   // === ORG ADMIN ===
 
-  async createOrgAdmin(data: InsertOrgAdmin & { passwordHash: string }): Promise<OrgAdmin> {
+  async createOrgAdmin(data: InsertOrgAdmin & { passwordHash?: string | null }): Promise<OrgAdmin> {
     const [admin] = await db.insert(orgAdmins).values(data).returning();
     return admin;
   }

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Building2, Eye, EyeOff, Loader2, KeyRound } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 export default function OrgRegister() {
   const [, setLocation] = useLocation();
@@ -13,6 +14,32 @@ export default function OrgRegister() {
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "", joinCode: "" });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleGoogle = async (idToken: string) => {
+    const code = form.joinCode.toUpperCase().trim();
+    if (!code) {
+      toast({ title: "Join code required", description: "Please enter your organization join code before signing up with Google.", variant: "destructive" });
+      return;
+    }
+    setGoogleLoading(true);
+    try {
+      const res = await fetch("/api/org/auth/google-register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ idToken, joinCode: code }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      qc.setQueryData(["/api/org/auth/me"], data);
+      setLocation("/org/dashboard");
+    } catch (e: any) {
+      toast({ title: "Google sign-up failed", description: e.message, variant: "destructive" });
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const set = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [key]: e.target.value }));
 
@@ -111,6 +138,20 @@ export default function OrgRegister() {
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
                 Create Account
               </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">or sign up with Google</span>
+                </div>
+              </div>
+              <p className="text-xs text-center text-muted-foreground">Enter your join code above, then use Google to skip the form</p>
+              <GoogleSignInButton
+                onSuccess={handleGoogle}
+                onError={(msg) => toast({ title: "Google sign-up failed", description: msg, variant: "destructive" })}
+                text="signup_with"
+              />
+              {googleLoading && <div className="flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-blue-500" /></div>}
             </form>
           </CardContent>
         </Card>
