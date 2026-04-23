@@ -137,7 +137,24 @@ export async function registerRoutes(
         const code = classCode.toUpperCase().trim();
         // Try class code first
         resolvedClass = (await storage.getClassByCode(code)) ?? null;
-        if (!resolvedClass) {
+        if (resolvedClass) {
+          // If this class belongs to an org environment, enforce domain allowlist
+          if (resolvedClass.envId) {
+            const classEnv = await getOrgEnvironmentById(resolvedClass.envId);
+            if (classEnv) {
+              const classOrg = await getOrganization(classEnv.org_id);
+              if (classOrg?.allowed_email_domains && classOrg.allowed_email_domains.length > 0) {
+                const emailDomain = profile.email.split("@")[1]?.toLowerCase() ?? "";
+                const allowed = classOrg.allowed_email_domains.map((d: string) => d.toLowerCase());
+                if (!allowed.includes(emailDomain)) {
+                  return res.status(403).json({
+                    message: `Your email domain (@${emailDomain}) is not permitted for this school. Allowed: ${classOrg.allowed_email_domains.join(", ")}`,
+                  });
+                }
+              }
+            }
+          }
+        } else {
           // Try org environment join code
           resolvedOrgEnv = (await getOrgEnvironmentByJoinCode(code)) ?? null;
           if (!resolvedOrgEnv) {

@@ -109,7 +109,7 @@ export default function Settings() {
       const res = await apiRequest("POST", "/api/auth/google-link", { idToken });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      queryClient.invalidateQueries({ queryKey: ["/api/email/contact"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({ title: "Google account linked", description: `Linked to ${data.email}. You can now sign in with Google.` });
     } catch (e: any) {
       toast({ title: "Couldn't link Google", description: e.message, variant: "destructive" });
@@ -277,12 +277,12 @@ export default function Settings() {
                 </div>
               </div>
 
-              {contact?.selfEmail ? (
+              {user?.email ? (
                 <div className="rounded-2xl border border-white/15 bg-white/5 p-4 flex items-center gap-3">
                   <ShieldCheck className="w-5 h-5 text-green-300 flex-shrink-0" />
                   <div>
                     <p className="text-xs text-white/60 uppercase tracking-widest font-bold">Linked email</p>
-                    <p className="text-white font-medium" data-testid="text-google-linked-email">{contact.selfEmail}</p>
+                    <p className="text-white font-medium" data-testid="text-google-linked-email">{user.email}</p>
                   </div>
                 </div>
               ) : (
