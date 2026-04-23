@@ -2,6 +2,7 @@ import { Express, json as expressJson } from "express";
 import { Server } from "http";
 import { storage } from "./storage";
 import { audit, listAuditLog } from "./audit";
+import { setSentryUser } from "./sentry";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { verifyGoogleToken, googleEnabled } from "./googleAuth";
 import { api } from "@shared/routes";
@@ -2295,6 +2296,7 @@ If the user asks about FinSight Lite features, you can mention:
         return res.status(401).json({ message: "Invalid credentials" });
       }
       req.session.isAdmin = true;
+      setSentryUser({ id: ADMIN_EMAIL });
       await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.login", req });
       res.json({ ok: true, email: ADMIN_EMAIL });
     } catch (e: any) {
@@ -2303,23 +2305,39 @@ If the user asks about FinSight Lite features, you can mention:
   });
 
   // Audit log query (admin only)
+  const auditQuerySchema = z.object({
+    actorType: z.enum(["admin", "org_admin", "teacher", "student", "system"]).optional(),
+    actorId: z.string().optional(),
+    action: z.string().optional(),
+    orgId: z.string().optional(),
+    from: z.string().optional(),
+    to: z.string().optional(),
+    limit: z.coerce.number().int().min(1).max(500).optional(),
+    offset: z.coerce.number().int().min(0).optional(),
+  });
   app.get("/api/admin/audit-log", isAdmin, async (req, res) => {
     try {
-      const q = req.query as Record<string, string | undefined>;
-      const rows = await listAuditLog({
-        actorType: q.actorType as any,
-        actorId: q.actorId,
-        action: q.action,
-        orgId: q.orgId,
-        from: q.from,
-        to: q.to,
-        limit: q.limit ? Number(q.limit) : undefined,
-        offset: q.offset ? Number(q.offset) : undefined,
-      });
+      const q = auditQuerySchema.parse(req.query);
+      const rows = await listAuditLog(q);
       res.json(rows);
     } catch (e: any) {
-      res.status(500).json({ message: e.message });
+      res.status(400).json({ message: e.message });
     }
+  });
+
+  // Sentry config visibility for admin overview UI (no DSN secret leak — only enabled flag + project URL hint)
+  app.get("/api/admin/observability", isAdmin, (_req, res) => {
+    const dsn = process.env.SENTRY_DSN || "";
+    const clientDsn = process.env.VITE_SENTRY_DSN || "";
+    res.json({
+      sentry: {
+        serverEnabled: !!dsn,
+        clientEnabled: !!clientDsn,
+        projectUrl: process.env.SENTRY_PROJECT_URL || null,
+      },
+      healthz: { url: "/healthz" },
+      alertEmail: process.env.ALERT_EMAIL ? "configured" : null,
+    });
   });
 
   app.post("/api/admin/auth/logout", (req: any, res) => {
@@ -2360,6 +2378,7 @@ If the user asks about FinSight Lite features, you can mention:
       }
       const updated = await storage.updateTeacherOrgLink(id, org_id, env_id);
       const { passwordHash: _, ...safe } = updated;
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "teacher.org_link", targetType: "teacher", targetId: id, orgId: org_id, meta: { env_id }, req });
       res.json(safe);
     } catch (e: any) {
       res.status(400).json({ message: e.message });
@@ -2381,6 +2400,7 @@ If the user asks about FinSight Lite features, you can mention:
         if (!env) return res.status(404).json({ message: "Org environment not found" });
       }
       const updated = await storage.updateClassEnvLink(id, env_id);
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "class.org_link", targetType: "class", targetId: id, meta: { env_id }, req });
       res.json(updated);
     } catch (e: any) {
       res.status(400).json({ message: e.message });
@@ -2446,17 +2466,20 @@ If the user asks about FinSight Lite features, you can mention:
   app.post("/api/admin/sponsors", isAdmin, async (req, res) => {
     try {
       const sponsor = await storage.createSponsor(req.body);
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "sponsor.create", targetType: "sponsor", targetId: sponsor.id, meta: { name: sponsor.name }, req });
       res.json(sponsor);
     } catch (e: any) { res.status(400).json({ message: e.message }); }
   });
   app.patch("/api/admin/sponsors/:id", isAdmin, async (req, res) => {
     try {
       const sponsor = await storage.updateSponsor(parseInt(req.params.id), req.body);
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "sponsor.update", targetType: "sponsor", targetId: req.params.id, meta: req.body, req });
       res.json(sponsor);
     } catch (e: any) { res.status(400).json({ message: e.message }); }
   });
   app.delete("/api/admin/sponsors/:id", isAdmin, async (req, res) => {
     await storage.deleteSponsor(parseInt(req.params.id));
+    await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "sponsor.delete", targetType: "sponsor", targetId: req.params.id, req });
     res.json({ ok: true });
   });
 
@@ -2857,6 +2880,7 @@ If the user asks about FinSight Lite features, you can mention:
       const { is_published } = z.object({ is_published: z.boolean() }).parse(req.body);
       const lesson = await toggleLessonPublish(req.params.id, is_published);
       if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: is_published ? "lesson.publish" : "lesson.unpublish", targetType: "lesson", targetId: req.params.id, orgId: lesson.org_id, req });
       res.json(lesson);
     } catch (e: any) {
       res.status(400).json({ message: e.message });
@@ -2965,6 +2989,7 @@ If the user asks about FinSight Lite features, you can mention:
         orgId: env.org_id, envId: env.id, role: "admin",
       });
       (req as any).session.orgAdminId = admin.id;
+      setSentryUser({ id: admin.id, orgId: admin.orgId });
       const { passwordHash: _, ...safe } = admin;
       return res.json({ ...safe, orgName: org.name, envName: env.display_name });
     } catch (e: any) {
@@ -2981,6 +3006,7 @@ If the user asks about FinSight Lite features, you can mention:
       const valid = await bcrypt.compare(password, admin.passwordHash);
       if (!valid) return res.status(401).json({ message: "Invalid email or password" });
       (req as any).session.orgAdminId = admin.id;
+      setSentryUser({ id: admin.id, orgId: admin.orgId });
       const { passwordHash: _, ...safe } = admin;
       // Fetch org and env names
       const org = await getOrganization(admin.orgId);
@@ -3035,6 +3061,7 @@ If the user asks about FinSight Lite features, you can mention:
       }
 
       (req as any).session.orgAdminId = admin.id;
+      setSentryUser({ id: admin.id, orgId: admin.orgId });
       const { passwordHash: _, ...safe } = admin;
       const envs = await getOrgEnvironments(admin.orgId);
       const env = envs.find(e => e.id === admin.envId);
@@ -3081,6 +3108,7 @@ If the user asks about FinSight Lite features, you can mention:
           });
         }
         (req as any).session.orgAdminId = existing.id;
+        setSentryUser({ id: existing.id, orgId: existing.orgId });
         const { passwordHash: _, ...safe } = existing;
         return res.json({ ...safe, orgName: org.name, envName: env.display_name });
       }
@@ -3095,6 +3123,7 @@ If the user asks about FinSight Lite features, you can mention:
         role: "admin",
       });
       (req as any).session.orgAdminId = admin.id;
+      setSentryUser({ id: admin.id, orgId: admin.orgId });
       const { passwordHash: _, ...safe } = admin;
       return res.json({ ...safe, orgName: org.name, envName: env.display_name });
     } catch (e: any) {
@@ -3576,6 +3605,23 @@ If the user asks about FinSight Lite features, you can mention:
           });
         }
 
+        await audit({
+          actorType: "org_admin",
+          actorId: admin.id,
+          actorEmail: admin.email,
+          action: "org.students.bulk_import",
+          targetType: "organization",
+          targetId: admin.orgId,
+          orgId: admin.orgId,
+          meta: {
+            envId: admin.envId,
+            total: rows.length,
+            created: created.length,
+            skipped: skipped.length,
+            emailed: created.filter((c) => c.emailSent).length,
+          },
+          req,
+        });
         res.json({
           summary: {
             total: rows.length,
@@ -3851,6 +3897,7 @@ If the user asks about FinSight Lite features, you can mention:
       const { isPublished } = z.object({ isPublished: z.boolean() }).parse(req.body);
       const lesson = await toggleLessonPublish(req.params.id, isPublished);
       if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+      await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: isPublished ? "lesson.publish" : "lesson.unpublish", targetType: "lesson", targetId: req.params.id, orgId: admin.orgId, req });
       res.json(lesson);
     } catch (e: any) {
       res.status(400).json({ message: e.message });

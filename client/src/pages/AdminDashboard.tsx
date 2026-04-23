@@ -44,6 +44,55 @@ const TABS = [
   { id: "dbviewer", label: "DB Viewer", icon: Building2 },
 ];
 
+function ObservabilityCard() {
+  const { data } = useQuery<any>({
+    queryKey: ["/api/admin/observability"],
+    queryFn: () => apiRequest("GET", "/api/admin/observability").then(r => r.json()),
+  });
+  const sentry = data?.sentry;
+  return (
+    <Card className="bg-slate-800 border-slate-700" data-testid="card-observability">
+      <CardHeader><CardTitle className="text-slate-200 text-base flex items-center gap-2">
+        <FileText className="w-4 h-4 text-indigo-400" /> Observability
+      </CardTitle></CardHeader>
+      <CardContent className="space-y-2 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-slate-300">Sentry (server)</span>
+          <Badge className={sentry?.serverEnabled ? "bg-emerald-600" : "bg-slate-600"} data-testid="badge-sentry-server">
+            {sentry?.serverEnabled ? "Enabled" : "Disabled"}
+          </Badge>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-slate-300">Sentry (client)</span>
+          <Badge className={sentry?.clientEnabled ? "bg-emerald-600" : "bg-slate-600"} data-testid="badge-sentry-client">
+            {sentry?.clientEnabled ? "Enabled" : "Disabled"}
+          </Badge>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-slate-300">Health-check email alerts</span>
+          <Badge className={data?.alertEmail ? "bg-emerald-600" : "bg-slate-600"} data-testid="badge-alert-email">
+            {data?.alertEmail ? "Configured" : "Not configured"}
+          </Badge>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-slate-300">Health endpoint</span>
+          <a href={data?.healthz?.url || "/healthz"} target="_blank" rel="noreferrer"
+             className="text-indigo-300 hover:text-indigo-200 underline text-xs font-mono"
+             data-testid="link-healthz">{data?.healthz?.url || "/healthz"}</a>
+        </div>
+        {sentry?.projectUrl && (
+          <div className="flex items-center justify-between">
+            <span className="text-slate-300">Sentry project</span>
+            <a href={sentry.projectUrl} target="_blank" rel="noreferrer"
+               className="text-indigo-300 hover:text-indigo-200 underline text-xs"
+               data-testid="link-sentry-project">Open in Sentry →</a>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function AuditLogPanel() {
   const [actorType, setActorType] = useState<string>("all");
   const [action, setAction] = useState("");
@@ -1187,6 +1236,7 @@ export default function AdminDashboard() {
         {activeTab === "overview" && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold">Platform Overview</h2>
+            <ObservabilityCard />
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <MetricCard label="Total Students" value={overview?.totalStudents ?? "—"} icon={Users} color="bg-violet-600" />
               <MetricCard label="Total Teachers" value={overview?.totalTeachers ?? "—"} icon={GraduationCap} color="bg-emerald-600" />

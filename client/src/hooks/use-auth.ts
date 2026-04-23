@@ -1,4 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import * as Sentry from "@sentry/react";
 import type { User } from "@shared/models/auth";
 
 async function fetchUser(): Promise<User | null> {
@@ -53,6 +55,20 @@ export function useAuth() {
       queryClient.setQueryData(["/api/auth/user"], null);
     },
   });
+
+  useEffect(() => {
+    try {
+      if (user) {
+        Sentry.setUser({ id: (user as any).id ? String((user as any).id) : undefined });
+        const orgId = (user as any).orgId;
+        if (orgId) Sentry.setTag("org_id", orgId);
+      } else {
+        Sentry.setUser(null);
+      }
+    } catch {
+      // Sentry might not be initialized; ignore
+    }
+  }, [user]);
 
   return {
     user,
