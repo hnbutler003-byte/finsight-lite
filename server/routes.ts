@@ -3026,9 +3026,14 @@ If the user asks about FinSight Lite features, you can mention:
         }
       }
 
-      // If already registered, log them in
+      // If already registered, verify the account belongs to this org then log them in
       const existing = await storage.getOrgAdminByEmail(profile.email);
       if (existing) {
+        if (existing.orgId !== env.org_id) {
+          return res.status(409).json({
+            message: "This Google account is already registered with a different organization. Please sign in from that organization's portal instead.",
+          });
+        }
         (req as any).session.orgAdminId = existing.id;
         const { passwordHash: _, ...safe } = existing;
         return res.json({ ...safe, orgName: org.name, envName: env.display_name });
