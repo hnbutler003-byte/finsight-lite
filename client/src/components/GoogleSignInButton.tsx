@@ -7,6 +7,39 @@ interface Props {
   theme?: "outline" | "filled_blue" | "filled_black";
 }
 
+interface GoogleCredentialResponse {
+  credential?: string;
+  select_by?: string;
+}
+
+interface GoogleAccountsId {
+  initialize: (config: {
+    client_id: string;
+    callback: (response: GoogleCredentialResponse) => void;
+    auto_select?: boolean;
+    cancel_on_tap_outside?: boolean;
+  }) => void;
+  renderButton: (
+    parent: HTMLElement,
+    options: {
+      type?: "standard" | "icon";
+      theme?: "outline" | "filled_blue" | "filled_black";
+      size?: "large" | "medium" | "small";
+      text?: "signin_with" | "signup_with" | "continue_with" | "signin";
+      width?: number;
+      logo_alignment?: "left" | "center";
+    }
+  ) => void;
+}
+
+interface GoogleWindow extends Window {
+  google?: {
+    accounts?: {
+      id?: GoogleAccountsId;
+    };
+  };
+}
+
 export function GoogleSignInButton({
   onSuccess,
   onError,
@@ -26,11 +59,11 @@ export function GoogleSignInButton({
     }
 
     const initialize = () => {
-      const g = (window as any).google?.accounts?.id;
+      const g = (window as GoogleWindow).google?.accounts?.id;
       if (!g) { setUnavailable(true); return; }
       g.initialize({
         client_id: clientId,
-        callback: (response: any) => {
+        callback: (response: GoogleCredentialResponse) => {
           if (response?.credential) {
             onSuccess(response.credential);
           } else {
@@ -53,7 +86,7 @@ export function GoogleSignInButton({
       }
     };
 
-    if ((window as any).google?.accounts?.id) {
+    if ((window as GoogleWindow).google?.accounts?.id) {
       initialize();
     } else {
       const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
