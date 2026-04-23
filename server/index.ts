@@ -1,5 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { initSentry, captureError, Sentry } from "./sentry";
+import { initSentry, captureError, sentryRequestContext, Sentry } from "./sentry";
+import { spawn } from "child_process";
+import path from "path";
 initSentry();
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
@@ -30,6 +32,7 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+app.use(sentryRequestContext);
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -112,50 +115,45 @@ function startWeeklyDigestScheduler() {
   setInterval(() => { void maybeRunWeeklyDigest(); }, 15 * 60 * 1000);
 }
 
-// Uptime ping: scheduled self-check of /healthz every minute. On 3 consecutive
-// failures, emit an alert via the email helper (gated by ALERT_EMAIL).
-let healthFailures = 0;
-let healthAlertedAt = 0;
-async function uptimePing() {
-  try {
-    const port = parseInt(process.env.PORT || "5000", 10);
-    const url = `http://127.0.0.1:${port}/healthz`;
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 5000);
-    const r = await fetch(url, { signal: ctrl.signal });
-    clearTimeout(t);
-    if (r.ok) {
-      healthFailures = 0;
-      return;
-    }
-    healthFailures++;
-  } catch {
-    healthFailures++;
+// Uptime guardrail: spawn an INDEPENDENT child process (scripts/uptime-worker.js)
+// that pings /healthz on a schedule and emits email alerts via Resend on
+// repeated failures. Running it as a separate process means a crash of the
+// main server does NOT take the monitor down with it. The same script can
+// also be wired up as an external Replit Scheduled Deployment using
+// `node scripts/uptime-worker.js --oneshot` for fully out-of-process checks.
+let uptimeChild: ReturnType<typeof spawn> | null = null;
+function startUptimeWorker() {
+  if (process.env.DISABLE_UPTIME_WORKER === "1") {
+    log("uptime worker disabled by DISABLE_UPTIME_WORKER", "uptime");
+    return;
   }
-  if (healthFailures >= 3 && Date.now() - healthAlertedAt > 30 * 60 * 1000) {
-    healthAlertedAt = Date.now();
-    const to = process.env.ALERT_EMAIL;
-    if (to) {
-      try {
-        const { sendEmail } = await import("./email");
-        await sendEmail({
-          to,
-          subject: `[FinSight] Healthz failing (${healthFailures} consecutive)`,
-          html: `<p>FinSight Lite /healthz has failed ${healthFailures} consecutive checks.</p>`,
-        });
-        log(`uptime: alert email sent to ${to}`, "uptime");
-      } catch (e) {
-        log(`uptime: alert email failed: ${(e as Error).message}`, "uptime");
-      }
-    }
-    captureError(new Error(`healthz failing ${healthFailures}x`), { source: "uptime" });
+  const scriptPath = path.resolve(process.cwd(), "scripts/uptime-worker.js");
+  try {
+    uptimeChild = spawn(process.execPath, [scriptPath], {
+      env: process.env,
+      stdio: "inherit",
+      detached: false,
+    });
+    uptimeChild.on("exit", (code, sig) => {
+      log(`uptime worker exited (code=${code}, signal=${sig}); respawning in 30s`, "uptime");
+      setTimeout(startUptimeWorker, 30_000);
+    });
+    uptimeChild.on("error", (err) => {
+      log(`uptime worker error: ${err.message}`, "uptime");
+    });
+    log(`uptime worker spawned (pid=${uptimeChild.pid})`, "uptime");
+  } catch (e) {
+    log(`uptime worker failed to spawn: ${(e as Error).message}`, "uptime");
   }
 }
 
-function startUptimeScheduler() {
-  setTimeout(() => { void uptimePing(); }, 60_000);
-  setInterval(() => { void uptimePing(); }, 60_000);
+function stopUptimeWorker() {
+  if (uptimeChild && !uptimeChild.killed) {
+    try { uptimeChild.kill("SIGTERM"); } catch { /* ignore */ }
+  }
 }
+process.on("SIGTERM", stopUptimeWorker);
+process.on("SIGINT", stopUptimeWorker);
 
 (async () => {
   await registerRoutes(httpServer, app);
@@ -210,7 +208,7 @@ function startUptimeScheduler() {
     },
     () => {
       log(`serving on port ${port}`);
-      startUptimeScheduler();
+      startUptimeWorker();
     },
   );
 })();

@@ -2296,7 +2296,7 @@ If the user asks about FinSight Lite features, you can mention:
         return res.status(401).json({ message: "Invalid credentials" });
       }
       req.session.isAdmin = true;
-      setSentryUser({ id: ADMIN_EMAIL });
+      setSentryUser({ id: "admin" });
       await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.login", req });
       res.json({ ok: true, email: ADMIN_EMAIL });
     } catch (e: any) {

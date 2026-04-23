@@ -35,6 +35,34 @@ export function captureError(err: unknown, ctx?: Record<string, any>) {
   }
 }
 
+// Request-scoped Sentry context middleware. Wraps each request in its own
+// isolation scope so the user/org tags set during this request never leak
+// to other concurrent requests. Reads identity from session after auth runs.
+import type { Request, Response, NextFunction } from "express";
+export function sentryRequestContext(req: Request, _res: Response, next: NextFunction) {
+  if (!initialized) return next();
+  try {
+    Sentry.withIsolationScope((scope) => {
+      const sess = (req as any).session ?? {};
+      // Use OPAQUE non-PII identifiers only — never raw email.
+      let id: string | undefined;
+      if (sess.isAdmin) id = "admin";
+      else if (sess.orgAdminId) id = `org_admin:${sess.orgAdminId}`;
+      else if (sess.userId) id = `user:${sess.userId}`;
+      else if (sess.passport?.user?.claims?.sub) id = `user:${sess.passport.user.claims.sub}`;
+      if (id) scope.setUser({ id });
+      // Org tag is non-PII (UUID).
+      const orgId = sess.orgId || sess.passport?.user?.org_id;
+      if (orgId) scope.setTag("org_id", String(orgId));
+      next();
+    });
+  } catch {
+    next();
+  }
+}
+
+// (legacy) globally-scoped helper kept for ad-hoc background contexts. Avoid
+// using inside per-request handlers — use sentryRequestContext middleware.
 export function setSentryUser(user: { id?: string | number; orgId?: string } | null) {
   if (!initialized) return;
   try {
