@@ -10,6 +10,7 @@ import { Loader2, Image as ImageIcon, Upload, Trash2, Award } from "lucide-react
 import { useEffect, useRef, useState } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { renderFinancialAcademyCertificateDataUri } from "@/lib/financialAcademyCertificate";
 
 type Branding = {
   logoUrl: string | null;
@@ -38,6 +39,8 @@ export default function OrgBranding() {
   const [rightName, setRightName] = useState("");
   const [rightRole, setRightRole] = useState("");
   const [dirty, setDirty] = useState(false);
+  const [previewUri, setPreviewUri] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const { data: branding, isLoading } = useQuery<Branding>({
     queryKey: ["/api/org-admin/branding"],
@@ -54,6 +57,44 @@ export default function OrgBranding() {
     setRightRole(branding.signatureRightRole ?? "");
     setDirty(false);
   }, [branding]);
+
+  useEffect(() => {
+    if (!admin) return;
+    let cancelled = false;
+    setPreviewLoading(true);
+    const handle = window.setTimeout(async () => {
+      try {
+        const today = new Date().toLocaleDateString(undefined, {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+        const sampleStudent = `${admin.firstName ?? ""} ${admin.lastName ?? ""}`.trim() || "Sample Student";
+        const sampleModule = "Budgeting Basics";
+        const uri = await renderFinancialAcademyCertificateDataUri(
+          sampleStudent,
+          sampleModule,
+          today,
+          {
+            logoUrl: logoUrl,
+            leftName: leftName || null,
+            leftRole: leftRole || null,
+            rightName: rightName || null,
+            rightRole: rightRole || null,
+          },
+        );
+        if (!cancelled) setPreviewUri(uri);
+      } catch {
+        if (!cancelled) setPreviewUri(null);
+      } finally {
+        if (!cancelled) setPreviewLoading(false);
+      }
+    }, 350);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(handle);
+    };
+  }, [admin, logoUrl, leftName, leftRole, rightName, rightRole]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -149,6 +190,39 @@ export default function OrgBranding() {
             <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>
           ) : (
             <>
+              <Card className="glass-card rounded-glass">
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <Award className="w-5 h-5 text-amber-600" />
+                      <h3 className="font-display font-bold text-lg">Live Certificate Preview</h3>
+                    </div>
+                    {previewLoading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    This sample uses your current logo and signatures. It refreshes as you edit.
+                  </p>
+                  <div
+                    className="w-full rounded-2xl overflow-hidden border border-input bg-white"
+                    style={{ aspectRatio: "297 / 210" }}
+                    data-testid="certificate-preview"
+                  >
+                    {previewUri ? (
+                      <iframe
+                        title="Certificate preview"
+                        src={previewUri}
+                        className="w-full h-full"
+                        data-testid="iframe-certificate-preview"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
+                        Generating preview…
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card className="glass-card rounded-glass">
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-center gap-3">
