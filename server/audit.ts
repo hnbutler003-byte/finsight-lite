@@ -60,7 +60,13 @@ export async function listAuditLog(q: AuditQuery = {}) {
   if (q.action) conditions.push(sql`${auditLog.action} ILIKE ${"%" + q.action + "%"}`);
   if (q.orgId) conditions.push(eq(auditLog.orgId, q.orgId));
   if (q.from) conditions.push(gte(auditLog.createdAt, new Date(q.from)));
-  if (q.to) conditions.push(lte(auditLog.createdAt, new Date(q.to)));
+  if (q.to) {
+    // If the user passes a bare YYYY-MM-DD, treat it as inclusive end-of-day
+    // so "to=2026-04-23" returns rows up through 23:59:59.999 of that day.
+    const isBareDate = /^\d{4}-\d{2}-\d{2}$/.test(q.to);
+    const toDate = isBareDate ? new Date(`${q.to}T23:59:59.999Z`) : new Date(q.to);
+    conditions.push(lte(auditLog.createdAt, toDate));
+  }
 
   const limit = Math.min(Math.max(q.limit ?? 100, 1), 500);
   const offset = Math.max(q.offset ?? 0, 0);

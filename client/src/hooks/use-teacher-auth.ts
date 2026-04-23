@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
+import * as Sentry from "@sentry/react";
 
 export type Teacher = {
   id: number;
@@ -28,6 +30,12 @@ export function useTeacherAuth() {
     staleTime: 60_000,
     retry: false,
   });
+
+  useEffect(() => {
+    try {
+      if (teacher) Sentry.setUser({ id: `teacher:${teacher.id}` });
+    } catch { /* ignore */ }
+  }, [teacher]);
 
   const logoutMutation = useMutation({
     mutationFn: () => fetch("/api/teacher/auth/logout", { method: "POST", credentials: "include" }).then(r => r.json()),

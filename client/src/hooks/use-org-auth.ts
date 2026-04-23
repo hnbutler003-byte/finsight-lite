@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
+import * as Sentry from "@sentry/react";
 
 export type OrgAdminUser = {
   id: number;
@@ -31,6 +33,15 @@ export function useOrgAuth() {
     staleTime: 60_000,
     retry: false,
   });
+
+  useEffect(() => {
+    try {
+      if (admin) {
+        Sentry.setUser({ id: `org_admin:${admin.id}` });
+        Sentry.setTag("org_id", admin.orgId);
+      }
+    } catch { /* ignore */ }
+  }, [admin]);
 
   const logoutMutation = useMutation({
     mutationFn: () => fetch("/api/org/auth/logout", { method: "POST", credentials: "include" }).then(r => r.json()),

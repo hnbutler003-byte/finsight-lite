@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
+import * as Sentry from "@sentry/react";
 import { apiRequest } from "@/lib/queryClient";
 
 export function useAdminAuth() {
@@ -11,6 +13,12 @@ export function useAdminAuth() {
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
+
+  useEffect(() => {
+    try {
+      if (admin?.isAdmin) Sentry.setUser({ id: "admin" });
+    } catch { /* ignore */ }
+  }, [admin]);
 
   const login = useMutation({
     mutationFn: (creds: { email: string; password: string }) =>
