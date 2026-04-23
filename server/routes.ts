@@ -2013,7 +2013,7 @@ If the user asks about FinSight Lite features, you can mention:
         sponsorName: z.string().optional(),
       }).parse(req.body);
       const cls = await storage.createClass({ teacherId: req.session.teacherId, name, subject, sponsorName });
-      await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "class.create", targetType: "class", targetId: cls.id, meta: { name, subject }, req });
+      await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "teacher.class.create", targetType: "class", targetId: cls.id, meta: { name, subject }, req });
       res.json(cls);
     } catch (e: any) {
       res.status(400).json({ message: e.message });
@@ -2032,7 +2032,7 @@ If the user asks about FinSight Lite features, you can mention:
       const id = parseInt(req.params.id);
       const data = z.object({ name: z.string().optional(), subject: z.string().optional(), sponsorName: z.string().optional() }).parse(req.body);
       const cls = await storage.updateClass(id, req.session.teacherId, data);
-      await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "class.update", targetType: "class", targetId: id, meta: data, req });
+      await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "teacher.class.update", targetType: "class", targetId: id, meta: data, req });
       res.json(cls);
     } catch (e: any) {
       res.status(400).json({ message: e.message });
@@ -2042,7 +2042,7 @@ If the user asks about FinSight Lite features, you can mention:
   app.delete("/api/teacher/classes/:id", isTeacher, async (req: any, res) => {
     const id = parseInt(req.params.id);
     await storage.deleteClass(id, req.session.teacherId);
-    await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "class.delete", targetType: "class", targetId: id, req });
+    await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "teacher.class.delete", targetType: "class", targetId: id, req });
     res.json({ ok: true });
   });
 
@@ -2064,7 +2064,7 @@ If the user asks about FinSight Lite features, you can mention:
     const cls = await storage.getClassById(classId);
     if (!cls || cls.teacherId !== req.session.teacherId) return res.status(403).json({ message: "Forbidden" });
     await storage.removeEnrollment(classId, req.params.studentId);
-    await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "class.student.remove", targetType: "user", targetId: req.params.studentId, meta: { classId }, req });
+    await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "teacher.class.student.remove", targetType: "user", targetId: req.params.studentId, meta: { classId }, req });
     res.json({ ok: true });
   });
 
@@ -2303,11 +2303,11 @@ If the user asks about FinSight Lite features, you can mention:
     try {
       const { email, password } = z.object({ email: z.string(), password: z.string() }).parse(req.body);
       if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
-        await audit({ actorType: "admin", actorEmail: email, action: "admin.login.failed", req });
+        await audit({ actorType: "admin", actorEmail: email, action: "admin.login.failure", req });
         return res.status(401).json({ message: "Invalid credentials" });
       }
       req.session.isAdmin = true;
-      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.login", req });
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.login.success", req });
       res.json({ ok: true, email: ADMIN_EMAIL });
     } catch (e: any) {
       res.status(400).json({ message: e.message });
@@ -2394,7 +2394,7 @@ If the user asks about FinSight Lite features, you can mention:
       }
       const updated = await storage.updateTeacherOrgLink(id, org_id, env_id);
       const { passwordHash: _, ...safe } = updated;
-      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "teacher.org_link", targetType: "teacher", targetId: id, orgId: org_id, meta: { env_id }, req });
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.teacher.org_link.update", targetType: "teacher", targetId: id, orgId: org_id, meta: { env_id }, req });
       res.json(safe);
     } catch (e: any) {
       res.status(400).json({ message: e.message });
@@ -2416,7 +2416,7 @@ If the user asks about FinSight Lite features, you can mention:
         if (!env) return res.status(404).json({ message: "Org environment not found" });
       }
       const updated = await storage.updateClassEnvLink(id, env_id);
-      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "class.org_link", targetType: "class", targetId: id, meta: { env_id }, req });
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.class.org_link.update", targetType: "class", targetId: id, meta: { env_id }, req });
       res.json(updated);
     } catch (e: any) {
       res.status(400).json({ message: e.message });
@@ -2457,20 +2457,20 @@ If the user asks about FinSight Lite features, you can mention:
   app.post("/api/admin/schools", isAdmin, async (req, res) => {
     try {
       const school = await storage.createSchool(req.body);
-      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "school.create", targetType: "school", targetId: school.id, meta: { name: school.name }, req });
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.school.create", targetType: "school", targetId: school.id, meta: { name: school.name }, req });
       res.json(school);
     } catch (e: any) { res.status(400).json({ message: e.message }); }
   });
   app.patch("/api/admin/schools/:id", isAdmin, async (req, res) => {
     try {
       const school = await storage.updateSchool(parseInt(req.params.id), req.body);
-      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "school.update", targetType: "school", targetId: req.params.id, meta: req.body, req });
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.school.update", targetType: "school", targetId: req.params.id, meta: req.body, req });
       res.json(school);
     } catch (e: any) { res.status(400).json({ message: e.message }); }
   });
   app.delete("/api/admin/schools/:id", isAdmin, async (req, res) => {
     await storage.deleteSchool(parseInt(req.params.id));
-    await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "school.delete", targetType: "school", targetId: req.params.id, req });
+    await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.school.delete", targetType: "school", targetId: req.params.id, req });
     res.json({ ok: true });
   });
 
@@ -2482,20 +2482,20 @@ If the user asks about FinSight Lite features, you can mention:
   app.post("/api/admin/sponsors", isAdmin, async (req, res) => {
     try {
       const sponsor = await storage.createSponsor(req.body);
-      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "sponsor.create", targetType: "sponsor", targetId: sponsor.id, meta: { name: sponsor.name }, req });
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.sponsor.create", targetType: "sponsor", targetId: sponsor.id, meta: { name: sponsor.name }, req });
       res.json(sponsor);
     } catch (e: any) { res.status(400).json({ message: e.message }); }
   });
   app.patch("/api/admin/sponsors/:id", isAdmin, async (req, res) => {
     try {
       const sponsor = await storage.updateSponsor(parseInt(req.params.id), req.body);
-      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "sponsor.update", targetType: "sponsor", targetId: req.params.id, meta: req.body, req });
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.sponsor.update", targetType: "sponsor", targetId: req.params.id, meta: req.body, req });
       res.json(sponsor);
     } catch (e: any) { res.status(400).json({ message: e.message }); }
   });
   app.delete("/api/admin/sponsors/:id", isAdmin, async (req, res) => {
     await storage.deleteSponsor(parseInt(req.params.id));
-    await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "sponsor.delete", targetType: "sponsor", targetId: req.params.id, req });
+    await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.sponsor.delete", targetType: "sponsor", targetId: req.params.id, req });
     res.json({ ok: true });
   });
 
@@ -2749,7 +2749,7 @@ If the user asks about FinSight Lite features, you can mention:
       }).parse(req.body);
       const org = await createOrganization({ ...body, is_active: true, logo_url: undefined });
       if (!org) return res.status(500).json({ message: "Failed to create organization" });
-      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "organization.create", targetType: "organization", targetId: org.id, orgId: org.id, meta: { name: body.name }, req });
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.organization.create", targetType: "organization", targetId: org.id, orgId: org.id, meta: { name: body.name }, req });
       res.json(org);
     } catch (e: any) {
       res.status(400).json({ message: e.message });
@@ -2761,7 +2761,7 @@ If the user asks about FinSight Lite features, you can mention:
     if (!org) return res.status(404).json({ message: "Organization not found" });
     const { invalidateOrganizationCache } = await import("./supabase");
     await invalidateOrganizationCache(req.params.id);
-    await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "organization.update", targetType: "organization", targetId: req.params.id, orgId: req.params.id, meta: req.body, req });
+    await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.organization.update", targetType: "organization", targetId: req.params.id, orgId: req.params.id, meta: req.body, req });
     res.json(org);
   });
 
@@ -2896,7 +2896,7 @@ If the user asks about FinSight Lite features, you can mention:
       const { is_published } = z.object({ is_published: z.boolean() }).parse(req.body);
       const lesson = await toggleLessonPublish(req.params.id, is_published);
       if (!lesson) return res.status(404).json({ message: "Lesson not found" });
-      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: is_published ? "lesson.publish" : "lesson.unpublish", targetType: "lesson", targetId: req.params.id, orgId: lesson.org_id, req });
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: is_published ? "admin.lesson.publish" : "admin.lesson.unpublish", targetType: "lesson", targetId: req.params.id, orgId: lesson.org_id, req });
       res.json(lesson);
     } catch (e: any) {
       res.status(400).json({ message: e.message });
@@ -3261,7 +3261,7 @@ If the user asks about FinSight Lite features, you can mention:
       }
       await updateOrgQuotaSettings(admin.orgId, parsed.data);
       const settings = await getOrgQuotaSettings(admin.orgId);
-      await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org.ai-quotas.update", orgId: admin.orgId, meta: parsed.data, req });
+      await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org_admin.ai_quota.update", orgId: admin.orgId, meta: parsed.data, req });
       res.json(settings);
     } catch (err: any) {
       res.status(500).json({ message: err.message });
@@ -3320,7 +3320,7 @@ If the user asks about FinSight Lite features, you can mention:
       .eq("org_id", admin.orgId)
       .eq("student_user_id", req.params.studentUserId);
     if (error) return res.status(500).json({ message: error.message });
-    await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org.student.remove", targetType: "user", targetId: req.params.studentUserId, orgId: admin.orgId, req });
+    await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org_admin.student.remove", targetType: "user", targetId: req.params.studentUserId, orgId: admin.orgId, req });
     res.json({ ok: true });
   });
 
@@ -3638,7 +3638,7 @@ If the user asks about FinSight Lite features, you can mention:
           actorType: "org_admin",
           actorId: admin.id,
           actorEmail: admin.email,
-          action: "org.students.bulk_import",
+          action: "org_admin.bulk_import.commit",
           targetType: "organization",
           targetId: admin.orgId,
           orgId: admin.orgId,
@@ -3798,7 +3798,7 @@ If the user asks about FinSight Lite features, you can mention:
       if (!org) return res.status(500).json({ message: "Failed to update organization branding" });
       const { invalidateOrganizationCache } = await import("./supabase");
       await invalidateOrganizationCache(admin.orgId);
-      await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org.branding.update", targetType: "organization", targetId: admin.orgId, orgId: admin.orgId, meta: Object.keys(updates), req });
+      await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org_admin.branding.update", targetType: "organization", targetId: admin.orgId, orgId: admin.orgId, meta: Object.keys(updates), req });
       res.json({
         logoUrl: org.logo_url ?? null,
         signatureLeftName: org.signature_left_name ?? null,
@@ -3926,7 +3926,7 @@ If the user asks about FinSight Lite features, you can mention:
       const { isPublished } = z.object({ isPublished: z.boolean() }).parse(req.body);
       const lesson = await toggleLessonPublish(req.params.id, isPublished);
       if (!lesson) return res.status(404).json({ message: "Lesson not found" });
-      await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: isPublished ? "lesson.publish" : "lesson.unpublish", targetType: "lesson", targetId: req.params.id, orgId: admin.orgId, req });
+      await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: isPublished ? "org_admin.lesson.publish" : "org_admin.lesson.unpublish", targetType: "lesson", targetId: req.params.id, orgId: admin.orgId, req });
       res.json(lesson);
     } catch (e: any) {
       res.status(400).json({ message: e.message });
