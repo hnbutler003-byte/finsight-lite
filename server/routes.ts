@@ -2,7 +2,6 @@ import { Express, json as expressJson } from "express";
 import { Server } from "http";
 import { storage } from "./storage";
 import { audit, listAuditLog } from "./audit";
-import { setSentryUser } from "./sentry";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { verifyGoogleToken, googleEnabled } from "./googleAuth";
 import { api } from "@shared/routes";
@@ -132,6 +131,13 @@ export async function registerRoutes(
   // Auth setup
   await setupAuth(app);
   registerAuthRoutes(app);
+
+  // Sentry request-scoped context. Registered AFTER setupAuth so that
+  // express-session has already populated req.session by the time this
+  // middleware runs. Uses an isolation scope so user/org tags can never
+  // leak across concurrent requests.
+  const { sentryRequestContext } = await import("./sentry");
+  app.use(sentryRequestContext);
 
   // ── Student Google sign-in ──────────────────────────────────────────────────
   app.post("/api/auth/google", async (req, res) => {
@@ -2007,6 +2013,7 @@ If the user asks about FinSight Lite features, you can mention:
         sponsorName: z.string().optional(),
       }).parse(req.body);
       const cls = await storage.createClass({ teacherId: req.session.teacherId, name, subject, sponsorName });
+      await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "class.create", targetType: "class", targetId: cls.id, meta: { name, subject }, req });
       res.json(cls);
     } catch (e: any) {
       res.status(400).json({ message: e.message });
@@ -2025,6 +2032,7 @@ If the user asks about FinSight Lite features, you can mention:
       const id = parseInt(req.params.id);
       const data = z.object({ name: z.string().optional(), subject: z.string().optional(), sponsorName: z.string().optional() }).parse(req.body);
       const cls = await storage.updateClass(id, req.session.teacherId, data);
+      await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "class.update", targetType: "class", targetId: id, meta: data, req });
       res.json(cls);
     } catch (e: any) {
       res.status(400).json({ message: e.message });
@@ -2032,7 +2040,9 @@ If the user asks about FinSight Lite features, you can mention:
   });
 
   app.delete("/api/teacher/classes/:id", isTeacher, async (req: any, res) => {
-    await storage.deleteClass(parseInt(req.params.id), req.session.teacherId);
+    const id = parseInt(req.params.id);
+    await storage.deleteClass(id, req.session.teacherId);
+    await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "class.delete", targetType: "class", targetId: id, req });
     res.json({ ok: true });
   });
 
@@ -2054,6 +2064,7 @@ If the user asks about FinSight Lite features, you can mention:
     const cls = await storage.getClassById(classId);
     if (!cls || cls.teacherId !== req.session.teacherId) return res.status(403).json({ message: "Forbidden" });
     await storage.removeEnrollment(classId, req.params.studentId);
+    await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "class.student.remove", targetType: "user", targetId: req.params.studentId, meta: { classId }, req });
     res.json({ ok: true });
   });
 
@@ -2296,7 +2307,6 @@ If the user asks about FinSight Lite features, you can mention:
         return res.status(401).json({ message: "Invalid credentials" });
       }
       req.session.isAdmin = true;
-      setSentryUser({ id: "admin" });
       await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.login", req });
       res.json({ ok: true, email: ADMIN_EMAIL });
     } catch (e: any) {
@@ -2989,7 +2999,6 @@ If the user asks about FinSight Lite features, you can mention:
         orgId: env.org_id, envId: env.id, role: "admin",
       });
       (req as any).session.orgAdminId = admin.id;
-      setSentryUser({ id: admin.id, orgId: admin.orgId });
       const { passwordHash: _, ...safe } = admin;
       return res.json({ ...safe, orgName: org.name, envName: env.display_name });
     } catch (e: any) {
@@ -3006,7 +3015,6 @@ If the user asks about FinSight Lite features, you can mention:
       const valid = await bcrypt.compare(password, admin.passwordHash);
       if (!valid) return res.status(401).json({ message: "Invalid email or password" });
       (req as any).session.orgAdminId = admin.id;
-      setSentryUser({ id: admin.id, orgId: admin.orgId });
       const { passwordHash: _, ...safe } = admin;
       // Fetch org and env names
       const org = await getOrganization(admin.orgId);
@@ -3061,7 +3069,6 @@ If the user asks about FinSight Lite features, you can mention:
       }
 
       (req as any).session.orgAdminId = admin.id;
-      setSentryUser({ id: admin.id, orgId: admin.orgId });
       const { passwordHash: _, ...safe } = admin;
       const envs = await getOrgEnvironments(admin.orgId);
       const env = envs.find(e => e.id === admin.envId);
@@ -3108,7 +3115,6 @@ If the user asks about FinSight Lite features, you can mention:
           });
         }
         (req as any).session.orgAdminId = existing.id;
-        setSentryUser({ id: existing.id, orgId: existing.orgId });
         const { passwordHash: _, ...safe } = existing;
         return res.json({ ...safe, orgName: org.name, envName: env.display_name });
       }
@@ -3123,7 +3129,6 @@ If the user asks about FinSight Lite features, you can mention:
         role: "admin",
       });
       (req as any).session.orgAdminId = admin.id;
-      setSentryUser({ id: admin.id, orgId: admin.orgId });
       const { passwordHash: _, ...safe } = admin;
       return res.json({ ...safe, orgName: org.name, envName: env.display_name });
     } catch (e: any) {

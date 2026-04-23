@@ -58,10 +58,9 @@ export function useAuth() {
 
   useEffect(() => {
     try {
-      if (user) {
-        Sentry.setUser({ id: (user as any).id ? String((user as any).id) : undefined });
-        const orgId = (user as any).orgId;
-        if (orgId) Sentry.setTag("org_id", orgId);
+      if (user && user.id) {
+        // Use opaque user id only — no PII (no email/name) sent to Sentry.
+        Sentry.setUser({ id: `user:${user.id}` });
       } else {
         Sentry.setUser(null);
       }

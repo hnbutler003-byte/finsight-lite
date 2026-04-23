@@ -32,7 +32,9 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
-app.use(sentryRequestContext);
+// NOTE: sentryRequestContext is registered INSIDE registerRoutes(),
+// AFTER setupAuth() installs the session middleware, so req.session is
+// available when this middleware runs.
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
