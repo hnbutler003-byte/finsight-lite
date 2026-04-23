@@ -41,7 +41,7 @@ export function useOrgAuth() {
         Sentry.setTag("org_id", admin.orgId);
       } else {
         Sentry.setUser(null);
-        Sentry.setTag("org_id", undefined as any);
+        Sentry.getCurrentScope().setTag("org_id", null);
       }
     } catch { /* ignore */ }
   }, [admin]);

@@ -64,8 +64,8 @@ function ObservabilityCard() {
         </div>
         <div className="flex items-center justify-between">
           <span className="text-slate-300">Sentry (client)</span>
-          <Badge className={sentry?.clientEnabled ? "bg-emerald-600" : "bg-slate-600"} data-testid="badge-sentry-client">
-            {sentry?.clientEnabled ? "Enabled" : "Disabled"}
+          <Badge className={sentry?.clientDsnConfigured ? "bg-emerald-600" : "bg-slate-600"} data-testid="badge-sentry-client">
+            {sentry?.clientDsnConfigured ? "Enabled" : "Disabled"}
           </Badge>
         </div>
         <div className="flex items-center justify-between">

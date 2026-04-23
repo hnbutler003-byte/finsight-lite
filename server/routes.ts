@@ -2335,14 +2335,20 @@ If the user asks about FinSight Lite features, you can mention:
     }
   });
 
-  // Sentry config visibility for admin overview UI (no DSN secret leak — only enabled flag + project URL hint)
+  // Sentry config visibility for admin overview UI.
+  // No DSN value is returned — only presence flags and the project URL hint.
+  // NOTE on client status: VITE_SENTRY_DSN is inlined into the client bundle by
+  // Vite at build time. We surface the env-var presence so admins can see
+  // whether the deployment was provisioned with a client DSN; whether the
+  // running browser bundle actually initialised Sentry depends on the build
+  // having been produced with that variable set.
   app.get("/api/admin/observability", isAdmin, (_req, res) => {
     const dsn = process.env.SENTRY_DSN || "";
     const clientDsn = process.env.VITE_SENTRY_DSN || "";
     res.json({
       sentry: {
         serverEnabled: !!dsn,
-        clientEnabled: !!clientDsn,
+        clientDsnConfigured: !!clientDsn,
         projectUrl: process.env.SENTRY_PROJECT_URL || null,
       },
       healthz: { url: "/healthz" },
@@ -2999,6 +3005,16 @@ If the user asks about FinSight Lite features, you can mention:
         orgId: env.org_id, envId: env.id, role: "admin",
       });
       (req as any).session.orgAdminId = admin.id;
+      // Audit: creation of an org_admin is a privileged role grant (the
+      // closest equivalent in this codebase to "promote user to admin").
+      await audit({
+        actorType: "org_admin", actorId: String(admin.id), actorEmail: admin.email,
+        action: "org_admin.account.created",
+        targetType: "org_admin", targetId: String(admin.id),
+        orgId: env.org_id,
+        meta: { via: "password+joinCode", role: "admin" },
+        req,
+      });
       const { passwordHash: _, ...safe } = admin;
       return res.json({ ...safe, orgName: org.name, envName: env.display_name });
     } catch (e: any) {
@@ -3129,6 +3145,14 @@ If the user asks about FinSight Lite features, you can mention:
         role: "admin",
       });
       (req as any).session.orgAdminId = admin.id;
+      await audit({
+        actorType: "org_admin", actorId: String(admin.id), actorEmail: admin.email,
+        action: "org_admin.account.created",
+        targetType: "org_admin", targetId: String(admin.id),
+        orgId: env.org_id,
+        meta: { via: "google+joinCode", role: "admin" },
+        req,
+      });
       const { passwordHash: _, ...safe } = admin;
       return res.json({ ...safe, orgName: org.name, envName: env.display_name });
     } catch (e: any) {
