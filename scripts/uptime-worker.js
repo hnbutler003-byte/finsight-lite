@@ -65,18 +65,26 @@ async function ping() {
   } finally {
     clearTimeout(t);
   }
-  if (consecutiveFailures >= FAIL_THRESHOLD && Date.now() - lastAlertAt > ALERT_COOLDOWN_MS) {
+  // In oneshot mode the in-memory counter cannot accumulate across runs (the
+  // process exits after a single ping), so any failure should immediately
+  // trigger an alert. The external scheduler is responsible for the
+  // schedule/cooldown semantics (e.g. running every 5 minutes).
+  const shouldAlert = ONESHOT
+    ? consecutiveFailures > 0
+    : consecutiveFailures >= FAIL_THRESHOLD && Date.now() - lastAlertAt > ALERT_COOLDOWN_MS;
+  if (shouldAlert) {
     lastAlertAt = Date.now();
-    await sendAlert(`${consecutiveFailures} consecutive failures`);
+    await sendAlert(ONESHOT ? "oneshot ping failed" : `${consecutiveFailures} consecutive failures`);
   }
+  return consecutiveFailures === 0;
 }
 
 const ONESHOT = process.argv.includes("--oneshot");
 
 (async () => {
   if (ONESHOT) {
-    await ping();
-    process.exit(0);
+    const ok = await ping();
+    process.exit(ok ? 0 : 1);
   }
   console.log(`[uptime-worker] starting; URL=${URL}, interval=${INTERVAL_MS}ms`);
   // eslint-disable-next-line no-constant-condition

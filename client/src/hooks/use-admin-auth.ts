@@ -17,6 +17,7 @@ export function useAdminAuth() {
   useEffect(() => {
     try {
       if (admin?.isAdmin) Sentry.setUser({ id: "admin" });
+      else Sentry.setUser(null);
     } catch { /* ignore */ }
   }, [admin]);
 

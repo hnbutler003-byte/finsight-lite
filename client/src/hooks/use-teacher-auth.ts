@@ -34,6 +34,7 @@ export function useTeacherAuth() {
   useEffect(() => {
     try {
       if (teacher) Sentry.setUser({ id: `teacher:${teacher.id}` });
+      else Sentry.setUser(null);
     } catch { /* ignore */ }
   }, [teacher]);
 

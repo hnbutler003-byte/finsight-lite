@@ -39,6 +39,9 @@ export function useOrgAuth() {
       if (admin) {
         Sentry.setUser({ id: `org_admin:${admin.id}` });
         Sentry.setTag("org_id", admin.orgId);
+      } else {
+        Sentry.setUser(null);
+        Sentry.setTag("org_id", undefined as any);
       }
     } catch { /* ignore */ }
   }, [admin]);
