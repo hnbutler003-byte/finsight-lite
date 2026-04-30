@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "og9XcL11Ep2k9cUGNiX-p"
+uri = "file://docs/FinSight_Lite_User_Manual.pdf"
+type = "pdf"
+title = "FinSight Lite – User Manual"
