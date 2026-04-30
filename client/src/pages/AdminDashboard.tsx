@@ -21,6 +21,7 @@ import {
   CheckCircle2, XCircle, Layers, Medal, FileText, Eye, EyeOff, Minus, Copy, Check, Loader2
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { VideoField } from "@/components/VideoField";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -650,7 +651,7 @@ function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => vo
   const { toast } = useToast();
   const [meta, setMeta] = useState({
     title: "", instructor: "", subject: "Personal Finance",
-    grade_level: "", topic: "", duration: "",
+    grade_level: "", topic: "", duration: "", video_url: "",
   });
   const [objectives, setObjectives] = useState<string[]>(["", "", "", ""]);
   const [sections, setSections] = useState<ContentSect[]>([{ heading: "", body: "", examples: "" }]);
@@ -724,6 +725,11 @@ function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => vo
             <Label className="text-slate-300 text-xs mb-1 block">Duration</Label>
             <Input value={meta.duration} onChange={fm("duration")} placeholder="45 minutes (Period 7)" className="bg-slate-700 border-slate-600 text-white" />
           </div>
+          <VideoField
+            value={meta.video_url}
+            onChange={url => setMeta(p => ({ ...p, video_url: url }))}
+            darkMode
+          />
           <div>
             <Label className="text-slate-300 text-xs mb-1 block">Learning Objectives</Label>
             <div className="space-y-2">

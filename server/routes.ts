@@ -30,6 +30,18 @@ const logoUpload = multer({
   },
 });
 
+const videoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 500 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (/^video\/(mp4|webm|ogg|quicktime|x-msvideo|x-matroska)$/i.test(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Video must be MP4, WebM, OGG, MOV, AVI, or MKV"));
+    }
+  },
+});
+
 const objectStorage = new ObjectStorageService();
 
 import { registerChatRoutes } from "./replit_integrations/chat";
@@ -3880,6 +3892,96 @@ If the user asks about FinSight Lite features, you can mention:
       }
     },
   );
+
+  // === VIDEO LIBRARY (org-admin) ===
+
+  const handleVideoUpload = (req: any, res: any, next: any) => {
+    videoUpload.single("video")(req, res, (err: any) => {
+      if (err) {
+        const status = err?.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+        return res.status(status).json({ message: err.message || "Video upload failed" });
+      }
+      next();
+    });
+  };
+
+  app.post(
+    "/api/org-admin/videos/upload",
+    isOrgAdmin,
+    handleVideoUpload,
+    async (req: any, res) => {
+      try {
+        const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+        if (!admin) return res.status(401).json({ message: "Not found" });
+        if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+        const mimeToExt: Record<string, string> = {
+          "video/mp4": "mp4",
+          "video/webm": "webm",
+          "video/ogg": "ogv",
+          "video/quicktime": "mov",
+          "video/x-msvideo": "avi",
+          "video/x-matroska": "mkv",
+        };
+        const ext = mimeToExt[req.file.mimetype.toLowerCase()] || "mp4";
+        const safeName = (req.file.originalname || "video")
+          .replace(/[^a-zA-Z0-9._-]/g, "_")
+          .replace(/\.[^.]+$/, "");
+        const filename = `${safeName}-${Date.now()}-${crypto.randomBytes(4).toString("hex")}.${ext}`;
+
+        const publicPaths = objectStorage.getPublicObjectSearchPaths();
+        const targetDir = publicPaths[0];
+        const objectKey = `videos/${admin.orgId}/${filename}`;
+        const fullPath = `${targetDir.replace(/\/$/, "")}/${objectKey}`;
+        const [, bucketName, ...rest] = fullPath.split("/");
+        const objectName = rest.join("/");
+
+        await objectStorageClient
+          .bucket(bucketName)
+          .file(objectName)
+          .save(req.file.buffer, {
+            contentType: req.file.mimetype,
+            resumable: false,
+            metadata: { cacheControl: "public, max-age=2592000" },
+          });
+
+        const url = `/public-objects/${objectKey}`;
+        const name = req.file.originalname || filename;
+        res.status(201).json({ url, name });
+      } catch (e: any) {
+        console.error("Video upload failed:", e);
+        res.status(500).json({ message: e.message || "Video upload failed" });
+      }
+    },
+  );
+
+  app.get("/api/org-admin/videos", isOrgAdmin, async (req: any, res) => {
+    try {
+      const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+      if (!admin) return res.status(401).json({ message: "Not found" });
+
+      const publicPaths = objectStorage.getPublicObjectSearchPaths();
+      const targetDir = publicPaths[0];
+      const prefix = `videos/${admin.orgId}/`;
+      const fullPrefix = `${targetDir.replace(/\/$/, "")}/${prefix}`;
+      const [, bucketName, ...rest] = fullPrefix.split("/");
+      const folderPath = rest.join("/");
+
+      const [files] = await objectStorageClient.bucket(bucketName).getFiles({ prefix: folderPath });
+      const videos = files.map((f: any) => {
+        const objectKey = `videos/${admin.orgId}/${f.name.split("/").pop()}`;
+        return {
+          url: `/public-objects/${objectKey}`,
+          name: f.name.split("/").pop() ?? f.name,
+          updatedAt: f.metadata?.updated ?? null,
+        };
+      });
+      res.json(videos);
+    } catch (e: any) {
+      console.error("Video list failed:", e);
+      res.status(500).json({ message: e.message || "Failed to list videos" });
+    }
+  });
 
   app.get("/api/org-admin/lessons", isOrgAdmin, async (req: any, res) => {
     const admin = await storage.getOrgAdminById(req.session.orgAdminId);

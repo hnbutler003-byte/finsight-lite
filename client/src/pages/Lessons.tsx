@@ -115,6 +115,7 @@ const STATIC_MODULES: StaticModule[] = [
         description: "Learn the critical difference between things you must have and things you'd like to have.",
         icon: <ShoppingCart className="w-5 h-5" />,
         duration: "10 min",
+        videoUrl: "https://youtu.be/2PX4-Y1zu2g?feature=shared",
         objectives: [
           "Distinguish between needs (food, shelter, clothing) and wants (entertainment, luxuries).",
           "Explain why prioritizing needs leads to better financial decisions.",

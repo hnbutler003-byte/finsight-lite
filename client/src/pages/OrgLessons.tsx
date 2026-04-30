@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { VideoField } from "@/components/VideoField";
 
 type QuizQuestion = {
   question: string;
@@ -183,12 +184,10 @@ function CreateLessonModal({ onClose }: { onClose: () => void }) {
                   className="w-full rounded-2xl border-2 border-input bg-background px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400"
                   data-testid="input-lesson-topic" />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold">Video URL <span className="text-muted-foreground font-normal">(optional — YouTube or direct link)</span></label>
-                <input value={form.videoUrl} onChange={set("videoUrl")} placeholder="e.g. https://www.youtube.com/watch?v=..."
-                  className="w-full rounded-2xl border-2 border-input bg-background px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  data-testid="input-lesson-video-url" />
-              </div>
+              <VideoField
+                value={form.videoUrl}
+                onChange={url => setForm(f => ({ ...f, videoUrl: url }))}
+              />
               <div className="space-y-1.5">
                 <label className="text-xs font-bold">Learning Objectives (one per line)</label>
                 <textarea value={form.objectivesRaw} onChange={set("objectivesRaw")} rows={3}
