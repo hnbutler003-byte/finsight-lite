@@ -1,6 +1,5 @@
 import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Link2, Upload, Library, X, PlayCircle, Loader2, Video, Check } from "lucide-react";
 
@@ -20,40 +19,99 @@ function getYouTubeId(url: string): string | null {
   return null;
 }
 
-function getYouTubeEmbedUrl(url: string): string | null {
-  const id = getYouTubeId(url);
-  return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
-}
-
 function getYouTubeThumbnail(url: string): string | null {
   const id = getYouTubeId(url);
   return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
 }
 
+function isDirectVideoUrl(url: string): boolean {
+  return /\.(mp4|webm|ogv|mov|avi)(\?|$)/i.test(url);
+}
+
 type OrgVideo = { url: string; name: string; updatedAt?: string | null };
 
-function VideoLibrarySheet({
+function VideoThumbnailCard({
+  video,
   onSelect,
   onClose,
   darkMode,
 }: {
+  video: OrgVideo;
+  onSelect: (url: string) => void;
+  onClose: () => void;
+  darkMode?: boolean;
+}) {
+  const ytThumb = getYouTubeThumbnail(video.url);
+  const isDirect = isDirectVideoUrl(video.url);
+  const cardBg = darkMode
+    ? "bg-slate-700 border-slate-600 hover:border-indigo-400"
+    : "bg-muted/60 border-input hover:border-blue-400";
+
+  return (
+    <button
+      onClick={() => { onSelect(video.url); onClose(); }}
+      className={`w-full text-left rounded-xl border-2 ${cardBg} overflow-hidden transition-all group`}
+      data-testid={`button-library-video-${video.url}`}
+    >
+      <div className="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden">
+        {ytThumb ? (
+          <img src={ytThumb} alt={video.name} className="w-full h-full object-cover" />
+        ) : isDirect ? (
+          <video src={video.url} preload="metadata" className="w-full h-full object-cover" muted />
+        ) : (
+          <div className="flex items-center justify-center w-full h-full bg-slate-800">
+            <Video className="w-8 h-8 text-slate-400" />
+          </div>
+        )}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/50 transition-all">
+          <PlayCircle className="w-8 h-8 text-white drop-shadow-lg opacity-80 group-hover:opacity-100 transition-opacity" />
+        </div>
+        {ytThumb && (
+          <span className="absolute bottom-1 right-1 text-[9px] font-bold bg-red-600 text-white px-1 py-0.5 rounded leading-none">
+            YT
+          </span>
+        )}
+        <span className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Check className="w-4 h-4 text-white drop-shadow" />
+        </span>
+      </div>
+      <div className="px-2 py-1.5">
+        <p className={`text-xs font-medium truncate ${darkMode ? "text-slate-200" : "text-foreground"}`}>
+          {video.name}
+        </p>
+        {video.updatedAt && (
+          <p className={`text-[10px] ${darkMode ? "text-slate-400" : "text-muted-foreground"}`}>
+            {new Date(video.updatedAt).toLocaleDateString()}
+          </p>
+        )}
+      </div>
+    </button>
+  );
+}
+
+function VideoLibrarySheet({
+  listEndpoint,
+  onSelect,
+  onClose,
+  darkMode,
+}: {
+  listEndpoint: string;
   onSelect: (url: string) => void;
   onClose: () => void;
   darkMode?: boolean;
 }) {
   const { data: videos, isLoading } = useQuery<OrgVideo[]>({
-    queryKey: ["/api/org-admin/videos"],
-    queryFn: () => fetch("/api/org-admin/videos", { credentials: "include" }).then(r => r.json()),
+    queryKey: [listEndpoint],
+    queryFn: () => fetch(listEndpoint, { credentials: "include" }).then(r => r.json()),
   });
 
   const bg = darkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-background border-input";
-  const cardBg = darkMode ? "bg-slate-700 border-slate-600" : "bg-muted/50 border-input";
-  const mutedText = darkMode ? "text-slate-300" : "text-muted-foreground";
+  const mutedText = darkMode ? "text-slate-400" : "text-muted-foreground";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div
-        className={`w-full max-w-md rounded-2xl border-2 shadow-2xl ${bg} p-6 space-y-4`}
+        className={`w-full max-w-lg rounded-2xl border-2 shadow-2xl ${bg} p-6 space-y-4`}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -77,25 +135,15 @@ function VideoLibrarySheet({
             <p className="text-xs">Use the upload button to add videos to your library.</p>
           </div>
         ) : (
-          <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+          <div className="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
             {videos.map(v => (
-              <button
+              <VideoThumbnailCard
                 key={v.url}
-                onClick={() => { onSelect(v.url); onClose(); }}
-                className={`w-full text-left flex items-center gap-3 p-3 rounded-xl border-2 ${cardBg} hover:border-blue-400 transition-all group`}
-                data-testid={`button-library-video-${v.url}`}
-              >
-                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-                  <PlayCircle className="w-5 h-5 text-blue-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{v.name}</p>
-                  {v.updatedAt && (
-                    <p className={`text-xs ${mutedText}`}>{new Date(v.updatedAt).toLocaleDateString()}</p>
-                  )}
-                </div>
-                <Check className="w-4 h-4 text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-              </button>
+                video={v}
+                onSelect={onSelect}
+                onClose={onClose}
+                darkMode={darkMode}
+              />
             ))}
           </div>
         )}
@@ -109,9 +157,18 @@ type VideoFieldProps = {
   onChange: (url: string) => void;
   darkMode?: boolean;
   label?: string;
+  uploadEndpoint?: string;
+  listEndpoint?: string;
 };
 
-export function VideoField({ value, onChange, darkMode, label = "Lesson Video" }: VideoFieldProps) {
+export function VideoField({
+  value,
+  onChange,
+  darkMode,
+  label = "Lesson Video",
+  uploadEndpoint = "/api/org-admin/videos/upload",
+  listEndpoint = "/api/org-admin/videos",
+}: VideoFieldProps) {
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -126,17 +183,19 @@ export function VideoField({ value, onChange, darkMode, label = "Lesson Video" }
     : "text-xs font-bold";
 
   const mutedText = darkMode ? "text-slate-400" : "text-muted-foreground";
+  const btnClass = darkMode
+    ? "border-slate-600 text-slate-300 hover:border-indigo-400 hover:text-indigo-300"
+    : "border-input text-muted-foreground hover:border-blue-400 hover:text-blue-600";
 
-  const embedUrl = value ? getYouTubeEmbedUrl(value) : null;
-  const thumbnail = value ? getYouTubeThumbnail(value) : null;
-  const isDirectVideo = value && !embedUrl && /\.(mp4|webm|ogv|mov)(\?|$)/i.test(value);
+  const ytThumb = value ? getYouTubeThumbnail(value) : null;
+  const isDirect = value ? isDirectVideoUrl(value) : false;
 
   const handleFileUpload = async (file: File) => {
     setUploading(true);
     try {
       const fd = new FormData();
       fd.append("video", file);
-      const res = await fetch("/api/org-admin/videos/upload", {
+      const res = await fetch(uploadEndpoint, {
         method: "POST",
         credentials: "include",
         body: fd,
@@ -157,7 +216,9 @@ export function VideoField({ value, onChange, darkMode, label = "Lesson Video" }
 
   return (
     <div className="space-y-2">
-      <label className={labelClass}>{label} <span className={`${mutedText} font-normal`}>(optional)</span></label>
+      <label className={labelClass}>
+        {label} <span className={`${mutedText} font-normal`}>(optional)</span>
+      </label>
 
       <div className="flex gap-2">
         <div className="relative flex-1">
@@ -198,11 +259,7 @@ export function VideoField({ value, onChange, darkMode, label = "Lesson Video" }
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 text-xs font-bold transition-all ${
-            darkMode
-              ? "border-slate-600 text-slate-300 hover:border-indigo-400 hover:text-indigo-300"
-              : "border-input text-muted-foreground hover:border-blue-400 hover:text-blue-600"
-          }`}
+          className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 text-xs font-bold transition-all ${btnClass}`}
           title="Upload video from device"
           data-testid="button-upload-video"
         >
@@ -213,11 +270,7 @@ export function VideoField({ value, onChange, darkMode, label = "Lesson Video" }
         <button
           type="button"
           onClick={() => setShowLibrary(true)}
-          className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 text-xs font-bold transition-all ${
-            darkMode
-              ? "border-slate-600 text-slate-300 hover:border-indigo-400 hover:text-indigo-300"
-              : "border-input text-muted-foreground hover:border-blue-400 hover:text-blue-600"
-          }`}
+          className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 text-xs font-bold transition-all ${btnClass}`}
           title="Choose from library"
           data-testid="button-open-video-library"
         >
@@ -226,10 +279,10 @@ export function VideoField({ value, onChange, darkMode, label = "Lesson Video" }
         </button>
       </div>
 
-      {thumbnail && !isDirectVideo && (
+      {ytThumb && (
         <div className="relative rounded-xl overflow-hidden border-2 border-input group">
           <img
-            src={thumbnail}
+            src={ytThumb}
             alt="YouTube thumbnail"
             className="w-full h-36 object-cover"
             data-testid="img-youtube-thumbnail"
@@ -237,13 +290,13 @@ export function VideoField({ value, onChange, darkMode, label = "Lesson Video" }
           <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/50 transition-all">
             <PlayCircle className="w-12 h-12 text-white drop-shadow-lg" />
           </div>
-          <div className={`absolute bottom-2 right-2 text-[10px] font-bold px-1.5 py-0.5 rounded ${darkMode ? "bg-slate-800/80 text-slate-200" : "bg-background/80 text-foreground"}`}>
+          <span className="absolute bottom-2 right-2 text-[10px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded leading-none">
             YouTube
-          </div>
+          </span>
         </div>
       )}
 
-      {isDirectVideo && (
+      {isDirect && (
         <div className="rounded-xl overflow-hidden border-2 border-input">
           <video
             src={value}
@@ -254,7 +307,7 @@ export function VideoField({ value, onChange, darkMode, label = "Lesson Video" }
         </div>
       )}
 
-      {value && !thumbnail && !isDirectVideo && (
+      {value && !ytThumb && !isDirect && (
         <p className={`text-xs ${mutedText} flex items-center gap-1`}>
           <Link2 className="w-3 h-3" />
           External video URL saved. Preview not available for this URL type.
@@ -263,6 +316,7 @@ export function VideoField({ value, onChange, darkMode, label = "Lesson Video" }
 
       {showLibrary && (
         <VideoLibrarySheet
+          listEndpoint={listEndpoint}
           onSelect={onChange}
           onClose={() => setShowLibrary(false)}
           darkMode={darkMode}

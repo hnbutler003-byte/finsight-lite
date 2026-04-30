@@ -729,6 +729,8 @@ function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => vo
             value={meta.video_url}
             onChange={url => setMeta(p => ({ ...p, video_url: url }))}
             darkMode
+            uploadEndpoint={`/api/admin/organizations/${orgId}/videos/upload`}
+            listEndpoint={`/api/admin/organizations/${orgId}/videos`}
           />
           <div>
             <Label className="text-slate-300 text-xs mb-1 block">Learning Objectives</Label>

@@ -2867,6 +2867,93 @@ If the user asks about FinSight Lite features, you can mention:
 
   // === LESSON PLANS (admin) ===
 
+  // === VIDEO LIBRARY (platform admin, org-scoped) ===
+
+  const handleAdminVideoUpload = (req: any, res: any, next: any) => {
+    videoUpload.single("video")(req, res, (err: any) => {
+      if (err) {
+        const status = err?.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+        return res.status(status).json({ message: err.message || "Video upload failed" });
+      }
+      next();
+    });
+  };
+
+  app.post(
+    "/api/admin/organizations/:id/videos/upload",
+    isAdmin,
+    handleAdminVideoUpload,
+    async (req: any, res) => {
+      try {
+        const orgId = req.params.id;
+        if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+        const mimeToExt: Record<string, string> = {
+          "video/mp4": "mp4",
+          "video/webm": "webm",
+          "video/ogg": "ogv",
+          "video/quicktime": "mov",
+          "video/x-msvideo": "avi",
+          "video/x-matroska": "mkv",
+        };
+        const ext = mimeToExt[req.file.mimetype.toLowerCase()] || "mp4";
+        const safeName = (req.file.originalname || "video")
+          .replace(/[^a-zA-Z0-9._-]/g, "_")
+          .replace(/\.[^.]+$/, "");
+        const filename = `${safeName}-${Date.now()}-${crypto.randomBytes(4).toString("hex")}.${ext}`;
+
+        const publicPaths = objectStorage.getPublicObjectSearchPaths();
+        const targetDir = publicPaths[0];
+        const objectKey = `videos/${orgId}/${filename}`;
+        const fullPath = `${targetDir.replace(/\/$/, "")}/${objectKey}`;
+        const [, bucketName, ...rest] = fullPath.split("/");
+        const objectName = rest.join("/");
+
+        await objectStorageClient
+          .bucket(bucketName)
+          .file(objectName)
+          .save(req.file.buffer, {
+            contentType: req.file.mimetype,
+            resumable: false,
+            metadata: { cacheControl: "public, max-age=2592000" },
+          });
+
+        const url = `/public-objects/${objectKey}`;
+        const name = req.file.originalname || filename;
+        res.status(201).json({ url, name });
+      } catch (e: any) {
+        console.error("Admin video upload failed:", e);
+        res.status(500).json({ message: e.message || "Video upload failed" });
+      }
+    },
+  );
+
+  app.get("/api/admin/organizations/:id/videos", isAdmin, async (req: any, res) => {
+    try {
+      const orgId = req.params.id;
+      const publicPaths = objectStorage.getPublicObjectSearchPaths();
+      const targetDir = publicPaths[0];
+      const prefix = `videos/${orgId}/`;
+      const fullPrefix = `${targetDir.replace(/\/$/, "")}/${prefix}`;
+      const [, bucketName, ...rest] = fullPrefix.split("/");
+      const folderPath = rest.join("/");
+
+      const [files] = await objectStorageClient.bucket(bucketName).getFiles({ prefix: folderPath });
+      const videos = files.map((f: any) => {
+        const objectKey = `videos/${orgId}/${f.name.split("/").pop()}`;
+        return {
+          url: `/public-objects/${objectKey}`,
+          name: f.name.split("/").pop() ?? f.name,
+          updatedAt: f.metadata?.updated ?? null,
+        };
+      });
+      res.json(videos);
+    } catch (e: any) {
+      console.error("Admin video list failed:", e);
+      res.status(500).json({ message: e.message || "Failed to list videos" });
+    }
+  });
+
   app.get("/api/admin/organizations/:id/lessons", isAdmin, async (req, res) => {
     const lessons = await getLessonsByOrg(req.params.id);
     res.json(lessons);
