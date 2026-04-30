@@ -534,6 +534,28 @@ export async function toggleLessonPublish(lessonId: string, isPublished: boolean
   return normalizeLessonPlan(data);
 }
 
+export async function updateLessonPlan(lessonId: string, updates: Partial<Omit<LessonPlan, "id" | "org_id" | "created_at">>): Promise<LessonPlan | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("lesson_plans").update(updates).eq("id", lessonId).select().single();
+  if (error) { console.error("[Supabase] updateLessonPlan:", error.message); return null; }
+  return normalizeLessonPlan(data);
+}
+
+export async function deleteQuizQuestionsForLesson(lessonId: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from("lesson_quiz_questions").delete().eq("lesson_id", lessonId);
+  if (error) console.error("[Supabase] deleteQuizQuestionsForLesson:", error.message);
+}
+
+export async function deleteLessonPlan(lessonId: string): Promise<boolean> {
+  if (!supabase) return false;
+  await supabase.from("lesson_quiz_questions").delete().eq("lesson_id", lessonId);
+  const { error } = await supabase.from("lesson_plans").delete().eq("id", lessonId);
+  if (error) { console.error("[Supabase] deleteLessonPlan:", error.message); return false; }
+  return true;
+}
+
 export async function getStudentOrgIds(studentUserId: string): Promise<string[]> {
   if (!supabase) return [];
   const { data, error } = await supabase

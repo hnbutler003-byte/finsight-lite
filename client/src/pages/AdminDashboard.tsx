@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
@@ -645,6 +645,15 @@ function EnvDialog({ orgId, onClose }: { orgId: string; onClose: () => void }) {
 
 type QuizQ = { question: string; option_a: string; option_b: string; option_c: string; option_d: string; correct_answer: string };
 type ContentSect = { heading: string; body: string; examples: string };
+type LessonMeta = { title: string; instructor: string; subject: string; grade_level: string; topic: string; duration: string; video_url: string };
+type LessonPlanRecord = {
+  id: string; org_id: string; is_published: boolean; created_at: string;
+  title: string; instructor?: string | null; subject?: string | null;
+  grade_level?: string | null; topic?: string | null; duration?: string | null; video_url?: string | null;
+  objectives: string[];
+  content_sections: { heading: string; body: string; examples?: string[] }[];
+  questions?: { question: string; option_a: string; option_b: string; option_c: string; option_d: string; correct_answer: string; order_index: number }[];
+};
 
 function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => void }) {
   const qc = useQueryClient();
@@ -841,12 +850,271 @@ function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => vo
   );
 }
 
+// ─── AdminEditLessonDialog ───────────────────────────────────────────────────
+
+type LessonFullData = LessonPlanRecord;
+
+function AdminEditLessonDialog({ orgId, lessonId, onClose }: { orgId: string; lessonId: string; onClose: () => void }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [step, setStep] = useState<"meta" | "content" | "quiz">("meta");
+  const [meta, setMeta] = useState<LessonMeta | null>(null);
+  const [objectives, setObjectives] = useState<string[]>([""]);
+  const [sections, setSections] = useState<ContentSect[]>([{ heading: "", body: "", examples: "" }]);
+  const [questions, setQuestions] = useState<QuizQ[]>([{ question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "A" }]);
+  const [initialized, setInitialized] = useState(false);
+
+  const { data: lessonFull, isLoading, isError } = useQuery<LessonFullData>({
+    queryKey: ["admin-lesson-detail", lessonId],
+    queryFn: async () => {
+      const r = await apiRequest("GET", `/api/admin/lessons/${lessonId}`);
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? "Failed to load lesson");
+      return r.json();
+    },
+    enabled: !!lessonId,
+  });
+
+  useEffect(() => {
+    if (lessonFull && !initialized) {
+      setInitialized(true);
+      setMeta({
+        title: lessonFull.title ?? "",
+        instructor: lessonFull.instructor ?? "",
+        subject: lessonFull.subject ?? "",
+        grade_level: lessonFull.grade_level ?? "",
+        topic: lessonFull.topic ?? "",
+        duration: lessonFull.duration ?? "",
+        video_url: lessonFull.video_url ?? "",
+      });
+      setObjectives(lessonFull.objectives?.length ? lessonFull.objectives : [""]);
+      setSections(lessonFull.content_sections?.length
+        ? lessonFull.content_sections.map(s => ({ heading: s.heading, body: s.body, examples: (s.examples ?? []).join(", ") }))
+        : [{ heading: "", body: "", examples: "" }]);
+      if (lessonFull.questions?.length) {
+        setQuestions(lessonFull.questions.slice().sort((a, b) => a.order_index - b.order_index));
+      }
+    }
+  }, [lessonFull, initialized]);
+
+  const save = useMutation({
+    mutationFn: () => {
+      const validQuestions = questions.filter(q => q.question.trim() && q.option_a && q.option_b && q.option_c && q.option_d);
+      const payload: Record<string, unknown> = {
+        ...(meta ?? {}),
+        objectives: objectives.filter(o => o.trim()),
+        content_sections: sections
+          .filter(s => s.heading.trim() || s.body.trim())
+          .map(s => ({
+            heading: s.heading,
+            body: s.body,
+            examples: s.examples ? s.examples.split(",").map(e => e.trim()).filter(Boolean) : [],
+          })),
+      };
+      if (!isError) {
+        payload.questions = validQuestions;
+      }
+      return apiRequest("PATCH", `/api/admin/lessons/${lessonId}`, payload).then(r => r.json());
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/organizations", orgId, "lessons"] });
+      toast({ title: "Lesson updated!" });
+      onClose();
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const setMetaField = (k: keyof LessonMeta) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setMeta(p => p ? { ...p, [k]: e.target.value } : p);
+
+  if (isError) {
+    return <p className="text-sm text-red-400 py-8 text-center">Failed to load lesson details. Please close and try again.</p>;
+  }
+
+  if (isLoading || !initialized || !meta) {
+    return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-slate-300" /></div>;
+  }
+
+  return (
+    <div className="space-y-4 pt-1 max-h-[70vh] overflow-y-auto pr-1">
+      <div className="flex gap-2 mb-4">
+        {(["meta", "content", "quiz"] as const).map((s, i) => (
+          <button key={s} onClick={() => setStep(s)}
+            className={`flex-1 py-1.5 rounded text-xs font-bold border transition-colors ${step === s ? "bg-indigo-600 border-indigo-500 text-white" : "border-slate-600 text-slate-300 hover:text-white"}`}>
+            {i + 1}. {s === "meta" ? "Details" : s === "content" ? "Content" : "Quiz"}
+          </button>
+        ))}
+      </div>
+
+      {step === "meta" && (
+        <div className="space-y-3">
+          <div>
+            <Label className="text-slate-300 text-xs mb-1 block">Lesson Title *</Label>
+            <Input value={meta.title} onChange={setMetaField("title")} placeholder="e.g. Needs and Wants" className="bg-slate-700 border-slate-600 text-white" data-testid="input-edit-lesson-title" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-slate-300 text-xs mb-1 block">Instructor</Label>
+              <Input value={meta.instructor} onChange={setMetaField("instructor")} placeholder="Mrs. Deveaux" className="bg-slate-700 border-slate-600 text-white" />
+            </div>
+            <div>
+              <Label className="text-slate-300 text-xs mb-1 block">Subject</Label>
+              <Input value={meta.subject} onChange={setMetaField("subject")} placeholder="Personal Finance" className="bg-slate-700 border-slate-600 text-white" />
+            </div>
+            <div>
+              <Label className="text-slate-300 text-xs mb-1 block">Grade Level</Label>
+              <Input value={meta.grade_level} onChange={setMetaField("grade_level")} placeholder="5/6" className="bg-slate-700 border-slate-600 text-white" />
+            </div>
+            <div>
+              <Label className="text-slate-300 text-xs mb-1 block">Topic</Label>
+              <Input value={meta.topic} onChange={setMetaField("topic")} placeholder="Needs and Wants" className="bg-slate-700 border-slate-600 text-white" />
+            </div>
+          </div>
+          <div>
+            <Label className="text-slate-300 text-xs mb-1 block">Duration</Label>
+            <Input value={meta.duration} onChange={setMetaField("duration")} placeholder="45 minutes" className="bg-slate-700 border-slate-600 text-white" />
+          </div>
+          <VideoField
+            value={meta.video_url}
+            onChange={url => setMeta(p => p ? { ...p, video_url: url } : p)}
+            darkMode
+            uploadEndpoint={`/api/admin/organizations/${orgId}/videos/upload`}
+            listEndpoint={`/api/admin/organizations/${orgId}/videos`}
+          />
+          <div>
+            <Label className="text-slate-300 text-xs mb-1 block">Learning Objectives</Label>
+            <div className="space-y-2">
+              {objectives.map((obj, i) => (
+                <div key={i} className="flex gap-2">
+                  <Input value={obj}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setObjectives(p => p.map((x, j) => j === i ? e.target.value : x))
+                    }
+                    placeholder={`Objective ${i + 1}`} className="bg-slate-700 border-slate-600 text-white text-sm flex-1" />
+                  {objectives.length > 1 && (
+                    <button onClick={() => setObjectives(p => p.filter((_, j) => j !== i))} className="text-slate-300 hover:text-red-400 px-1">
+                      <Minus className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button onClick={() => setObjectives(p => [...p, ""])} className="text-indigo-400 text-xs hover:text-indigo-300 flex items-center gap-1">
+                <Plus className="w-3 h-3" /> Add objective
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-end pt-1">
+            <Button onClick={() => setStep("content")} disabled={!meta.title} className="bg-indigo-600 hover:bg-indigo-700">
+              Next: Content →
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {step === "content" && (
+        <div className="space-y-4">
+          <p className="text-slate-300 text-xs">Edit content sections — all existing sections will be replaced on save.</p>
+          {sections.map((sec, i) => (
+            <div key={i} className="space-y-2 p-3 rounded-lg bg-slate-800 border border-slate-700">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-300 text-xs font-bold">Section {i + 1}</span>
+                {sections.length > 1 && (
+                  <button onClick={() => setSections(p => p.filter((_, j) => j !== i))} className="text-slate-300 hover:text-red-400">
+                    <Minus className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              <Input value={sec.heading}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setSections(p => p.map((s, j) => j === i ? { ...s, heading: e.target.value } : s))
+                }
+                placeholder="Section heading" className="bg-slate-700 border-slate-600 text-white text-sm" />
+              <Textarea value={sec.body}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setSections(p => p.map((s, j) => j === i ? { ...s, body: e.target.value } : s))
+                }
+                placeholder="Definition or explanation..." className="bg-slate-700 border-slate-600 text-white text-sm resize-none h-20" />
+              <Input value={sec.examples}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setSections(p => p.map((s, j) => j === i ? { ...s, examples: e.target.value } : s))
+                }
+                placeholder="Examples (comma-separated)" className="bg-slate-700 border-slate-600 text-white text-sm" />
+            </div>
+          ))}
+          <button onClick={() => setSections(p => [...p, { heading: "", body: "", examples: "" }])} className="text-indigo-400 text-xs hover:text-indigo-300 flex items-center gap-1">
+            <Plus className="w-3 h-3" /> Add section
+          </button>
+          <div className="flex justify-between pt-1">
+            <Button variant="ghost" onClick={() => setStep("meta")} className="text-slate-300 hover:text-white">← Back</Button>
+            <Button onClick={() => setStep("quiz")} className="bg-indigo-600 hover:bg-indigo-700">Next: Quiz →</Button>
+          </div>
+        </div>
+      )}
+
+      {step === "quiz" && (
+        <div className="space-y-4">
+          <p className="text-slate-300 text-xs">Edit quiz questions. Existing questions will be replaced on save.</p>
+          {questions.map((q, qi) => (
+            <div key={qi} className="space-y-2 p-3 rounded-lg bg-slate-800 border border-slate-700">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-300 text-xs font-bold">Q{qi + 1}</span>
+                {questions.length > 1 && (
+                  <button onClick={() => setQuestions(p => p.filter((_, j) => j !== qi))} className="text-slate-300 hover:text-red-400">
+                    <Minus className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              <Textarea value={q.question}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setQuestions(p => p.map((x, j) => j === qi ? { ...x, question: e.target.value } : x))
+                }
+                placeholder="Question text..." className="bg-slate-700 border-slate-600 text-white text-sm resize-none h-16" />
+              <div className="grid grid-cols-2 gap-2">
+                {(["option_a", "option_b", "option_c", "option_d"] as const).map((opt, oi) => {
+                  const letter = String.fromCharCode(65 + oi);
+                  const isCorrect = q.correct_answer === letter;
+                  const optValue: string = q[opt];
+                  return (
+                    <div key={opt}
+                      className={`flex gap-1.5 items-center p-1.5 rounded border cursor-pointer transition-colors ${isCorrect ? "border-emerald-500 bg-emerald-900/30" : "border-slate-600 hover:border-slate-500"}`}
+                      onClick={() => setQuestions(p => p.map((x, j) => j === qi ? { ...x, correct_answer: letter } : x))}>
+                      <span className={`w-5 h-5 rounded text-xs font-bold flex items-center justify-center flex-shrink-0 ${isCorrect ? "bg-emerald-500 text-white" : "bg-slate-600 text-slate-300"}`}>{letter}</span>
+                      <Input value={optValue}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setQuestions(p => p.map((x, j) => j === qi ? { ...x, [opt]: e.target.value } : x))
+                        }
+                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                        placeholder={`Option ${letter}`} className="bg-transparent border-0 text-white text-xs p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-slate-300">Click an option to mark it correct</p>
+            </div>
+          ))}
+          <button onClick={() => setQuestions(p => [...p, { question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "A" }])}
+            className="text-indigo-400 text-xs hover:text-indigo-300 flex items-center gap-1">
+            <Plus className="w-3 h-3" /> Add question
+          </button>
+          <div className="flex justify-between pt-1">
+            <Button variant="ghost" onClick={() => setStep("content")} className="text-slate-300 hover:text-white">← Back</Button>
+            <Button onClick={() => save.mutate()} disabled={save.isPending || !meta.title} className="bg-indigo-600 hover:bg-indigo-700" data-testid="button-update-lesson">
+              {save.isPending ? "Saving…" : "Save Changes"}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── OrgCard ─────────────────────────────────────────────────────────────────
 
 function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
   const [expanded, setExpanded] = useState(false);
   const [envDialog, setEnvDialog] = useState(false);
   const [lessonDialog, setLessonDialog] = useState(false);
+  const [editLesson, setEditLesson] = useState<string | null>(null);
+  const [deleteLesson, setDeleteLesson] = useState<LessonPlanRecord | null>(null);
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data: envs = [], isLoading: envsLoading } = useQuery<any[]>({
@@ -871,6 +1139,16 @@ function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
     onError: () => toast({ title: "Error updating lesson", variant: "destructive" }),
   });
 
+  const deleteLessonMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/admin/lessons/${id}`).then(r => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/organizations", org.id, "lessons"] });
+      toast({ title: "Lesson deleted" });
+      setDeleteLesson(null);
+    },
+    onError: () => toast({ title: "Error deleting lesson", variant: "destructive" }),
+  });
+
   const tierColors: Record<string, string> = {
     free: "bg-slate-700 text-slate-300",
     standard: "bg-blue-900 text-blue-300",
@@ -886,6 +1164,35 @@ function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
 
   return (
     <div className="rounded-lg border border-slate-700 bg-slate-800/50 overflow-hidden">
+      {editLesson && (
+        <Dialog open={!!editLesson} onOpenChange={() => setEditLesson(null)}>
+          <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-xl">
+            <DialogHeader><DialogTitle>Edit Lesson</DialogTitle></DialogHeader>
+            <AdminEditLessonDialog orgId={org.id} lessonId={editLesson} onClose={() => setEditLesson(null)} />
+          </DialogContent>
+        </Dialog>
+      )}
+      {deleteLesson && (
+        <Dialog open={!!deleteLesson} onOpenChange={() => setDeleteLesson(null)}>
+          <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-sm">
+            <DialogHeader><DialogTitle>Delete Lesson?</DialogTitle></DialogHeader>
+            <div className="space-y-4 pt-1">
+              <p className="text-slate-300 text-sm">
+                This will permanently delete <span className="font-semibold text-white">"{deleteLesson.title}"</span> and all its quiz questions. This cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <Button variant="ghost" onClick={() => setDeleteLesson(null)} className="flex-1 text-slate-300 hover:text-white" data-testid="button-cancel-delete-lesson">
+                  Cancel
+                </Button>
+                <Button onClick={() => deleteLessonMutation.mutate(deleteLesson.id)} disabled={deleteLessonMutation.isPending}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white" data-testid="button-confirm-delete-lesson">
+                  {deleteLessonMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete Lesson"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
       <div className="px-4 py-3 flex items-center gap-3">
         <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
           style={{ backgroundColor: `${org.name?.charCodeAt(0) % 2 === 0 ? "#312e81" : "#164e63"}` }}>
@@ -992,7 +1299,7 @@ function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
                         {lesson.instructor || ""}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-1 flex-shrink-0">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${lesson.is_published ? "bg-teal-900/60 text-teal-300" : "bg-slate-700 text-slate-300"}`}>
                         {lesson.is_published ? "Published" : "Draft"}
                       </span>
@@ -1004,6 +1311,22 @@ function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
                         data-testid={`button-toggle-lesson-${lesson.id}`}
                       >
                         {lesson.is_published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                      <button
+                        onClick={() => setEditLesson(lesson.id)}
+                        className="p-1.5 rounded transition-colors text-slate-300 hover:text-indigo-400 hover:bg-indigo-900/30"
+                        title="Edit lesson"
+                        data-testid={`button-edit-lesson-${lesson.id}`}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteLesson(lesson)}
+                        className="p-1.5 rounded transition-colors text-slate-300 hover:text-red-400 hover:bg-red-900/30"
+                        title="Delete lesson"
+                        data-testid={`button-delete-lesson-admin-${lesson.id}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>

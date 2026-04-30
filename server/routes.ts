@@ -87,6 +87,9 @@ import {
   createLessonPlan,
   createLessonQuizQuestion,
   toggleLessonPublish,
+  updateLessonPlan,
+  deleteLessonPlan,
+  deleteQuizQuestionsForLesson,
   getStudentOrgIds,
   seedFinancialAcademyLesson,
   getOrgEnvironmentByJoinCode,
@@ -3001,6 +3004,16 @@ If the user asks about FinSight Lite features, you can mention:
     }
   });
 
+  app.get("/api/admin/lessons/:id", isAdmin, async (req, res) => {
+    try {
+      const lesson = await getLessonWithQuestions(req.params.id);
+      if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+      res.json(lesson);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
   app.patch("/api/admin/lessons/:id/publish", isAdmin, async (req, res) => {
     try {
       const { is_published } = z.object({ is_published: z.boolean() }).parse(req.body);
@@ -3008,6 +3021,59 @@ If the user asks about FinSight Lite features, you can mention:
       if (!lesson) return res.status(404).json({ message: "Lesson not found" });
       await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: is_published ? "admin.lesson.publish" : "admin.lesson.unpublish", targetType: "lesson", targetId: req.params.id, orgId: lesson.org_id, req });
       res.json(lesson);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.patch("/api/admin/lessons/:id", isAdmin, async (req, res) => {
+    try {
+      const existing = await getLessonWithQuestions(req.params.id);
+      if (!existing) return res.status(404).json({ message: "Lesson not found" });
+      const body = z.object({
+        title: z.string().min(1),
+        instructor: z.string().optional().nullable(),
+        subject: z.string().optional().nullable(),
+        grade_level: z.string().optional().nullable(),
+        topic: z.string().optional().nullable(),
+        duration: z.string().optional().nullable(),
+        video_url: z.string().optional().nullable(),
+        objectives: z.array(z.string()).default([]),
+        content_sections: z.array(z.object({ heading: z.string(), body: z.string(), examples: z.array(z.string()).optional() })).default([]),
+        questions: z.array(z.object({
+          question: z.string().min(1),
+          option_a: z.string().min(1),
+          option_b: z.string().min(1),
+          option_c: z.string().min(1),
+          option_d: z.string().min(1),
+          correct_answer: z.enum(["A", "B", "C", "D"]),
+        })).optional(),
+      }).parse(req.body);
+      const { questions, ...planData } = body;
+      const lesson = await updateLessonPlan(req.params.id, planData);
+      if (!lesson) return res.status(500).json({ message: "Failed to update lesson" });
+      if (questions !== undefined) {
+        await deleteQuizQuestionsForLesson(req.params.id);
+        for (let i = 0; i < questions.length; i++) {
+          await createLessonQuizQuestion({ ...questions[i], lesson_id: req.params.id, order_index: i });
+        }
+      }
+      const full = await getLessonWithQuestions(req.params.id);
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.lesson.update", targetType: "lesson", targetId: req.params.id, orgId: lesson.org_id, req });
+      res.json(full);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.delete("/api/admin/lessons/:id", isAdmin, async (req, res) => {
+    try {
+      const existing = await getLessonWithQuestions(req.params.id);
+      if (!existing) return res.status(404).json({ message: "Lesson not found" });
+      const ok = await deleteLessonPlan(req.params.id);
+      if (!ok) return res.status(500).json({ message: "Failed to delete lesson" });
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.lesson.delete", targetType: "lesson", targetId: req.params.id, orgId: existing.org_id, req });
+      res.json({ success: true });
     } catch (e: any) {
       res.status(400).json({ message: e.message });
     }
@@ -4077,6 +4143,20 @@ If the user asks about FinSight Lite features, you can mention:
     res.json(lessons);
   });
 
+  app.get("/api/org-admin/lessons/:id", isOrgAdmin, async (req: any, res) => {
+    try {
+      const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+      if (!admin) return res.status(401).json({ message: "Not found" });
+      const lesson = await getLessonWithQuestions(req.params.id);
+      if (!lesson || lesson.org_id !== admin.orgId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      res.json(lesson);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
   app.post("/api/org-admin/lessons", isOrgAdmin, async (req: any, res) => {
     try {
       const admin = await storage.getOrgAdminById(req.session.orgAdminId);
@@ -4164,6 +4244,81 @@ If the user asks about FinSight Lite features, you can mention:
       });
       if (!q) return res.status(500).json({ message: "Failed to create question" });
       res.json(q);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.patch("/api/org-admin/lessons/:id", isOrgAdmin, async (req: any, res) => {
+    try {
+      const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+      if (!admin) return res.status(401).json({ message: "Not found" });
+      const existing = await getLessonWithQuestions(req.params.id);
+      if (!existing || existing.org_id !== admin.orgId) {
+        return res.status(403).json({ message: "Access denied — lesson does not belong to your organization" });
+      }
+      const body = z.object({
+        title: z.string().min(1),
+        instructor: z.string().optional().nullable(),
+        subject: z.string().optional().nullable(),
+        gradeLevel: z.string().optional().nullable(),
+        topic: z.string().optional().nullable(),
+        duration: z.string().optional().nullable(),
+        videoUrl: z.string().optional().nullable(),
+        objectives: z.array(z.string()).default([]),
+        contentSections: z.array(z.object({ heading: z.string(), body: z.string(), examples: z.array(z.string()).optional() })).default([]),
+        questions: z.array(z.object({
+          question: z.string().min(1),
+          optionA: z.string().min(1),
+          optionB: z.string().min(1),
+          optionC: z.string().min(1),
+          optionD: z.string().min(1),
+          correctAnswer: z.enum(["A", "B", "C", "D"]),
+        })).optional(),
+      }).parse(req.body);
+      const { questions, gradeLevel, videoUrl, contentSections, ...rest } = body;
+      const lesson = await updateLessonPlan(req.params.id, {
+        ...rest,
+        grade_level: gradeLevel ?? null,
+        video_url: videoUrl ?? null,
+        content_sections: contentSections,
+      });
+      if (!lesson) return res.status(500).json({ message: "Failed to update lesson" });
+      if (questions !== undefined) {
+        await deleteQuizQuestionsForLesson(req.params.id);
+        for (let i = 0; i < questions.length; i++) {
+          await createLessonQuizQuestion({
+            lesson_id: req.params.id,
+            question: questions[i].question,
+            option_a: questions[i].optionA,
+            option_b: questions[i].optionB,
+            option_c: questions[i].optionC,
+            option_d: questions[i].optionD,
+            correct_answer: questions[i].correctAnswer,
+            order_index: i,
+          });
+        }
+      }
+      const full = await getLessonWithQuestions(req.params.id);
+      await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org_admin.lesson.update", targetType: "lesson", targetId: req.params.id, orgId: admin.orgId, req });
+      res.json(full);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.delete("/api/org-admin/lessons/:id", isOrgAdmin, async (req: any, res) => {
+    try {
+      const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+      if (!admin) return res.status(401).json({ message: "Not found" });
+      const existing = await getLessonWithQuestions(req.params.id);
+      if (!existing || existing.org_id !== admin.orgId) {
+        return res.status(403).json({ message: "Access denied — lesson does not belong to your organization" });
+      }
+      const ok = await deleteLessonPlan(req.params.id);
+      if (!ok) return res.status(500).json({ message: "Failed to delete lesson" });
+      await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org_admin.lesson.delete", targetType: "lesson", targetId: req.params.id, orgId: admin.orgId, req });
+      res.json({ success: true });
     } catch (e: any) {
       res.status(400).json({ message: e.message });
     }
