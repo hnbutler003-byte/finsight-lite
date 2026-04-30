@@ -185,3 +185,5 @@ export type TransactionResponse = z.infer<typeof api.transactions.list.responses
 export type CategoryResponse = z.infer<typeof api.categories.list.responses[200]>[number];
 export type BudgetResponse = z.infer<typeof api.budgets.list.responses[200]>[number];
 export type CardResponse = z.infer<typeof api.cards.list.responses[200]>[number];
+export type CreateBudgetRequest = z.infer<typeof insertBudgetSchema>;
+export type InsertCategory = z.infer<typeof insertCategorySchema>;

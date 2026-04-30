@@ -6,6 +6,10 @@ import { authStorage } from "./storage";
 declare module "express-session" {
   interface SessionData {
     userId: string;
+    teacherId: string;
+    orgAdminId: string;
+    orgId: string;
+    isAdmin: boolean;
   }
 }
 

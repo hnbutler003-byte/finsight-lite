@@ -2127,7 +2127,7 @@ If the user asks about FinSight Lite features, you can mention:
       ["Name", "Username", "XP", "Level", "Streak", "Lessons Completed", "Games Played", "Avg Score (%)", "Badges"],
       ...summary.students.map((s: any) => [s.name, s.username, s.xp, s.level, s.streak, s.lessonsCompleted, s.gamesPlayed, s.avgScore, s.badges]),
     ];
-    const csv = rows.map(r => r.map(String).map(v => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = rows.map(r => r.map(String).map((v: string) => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
     res.setHeader("Content-Type", "text/csv");
     res.setHeader("Content-Disposition", `attachment; filename="${cls.name.replace(/[^a-z0-9]/gi, '_')}_report.csv"`);
     res.send(csv);

@@ -340,7 +340,7 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
     const newRounds = shuffledStocks.map((stock) => {
       const newsItem = SPEED_NEWS[Math.floor(Math.random() * SPEED_NEWS.length)];
       const price = Math.floor(Math.random() * 900) + 100;
-      const actualTrend = newsItem.trend === "up" ? (Math.random() > 0.2 ? "up" : "down") as const : (Math.random() > 0.2 ? "down" : "up") as const;
+      const actualTrend: "up" | "down" = newsItem.trend === "up" ? (Math.random() > 0.2 ? "up" : "down") : (Math.random() > 0.2 ? "down" : "up");
       return { stock, news: newsItem, price, actualTrend };
     });
     return newRounds;

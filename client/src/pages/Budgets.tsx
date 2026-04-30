@@ -46,7 +46,7 @@ export default function Budgets() {
   });
 
   const onSubmit = (data: FormValues) => {
-    createBudget(data, {
+    createBudget({ ...data, amount: String(data.amount) }, {
       onSuccess: () => {
         setOpen(false);
         form.reset();

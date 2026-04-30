@@ -35,6 +35,7 @@ import {
   type UserXp,
   type UserBadge, type InsertUserBadge,
 } from "@shared/schema";
+import { type BudgetResponse } from "@shared/routes";
 import { db } from "./db";
 import { eq, and, desc, asc, sql, gte, lte, inArray } from "drizzle-orm";
 import { authStorage, type IAuthStorage } from "./replit_integrations/auth/storage";
@@ -171,6 +172,12 @@ export class DatabaseStorage implements IStorage {
     data: { firstName?: string | null; lastName?: string | null }
   ): Promise<User | undefined> {
     return authStorage.updateProfile(id, data);
+  }
+  getUserByEmail(email: string): Promise<User | undefined> {
+    return authStorage.getUserByEmail(email);
+  }
+  linkEmail(id: string, email: string, profileImageUrl?: string): Promise<User | undefined> {
+    return authStorage.linkEmail(id, email, profileImageUrl);
   }
 
   // Chat methods
@@ -1038,7 +1045,7 @@ export class DatabaseStorage implements IStorage {
         teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : '—',
         lessonsCompleted: lessons.length,
         quizScore: avgScore,
-        simulatorScore: xpRow?.xp ?? 0,
+        simulatorScore: xpRow?.totalXp ?? 0,
         level: xpRow?.level ?? 1,
         gamesPlayed: sessions.length,
         joinedAt: u.createdAt,
@@ -1120,7 +1127,7 @@ export class DatabaseStorage implements IStorage {
     const allSchools = await db.select().from(schools);
 
     const students = allUsers.filter(u =>
-      u.firstName.toLowerCase().includes(q) || u.username.toLowerCase().includes(q)
+      (u.firstName ?? '').toLowerCase().includes(q) || (u.username ?? '').toLowerCase().includes(q)
     ).slice(0, 10).map(u => ({ id: u.id, name: u.firstName, username: u.username, type: 'student' }));
 
     const filteredTeachers = allTeachers.filter(t =>
@@ -1290,7 +1297,7 @@ export class DatabaseStorage implements IStorage {
       // XP
       const alreadyXp = await db.select().from(userXp).where(eq(userXp.userId, s.id));
       if (!alreadyXp.length) {
-        await db.insert(userXp).values({ userId: s.id, xp: prog.xp, level: prog.level, currentStreak: prog.streak, longestStreak: prog.streak });
+        await db.insert(userXp).values({ userId: s.id, totalXp: prog.xp, level: prog.level, currentStreak: prog.streak, longestStreak: prog.streak });
       }
 
       // Lesson progress

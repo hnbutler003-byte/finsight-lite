@@ -408,7 +408,7 @@ export async function getOrgUsageThisMonth(orgId: string): Promise<{
   const byDay = new Map<string, DayBucket>();
   const totals = { guide_chat: 0, tutor_explain: 0, ai_insights: 0, cached: 0, tokens: 0, total: 0 };
 
-  const resultRows = (rows as { rows?: UsageRow[] }).rows ?? [];
+  const resultRows = (rows as unknown as { rows?: UsageRow[] }).rows ?? [];
   for (const r of resultRows) {
     const day = r.day;
     let bucket = byDay.get(day);
