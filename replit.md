@@ -34,6 +34,7 @@ Preferred communication style: Simple, everyday language.
 - **ORM**: Drizzle ORM with drizzle-zod for schema-to-validation integration
 - **Schema Location**: shared/schema.ts contains all table definitions
 - **Migrations**: Drizzle Kit for database migrations (drizzle-kit push)
+- **File / Asset Storage**: Replit Object Storage (Google Cloud Storage under the hood). Org branding logos uploaded via POST `/api/org-admin/branding/logo` are written to the public bucket under `logos/<orgId>-<ts>-<rand>.<ext>` and served from `/public-objects/logos/<filename>`. The DB stores only the short public URL — no base64 blobs and no local-disk uploads. A 308 redirect from `/uploads/logos/*` → `/public-objects/logos/*` keeps any externally-bookmarked legacy URLs from a brief on-disk era working. A one-shot migration script `scripts/migrate-base64-logos.ts` rewrites any leftover `data:image/...` logos in the DB into object storage.
 
 ### Key Design Patterns
 - **Shared Types**: The shared/ directory contains schema definitions and API route contracts used by both frontend and backend, ensuring type safety across the stack

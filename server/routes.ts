@@ -278,6 +278,17 @@ export async function registerRoutes(
     }
   });
 
+  // Backward compatibility: an earlier iteration of branding-logo upload
+  // briefly stored files on local disk under `/uploads/logos/...` and served
+  // them via express.static. Logos are now durable in object storage and
+  // those URLs point at `/public-objects/logos/...` instead. We keep a
+  // 308 redirect here so any externally-bookmarked or cached old URL keeps
+  // resolving to the same file in the public bucket.
+  app.get("/uploads/logos/:filePath(*)", (req, res) => {
+    const filePath = req.params.filePath;
+    res.redirect(308, `/public-objects/logos/${filePath}`);
+  });
+
   // OpenAI integration routes
   registerChatRoutes(app);
   registerImageRoutes(app);
