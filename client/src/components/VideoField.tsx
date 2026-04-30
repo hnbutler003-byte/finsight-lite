@@ -100,9 +100,14 @@ function VideoLibrarySheet({
   onClose: () => void;
   darkMode?: boolean;
 }) {
-  const { data: videos, isLoading } = useQuery<OrgVideo[]>({
+  const { data: videos, isLoading, isError } = useQuery<OrgVideo[]>({
     queryKey: [listEndpoint],
-    queryFn: () => fetch(listEndpoint, { credentials: "include" }).then(r => r.json()),
+    queryFn: async () => {
+      const r = await fetch(listEndpoint, { credentials: "include" });
+      if (!r.ok) throw new Error(`Failed to load video library (${r.status})`);
+      return r.json();
+    },
+    retry: 1,
   });
 
   const bg = darkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-background border-input";
@@ -127,6 +132,12 @@ function VideoLibrarySheet({
         {isLoading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+          </div>
+        ) : isError ? (
+          <div className={`text-center py-8 space-y-2 ${mutedText}`}>
+            <Video className="w-10 h-10 mx-auto opacity-40" />
+            <p className="text-sm font-medium">Could not load video library.</p>
+            <p className="text-xs">Check your connection or session and try again.</p>
           </div>
         ) : !videos?.length ? (
           <div className={`text-center py-8 space-y-2 ${mutedText}`}>
