@@ -177,9 +177,7 @@ function para(text) {
 function bullet(items, indent = 10) {
   doc.font("Helvetica").fontSize(11).fillColor(C.black);
   for (const item of items) {
-    const startY = doc.y;
-    doc.text("•", 72 + indent, startY, { continued: true, width: 14 });
-    doc.text(" " + item, { lineGap: 2, paragraphGap: 2 });
+    doc.text("\u2022 " + item, 72 + indent, doc.y, { width: PW - indent, lineGap: 2, paragraphGap: 3 });
   }
   doc.moveDown(0.4);
 }
@@ -187,8 +185,7 @@ function bullet(items, indent = 10) {
 function numberedList(items, indent = 10) {
   doc.font("Helvetica").fontSize(11).fillColor(C.black);
   items.forEach((item, i) => {
-    doc.text(`${i + 1}.`, 72 + indent, doc.y, { continued: true, width: 20 });
-    doc.text(" " + item, { lineGap: 2, paragraphGap: 2 });
+    doc.text(`${i + 1}. ${item}`, 72 + indent, doc.y, { width: PW - indent, lineGap: 2, paragraphGap: 3 });
   });
   doc.moveDown(0.4);
 }
@@ -207,19 +204,27 @@ function table(headers, rows) {
   const colCount = headers.length;
   const colW = PW / colCount;
   const cellPad = 6;
+  const headerH = 22;
 
-  // Header row
-  doc.rect(72, doc.y, PW, 22).fill(C.navy);
+  // Capture y BEFORE drawing the header rect.
+  // PDFKit shape drawing (.rect/.fill) does NOT update doc.y, so we must
+  // track positions manually throughout this function.
+  const headerY = doc.y;
+  doc.rect(72, headerY, PW, headerH).fill(C.navy);
   headers.forEach((h, i) => {
     doc
       .fillColor(C.white)
       .font("Helvetica-Bold")
       .fontSize(10)
-      .text(h, 72 + i * colW + cellPad, doc.y - 18, { width: colW - cellPad * 2 });
+      .text(h, 72 + i * colW + cellPad, headerY + 5, {
+        width: colW - cellPad * 2,
+        lineBreak: false,
+      });
   });
-  doc.moveDown(0.1);
+  // Force the cursor to start immediately below the header rect,
+  // regardless of where doc.y drifted during the header text calls.
+  let rowY = headerY + headerH;
 
-  let rowY = doc.y;
   rows.forEach((row, ri) => {
     const rowH = Math.max(
       ...row.map((cell) => doc.heightOfString(String(cell), { width: colW - cellPad * 2 }))
@@ -242,10 +247,13 @@ function table(headers, rows) {
         });
     });
 
-    // Border lines
     doc.rect(72, rowY, PW, rowH).strokeColor(C.divider).lineWidth(0.5).stroke();
+    // Advance rowY by the actual row height; also sync doc.y so that
+    // addPage() / checkPageSpace() see the correct cursor position.
     rowY += rowH;
+    doc.y = rowY;
   });
+
   doc.y = rowY;
   doc.moveDown(0.6);
 }
