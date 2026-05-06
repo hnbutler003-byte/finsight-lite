@@ -20,9 +20,11 @@ import {
   BookMarked,
   Building2,
   ChevronRight,
+  ChevronLeft,
   Settings as SettingsIcon,
   Sun,
   Moon,
+  PanelLeftClose,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -242,22 +244,47 @@ export function Sidebar() {
   const [open, setOpen] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
   const [showJoinOrg, setShowJoinOrg] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try { return localStorage.getItem("sidebar-collapsed") === "true"; }
+    catch { return false; }
+  });
+
+  const toggleCollapse = () => {
+    const next = !isCollapsed;
+    setIsCollapsed(next);
+    try { localStorage.setItem("sidebar-collapsed", String(next)); }
+    catch {}
+  };
+
+  const activeItem = NAV_ITEMS.find(item =>
+    item.href === "/" ? location === "/" : location.startsWith(item.href)
+  ) || NAV_ITEMS[0];
 
   const NavContent = () => (
     <div className="flex flex-col h-full caribbean-bg text-white">
-      <div className="p-6 border-b border-white/10">
-        <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-          <span className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-400 via-pink-500 to-orange-400 text-white flex items-center justify-center shrink-0 text-xl shadow-lg shadow-violet-900/50 animate-float">
-            $
-          </span>
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-300 via-pink-400 to-orange-400">
-            FinSight Lite
-          </span>
-        </h1>
-        <p className="text-[10px] text-white/75 uppercase font-bold tracking-widest mt-1 flex items-center gap-1">
-          <Sparkles className="w-3 h-3 text-amber-400" />
-          by FinSight Ltd.
-        </p>
+      <div className="p-5 pb-4 border-b border-white/10 flex items-start justify-between gap-2">
+        <div>
+          <h1 className="font-display text-2xl font-bold flex items-center gap-2">
+            <span className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-400 via-pink-500 to-orange-400 text-white flex items-center justify-center shrink-0 text-xl shadow-lg shadow-violet-900/50 animate-float">
+              $
+            </span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-300 via-pink-400 to-orange-400">
+              FinSight Lite
+            </span>
+          </h1>
+          <p className="text-[10px] text-white/75 uppercase font-bold tracking-widest mt-1 flex items-center gap-1">
+            <Sparkles className="w-3 h-3 text-amber-400" />
+            by FinSight Ltd.
+          </p>
+        </div>
+        <button
+          onClick={toggleCollapse}
+          className="hidden lg:flex mt-1 p-1.5 rounded-xl hover:bg-white/10 text-white/60 hover:text-white transition-colors shrink-0"
+          aria-label="Collapse sidebar"
+          data-testid="button-collapse-sidebar"
+        >
+          <PanelLeftClose className="w-4 h-4" />
+        </button>
       </div>
 
       <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
@@ -336,6 +363,8 @@ export function Sidebar() {
     <>
       {showJoin && <JoinClassModal onClose={() => setShowJoin(false)} />}
       {showJoinOrg && <JoinOrgModal onClose={() => setShowJoinOrg(false)} />}
+
+      {/* Mobile hamburger (unchanged) */}
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
@@ -349,9 +378,30 @@ export function Sidebar() {
         </Sheet>
       </div>
 
-      <aside className="hidden lg:block w-72 h-screen border-r border-white/10 sticky top-0 overflow-hidden">
-        <NavContent />
+      {/* Desktop sidebar — animates width */}
+      <aside className={cn(
+        "hidden lg:block h-screen border-r border-white/10 sticky top-0 overflow-hidden transition-all duration-300 ease-in-out shrink-0",
+        isCollapsed ? "w-0 border-r-0" : "w-72"
+      )}>
+        <div className="w-72 h-full">
+          <NavContent />
+        </div>
       </aside>
+
+      {/* Floating re-open tab — visible only when collapsed on desktop */}
+      {isCollapsed && (
+        <button
+          onClick={toggleCollapse}
+          className="hidden lg:flex fixed left-0 top-1/2 -translate-y-1/2 z-40 caribbean-bg flex-col items-center gap-2 px-2 py-4 rounded-r-2xl shadow-xl border border-white/10 border-l-0 text-white hover:pl-3 transition-all duration-200 group"
+          aria-label="Open sidebar"
+          data-testid="button-open-sidebar"
+        >
+          <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
+            <activeItem.icon className="w-4 h-4 text-white" />
+          </div>
+          <ChevronRight className="w-3.5 h-3.5 text-white/70 group-hover:text-white transition-colors" />
+        </button>
+      )}
     </>
   );
 }
