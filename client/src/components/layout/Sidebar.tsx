@@ -42,10 +42,10 @@ const NAV_ITEMS = [
   { label: "Budgets", href: "/budgets", icon: Wallet, color: "text-amber-500", bg: "bg-amber-100 dark:bg-amber-900/30" },
   { label: "Savings Goals", href: "/savings", icon: PiggyBank, color: "text-green-500", bg: "bg-green-100 dark:bg-green-900/30" },
   { label: "Investment Simulator", href: "/invest", icon: GraduationCap, color: "text-orange-500", bg: "bg-orange-100 dark:bg-orange-900/30" },
+  { label: "Lessons", href: "/lessons", icon: BookMarked, color: "text-cyan-500", bg: "bg-cyan-100 dark:bg-cyan-900/30" },
   { label: "Money Games", href: "/games", icon: Gamepad2, color: "text-rose-500", bg: "bg-rose-100 dark:bg-rose-900/30" },
   { label: "Money Guide", href: "/guide", icon: Bot, color: "text-purple-500", bg: "bg-purple-100 dark:bg-purple-900/30" },
   { label: "MoneyLab", href: "/moneylab", icon: FlaskConical, color: "text-teal-500", bg: "bg-teal-100 dark:bg-teal-900/30" },
-  { label: "Lessons", href: "/lessons", icon: BookMarked, color: "text-cyan-500", bg: "bg-cyan-100 dark:bg-cyan-900/30" },
   { label: "Settings", href: "/settings", icon: SettingsIcon, color: "text-slate-400", bg: "bg-slate-100 dark:bg-slate-900/30" },
 ];
 
