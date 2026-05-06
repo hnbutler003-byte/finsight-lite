@@ -37,16 +37,38 @@ const AVATAR_EMOJIS: Record<string, string> = {
   mountain: "🏔️", coral: "🪸", coconut: "🥥", compass: "🧭",
 };
 
+const NAV_GROUPS = [
+  {
+    section: "My Finances",
+    items: [
+      { label: "My Money", href: "/", icon: LayoutDashboard },
+      { label: "Budgets", href: "/budgets", icon: Wallet },
+      { label: "Savings Goals", href: "/savings", icon: PiggyBank },
+    ],
+  },
+  {
+    section: "Investing & Learning",
+    items: [
+      { label: "Investment Simulator", href: "/invest", icon: GraduationCap },
+      { label: "Lessons", href: "/lessons", icon: BookMarked },
+      { label: "MoneyLab", href: "/moneylab", icon: FlaskConical },
+    ],
+  },
+  {
+    section: "Explore",
+    items: [
+      { label: "Money Games", href: "/games", icon: Gamepad2 },
+      { label: "Money Guide", href: "/guide", icon: Bot },
+    ],
+  },
+];
+
+const NAV_SETTINGS = { label: "Settings", href: "/settings", icon: SettingsIcon };
+
+// Flat list for icon rail (all items + settings)
 const NAV_ITEMS = [
-  { label: "My Money", href: "/", icon: LayoutDashboard, color: "text-violet-500", bg: "bg-violet-100 dark:bg-violet-900/30" },
-  { label: "Budgets", href: "/budgets", icon: Wallet, color: "text-amber-500", bg: "bg-amber-100 dark:bg-amber-900/30" },
-  { label: "Savings Goals", href: "/savings", icon: PiggyBank, color: "text-green-500", bg: "bg-green-100 dark:bg-green-900/30" },
-  { label: "Investment Simulator", href: "/invest", icon: GraduationCap, color: "text-orange-500", bg: "bg-orange-100 dark:bg-orange-900/30" },
-  { label: "Lessons", href: "/lessons", icon: BookMarked, color: "text-cyan-500", bg: "bg-cyan-100 dark:bg-cyan-900/30" },
-  { label: "Money Games", href: "/games", icon: Gamepad2, color: "text-rose-500", bg: "bg-rose-100 dark:bg-rose-900/30" },
-  { label: "Money Guide", href: "/guide", icon: Bot, color: "text-purple-500", bg: "bg-purple-100 dark:bg-purple-900/30" },
-  { label: "MoneyLab", href: "/moneylab", icon: FlaskConical, color: "text-teal-500", bg: "bg-teal-100 dark:bg-teal-900/30" },
-  { label: "Settings", href: "/settings", icon: SettingsIcon, color: "text-slate-400", bg: "bg-slate-100 dark:bg-slate-900/30" },
+  ...NAV_GROUPS.flatMap(g => g.items),
+  NAV_SETTINGS,
 ];
 
 function JoinClassModal({ onClose }: { onClose: () => void }) {
@@ -282,26 +304,60 @@ export function Sidebar() {
         </button>
       </div>
 
-      <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
-          const isActive = item.href === "/" ? location === "/" : location.startsWith(item.href);
-          return (
-            <Link key={item.href} href={item.href} className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 border",
-              isActive 
-                ? "bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 text-white shadow-lg shadow-purple-900/50 border-transparent scale-[1.02]" 
-                : "glass-inset text-white/80 hover:bg-white/10 hover:text-white hover:scale-[1.02] border-transparent hover:border-white/10"
-            )} onClick={() => setOpen(false)}>
-              <div className={cn(
-                "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all",
-                isActive ? "bg-white/20" : "bg-white/10"
-              )}>
-                <item.icon className={cn("w-4.5 h-4.5", isActive ? "text-white" : "text-white/80")} />
-              </div>
-              <span className="font-semibold text-sm">{item.label}</span>
-            </Link>
-          );
-        })}
+      <nav className="flex-1 p-3 overflow-y-auto space-y-4">
+        {NAV_GROUPS.map((group, gi) => (
+          <div key={group.section}>
+            {gi > 0 && <div className="border-t border-white/10 mb-3" />}
+            <p className="text-[9px] font-bold uppercase tracking-widest text-white/35 px-4 mb-1.5">
+              {group.section}
+            </p>
+            <div className="space-y-1">
+              {group.items.map((item) => {
+                const isActive = item.href === "/" ? location === "/" : location.startsWith(item.href);
+                return (
+                  <Link key={item.href} href={item.href} className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 border",
+                    isActive
+                      ? "bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 text-white shadow-lg shadow-purple-900/50 border-transparent scale-[1.02]"
+                      : "glass-inset text-white/80 hover:bg-white/10 hover:text-white hover:scale-[1.02] border-transparent hover:border-white/10"
+                  )} onClick={() => setOpen(false)}>
+                    <div className={cn(
+                      "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all",
+                      isActive ? "bg-white/20" : "bg-white/10"
+                    )}>
+                      <item.icon className={cn("w-4.5 h-4.5", isActive ? "text-white" : "text-white/80")} />
+                    </div>
+                    <span className="font-semibold text-sm">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+        {/* Settings — always at the bottom of the nav list */}
+        <div className="border-t border-white/10 pt-3">
+          {(() => {
+            const item = NAV_SETTINGS;
+            const isActive = location.startsWith(item.href);
+            return (
+              <Link href={item.href} className={cn(
+                "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 border",
+                isActive
+                  ? "bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 text-white shadow-lg shadow-purple-900/50 border-transparent scale-[1.02]"
+                  : "glass-inset text-white/80 hover:bg-white/10 hover:text-white hover:scale-[1.02] border-transparent hover:border-white/10"
+              )} onClick={() => setOpen(false)}>
+                <div className={cn(
+                  "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all",
+                  isActive ? "bg-white/20" : "bg-white/10"
+                )}>
+                  <item.icon className={cn("w-4.5 h-4.5", isActive ? "text-white" : "text-white/80")} />
+                </div>
+                <span className="font-semibold text-sm">{item.label}</span>
+              </Link>
+            );
+          })()}
+        </div>
       </nav>
 
       <div className="p-4 border-t border-white/10 mt-auto space-y-2 glass-inset rounded-t-2xl">
