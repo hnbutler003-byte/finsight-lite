@@ -1151,7 +1151,7 @@ export default function Lessons() {
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {section.examples.map((ex, j) => (
-                            <span key={j} className="text-sm bg-teal-500/10 text-teal-300 border border-teal-500/30 px-3 py-1.5 rounded-xl font-medium" data-testid={`example-${i}-${j}`}>
+                            <span key={j} className="text-sm bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30 px-3 py-1.5 rounded-xl font-medium" data-testid={`example-${i}-${j}`}>
                               {ex}
                             </span>
                           ))}
@@ -1221,11 +1221,11 @@ export default function Lessons() {
                   const isSelected = selected === letter;
                   const isCorrect = letter === currentQuestion.correct_answer;
 
-                  let cls = "border-white/20 hover:border-teal-400 hover:scale-[1.01]";
+                  let cls = "border-border hover:border-teal-400 hover:scale-[1.01]";
                   if (showResult) {
                     if (isCorrect) cls = "border-green-500 bg-green-500/10 scale-[1.01]";
                     else if (isSelected) cls = "border-red-500 bg-red-500/10";
-                    else cls = "border-white/10 opacity-50";
+                    else cls = "border-border/50 opacity-50";
                   }
 
                   return (

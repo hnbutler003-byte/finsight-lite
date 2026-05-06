@@ -427,7 +427,7 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
         <CardContent className="p-8 space-y-8">
           <div className="text-center space-y-2">
             <div className="text-6xl">⚡</div>
-            <h3 className="font-display text-2xl font-bold text-gray-800">Speed Investor</h3>
+            <h3 className="font-display text-2xl font-bold text-foreground">Speed Investor</h3>
             <p className="text-muted-foreground">Learn to make smart investment decisions!</p>
           </div>
 
@@ -1061,7 +1061,7 @@ function BeatTheBudgetGame({ currency }: { currency: string }) {
         <CardContent className="p-8 space-y-6">
           <div className="text-center space-y-2">
             <div className="text-6xl">{futureScore >= 70 ? "🌟" : futureScore >= 40 ? "💪" : "📚"}</div>
-            <h3 className="font-display text-2xl font-bold text-gray-800">Your Future Self Score</h3>
+            <h3 className="font-display text-2xl font-bold text-foreground">Your Future Self Score</h3>
             <div className="relative w-32 h-32 mx-auto">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
                 <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" strokeWidth="10" className="text-muted" />
@@ -1468,7 +1468,7 @@ function NeedsVsWantsGame() {
         <CardContent className="p-8 space-y-6">
           <div className="text-center space-y-2">
             <div className="text-6xl">{accuracy >= 80 ? "🏆" : accuracy >= 60 ? "💡" : "📚"}</div>
-            <h3 className="font-display text-2xl font-bold text-gray-800" data-testid="text-nw-result">
+            <h3 className="font-display text-2xl font-bold text-foreground" data-testid="text-nw-result">
               {accuracy >= 80 ? "Amazing!" : accuracy >= 60 ? "Good job!" : "Keep learning!"}
             </h3>
             <p className="text-lg">{score} / {items.length} correct — <strong>{accuracy}% accuracy</strong></p>
@@ -1612,7 +1612,7 @@ function FutureMeGame({ currency }: { currency: string }) {
         <CardContent className="p-8 space-y-6">
           <div className="text-center space-y-2">
             <div className="text-6xl">{laterCount >= 4 ? "🏆" : laterCount >= 2 ? "💡" : "🎯"}</div>
-            <h3 className="font-display text-2xl font-bold text-gray-800" data-testid="text-futureme-result">
+            <h3 className="font-display text-2xl font-bold text-foreground" data-testid="text-futureme-result">
               {laterCount >= 4 ? "Patient Investor!" : laterCount >= 2 ? "Balanced Thinker!" : "Live in the Moment!"}
             </h3>
           </div>
@@ -1772,7 +1772,7 @@ export default function MoneyGames() {
               {activeGame ? (
                 <Button
                   variant="ghost"
-                  className="rounded-2xl gap-2 mb-2"
+                  className="rounded-2xl gap-2 mb-2 text-white hover:bg-white/10 hover:text-white"
                   onClick={() => setActiveGame(null)}
                   data-testid="button-back-to-games"
                 >

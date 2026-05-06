@@ -297,8 +297,8 @@ export default function InvestmentSimulator() {
             {/* === MARKET TAB === */}
             <TabsContent value="market" className="space-y-6">
               <div>
-                <h2 className="text-xl font-display font-bold">Browse the Market</h2>
-                <p className="text-sm text-muted-foreground">
+                <h2 className="text-xl font-display font-bold text-white">Browse the Market</h2>
+                <p className="text-sm text-white/75">
                   Explore stocks and bonds from across the Caribbean. Use your virtual cash to practice investing!
                 </p>
               </div>
@@ -347,10 +347,10 @@ export default function InvestmentSimulator() {
                 <div className="space-y-6">
                   {/* Stocks Section */}
                   <div>
-                    <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                      <TrendingUp className="w-5 h-5 text-blue-500" />
+                    <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-white">
+                      <TrendingUp className="w-5 h-5 text-blue-400" />
                       Stocks
-                      <span className="text-xs text-muted-foreground font-normal ml-1">— Own a piece of a company</span>
+                      <span className="text-xs text-white/60 font-normal ml-1">— Own a piece of a company</span>
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {filteredMarket.filter(s => s.type === "stock").map(stock => (
@@ -368,10 +368,10 @@ export default function InvestmentSimulator() {
 
                   {/* Bonds Section */}
                   <div>
-                    <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-green-500" />
+                    <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-white">
+                      <Shield className="w-5 h-5 text-green-400" />
                       Bonds
-                      <span className="text-xs text-muted-foreground font-normal ml-1">— Lend money and earn interest</span>
+                      <span className="text-xs text-white/60 font-normal ml-1">— Lend money and earn interest</span>
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {filteredMarket.filter(s => s.type === "bond").map(stock => (
@@ -393,8 +393,8 @@ export default function InvestmentSimulator() {
             {/* === PORTFOLIO TAB === */}
             <TabsContent value="portfolio" className="space-y-6">
               <div>
-                <h2 className="text-xl font-display font-bold">My Portfolio</h2>
-                <p className="text-sm text-muted-foreground">Track your simulated investments and see how they perform.</p>
+                <h2 className="text-xl font-display font-bold text-white">My Portfolio</h2>
+                <p className="text-sm text-white/75">Track your simulated investments and see how they perform.</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -440,7 +440,7 @@ export default function InvestmentSimulator() {
                 </Card>
               ) : (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Your Holdings</h3>
+                  <h3 className="text-lg font-semibold text-white">Your Holdings</h3>
                   {portfolio?.holdings.map(holding => {
                     const currentValue = holding.quantity * parseFloat(holding.stock.currentPrice);
                     const costBasis = holding.quantity * parseFloat(holding.avgPurchasePrice);
@@ -504,7 +504,7 @@ export default function InvestmentSimulator() {
               {/* Transaction History */}
               {history && history.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <h3 className="text-lg font-semibold flex items-center gap-2 text-white">
                     <History className="w-5 h-5" />
                     Recent Trades
                   </h3>

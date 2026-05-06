@@ -352,25 +352,25 @@ export default function MoneyLabPlay() {
                 <Card className="glass-card rounded-glass">
                   <CardContent className="p-4 text-center">
                     <p className="text-2xl font-bold text-amber-600">{gameResults.finalScore}</p>
-                    <p className="text-xs font-bold text-gray-500">Score</p>
+                    <p className="text-xs font-bold text-muted-foreground">Score</p>
                   </CardContent>
                 </Card>
                 <Card className="glass-card rounded-glass">
                   <CardContent className="p-4 text-center">
                     <p className="text-2xl font-bold text-green-600">{gameResults.finalCorrect}/{gameResults.totalQ}</p>
-                    <p className="text-xs font-bold text-gray-500">Correct</p>
+                    <p className="text-xs font-bold text-muted-foreground">Correct</p>
                   </CardContent>
                 </Card>
                 <Card className="glass-card rounded-glass">
                   <CardContent className="p-4 text-center">
                     <span className="xp-pill text-lg">+{gameResults.xpEarned} XP</span>
-                    <p className="text-xs font-bold text-gray-500 mt-1">XP Earned</p>
+                    <p className="text-xs font-bold text-muted-foreground mt-1">XP Earned</p>
                   </CardContent>
                 </Card>
                 <Card className="glass-card rounded-glass">
                   <CardContent className="p-4 text-center">
                     <p className="text-2xl font-bold text-blue-600">Lv.{gameResults.level}</p>
-                    <p className="text-xs font-bold text-gray-500">Level</p>
+                    <p className="text-xs font-bold text-muted-foreground">Level</p>
                   </CardContent>
                 </Card>
               </div>
@@ -385,7 +385,7 @@ export default function MoneyLabPlay() {
               {gameResults.newBadges?.length > 0 && (
                 <Card className="glass-card-coral rounded-glass">
                   <CardContent className="p-4">
-                    <p className="font-bold mb-2 flex items-center justify-center gap-1 text-gray-800">
+                    <p className="font-bold mb-2 flex items-center justify-center gap-1 text-foreground">
                       <Award className="w-4 h-4 text-orange-500" /> New Badge{gameResults.newBadges.length > 1 ? "s" : ""}!
                     </p>
                     <div className="flex flex-wrap justify-center gap-2">
