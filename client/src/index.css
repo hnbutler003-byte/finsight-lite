@@ -1,6 +1,33 @@
 /* ============================================================
    FINSIGHT LITE — Integrated Design System
-   ============================================================ */
+   ============================================================
+
+   ── CONTRAST RULES (read before adding any text colour) ──────
+   These rules exist so every user can read text in both light
+   AND dark mode. Violations cause invisible text.
+
+   1. caribbean-bg is ALWAYS dark (hardcoded deep purple/navy).
+      ✅ Use text-white, text-white/80 etc. on it — always correct.
+      ❌ Never use text-foreground or muted-foreground on it.
+
+   2. glass-card / glass-card-heavy adapts:
+        Light mode → white/translucent    Dark mode → dark purple
+      ✅ Use text-foreground (semantic token) — adapts automatically.
+      ❌ Never hardcode text-gray-800, text-gray-700, text-teal-900,
+         text-blue-900 etc. inside these cards — they vanish in dark mode.
+      ✅ If you need a tinted label, always pair it:
+         e.g.  text-teal-800 dark:text-teal-200
+
+   3. glass-card-coral / glass-card-teal follow the same pattern.
+      Both have .dark overrides defined below — don't remove them.
+
+   4. For any coloured inline badge/pill on a coloured background,
+      always add both light AND dark variants:
+         e.g.  bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300
+
+   5. Semantic tokens that always adapt correctly (prefer these):
+        text-foreground, text-muted-foreground, text-card-foreground
+   ──────────────────────────────────────────────────────────── */
 
 /* ── 1. GOOGLE FONTS ─────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap');
@@ -264,6 +291,11 @@
   border-radius: var(--radius-glass);
   box-shadow: var(--shadow-sm);
   color: hsl(var(--card-foreground));
+}
+
+.dark .glass-card-teal {
+  background: linear-gradient(135deg, hsl(200 50% 10%) 0%, hsl(190 80% 50% / 0.18) 100%);
+  border-color: hsl(190 80% 55% / 0.30);
 }
 
 .glass-card:hover,

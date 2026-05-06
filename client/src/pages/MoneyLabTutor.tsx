@@ -164,7 +164,7 @@ export default function MoneyLabTutor() {
             <div className="space-y-4">
               <Card className="glass-card rounded-glass">
                 <CardContent className="p-6">
-                  <h3 className="font-bold text-lg text-gray-800">{selectedQuestion.questionText}</h3>
+                  <h3 className="font-bold text-lg text-foreground">{selectedQuestion.questionText}</h3>
                   {selectedQuestion.options && (
                     <div className="space-y-1.5 mt-3">
                       {selectedQuestion.options.map((opt: string, i: number) => (
@@ -185,7 +185,7 @@ export default function MoneyLabTutor() {
                     <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center">
                       <GraduationCap className="w-4 h-4 text-white" />
                     </div>
-                    <h3 className="font-bold flex items-center gap-1 text-teal-900">
+                    <h3 className="font-bold flex items-center gap-1 text-teal-800 dark:text-teal-200">
                       AI Tutor Explanation
                       <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                     </h3>
@@ -196,7 +196,7 @@ export default function MoneyLabTutor() {
                       <span className="text-sm font-medium">Thinking...</span>
                     </div>
                   ) : (
-                    <div className="text-sm leading-relaxed whitespace-pre-wrap">{explanation}</div>
+                    <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">{explanation}</div>
                   )}
                 </CardContent>
               </Card>
@@ -320,7 +320,7 @@ export default function MoneyLabTutor() {
                     <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center">
                       <GraduationCap className="w-4 h-4 text-white" />
                     </div>
-                    <h3 className="font-bold flex items-center gap-1 text-teal-900">
+                    <h3 className="font-bold flex items-center gap-1 text-teal-800 dark:text-teal-200">
                       AI Tutor Explanation
                       <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                     </h3>
@@ -331,7 +331,7 @@ export default function MoneyLabTutor() {
                       <span className="text-sm font-medium">Thinking...</span>
                     </div>
                   ) : (
-                    <div className="text-sm leading-relaxed whitespace-pre-wrap">{explanation}</div>
+                    <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">{explanation}</div>
                   )}
                 </CardContent>
               </Card>
