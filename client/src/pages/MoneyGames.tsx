@@ -1810,12 +1810,12 @@ export default function MoneyGames() {
               {GAMES.map((game) => (
                 <Card
                   key={game.id}
-                  className="glass-card rounded-glass transition-all hover:shadow-xl hover:scale-[1.02] cursor-pointer group overflow-hidden"
+                  className="glass-card rounded-glass transition-all hover:shadow-xl hover:scale-[1.02] cursor-pointer group overflow-hidden flex flex-col"
                   onClick={() => setActiveGame(game.id)}
                   data-testid={`card-game-${game.id}`}
                 >
                   <div className={`h-2 bg-gradient-to-r ${game.color}`} />
-                  <CardContent className="p-6 text-center space-y-4">
+                  <CardContent className="p-6 text-center flex flex-col gap-4 h-full">
                     <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${game.color} flex items-center justify-center text-white mx-auto shadow-lg group-hover:scale-110 transition-transform`}>
                       <game.icon className="w-8 h-8" />
                     </div>
@@ -1825,8 +1825,8 @@ export default function MoneyGames() {
                         {game.difficulty}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">{game.description}</p>
-                    <Button className="btn-coral rounded-2xl gap-2 w-full" data-testid={`button-play-${game.id}`}>
+                    <p className="text-sm text-muted-foreground flex-1">{game.description}</p>
+                    <Button className="btn-coral rounded-2xl gap-2 w-full mt-auto" data-testid={`button-play-${game.id}`}>
                       <Sparkles className="w-4 h-4" /> Play Now
                     </Button>
                   </CardContent>
