@@ -131,14 +131,6 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // User manual PDF download
-  app.get("/api/manual/download", (_req, res) => {
-    const filePath = path.resolve(process.cwd(), "docs/FinSight_Lite_User_Manual.pdf");
-    res.download(filePath, "FinSight_Lite_User_Manual.pdf", (err) => {
-      if (err) res.status(404).json({ message: "Manual not found. Run: node scripts/generate-manual.js" });
-    });
-  });
-
   // Health check (used for uptime monitoring)
   app.get("/healthz", async (_req, res) => {
     try {

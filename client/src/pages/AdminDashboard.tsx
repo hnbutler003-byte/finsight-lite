@@ -1676,18 +1676,7 @@ export default function AdminDashboard() {
         {/* ── Overview ── */}
         {activeTab === "overview" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <h2 className="text-2xl font-bold">Platform Overview</h2>
-              <a
-                href="/api/manual/download"
-                download
-                data-testid="link-download-manual-admin"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-medium transition-colors"
-              >
-                <FileDown className="w-4 h-4" />
-                Download User Manual
-              </a>
-            </div>
+            <h2 className="text-2xl font-bold">Platform Overview</h2>
             <ObservabilityCard />
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <MetricCard label="Total Students" value={overview?.totalStudents ?? "—"} icon={Users} color="bg-violet-600" />
