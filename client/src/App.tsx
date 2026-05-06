@@ -11,7 +11,6 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import AuthPage from "@/pages/Auth";
 import Budgets from "@/pages/Budgets";
-import Trends from "@/pages/Trends";
 import SavingsGoals from "@/pages/SavingsGoals";
 import InvestmentSimulator from "@/pages/InvestmentSimulator";
 import MoneyGames from "@/pages/MoneyGames";
@@ -113,7 +112,6 @@ function Router() {
       <Route path="/org">{() => <Redirect to="/org/dashboard" />}</Route>
       <Route path="/" component={Dashboard} />
       <Route path="/budgets" component={Budgets} />
-      <Route path="/trends" component={Trends} />
       <Route path="/savings" component={SavingsGoals} />
       <Route path="/invest" component={InvestmentSimulator} />
       <Route path="/games" component={MoneyGames} />
