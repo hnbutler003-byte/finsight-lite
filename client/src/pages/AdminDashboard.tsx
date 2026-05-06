@@ -1342,6 +1342,111 @@ function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
 
 // ─── main dashboard ───────────────────────────────────────────────────────────
 
+function AiUsagePurgeCard() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [olderThanDays, setOlderThanDays] = useState(180);
+  const [confirmed, setConfirmed] = useState(false);
+
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery<any>({
+    queryKey: ["/api/admin/maintenance/ai-usage-stats", olderThanDays],
+    queryFn: () => apiRequest("GET", `/api/admin/maintenance/ai-usage-stats?olderThanDays=${olderThanDays}`).then(r => r.json()),
+  });
+
+  const purgeMutation = useMutation({
+    mutationFn: () =>
+      apiRequest("POST", "/api/admin/maintenance/purge-ai-usage", { olderThanDays }).then(r => r.json()),
+    onSuccess: (data) => {
+      toast({ title: "Purge job queued", description: `Job #${data.jobId} is now running in the background.` });
+      setConfirmed(false);
+      refetchStats();
+      qc.invalidateQueries({ queryKey: ["/api/admin/jobs"] });
+    },
+    onError: (e: any) => {
+      toast({ title: "Failed to queue purge", description: e.message, variant: "destructive" });
+    },
+  });
+
+  return (
+    <Card className="bg-slate-800 border-slate-700" data-testid="card-ai-usage-purge">
+      <CardHeader>
+        <CardTitle className="text-slate-200 text-base flex items-center gap-2">
+          <Trash2 className="w-4 h-4 text-red-400" /> AI Usage Record Cleanup
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-slate-300 text-sm">
+          AI usage events accumulate over time — one row per AI call. Delete old records to keep the table fast.
+          Quota enforcement only needs the current month; trends only need a few months.
+        </p>
+        {statsLoading ? (
+          <p className="text-slate-400 text-sm">Loading stats…</p>
+        ) : stats ? (
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="bg-slate-900/60 rounded-lg p-3">
+              <p className="text-slate-400 text-xs mb-1">Total rows</p>
+              <p className="text-slate-100 font-semibold text-lg" data-testid="text-ai-usage-total">{stats.total?.toLocaleString() ?? "—"}</p>
+            </div>
+            <div className="bg-red-900/30 rounded-lg p-3 border border-red-800/40">
+              <p className="text-red-300 text-xs mb-1">Older than {olderThanDays} days</p>
+              <p className="text-red-200 font-semibold text-lg" data-testid="text-ai-usage-purgeable">{stats.purgeable?.toLocaleString() ?? "—"}</p>
+            </div>
+          </div>
+        ) : null}
+        <div className="flex items-center gap-3">
+          <label className="text-slate-300 text-sm whitespace-nowrap">Delete records older than</label>
+          <Input
+            type="number"
+            min={30}
+            max={3650}
+            value={olderThanDays}
+            onChange={e => { setOlderThanDays(parseInt(e.target.value) || 180); setConfirmed(false); }}
+            className="w-24 bg-slate-900 border-slate-600 text-slate-100"
+            data-testid="input-purge-days"
+          />
+          <span className="text-slate-300 text-sm">days</span>
+        </div>
+        {!confirmed ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setConfirmed(true)}
+            disabled={!stats || stats.purgeable === 0}
+            className="border-red-700 text-red-300 hover:bg-red-900/30 disabled:opacity-40"
+            data-testid="button-confirm-purge"
+          >
+            <Trash2 className="w-3 h-3 mr-1" />
+            {stats?.purgeable === 0 ? "Nothing to purge" : `Purge ${stats?.purgeable?.toLocaleString() ?? "…"} rows`}
+          </Button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="text-red-300 text-sm">Are you sure? This cannot be undone.</span>
+            <Button
+              size="sm"
+              onClick={() => purgeMutation.mutate()}
+              disabled={purgeMutation.isPending}
+              className="bg-red-700 hover:bg-red-600 text-white"
+              data-testid="button-run-purge"
+            >
+              {purgeMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+              Yes, delete them
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setConfirmed(false)}
+              className="text-slate-300 hover:text-slate-100"
+              data-testid="button-cancel-purge"
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function JobsPanel() {
   const qc = useQueryClient();
   const { data: jobs = [], isLoading } = useQuery<any[]>({
@@ -1357,7 +1462,7 @@ function JobsPanel() {
     return <span className={`px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{s}</span>;
   };
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Background Jobs</h2>
         <Button
@@ -1370,59 +1475,64 @@ function JobsPanel() {
           Refresh
         </Button>
       </div>
-      <p className="text-slate-300 text-sm">Recent background work — paper extractions and CSV exports.</p>
-      <Card className="bg-slate-800 border-slate-700">
-        <CardContent className="p-0">
-          {isLoading ? (
-            <p className="p-6 text-slate-300 text-sm">Loading…</p>
-          ) : jobs.length === 0 ? (
-            <p className="p-6 text-slate-300 text-sm">No jobs yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-900/50 text-slate-300">
-                  <tr>
-                    <th className="px-3 py-2 text-left">ID</th>
-                    <th className="px-3 py-2 text-left">Kind</th>
-                    <th className="px-3 py-2 text-left">Status</th>
-                    <th className="px-3 py-2 text-left">Attempts</th>
-                    <th className="px-3 py-2 text-left">Scheduled</th>
-                    <th className="px-3 py-2 text-left">Completed</th>
-                    <th className="px-3 py-2 text-left">Last error</th>
-                    <th className="px-3 py-2 text-left">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {jobs.map((j: any) => (
-                    <tr key={j.id} className="border-t border-slate-700 text-slate-100" data-testid={`row-job-${j.id}`}>
-                      <td className="px-3 py-2 font-mono">{j.id}</td>
-                      <td className="px-3 py-2">{j.kind}</td>
-                      <td className="px-3 py-2">{statusBadge(j.status)}</td>
-                      <td className="px-3 py-2">{j.attempts}/{j.maxAttempts}</td>
-                      <td className="px-3 py-2 text-slate-300">{fmtDate(j.scheduledAt)}</td>
-                      <td className="px-3 py-2 text-slate-300">{j.completedAt ? fmtDate(j.completedAt) : "—"}</td>
-                      <td className="px-3 py-2 text-red-300 max-w-xs truncate" title={j.lastError || ""}>{j.lastError || "—"}</td>
-                      <td className="px-3 py-2">
-                        {j.kind === "admin-csv-export" && j.status === "completed" && (
-                          <a
-                            href={`/api/admin/exports/${j.id}/download`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-indigo-300 hover:text-indigo-100 underline text-xs"
-                            data-testid={`link-download-job-${j.id}`}
-                          >
-                            Download
-                          </a>
-                        )}
-                      </td>
+
+      <AiUsagePurgeCard />
+
+      <div>
+        <p className="text-slate-300 text-sm mb-3">Recent background work — paper extractions, CSV exports, and maintenance jobs.</p>
+        <Card className="bg-slate-800 border-slate-700">
+          <CardContent className="p-0">
+            {isLoading ? (
+              <p className="p-6 text-slate-300 text-sm">Loading…</p>
+            ) : jobs.length === 0 ? (
+              <p className="p-6 text-slate-300 text-sm">No jobs yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-900/50 text-slate-300">
+                    <tr>
+                      <th className="px-3 py-2 text-left">ID</th>
+                      <th className="px-3 py-2 text-left">Kind</th>
+                      <th className="px-3 py-2 text-left">Status</th>
+                      <th className="px-3 py-2 text-left">Attempts</th>
+                      <th className="px-3 py-2 text-left">Scheduled</th>
+                      <th className="px-3 py-2 text-left">Completed</th>
+                      <th className="px-3 py-2 text-left">Last error</th>
+                      <th className="px-3 py-2 text-left">Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </thead>
+                  <tbody>
+                    {jobs.map((j: any) => (
+                      <tr key={j.id} className="border-t border-slate-700 text-slate-100" data-testid={`row-job-${j.id}`}>
+                        <td className="px-3 py-2 font-mono">{j.id}</td>
+                        <td className="px-3 py-2">{j.kind}</td>
+                        <td className="px-3 py-2">{statusBadge(j.status)}</td>
+                        <td className="px-3 py-2">{j.attempts}/{j.maxAttempts}</td>
+                        <td className="px-3 py-2 text-slate-300">{fmtDate(j.scheduledAt)}</td>
+                        <td className="px-3 py-2 text-slate-300">{j.completedAt ? fmtDate(j.completedAt) : "—"}</td>
+                        <td className="px-3 py-2 text-red-300 max-w-xs truncate" title={j.lastError || ""}>{j.lastError || "—"}</td>
+                        <td className="px-3 py-2">
+                          {j.kind === "admin-csv-export" && j.status === "completed" && (
+                            <a
+                              href={`/api/admin/exports/${j.id}/download`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-indigo-300 hover:text-indigo-100 underline text-xs"
+                              data-testid={`link-download-job-${j.id}`}
+                            >
+                              Download
+                            </a>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

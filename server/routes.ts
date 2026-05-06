@@ -66,8 +66,8 @@ import {
 import { streamPrivateObjectToResponse } from "./jobHandlers";
 import { sendEmail, getOrCreateContact, createVerificationToken, consumeVerificationToken, escapeHtml, appBaseUrl } from "./email";
 import { db as emailDb } from "./db";
-import { emailContacts, emailEvents } from "@shared/schema";
-import { eq as eqEmail, and as andEmail, gte as gteEmail, sql as sqlEmail } from "drizzle-orm";
+import { aiUsageEvents, emailContacts, emailEvents } from "@shared/schema";
+import { eq as eqEmail, and as andEmail, gte as gteEmail, lt as ltDrizzle, sql as sqlEmail } from "drizzle-orm";
 import { isVeryfiConfigured, parseWithVeryfi } from "./veryfi";
 import {
   supabase,
@@ -2563,9 +2563,29 @@ If the user asks about FinSight Lite features, you can mention:
   app.get("/api/admin/jobs", isAdmin, async (req, res) => {
     const limit = Math.min(parseInt(String(req.query.limit ?? "50")) || 50, 200);
     const kindParam = req.query.kind ? String(req.query.kind) : undefined;
-    const kind = (kindParam === "extract-paper" || kindParam === "admin-csv-export") ? kindParam : undefined;
+    const kind = (kindParam === "extract-paper" || kindParam === "admin-csv-export" || kindParam === "purge-ai-usage") ? kindParam as import("./jobs").JobKind : undefined;
     const rows = await listRecentJobs({ limit, kind });
     res.json(rows.map(({ payload, result, ...rest }: any) => ({ ...rest, hasResult: !!result })));
+  });
+
+  // === AI usage maintenance ===
+  app.get("/api/admin/maintenance/ai-usage-stats", isAdmin, async (req, res) => {
+    try {
+      const rawDays = parseInt(String(req.query.olderThanDays ?? 180)) || 180;
+      const cutoffDays = Math.max(30, rawDays);
+      const cutoff = new Date(Date.now() - cutoffDays * 24 * 60 * 60 * 1000);
+      const [totalRow] = await emailDb.select({ n: sqlEmail<number>`count(*)::int` }).from(aiUsageEvents);
+      const [purgeableRow] = await emailDb.select({ n: sqlEmail<number>`count(*)::int` }).from(aiUsageEvents).where(ltDrizzle(aiUsageEvents.createdAt, cutoff));
+      res.json({ total: totalRow.n, purgeable: purgeableRow.n, cutoffDays, cutoffDate: cutoff.toISOString() });
+    } catch (e) {
+      res.status(500).json({ message: (e as Error).message });
+    }
+  });
+
+  app.post("/api/admin/maintenance/purge-ai-usage", isAdmin, async (req, res) => {
+    const olderThanDays = Math.max(1, parseInt(String((req.body as any)?.olderThanDays ?? 180)) || 180);
+    const job = await enqueueJob({ kind: "purge-ai-usage", payload: { olderThanDays } });
+    res.json({ jobId: job.id });
   });
 
   // Enqueue an admin CSV export job (large datasets)

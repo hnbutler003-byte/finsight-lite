@@ -3,8 +3,8 @@ import { storage } from "./storage";
 import { openai } from "./replit_integrations/chat/routes";
 import { objectStorageClient } from "./replit_integrations/object_storage";
 import { db } from "./db";
-import { emailContacts, extractedQuestions, gameSessions, transactions, userXp, userLearningProgress, userBadges, learningModules, teachers, users } from "@shared/schema";
-import { and, eq, gte, sql, inArray, lte } from "drizzle-orm";
+import { aiUsageEvents, emailContacts, extractedQuestions, gameSessions, transactions, userXp, userLearningProgress, userBadges, learningModules, teachers, users } from "@shared/schema";
+import { and, eq, gte, lt, sql, inArray, lte } from "drizzle-orm";
 import { sendEmail, escapeHtml, appBaseUrl } from "./email";
 
 function parsePrivatePath(relPath: string): { bucket: string; object: string } {
@@ -57,6 +57,15 @@ export async function streamPrivateObjectToResponse(
 }
 
 export function registerJobHandlers() {
+  // === AI usage purge ===
+  registerJobHandler("purge-ai-usage", async (job) => {
+    const { olderThanDays } = job.payload;
+    const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000);
+    const result = await db.delete(aiUsageEvents).where(lt(aiUsageEvents.createdAt, cutoff));
+    const deletedRows = (result as unknown as { rowCount?: number }).rowCount ?? 0;
+    return { deletedRows, cutoffDate: cutoff.toISOString() };
+  });
+
   // === Paper extraction (MoneyLab upload) ===
   registerJobHandler("extract-paper", async (job) => {
     const { paperId, fileB64, ext, subject } = job.payload;

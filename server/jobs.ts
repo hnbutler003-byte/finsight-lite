@@ -39,6 +39,9 @@ export interface JobPayloads {
     audience: "student" | "teacher" | "guardian";
     orgId?: string | null;
   };
+  "purge-ai-usage": {
+    olderThanDays: number;
+  };
 }
 
 export interface JobResults {
@@ -64,6 +67,10 @@ export interface JobResults {
     audience: "student" | "teacher" | "guardian";
     weekStart: string;
     enqueued: number;
+  };
+  "purge-ai-usage": {
+    deletedRows: number;
+    cutoffDate: string;
   };
 }
 
