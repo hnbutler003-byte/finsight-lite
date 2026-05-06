@@ -272,6 +272,23 @@
   box-shadow: var(--shadow-lg);
 }
 
+/* ── 7b. INPUT FIELDS INSIDE GLASS CARDS ─────────────────── */
+/*  Use .card-input on any <input> / <textarea> inside a glass card   */
+/*  so it adapts correctly in both light and dark modes.               */
+.card-input {
+  background: hsl(var(--background) / 0.6);
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+  border-radius: var(--radius);
+}
+.card-input::placeholder {
+  color: hsl(var(--muted-foreground) / 0.7);
+}
+.dark .card-input {
+  background: hsl(262 50% 8% / 0.7);
+  border-color: hsl(262 30% 25%);
+}
+
 /* ── 8. INSET / INNER PANELS ─────────────────────────────── */
 .glass-inset {
   background: rgba(0, 0, 0, 0.04);

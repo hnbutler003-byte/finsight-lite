@@ -130,37 +130,38 @@ export default function Settings() {
             <p className="text-white/85 mt-1">Update your profile and email preferences.</p>
           </div>
 
+          {/* ── Your Name ── */}
           <Card className="glass-card-heavy rounded-glass border-0">
             <CardContent className="p-6 space-y-5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-violet-500/20 flex items-center justify-center">
-                  <UserCog className="w-5 h-5 text-violet-300" />
+                  <UserCog className="w-5 h-5 text-violet-500 dark:text-violet-300" />
                 </div>
                 <div>
-                  <h2 className="font-display font-bold text-lg text-white">Your Name</h2>
-                  <p className="text-sm text-white/70">This is the name that prints on your certificates.</p>
+                  <h2 className="font-display font-bold text-lg text-foreground">Your Name</h2>
+                  <p className="text-sm text-muted-foreground">This is the name that prints on your certificates.</p>
                 </div>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName" className="text-white">First name</Label>
+                    <Label htmlFor="firstName" className="text-foreground">First name</Label>
                     <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} maxLength={50} placeholder="Jane"
-                      className="rounded-2xl bg-white/10 border-white/20 text-white placeholder:text-white/50" data-testid="input-first-name" />
+                      className="card-input rounded-2xl" data-testid="input-first-name" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName" className="text-white">Last name</Label>
+                    <Label htmlFor="lastName" className="text-foreground">Last name</Label>
                     <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} maxLength={50} placeholder="Doe"
-                      className="rounded-2xl bg-white/10 border-white/20 text-white placeholder:text-white/50" data-testid="input-last-name" />
+                      className="card-input rounded-2xl" data-testid="input-last-name" />
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/15 bg-white/5 p-4 flex items-center gap-3">
-                  <Award className="w-5 h-5 text-amber-300 flex-shrink-0" />
+                <div className="glass-inset rounded-2xl flex items-center gap-3">
+                  <Award className="w-5 h-5 text-amber-500 dark:text-amber-300 flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-xs uppercase tracking-widest text-white/60 font-bold">Certificate preview</p>
-                    <p className="text-white font-display font-bold truncate" data-testid="text-name-preview">{previewName}</p>
+                    <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Certificate preview</p>
+                    <p className="text-foreground font-display font-bold truncate" data-testid="text-name-preview">{previewName}</p>
                   </div>
                 </div>
 
@@ -173,37 +174,38 @@ export default function Settings() {
             </CardContent>
           </Card>
 
+          {/* ── Email & Notifications ── */}
           <Card className="glass-card-heavy rounded-glass border-0">
             <CardContent className="p-6 space-y-5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-500/20 flex items-center justify-center">
-                  <Mail className="w-5 h-5 text-blue-300" />
+                  <Mail className="w-5 h-5 text-blue-500 dark:text-blue-300" />
                 </div>
                 <div>
-                  <h2 className="font-display font-bold text-lg text-white">Email & notifications</h2>
-                  <p className="text-sm text-white/70">Get class announcements and a weekly recap.</p>
+                  <h2 className="font-display font-bold text-lg text-foreground">Email & notifications</h2>
+                  <p className="text-sm text-muted-foreground">Get class announcements and a weekly recap.</p>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <Label className="text-white">Your email</Label>
+                <Label className="text-foreground">Your email</Label>
                 <div className="flex gap-2">
                   <Input type="email" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} placeholder="you@example.com"
-                    className="rounded-2xl bg-white/10 border-white/20 text-white placeholder:text-white/50" data-testid="input-email" />
+                    className="card-input rounded-2xl" data-testid="input-email" />
                   <Button onClick={() => saveEmail.mutate({ email: emailInput.trim() })} disabled={saveEmail.isPending}
                     className="rounded-2xl bg-blue-500 hover:bg-blue-600 text-white" data-testid="button-save-email">Save</Button>
                 </div>
                 {contact && (
                   <div className="flex items-center justify-between gap-2 text-sm">
                     <div className="flex items-center gap-2">
-                      <ShieldCheck className={`w-4 h-4 ${contact.verified ? "text-green-300" : "text-amber-300"}`} />
-                      <span className="text-white/85" data-testid="text-email-verified">
+                      <ShieldCheck className={`w-4 h-4 ${contact.verified ? "text-green-500 dark:text-green-300" : "text-amber-500 dark:text-amber-300"}`} />
+                      <span className="text-muted-foreground" data-testid="text-email-verified">
                         {contact.verified ? "Verified" : "Not verified"}
                       </span>
                     </div>
                     {!contact.verified && (
                       <Button variant="ghost" onClick={() => sendVerification.mutate("self")} disabled={sendVerification.isPending}
-                        className="text-blue-300 hover:text-blue-200" data-testid="button-send-verification">
+                        className="text-blue-500 dark:text-blue-300 hover:text-blue-600 dark:hover:text-blue-200" data-testid="button-send-verification">
                         Send verification email
                       </Button>
                     )}
@@ -214,12 +216,12 @@ export default function Settings() {
               {contact && (
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="pref-class" className="text-white">Class notifications</Label>
+                    <Label htmlFor="pref-class" className="text-foreground">Class notifications</Label>
                     <Switch id="pref-class" checked={contact.classNotifications}
                       onCheckedChange={(v) => saveEmail.mutate({ classNotifications: v })} data-testid="switch-class-notifications" />
                   </div>
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="pref-digest" className="text-white">Weekly recap (Sundays)</Label>
+                    <Label htmlFor="pref-digest" className="text-foreground">Weekly recap (Sundays)</Label>
                     <Switch id="pref-digest" checked={contact.weeklyDigest}
                       onCheckedChange={(v) => saveEmail.mutate({ weeklyDigest: v })} data-testid="switch-weekly-digest" />
                   </div>
@@ -228,35 +230,36 @@ export default function Settings() {
             </CardContent>
           </Card>
 
+          {/* ── Guardian Email ── */}
           <Card className="glass-card-heavy rounded-glass border-0">
             <CardContent className="p-6 space-y-5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-emerald-300" />
+                  <Users className="w-5 h-5 text-emerald-500 dark:text-emerald-300" />
                 </div>
                 <div>
-                  <h2 className="font-display font-bold text-lg text-white">Guardian email</h2>
-                  <p className="text-sm text-white/70">A parent or guardian can receive your weekly progress.</p>
+                  <h2 className="font-display font-bold text-lg text-foreground">Guardian email</h2>
+                  <p className="text-sm text-muted-foreground">A parent or guardian can receive your weekly progress.</p>
                 </div>
               </div>
 
               <div className="flex gap-2">
                 <Input type="email" value={guardianInput} onChange={(e) => setGuardianInput(e.target.value)} placeholder="guardian@example.com"
-                  className="rounded-2xl bg-white/10 border-white/20 text-white placeholder:text-white/50" data-testid="input-guardian-email" />
+                  className="card-input rounded-2xl" data-testid="input-guardian-email" />
                 <Button onClick={() => saveGuardian.mutate({ email: guardianInput.trim() })} disabled={saveGuardian.isPending}
                   className="rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white" data-testid="button-save-guardian">Save</Button>
               </div>
               {guardian && (
                 <div className="flex items-center justify-between gap-2 text-sm">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className={`w-4 h-4 ${guardian.verified ? "text-green-300" : "text-amber-300"}`} />
-                    <span className="text-white/85" data-testid="text-guardian-verified">
+                    <ShieldCheck className={`w-4 h-4 ${guardian.verified ? "text-green-500 dark:text-green-300" : "text-amber-500 dark:text-amber-300"}`} />
+                    <span className="text-muted-foreground" data-testid="text-guardian-verified">
                       {guardian.verified ? "Verified" : "Not verified"}
                     </span>
                   </div>
                   {!guardian.verified && (
                     <Button variant="ghost" onClick={() => sendVerification.mutate("guardian")} disabled={sendVerification.isPending}
-                      className="text-emerald-300 hover:text-emerald-200" data-testid="button-send-guardian-verification">
+                      className="text-emerald-500 dark:text-emerald-300 hover:text-emerald-600 dark:hover:text-emerald-200" data-testid="button-send-guardian-verification">
                       Send verification email
                     </Button>
                   )}
@@ -265,35 +268,36 @@ export default function Settings() {
             </CardContent>
           </Card>
 
+          {/* ── Google Account ── */}
           <Card className="glass-card-heavy rounded-glass border-0">
             <CardContent className="p-6 space-y-5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-500/20 flex items-center justify-center">
-                  <Chrome className="w-5 h-5 text-blue-300" />
+                  <Chrome className="w-5 h-5 text-blue-500 dark:text-blue-300" />
                 </div>
                 <div>
-                  <h2 className="font-display font-bold text-lg text-white">Google Account</h2>
-                  <p className="text-sm text-white/70">Link your school Google account to sign in faster.</p>
+                  <h2 className="font-display font-bold text-lg text-foreground">Google Account</h2>
+                  <p className="text-sm text-muted-foreground">Link your school Google account to sign in faster.</p>
                 </div>
               </div>
 
               {user?.email ? (
-                <div className="rounded-2xl border border-white/15 bg-white/5 p-4 flex items-center gap-3">
-                  <ShieldCheck className="w-5 h-5 text-green-300 flex-shrink-0" />
+                <div className="glass-inset rounded-2xl flex items-center gap-3">
+                  <ShieldCheck className="w-5 h-5 text-green-500 dark:text-green-300 flex-shrink-0" />
                   <div>
-                    <p className="text-xs text-white/60 uppercase tracking-widest font-bold">Linked email</p>
-                    <p className="text-white font-medium" data-testid="text-google-linked-email">{user.email}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Linked email</p>
+                    <p className="text-foreground font-medium" data-testid="text-google-linked-email">{user.email}</p>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-sm text-white/60">No Google account linked yet.</p>
+                  <p className="text-sm text-muted-foreground">No Google account linked yet.</p>
                   <GoogleSignInButton
                     onSuccess={handleLinkGoogle}
                     onError={(msg) => toast({ title: "Couldn't link Google", description: msg, variant: "destructive" })}
                     text="signin_with"
                   />
-                  {googleLinkLoading && <div className="flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-blue-300" /></div>}
+                  {googleLinkLoading && <div className="flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-blue-500 dark:text-blue-300" /></div>}
                 </div>
               )}
             </CardContent>

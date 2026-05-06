@@ -1313,7 +1313,7 @@ export default function Lessons() {
                       <p className="font-bold text-sm">Module Complete! 🏅</p>
                       <p className="text-xs text-muted-foreground mt-0.5">Download your module certificate of completion.</p>
                       <p className="text-xs text-muted-foreground mt-1.5">
-                        Certificate name: <span className="font-semibold text-white" data-testid="text-certificate-name-module">{certificateFullName}</span>
+                        Certificate name: <span className="font-semibold text-foreground" data-testid="text-certificate-name-module">{certificateFullName}</span>
                         {" · "}
                         <Link href="/settings" className="underline text-teal-300 hover:text-teal-200" data-testid="link-edit-name-module">Edit name</Link>
                       </p>
@@ -1352,7 +1352,7 @@ export default function Lessons() {
                           : "Download your certificate of completion for this lesson."}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1.5">
-                        Certificate name: <span className="font-semibold text-white" data-testid="text-certificate-name-lesson">{certificateFullName}</span>
+                        Certificate name: <span className="font-semibold text-foreground" data-testid="text-certificate-name-lesson">{certificateFullName}</span>
                         {" · "}
                         <Link href="/settings" className="underline text-teal-300 hover:text-teal-200" data-testid="link-edit-name-lesson">Edit name</Link>
                       </p>
