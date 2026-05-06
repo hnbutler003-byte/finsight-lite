@@ -163,7 +163,7 @@ export default function Budgets() {
                                   <Wallet className="w-5 h-5" />
                                 </div>
                                 <div>
-                                  <h3 className="font-bold text-lg">{budget.category?.name}</h3>
+                                  <h3 className="font-bold text-lg text-foreground">{budget.category?.name}</h3>
                                   <p className="text-xs text-muted-foreground capitalize">{budget.period} Limit</p>
                                 </div>
                               </div>
@@ -175,9 +175,9 @@ export default function Budgets() {
                             <div className="space-y-2">
                               <div className="flex justify-between text-sm font-medium">
                                 <span className="text-muted-foreground">Spent: ${spent.toFixed(2)}</span>
-                                <span>Limit: ${limit.toFixed(2)}</span>
+                                <span className="text-foreground">Limit: ${limit.toFixed(2)}</span>
                               </div>
-                              <Progress value={percentage} className="h-2" indicatorClassName={percentage > 90 ? "bg-destructive" : "bg-primary"} />
+                              <Progress value={percentage} className="h-2 bg-muted" indicatorClassName={percentage > 90 ? "bg-destructive" : "bg-primary"} />
                               <p className="text-xs text-right text-muted-foreground pt-1">
                                 {percentage.toFixed(0)}% used
                               </p>
