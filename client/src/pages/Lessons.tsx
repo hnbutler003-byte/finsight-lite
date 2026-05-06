@@ -1239,7 +1239,7 @@ export default function Lessons() {
                       <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm transition-colors ${
                         showResult && isCorrect ? "bg-green-500 text-white" :
                         showResult && isSelected ? "bg-red-500 text-white" :
-                        "bg-white/10 text-white"
+                        "bg-muted text-foreground"
                       }`}>
                         {showResult && isCorrect ? <CheckCircle2 className="w-5 h-5" /> :
                          showResult && isSelected ? <XCircle className="w-5 h-5" /> : letter}

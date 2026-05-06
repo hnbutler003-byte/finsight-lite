@@ -184,7 +184,7 @@ export default function Dashboard() {
                         labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
                         itemStyle={{ color: "hsl(var(--foreground))" }}
                       />
-                      <Legend verticalAlign="bottom" height={36} wrapperStyle={{ color: "#cbd5e1" }} />
+                      <Legend verticalAlign="bottom" height={36} wrapperStyle={{ color: "#555555" }} />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
