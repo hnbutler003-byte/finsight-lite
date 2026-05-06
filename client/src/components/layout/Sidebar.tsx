@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, 
@@ -21,6 +22,8 @@ import {
   Building2,
   ChevronRight,
   Settings as SettingsIcon,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -237,6 +240,7 @@ function JoinOrgModal({ onClose }: { onClose: () => void }) {
 export function Sidebar() {
   const [location] = useLocation();
   const { logout, user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
   const [showJoinOrg, setShowJoinOrg] = useState(false);
@@ -307,6 +311,15 @@ export function Sidebar() {
         >
           <Building2 className="w-4 h-4" />
           Join an Organization
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full justify-start gap-2 rounded-2xl border border-white/20 text-white/80 hover:bg-white/10 hover:text-white font-semibold"
+          onClick={toggleTheme}
+          data-testid="button-toggle-theme"
+        >
+          {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          {theme === "dark" ? "Light Mode" : "Dark Mode"}
         </Button>
         <Button 
           variant="outline" 
