@@ -149,14 +149,9 @@ export default function Settings() {
                   {theme === "dark"
                     ? <Moon className="w-5 h-5 text-indigo-400" />
                     : <Sun className="w-5 h-5 text-amber-500" />}
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">
-                      {theme === "dark" ? "Dark mode" : "Light mode"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {theme === "dark" ? "Easy on the eyes at night" : "Bright and clear display"}
-                    </p>
-                  </div>
+                  <p className="font-semibold text-foreground text-sm">
+                    {theme === "dark" ? "Dark mode" : "Light mode"}
+                  </p>
                 </div>
                 <Switch
                   id="appearance-theme"
