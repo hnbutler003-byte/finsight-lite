@@ -376,7 +376,29 @@ bullet([
 ]);
 
 h2("Signing Out");
-para("Click your avatar or initials in the top-right corner of any page, then select Sign Out. For shared devices, always sign out before leaving.");
+para("Click the Log Out button at the bottom of the sidebar. For shared devices, always sign out before leaving.");
+
+h2("Navigation Sidebar");
+para(
+  "The left sidebar is your primary navigation. On a desktop it can be expanded (full labels) or collapsed to a slim icon rail — " +
+  "click the chevron arrow at the top of the sidebar to toggle. On mobile, tap the hamburger icon (☰) in the top-left corner."
+);
+para("Navigation items are grouped into three sections:");
+table(
+  ["Section", "Items"],
+  [
+    ["My Finances", "My Money · Budgets · Savings Goals"],
+    ["Investing & Learning", "Investment Simulator · Lessons · MoneyLab"],
+    ["Explore", "Money Games · Money Guide"],
+  ]
+);
+para("Settings appears below all groups. The icon rail (collapsed state) shows icons only — hover over any icon to see its label.");
+
+h2("Appearance (Light & Dark Mode)");
+para(
+  "You can switch between light and dark mode at any time. Open Settings from the bottom of the sidebar " +
+  "and toggle the switch in the Appearance card at the top of the page."
+);
 
 // ════════════════════════════════════════════════════════════════════
 // SECTION 3 — STUDENT GUIDE
@@ -399,6 +421,12 @@ bullet([
   "Recent Activity — the last five transactions or quiz results",
   "Class Leaderboard — where you rank among your classmates this week",
 ]);
+
+infoBox(
+  "Navigation tip: Use the sidebar on the left to move between sections. " +
+  "The sidebar is split into three groups — My Finances, Investing & Learning, and Explore. " +
+  "Click the arrow at the top to collapse it to a compact icon rail if you need more screen space."
+);
 
 checkPageSpace(120);
 h2("Money Manager");
@@ -454,11 +482,11 @@ bullet([
 ]);
 
 checkPageSpace(160);
-h2("Money Lab (Investment Simulator)");
+h2("Investment Simulator");
 
 para(
-  "Money Lab is a safe, risk-free simulator where you practise buying and selling stocks and bonds " +
-  "using a virtual balance. No real money is ever involved."
+  "The Investment Simulator is a safe, risk-free tool where you practise buying and selling stocks and bonds " +
+  "using a virtual balance. No real money is ever involved. Find it under Investing & Learning in the sidebar."
 );
 
 h3("Starting Balance");
@@ -483,16 +511,20 @@ numberedList([
 infoBox("Prices in Money Lab are simulated and updated periodically. They reflect realistic market behaviour but are not real stock prices. Treat Money Lab as a learning tool, not financial advice.");
 
 checkPageSpace(100);
-h2("MoneyLab Games (Quiz Mode)");
+h2("MoneyLab (Exam Games & AI Tutor)");
 
-para("Your teacher uploads past exam papers and FinSight Lite converts them into interactive quiz games that earn you XP.");
+para(
+  "MoneyLab is your exam preparation hub — found under Investing & Learning in the sidebar. " +
+  "It has four areas: Upload Past Paper, Play Exam Game, AI Tutor, and Leaderboards."
+);
 
 h3("Playing a Quiz");
 numberedList([
-  "Navigate to Games from the sidebar.",
-  "Select an available quiz (created by your teacher).",
-  "Answer each multiple-choice question before the timer runs out.",
-  "Your score and XP earned are shown at the end.",
+  "Navigate to MoneyLab from the Investing & Learning section in the sidebar.",
+  "Click Play Exam Game and select an available paper.",
+  "Choose a game mode: Quiz (relaxed), Timed Exam (30 s per question), or Challenge Mode (speed bonus).",
+  "Answer each multiple-choice question — correct answers earn XP.",
+  "Your score, accuracy, and XP earned are shown on the results screen.",
 ]);
 
 h3("XP & Levelling");
@@ -513,12 +545,12 @@ h2("Money Guide (AI Mentor)");
 
 para(
   "Money Guide is your personal AI-powered financial mentor. Ask it anything about saving, budgeting, " +
-  "investing, or the Caribbean economy."
+  "investing, or the Caribbean economy. Find it in the Explore section of the sidebar."
 );
 
 h3("Starting a Conversation");
 numberedList([
-  "Click the Money Guide icon (chat bubble) in the sidebar.",
+  "Click Money Guide in the Explore section of the sidebar.",
   "Type your question in the chat box and press Enter or click Send.",
   "The AI responds in plain language with practical tips tailored to the Caribbean context.",
 ]);
@@ -534,13 +566,13 @@ infoBox("Money Guide conversations count against your organisation's daily AI us
 checkPageSpace(80);
 h2("Leaderboards");
 
-para("Compete with classmates and students across your school or country.");
+para("Compete with classmates and students across your school or country. The MoneyLab Leaderboard is inside MoneyLab → Leaderboards.");
 
 bullet([
   "Class Leaderboard — ranked by total XP this week among your classmates",
   "School Leaderboard — your rank among all students at your school",
   "National Leaderboard — top performers from all participating schools",
-  "Money Lab Leaderboard — ranked by virtual portfolio value",
+  "MoneyLab Leaderboard — ranked by total quiz score (inside MoneyLab > Leaderboards)",
 ]);
 
 h2("Badges & Achievements");
@@ -633,17 +665,21 @@ bullet([
 ]);
 
 checkPageSpace(120);
-h2("Exam Prep — Uploading Past Papers");
+h2("MoneyLab — Uploading Past Papers");
 
-para("FinSight Lite can convert uploaded past exam papers (PDF or image) into interactive quiz games for your students.");
+para(
+  "Teachers can upload past exam papers directly from the MoneyLab section (Investing & Learning > MoneyLab > Upload Past Paper). " +
+  "FinSight Lite uses AI to extract questions and turn them into playable quiz games."
+);
 
 numberedList([
-  "Go to Exam Prep and click + Upload Paper.",
-  "Drag-and-drop or browse for a PDF or image file (max 20 MB per file).",
-  "Give the paper a name and select the subject.",
-  "Click Upload & Generate. The AI extracts questions and creates a quiz — this usually takes 30–120 seconds.",
-  "Review the generated questions. Edit or delete any that were not extracted correctly.",
-  "Click Publish to make the quiz available to your students.",
+  "Navigate to MoneyLab from the Investing & Learning section in the sidebar.",
+  "Click Upload Past Paper.",
+  "Drag-and-drop or browse for a PDF or image file (PDF, JPG, or PNG — max 10 MB).",
+  "Give the paper an optional title and select the subject.",
+  "Click the upload zone. The AI extracts questions and creates a quiz — this usually takes 30–120 seconds.",
+  "The paper appears in Your Uploaded Papers once processing is complete.",
+  "Students can then select it in Play Exam Game.",
 ]);
 
 infoBox("Uploaded exam papers are private to your class. Questions generated by AI should always be reviewed before publishing to ensure accuracy.");

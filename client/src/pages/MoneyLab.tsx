@@ -88,7 +88,7 @@ export default function MoneyLab() {
             <h1 className="font-display text-3xl lg:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500" data-testid="text-moneylab-title">
               MoneyLab
             </h1>
-            <p className="text-muted-foreground max-w-md mx-auto">
+            <p className="text-white/75 max-w-md mx-auto">
               Upload past exam papers, play quiz games, and become a commerce champion!
             </p>
           </div>
