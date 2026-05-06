@@ -1,7 +1,16 @@
 import { db } from "./db";
 import { jobs, type Job } from "@shared/schema";
-import { and, desc, eq, lte, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, lt, lte, or, sql } from "drizzle-orm";
 import { log } from "./index";
+
+// Retention policy: how long to keep finished jobs before purging them.
+// Defaults: completed=7 days, failed=30 days.
+const _completedDays = Number(process.env.COMPLETED_JOB_RETENTION_DAYS ?? 7);
+const _failedDays    = Number(process.env.FAILED_JOB_RETENTION_DAYS ?? 30);
+const _intervalMs    = Number(process.env.JOB_CLEANUP_INTERVAL_MS ?? 24 * 60 * 60 * 1000);
+const COMPLETED_JOB_RETENTION_DAYS = Number.isFinite(_completedDays) && _completedDays > 0 ? _completedDays : 7;
+const FAILED_JOB_RETENTION_DAYS    = Number.isFinite(_failedDays) && _failedDays > 0 ? _failedDays : 30;
+const CLEANUP_INTERVAL_MS          = Number.isFinite(_intervalMs) && _intervalMs > 0 ? _intervalMs : 24 * 60 * 60 * 1000;
 
 // Typed payloads / results so handlers and call sites stay honest.
 export interface JobPayloads {
@@ -182,6 +191,27 @@ async function failJob(job: Job, err: unknown) {
   }
 }
 
+async function cleanOldJobs() {
+  try {
+    const completedCutoff = new Date(Date.now() - COMPLETED_JOB_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    const failedCutoff = new Date(Date.now() - FAILED_JOB_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    const result = await db
+      .delete(jobs)
+      .where(
+        or(
+          and(eq(jobs.status, "completed"), isNotNull(jobs.completedAt), lt(jobs.completedAt, completedCutoff)),
+          and(eq(jobs.status, "failed"),    isNotNull(jobs.completedAt), lt(jobs.completedAt, failedCutoff)),
+        ),
+      );
+    const count = (result as unknown as { rowCount?: number }).rowCount ?? 0;
+    if (count > 0) {
+      log(`cleanup removed ${count} old job(s)`, "jobs");
+    }
+  } catch (e) {
+    log(`cleanup error: ${(e as Error).message}`, "jobs");
+  }
+}
+
 let started = false;
 const pollMs = 2000;
 
@@ -225,5 +255,10 @@ export function startJobWorker() {
   };
 
   setTimeout(tick, pollMs);
+
+  // Run cleanup once at startup, then on a fixed interval.
+  cleanOldJobs();
+  setInterval(cleanOldJobs, CLEANUP_INTERVAL_MS);
+
   log("background job worker started", "jobs");
 }
