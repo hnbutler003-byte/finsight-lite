@@ -24,7 +24,6 @@ import {
   Settings as SettingsIcon,
   Sun,
   Moon,
-  PanelLeftClose,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -283,7 +282,7 @@ export function Sidebar() {
           aria-label="Collapse sidebar"
           data-testid="button-collapse-sidebar"
         >
-          <PanelLeftClose className="w-4 h-4" />
+          <ChevronLeft className="w-4 h-4" />
         </button>
       </div>
 
