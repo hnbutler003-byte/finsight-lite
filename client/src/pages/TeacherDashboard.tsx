@@ -7,7 +7,7 @@ import { Link, useLocation } from "wouter";
 import { useState } from "react";
 import {
   Users, BookOpen, Plus, Copy, Check, Loader2, Trophy, BarChart3,
-  GraduationCap, ArrowRight, Sparkles
+  GraduationCap, ArrowRight, Sparkles, FileDown
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -177,14 +177,25 @@ export default function TeacherDashboard() {
               <h1 className="font-display font-bold text-3xl">Welcome back, {teacher.firstName}!</h1>
               <p className="text-muted-foreground mt-1">{teacher.schoolName}</p>
             </div>
-            <Button
-              onClick={() => setShowCreate(true)}
-              className="rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-lg px-6"
-              data-testid="button-create-class"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Class
-            </Button>
+            <div className="flex items-center gap-3">
+              <a
+                href="/api/manual/download"
+                download
+                data-testid="link-download-manual-teacher"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border-2 border-input bg-background hover:bg-muted text-sm font-medium transition-colors"
+              >
+                <FileDown className="w-4 h-4" />
+                User Manual
+              </a>
+              <Button
+                onClick={() => setShowCreate(true)}
+                className="rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-lg px-6"
+                data-testid="button-create-class"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Class
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
