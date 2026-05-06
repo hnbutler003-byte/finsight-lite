@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, UserCog, Award, Mail, ShieldCheck, Users, Chrome } from "lucide-react";
+import { Loader2, UserCog, Award, Mail, ShieldCheck, Users, Chrome, Sun, Moon, Palette } from "lucide-react";
+import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -25,6 +26,7 @@ type ContactResp = { contact: EmailContact | null; guardian: EmailContact | null
 export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [emailInput, setEmailInput] = useState("");
@@ -129,6 +131,42 @@ export default function Settings() {
             </h1>
             <p className="text-white/85 mt-1">Update your profile and email preferences.</p>
           </div>
+
+          {/* ── Appearance ── */}
+          <Card className="glass-card-heavy rounded-glass border-0">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-2xl bg-violet-500/20 flex items-center justify-center">
+                  <Palette className="w-5 h-5 text-violet-500 dark:text-violet-300" />
+                </div>
+                <div>
+                  <h2 className="font-display font-bold text-lg text-foreground">Appearance</h2>
+                  <p className="text-sm text-muted-foreground">Choose how FinSight Lite looks for you.</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {theme === "dark"
+                    ? <Moon className="w-5 h-5 text-indigo-400" />
+                    : <Sun className="w-5 h-5 text-amber-500" />}
+                  <div>
+                    <p className="font-semibold text-foreground text-sm">
+                      {theme === "dark" ? "Dark mode" : "Light mode"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {theme === "dark" ? "Easy on the eyes at night" : "Bright and clear display"}
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="appearance-theme"
+                  checked={theme === "dark"}
+                  onCheckedChange={toggleTheme}
+                  data-testid="switch-dark-mode"
+                />
+              </div>
+            </CardContent>
+          </Card>
 
           {/* ── Your Name ── */}
           <Card className="glass-card-heavy rounded-glass border-0">

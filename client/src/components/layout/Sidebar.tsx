@@ -1,6 +1,5 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, 
@@ -22,8 +21,6 @@ import {
   ChevronRight,
   ChevronLeft,
   Settings as SettingsIcon,
-  Sun,
-  Moon,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -239,7 +236,6 @@ function JoinOrgModal({ onClose }: { onClose: () => void }) {
 export function Sidebar() {
   const [location] = useLocation();
   const { logout, user } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
   const [showJoinOrg, setShowJoinOrg] = useState(false);
@@ -336,15 +332,6 @@ export function Sidebar() {
           <Building2 className="w-4 h-4" />
           Join an Organization
         </Button>
-        <Button
-          variant="outline"
-          className="w-full justify-start gap-2 rounded-2xl border border-white/20 text-white/80 hover:bg-white/10 hover:text-white font-semibold"
-          onClick={toggleTheme}
-          data-testid="button-toggle-theme"
-        >
-          {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          {theme === "dark" ? "Light Mode" : "Dark Mode"}
-        </Button>
         <Button 
           variant="outline" 
           className="w-full justify-start gap-2 rounded-2xl border border-red-400/30 text-red-300 hover:text-red-200 hover:bg-red-500/10 font-semibold"
@@ -377,30 +364,56 @@ export function Sidebar() {
         </Sheet>
       </div>
 
-      {/* Desktop sidebar — animates width */}
+      {/* Desktop sidebar — full panel or slim icon rail */}
       <aside className={cn(
-        "hidden lg:block h-screen border-r border-white/10 sticky top-0 overflow-hidden transition-all duration-300 ease-in-out shrink-0",
-        isCollapsed ? "w-0 border-r-0" : "w-72"
+        "hidden lg:flex flex-col h-screen border-r border-white/10 sticky top-0 overflow-hidden transition-all duration-300 ease-in-out shrink-0 caribbean-bg",
+        isCollapsed ? "w-14" : "w-72"
       )}>
-        <div className="w-72 h-full">
-          <NavContent />
-        </div>
-      </aside>
+        {isCollapsed ? (
+          /* ── Icon rail (collapsed) ── */
+          <div className="flex flex-col items-center py-4 gap-1 h-full">
+            <button
+              onClick={toggleCollapse}
+              className="w-9 h-9 rounded-xl hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white transition-colors mb-3"
+              aria-label="Expand sidebar"
+              data-testid="button-expand-sidebar"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
 
-      {/* Floating re-open tab — visible only when collapsed on desktop */}
-      {isCollapsed && (
-        <button
-          onClick={toggleCollapse}
-          className="hidden lg:flex fixed left-0 top-1/2 -translate-y-1/2 z-40 caribbean-bg flex-col items-center gap-2 px-2 py-4 rounded-r-2xl shadow-xl border border-white/10 border-l-0 text-white hover:pl-3 transition-all duration-200 group"
-          aria-label="Open sidebar"
-          data-testid="button-open-sidebar"
-        >
-          <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
-            <activeItem.icon className="w-4 h-4 text-white" />
+            {NAV_ITEMS.map((item) => {
+              const isActive = item.href === "/" ? location === "/" : location.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  title={item.label}
+                  className={cn(
+                    "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200",
+                    isActive
+                      ? "bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 text-white shadow-lg shadow-purple-900/50"
+                      : "text-white/60 hover:bg-white/10 hover:text-white"
+                  )}
+                  data-testid={`rail-link-${item.href.replace("/", "") || "home"}`}
+                >
+                  <item.icon className="w-4 h-4" />
+                </Link>
+              );
+            })}
+
+            <div className="mt-auto mb-1">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-base shadow-md">
+                {AVATAR_EMOJIS[(user as any)?.avatar] || "🌟"}
+              </div>
+            </div>
           </div>
-          <ChevronRight className="w-3.5 h-3.5 text-white/70 group-hover:text-white transition-colors" />
-        </button>
-      )}
+        ) : (
+          /* ── Full panel (expanded) ── */
+          <div className="w-72 h-full">
+            <NavContent />
+          </div>
+        )}
+      </aside>
     </>
   );
 }
