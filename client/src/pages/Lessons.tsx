@@ -662,7 +662,7 @@ function ModuleCard({
   const pct = Math.round((doneCount / module.lessons.length) * 100);
 
   return (
-    <div className={`rounded-2xl border ${module.borderColor} bg-white/5 backdrop-blur-sm overflow-hidden`} data-testid={`module-card-${module.id}`}>
+    <div className={`rounded-2xl border ${module.borderColor} bg-card overflow-hidden shadow-sm`} data-testid={`module-card-${module.id}`}>
       {/* Module Header */}
       <div className={`bg-gradient-to-r ${module.colorFrom} ${module.colorTo} p-5`}>
         <div className="flex items-start justify-between gap-3">
@@ -720,7 +720,7 @@ function ModuleCard({
                 <button
                   key={lesson.id}
                   onClick={() => onOpenLesson(lesson, module)}
-                  className="w-full text-left p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all group flex items-center gap-3"
+                  className="w-full text-left p-4 rounded-xl bg-background border border-border hover:bg-muted hover:border-border transition-all group flex items-center gap-3"
                   data-testid={`lesson-item-${lesson.id}`}
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
