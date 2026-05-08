@@ -10,8 +10,14 @@ import { seedDatabase } from "./seed";
 import { startJobWorker, enqueueJob } from "./jobs";
 import { registerJobHandlers } from "./jobHandlers";
 import { db } from "./db";
-import { weeklyDigestRuns } from "@shared/schema";
+import { weeklyDigestRuns, aiUsagePurgeRuns } from "@shared/schema";
 import { and, eq } from "drizzle-orm";
+
+// How many days back the auto-scheduled purge deletes (default 180).
+const AUTO_PURGE_OLDER_THAN_DAYS = (() => {
+  const v = parseInt(process.env.AI_PURGE_OLDER_THAN_DAYS ?? "180", 10);
+  return Number.isFinite(v) && v > 0 ? v : 180;
+})();
 
 const app = express();
 const httpServer = createServer(app);
@@ -117,6 +123,39 @@ function startWeeklyDigestScheduler() {
   setInterval(() => { void maybeRunWeeklyDigest(); }, 15 * 60 * 1000);
 }
 
+// ── Monthly AI usage purge scheduler ─────────────────────────────────────────
+// Enqueues one purge-ai-usage job per calendar month using an atomic
+// INSERT ... ON CONFLICT DO NOTHING guard (same pattern as weeklyDigestRuns).
+async function maybeRunAiUsagePurge() {
+  try {
+    const monthKey = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+    const inserted = await db
+      .insert(aiUsagePurgeRuns)
+      .values({ monthKey })
+      .onConflictDoNothing()
+      .returning();
+    if (inserted.length === 0) return; // already ran this month
+    try {
+      await enqueueJob({ kind: "purge-ai-usage", payload: { olderThanDays: AUTO_PURGE_OLDER_THAN_DAYS } });
+      log(`enqueued auto purge-ai-usage for ${monthKey} (olderThanDays=${AUTO_PURGE_OLDER_THAN_DAYS})`, "purge");
+    } catch (e) {
+      // Roll back the claim so it retries on the next check interval.
+      await db.delete(aiUsagePurgeRuns).where(eq(aiUsagePurgeRuns.monthKey, monthKey));
+      log(`auto purge-ai-usage enqueue failed, claim rolled back: ${(e as Error).message}`, "purge");
+    }
+  } catch (e) {
+    log(`auto purge-ai-usage scheduler error: ${(e as Error).message}`, "purge");
+  }
+}
+
+function startAiUsagePurgeScheduler() {
+  // First check 60 s after startup (give the DB time to settle).
+  setTimeout(() => { void maybeRunAiUsagePurge(); }, 60_000);
+  // Then re-check every 6 hours — ensures we catch the month boundary
+  // even if the server restarts mid-month.
+  setInterval(() => { void maybeRunAiUsagePurge(); }, 6 * 60 * 60 * 1000);
+}
+
 // Uptime guardrail: spawn an INDEPENDENT child process (scripts/uptime-worker.js)
 // that pings /healthz on a schedule and emits email alerts via Resend on
 // repeated failures. Running it as a separate process means a crash of the
@@ -163,6 +202,7 @@ process.on("SIGINT", stopUptimeWorker);
   registerJobHandlers();
   startJobWorker();
   startWeeklyDigestScheduler();
+  startAiUsagePurgeScheduler();
 
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

@@ -705,6 +705,16 @@ export const weeklyDigestRuns = pgTable("weekly_digest_runs", {
   weekAudienceIdx: uniqueIndex("uniq_weekly_digest_week_audience").on(t.weekStart, t.audience),
 }));
 
+// One row per calendar month — prevents the auto-scheduler from
+// enqueueing more than one purge-ai-usage job per month.
+export const aiUsagePurgeRuns = pgTable("ai_usage_purge_runs", {
+  id: serial("id").primaryKey(),
+  monthKey: text("month_key").notNull(), // "YYYY-MM"
+  ranAt: timestamp("ran_at").defaultNow(),
+}, (t) => ({
+  monthKeyIdx: uniqueIndex("uniq_ai_usage_purge_month").on(t.monthKey),
+}));
+
 export type EmailContact = typeof emailContacts.$inferSelect;
 export type InsertEmailContact = typeof emailContacts.$inferInsert;
 export type EmailVerificationToken = typeof emailVerificationTokens.$inferSelect;
