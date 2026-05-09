@@ -176,41 +176,44 @@ export default function AuthPage() {
             <div className="space-y-3">
               <button
                 onClick={() => { clearError(); setFlow("student"); setStep("student-access"); }}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-purple-950/70 border border-purple-600/40 hover:bg-purple-900/80 hover:border-violet-400/70 transition-all group text-left"
+                className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left"
+                style={{ background: 'hsl(262 55% 32%)', border: '1px solid hsl(262 60% 50% / 0.7)', boxShadow: '0 8px 32px rgba(0,0,0,0.45)' }}
                 data-testid="button-student"
               >
                 <span className="text-3xl">👩🏽‍🎓</span>
                 <div className="flex-1">
                   <p className="text-white font-semibold">I'm a Student</p>
-                  <p className="text-white/55 text-sm">Join a class or organisation</p>
+                  <p className="text-white/60 text-sm">Join a class or organisation</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-violet-400 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-white/50 group-hover:text-violet-300 transition-colors" />
               </button>
 
               <button
                 onClick={() => setLocation("/teacher/login")}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-purple-950/70 border border-purple-600/40 hover:bg-purple-900/80 hover:border-blue-400/70 transition-all group text-left"
+                className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left"
+                style={{ background: 'hsl(262 55% 32%)', border: '1px solid hsl(262 60% 50% / 0.7)', boxShadow: '0 8px 32px rgba(0,0,0,0.45)' }}
                 data-testid="button-teacher"
               >
                 <span className="text-3xl">👩🏽‍🏫</span>
                 <div className="flex-1">
                   <p className="text-white font-semibold">I'm a Teacher</p>
-                  <p className="text-white/55 text-sm">Manage classes and students</p>
+                  <p className="text-white/60 text-sm">Manage classes and students</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-blue-400 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-white/50 group-hover:text-blue-300 transition-colors" />
               </button>
 
               <button
                 onClick={() => { clearError(); setFlow("guest"); setStep("guest-name"); }}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-purple-950/70 border border-purple-600/40 hover:bg-purple-900/80 hover:border-amber-400/70 transition-all group text-left"
+                className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left"
+                style={{ background: 'hsl(262 55% 32%)', border: '1px solid hsl(262 60% 50% / 0.7)', boxShadow: '0 8px 32px rgba(0,0,0,0.45)' }}
                 data-testid="button-guest"
               >
                 <span className="text-3xl">⚡</span>
                 <div className="flex-1">
                   <p className="text-white font-semibold">Continue as Guest</p>
-                  <p className="text-white/55 text-sm">Jump in with no sign-up</p>
+                  <p className="text-white/60 text-sm">Jump in with no sign-up</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-amber-400 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-white/50 group-hover:text-amber-300 transition-colors" />
               </button>
             </div>
           </div>
