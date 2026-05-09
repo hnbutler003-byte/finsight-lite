@@ -168,7 +168,11 @@ export default function AuthPage() {
         {step === "entry" && (
           <div className="space-y-8 animate-bounce-in">
             <div className="text-center space-y-3">
-              <div className="text-6xl mb-2">💸</div>
+              <div className="flex items-end justify-center gap-2 mb-4 select-none">
+                <span className="text-3xl" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.4s' }}>💰</span>
+                <span className="text-6xl animate-float">🚀</span>
+                <span className="text-3xl" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.8s' }}>⭐</span>
+              </div>
               <h1 className="text-4xl font-bold text-white tracking-tight">Welcome!</h1>
               <p className="text-white/50 text-base">Who are you today?</p>
             </div>
