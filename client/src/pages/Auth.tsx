@@ -176,7 +176,7 @@ export default function AuthPage() {
             <div className="space-y-3">
               <button
                 onClick={() => { clearError(); setFlow("student"); setStep("student-access"); }}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-white/8 border border-white/20 hover:bg-white/14 hover:border-violet-400/60 transition-all group text-left"
+                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-purple-950/70 border border-purple-600/40 hover:bg-purple-900/80 hover:border-violet-400/70 transition-all group text-left"
                 data-testid="button-student"
               >
                 <span className="text-3xl">👩🏽‍🎓</span>
@@ -189,7 +189,7 @@ export default function AuthPage() {
 
               <button
                 onClick={() => setLocation("/teacher/login")}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-white/8 border border-white/20 hover:bg-white/14 hover:border-blue-400/60 transition-all group text-left"
+                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-purple-950/70 border border-purple-600/40 hover:bg-purple-900/80 hover:border-blue-400/70 transition-all group text-left"
                 data-testid="button-teacher"
               >
                 <span className="text-3xl">👩🏽‍🏫</span>
@@ -202,7 +202,7 @@ export default function AuthPage() {
 
               <button
                 onClick={() => { clearError(); setFlow("guest"); setStep("guest-name"); }}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-white/8 border border-white/20 hover:bg-white/14 hover:border-amber-400/60 transition-all group text-left"
+                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-purple-950/70 border border-purple-600/40 hover:bg-purple-900/80 hover:border-amber-400/70 transition-all group text-left"
                 data-testid="button-guest"
               >
                 <span className="text-3xl">⚡</span>
