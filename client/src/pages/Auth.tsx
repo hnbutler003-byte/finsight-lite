@@ -154,7 +154,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-950 via-purple-950/50 to-slate-950 px-4 py-12">
+    <div className="min-h-screen flex flex-col items-center justify-center caribbean-bg px-4 py-12">
 
       {/* Persistent micro-brand header */}
       <div className="flex items-center gap-2 mb-10 opacity-80">
