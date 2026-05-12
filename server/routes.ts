@@ -8,6 +8,7 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 import crypto from "crypto";
 import * as XLSX from "xlsx";
 import Papa from "papaparse";
@@ -4684,6 +4685,48 @@ If the user asks about FinSight Lite features, you can mention:
       payload: { weekStart, audience, orgId: admin.orgId },
     });
     res.json({ jobId: job.id });
+  });
+
+  // === PERFORMANCE AGENT ===
+  app.post("/api/admin/perf-scan", isAdmin, async (_req, res) => {
+    try {
+      const job = await enqueueJob({ kind: "perf-scan", payload: { triggeredBy: "admin" } });
+      res.json({ jobId: job.id });
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  app.get("/api/admin/perf-reports", isAdmin, (_req, res) => {
+    try {
+      const dir = path.join(process.cwd(), "agent-reports");
+      if (!fs.existsSync(dir)) return res.json([]);
+      const files = fs.readdirSync(dir)
+        .filter(f => f.endsWith(".md"))
+        .sort()
+        .reverse()
+        .slice(0, 30)
+        .map(f => {
+          const stat = fs.statSync(path.join(dir, f));
+          return { name: f, sizeBytes: stat.size, createdMs: stat.mtimeMs };
+        });
+      res.json(files);
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  app.get("/api/admin/perf-reports/:filename", isAdmin, (req, res) => {
+    try {
+      const safe = path.basename(req.params.filename);
+      if (!safe.endsWith(".md")) return res.status(400).json({ message: "Invalid filename" });
+      const filePath = path.join(process.cwd(), "agent-reports", safe);
+      if (!fs.existsSync(filePath)) return res.status(404).json({ message: "Report not found" });
+      const content = fs.readFileSync(filePath, "utf-8");
+      res.json({ name: safe, content });
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
   });
 
   return httpServer;

@@ -156,6 +156,27 @@ function startAiUsagePurgeScheduler() {
   setInterval(() => { void maybeRunAiUsagePurge(); }, 6 * 60 * 60 * 1000);
 }
 
+// ── Performance scan scheduler ─────────────────────────────────────────────
+// Enqueues a perf-scan job on a configurable interval (default: 1 hour).
+// Set PERF_SCAN_INTERVAL_MS env var to override (e.g. "1800000" for 30 min).
+// Set DISABLE_PERF_SCAN=1 to turn it off entirely.
+function startPerfScanScheduler() {
+  if (process.env.DISABLE_PERF_SCAN === "1") {
+    log("perf-scan scheduler disabled (DISABLE_PERF_SCAN=1)", "perf");
+    return;
+  }
+  const intervalMs = Math.max(5 * 60_000, parseInt(process.env.PERF_SCAN_INTERVAL_MS ?? "3600000", 10));
+  // First scan 10 minutes after startup so it doesn't compete with cold-start.
+  setTimeout(async () => {
+    try { await enqueueJob({ kind: "perf-scan", payload: { triggeredBy: "scheduler" } }); log("perf-scan enqueued (first run)", "perf"); }
+    catch (e) { log(`perf-scan first enqueue failed: ${(e as Error).message}`, "perf"); }
+  }, 10 * 60_000);
+  setInterval(async () => {
+    try { await enqueueJob({ kind: "perf-scan", payload: { triggeredBy: "scheduler" } }); log(`perf-scan enqueued (interval=${intervalMs}ms)`, "perf"); }
+    catch (e) { log(`perf-scan enqueue failed: ${(e as Error).message}`, "perf"); }
+  }, intervalMs);
+}
+
 // Uptime guardrail: spawn an INDEPENDENT child process (scripts/uptime-worker.js)
 // that pings /healthz on a schedule and emits email alerts via Resend on
 // repeated failures. Running it as a separate process means a crash of the
@@ -203,6 +224,7 @@ process.on("SIGINT", stopUptimeWorker);
   startJobWorker();
   startWeeklyDigestScheduler();
   startAiUsagePurgeScheduler();
+  startPerfScanScheduler();
 
 
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {

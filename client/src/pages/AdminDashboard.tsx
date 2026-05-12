@@ -18,7 +18,8 @@ import {
   Shield, Users, GraduationCap, School, Building2, Trophy, Coins,
   LogOut, Search, Download, Plus, Trash2, Pencil, ChevronLeft, ChevronRight,
   LayoutDashboard, BookOpen, X, Globe, ChevronDown, ChevronUp,
-  CheckCircle2, XCircle, Layers, Medal, FileText, Eye, EyeOff, Minus, Copy, Check, Loader2
+  CheckCircle2, XCircle, Layers, Medal, FileText, Eye, EyeOff, Minus, Copy, Check, Loader2,
+  Zap, AlertTriangle, Info, RefreshCw, Play, Clock
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { VideoField } from "@/components/VideoField";
@@ -41,6 +42,7 @@ const TABS = [
   { id: "challenges", label: "Challenges", icon: Trophy },
   { id: "reports", label: "Reports", icon: Download },
   { id: "jobs", label: "Background Jobs", icon: Loader2 },
+  { id: "perf", label: "Perf Agent", icon: Zap },
   { id: "audit", label: "Audit Log", icon: FileText },
   { id: "dbviewer", label: "DB Viewer", icon: Building2 },
 ];
@@ -1599,6 +1601,234 @@ function JobsPanel() {
   );
 }
 
+// ─── PerfAgentPanel ─────────────────────────────────────────────────────────
+interface ReportMeta { name: string; sizeBytes: number; createdMs: number; }
+interface ReportDetail { name: string; content: string; }
+
+function parseSeverityFromReport(md: string): { critical: number; warning: number; info: number } {
+  const critMatch = md.match(/\*\*Issues:\*\*\s*(\d+)\s*critical/);
+  const warnMatch = md.match(/(\d+)\s*warnings/);
+  const infoMatch = md.match(/(\d+)\s*info/);
+  return {
+    critical: critMatch ? parseInt(critMatch[1]) : 0,
+    warning: warnMatch ? parseInt(warnMatch[1]) : 0,
+    info: infoMatch ? parseInt(infoMatch[1]) : 0,
+  };
+}
+
+function friendlyReportName(name: string): string {
+  // "2026-05-12T08-30-00-scan.md" → "May 12, 2026 08:30:00"
+  const m = name.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})-scan/);
+  if (!m) return name;
+  const [, yr, mo, dy, hr, mn, sc] = m;
+  const d = new Date(`${yr}-${mo}-${dy}T${hr}:${mn}:${sc}Z`);
+  return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
+function MarkdownView({ content }: { content: string }) {
+  // Minimal markdown → JSX renderer (no external dep needed)
+  const lines = content.split("\n");
+  const elements: JSX.Element[] = [];
+  let key = 0;
+  for (const line of lines) {
+    if (line.startsWith("# ")) {
+      elements.push(<h1 key={key++} className="text-2xl font-bold text-white mb-3 mt-2">{line.slice(2)}</h1>);
+    } else if (line.startsWith("## ")) {
+      elements.push(<h2 key={key++} className="text-lg font-semibold text-white mt-6 mb-2 border-b border-slate-600 pb-1">{line.slice(3)}</h2>);
+    } else if (line.startsWith("### ")) {
+      elements.push(<h3 key={key++} className="text-base font-semibold text-slate-200 mt-4 mb-1">{line.slice(4)}</h3>);
+    } else if (line.startsWith("---")) {
+      elements.push(<hr key={key++} className="border-slate-700 my-3" />);
+    } else if (line.startsWith("- ") || line.startsWith("* ")) {
+      elements.push(<li key={key++} className="text-slate-300 text-sm ml-4 list-disc">{line.slice(2)}</li>);
+    } else if (line.startsWith("**") && line.endsWith("**")) {
+      elements.push(<p key={key++} className="font-semibold text-slate-200 text-sm">{line.replace(/\*\*/g, "")}</p>);
+    } else if (line.trim() === "") {
+      elements.push(<div key={key++} className="h-1" />);
+    } else {
+      // Inline bold: **text**
+      const parts = line.split(/\*\*(.*?)\*\*/g);
+      elements.push(
+        <p key={key++} className="text-slate-300 text-sm">
+          {parts.map((p, i) => i % 2 === 1 ? <strong key={i} className="text-slate-100">{p}</strong> : p)}
+        </p>
+      );
+    }
+  }
+  return <div className="space-y-0.5">{elements}</div>;
+}
+
+function PerfAgentPanel() {
+  const queryClient = useQueryClient();
+  const [selectedReport, setSelectedReport] = useState<string | null>(null);
+
+  const { data: reports = [], isLoading: reportsLoading, refetch: refetchList } = useQuery<ReportMeta[]>({
+    queryKey: ["/api/admin/perf-reports"],
+  });
+
+  const { data: reportDetail, isLoading: detailLoading } = useQuery<ReportDetail>({
+    queryKey: ["/api/admin/perf-reports", selectedReport],
+    enabled: !!selectedReport,
+  });
+
+  const triggerMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/admin/perf-scan"),
+    onSuccess: () => {
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/perf-reports"] });
+      }, 3000);
+    },
+  });
+
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <Zap className="w-6 h-6 text-yellow-400" />
+            Performance Intelligence Agent
+          </h2>
+          <p className="text-slate-400 text-sm mt-0.5">
+            Claude-powered scanner — analyses 6 core files for performance, reliability, and security issues.
+            Runs automatically every hour and saves reports here.
+          </p>
+        </div>
+        <Button
+          onClick={() => triggerMutation.mutate()}
+          disabled={triggerMutation.isPending}
+          className="bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-semibold gap-2"
+          data-testid="button-trigger-perf-scan"
+        >
+          {triggerMutation.isPending
+            ? <><Loader2 className="w-4 h-4 animate-spin" /> Queuing scan…</>
+            : <><Play className="w-4 h-4" /> Run Scan Now</>}
+        </Button>
+      </div>
+
+      {triggerMutation.isSuccess && (
+        <div className="bg-yellow-900/30 border border-yellow-600 rounded-lg px-4 py-3 text-yellow-300 text-sm flex items-center gap-2" data-testid="banner-scan-queued">
+          <Clock className="w-4 h-4 flex-shrink-0" />
+          Scan job queued! Claude is analysing 6 files — this takes ~20–40 seconds. The new report will appear in the list below.
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Reports list */}
+        <div className="lg:col-span-1 space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide">Reports ({reports.length})</h3>
+            <Button
+              size="sm" variant="ghost"
+              onClick={() => refetchList()}
+              className="text-slate-400 hover:text-white gap-1"
+              data-testid="button-refresh-perf-reports"
+            >
+              <RefreshCw className="w-3 h-3" /> Refresh
+            </Button>
+          </div>
+
+          {reportsLoading && (
+            <div className="flex items-center gap-2 text-slate-400 text-sm py-4">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading reports…
+            </div>
+          )}
+
+          {!reportsLoading && reports.length === 0 && (
+            <div className="bg-slate-800 rounded-lg p-4 text-slate-400 text-sm text-center" data-testid="text-no-perf-reports">
+              No reports yet. Run a scan to generate the first one.
+            </div>
+          )}
+
+          <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
+            {reports.map((r) => {
+              const isSelected = selectedReport === r.name;
+              return (
+                <button
+                  key={r.name}
+                  onClick={() => setSelectedReport(r.name)}
+                  data-testid={`button-select-report-${r.name}`}
+                  className={`w-full text-left rounded-lg p-3 transition-colors border ${
+                    isSelected
+                      ? "bg-yellow-900/40 border-yellow-500 text-white"
+                      : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  <div className="text-xs font-medium truncate">{friendlyReportName(r.name)}</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">
+                    {(r.sizeBytes / 1024).toFixed(1)} KB
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Report detail */}
+        <div className="lg:col-span-2">
+          {!selectedReport && (
+            <div className="bg-slate-800 rounded-xl border border-slate-700 p-8 text-center text-slate-500 text-sm h-full flex flex-col items-center justify-center gap-3" data-testid="text-select-report-prompt">
+              <Zap className="w-8 h-8 text-slate-600" />
+              Select a report to view its findings
+            </div>
+          )}
+
+          {selectedReport && detailLoading && (
+            <div className="bg-slate-800 rounded-xl border border-slate-700 p-8 flex items-center justify-center gap-3 text-slate-400" data-testid="text-report-loading">
+              <Loader2 className="w-5 h-5 animate-spin" /> Loading report…
+            </div>
+          )}
+
+          {selectedReport && reportDetail && !detailLoading && (
+            <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden" data-testid="container-report-detail">
+              {/* Severity badges */}
+              {(() => {
+                const sev = parseSeverityFromReport(reportDetail.content);
+                return (
+                  <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700 bg-slate-900/60 flex-wrap">
+                    <span className="text-slate-400 text-xs font-semibold uppercase tracking-wide">
+                      {friendlyReportName(reportDetail.name)}
+                    </span>
+                    <div className="flex items-center gap-2 ml-auto flex-wrap">
+                      {sev.critical > 0 && (
+                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-900/40 text-red-300 dark:bg-red-900/40 dark:text-red-300" data-testid="badge-critical-count">
+                          <AlertTriangle className="w-3 h-3" /> {sev.critical} critical
+                        </span>
+                      )}
+                      {sev.warning > 0 && (
+                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-900/40 text-yellow-300 dark:bg-yellow-900/40 dark:text-yellow-300" data-testid="badge-warning-count">
+                          <AlertTriangle className="w-3 h-3" /> {sev.warning} warnings
+                        </span>
+                      )}
+                      {sev.info > 0 && (
+                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-900/40 text-blue-300 dark:bg-blue-900/40 dark:text-blue-300" data-testid="badge-info-count">
+                          <Info className="w-3 h-3" /> {sev.info} info
+                        </span>
+                      )}
+                      <a
+                        href={`/api/admin/perf-reports/${reportDetail.name}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-slate-400 hover:text-white underline ml-1"
+                        data-testid="link-raw-report"
+                      >
+                        raw ↗
+                      </a>
+                    </div>
+                  </div>
+                );
+              })()}
+              <div className="p-5 max-h-[70vh] overflow-y-auto">
+                <MarkdownView content={reportDetail.content} />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const { admin, isLoading, logout } = useAdminAuth();
@@ -2188,6 +2418,9 @@ export default function AdminDashboard() {
 
         {/* ── Background Jobs ── */}
         {activeTab === "jobs" && <JobsPanel />}
+
+        {/* ── Perf Agent ── */}
+        {activeTab === "perf" && <PerfAgentPanel />}
 
         {/* ── Audit Log ── */}
         {activeTab === "audit" && <AuditLogPanel />}

@@ -42,6 +42,9 @@ export interface JobPayloads {
   "purge-ai-usage": {
     olderThanDays: number;
   };
+  "perf-scan": {
+    triggeredBy?: string;
+  };
 }
 
 export interface JobResults {
@@ -71,6 +74,14 @@ export interface JobResults {
   "purge-ai-usage": {
     deletedRows: number;
     cutoffDate: string;
+  };
+  "perf-scan": {
+    reportFile: string;
+    issueCount: number;
+    criticalCount: number;
+    warningCount: number;
+    durationMs: number;
+    filesScanned: number;
   };
 }
 

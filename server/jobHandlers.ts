@@ -57,6 +57,12 @@ export async function streamPrivateObjectToResponse(
 }
 
 export function registerJobHandlers() {
+  // === Performance & reliability scan ===
+  registerJobHandler("perf-scan", async (job) => {
+    const { runPerfScan } = await import("./perfAgent");
+    return runPerfScan(job.payload.triggeredBy ?? "job");
+  });
+
   // === AI usage purge ===
   registerJobHandler("purge-ai-usage", async (job) => {
     const { olderThanDays } = job.payload;
