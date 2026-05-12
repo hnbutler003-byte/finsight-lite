@@ -317,7 +317,7 @@ export async function createOrganization(org: Omit<Organization, "id" | "created
 
 export async function updateOrganization(id: string, updates: Partial<Organization>): Promise<Organization | null> {
   if (!supabase) return null;
-  const payload = updates.name !== undefined ? { ...updates, name: updates.name.trim() } : updates;
+  const payload = typeof updates.name === "string" ? { ...updates, name: updates.name.trim() } : updates;
   const { data, error } = await supabase.from("organizations").update(payload).eq("id", id).select().single();
   if (error) { console.error("[Supabase] updateOrganization:", error.message); return null; }
   return data;
