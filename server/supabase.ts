@@ -302,7 +302,7 @@ export async function invalidateOrganizationCache(id?: string): Promise<void> {
 
 export async function getOrganizationByName(name: string): Promise<Organization | null> {
   if (!supabase) return null;
-  const { data, error } = await supabase.from("organizations").select("*").eq("name", name).limit(1).single();
+  const { data, error } = await supabase.from("organizations").select("*").eq("name", name.trim()).limit(1).single();
   if (error) return null;
   return data;
 }

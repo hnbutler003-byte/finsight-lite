@@ -72,6 +72,7 @@ import { isVeryfiConfigured, parseWithVeryfi } from "./veryfi";
 import {
   supabase,
   initSupabaseTables,
+  trimOrgNamesInSupabase,
   getOrganizations,
   getOrganization,
   createOrganization,
@@ -2760,6 +2761,7 @@ If the user asks about FinSight Lite features, you can mention:
 
   // === SUPABASE ORGANIZATIONS & ENVIRONMENTS ===
   initSupabaseTables()
+    .then(() => trimOrgNamesInSupabase())
     .then(() => seedFinancialAcademyLesson())
     .catch(e => console.error("[Supabase] Init error:", e));
 
