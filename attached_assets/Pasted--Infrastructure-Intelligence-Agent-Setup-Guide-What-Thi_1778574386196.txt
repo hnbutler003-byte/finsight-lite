@@ -1,0 +1,108 @@
+# 🤖 Infrastructure Intelligence Agent — Setup Guide
+
+## What This Does
+
+An autonomous agent that runs inside your Replit app and:
+- **Scans your codebase every hour**
+- **Auto-fixes** safe bugs (missing error handling, hardcoded values, unhandled promises, etc.)
+- **Flags** bigger issues with exact file + line numbers and a recommended fix
+- **Discovers** Replit features and integrations you haven't used yet
+- **Writes reports** to `agent-reports/` after every scan
+
+---
+
+## Setup (5 minutes)
+
+### 1. Install the SDK
+
+Open the Replit Shell and run:
+```bash
+npm install @anthropic-ai/claude-agent-sdk
+```
+
+### 2. Add Your API Key
+
+In Replit, click the **🔒 Secrets** icon in the left sidebar and add:
+```
+Key:   ANTHROPIC_API_KEY
+Value: sk-ant-... (your key from console.anthropic.com)
+```
+
+### 3. Drop These Files in Your Project Root
+
+- `agent.js` — the agent script
+- `CLAUDE.md` — context the agent reads every scan (fill in your app details)
+
+### 4. Start the Agent
+
+```bash
+node agent.js
+```
+
+To keep it running permanently, add this to your `.replit` file:
+```toml
+[run]
+command = "node agent.js & node YOUR_MAIN_FILE.js"
+```
+
+Or run it as a background process with Replit's **Always On** feature.
+
+---
+
+## Reading Reports
+
+After the first scan, check `agent-reports/`:
+
+```
+agent-reports/
+  2026-05-12T14-00-auto-fixes.md   ← everything the agent changed automatically
+  2026-05-12T14-00-flagged.md      ← issues needing your review + opportunity ideas
+```
+
+The flagged report always ends with a **"💡 Opportunities You Haven't Thought Of"** section
+with specific, actionable ideas for your app.
+
+---
+
+## Tuning the Agent
+
+**Change scan frequency** — edit `SCAN_INTERVAL_MS` in `agent.js`:
+```js
+const SCAN_INTERVAL_MS = 30 * 60 * 1000; // every 30 min
+```
+
+**Add more auto-approved tools** — edit `AUTO_APPROVED_TOOLS` array
+
+**Tell it about your app** — fill in `CLAUDE.md` with your architecture notes.
+The more context it has, the smarter its recommendations.
+
+**Suppress false positives** — add known non-issues to the "Known Issues" section of `CLAUDE.md`
+
+---
+
+## Safety Model
+
+| Action | Agent behavior |
+|--------|---------------|
+| Fix missing try/catch | ✅ Auto-applies |
+| Add .env.example entries | ✅ Auto-applies |
+| Remove hardcoded localhost URLs | ✅ Auto-applies |
+| Clean up unused imports | ✅ Auto-applies |
+| Change package.json deps | 🚩 Flags only |
+| Touch auth/payment code | 🚩 Flags only |
+| Database schema changes | 🚩 Flags only |
+| Delete files | ❌ Blocked entirely |
+| npm install/uninstall | ❌ Blocked entirely |
+| git push | ❌ Blocked entirely |
+
+---
+
+## Troubleshooting
+
+**"ANTHROPIC_API_KEY not found"** — Add it to Replit Secrets (not .env), Replit injects Secrets as environment variables automatically.
+
+**Agent stops mid-scan** — Check `agent-reports/` for an ERROR file. Usually a timeout or token limit; increase `MAX_TURNS` in agent.js.
+
+**Too many false positives** — Add the patterns to "Known Issues" in CLAUDE.md.
+
+**Want it to scan more aggressively** — Change `permissionMode` from `"acceptEdits"` to `"bypassPermissions"` (use with caution).
