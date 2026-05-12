@@ -204,6 +204,9 @@ process.on("SIGINT", stopUptimeWorker);
   startWeeklyDigestScheduler();
   startAiUsagePurgeScheduler();
 
+  // One-time cleanup: trim org names with stray whitespace (e.g. "The Financial Academy ")
+  { const { trimOrgNamesInSupabase } = await import("./supabase"); void trimOrgNamesInSupabase(); }
+
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";

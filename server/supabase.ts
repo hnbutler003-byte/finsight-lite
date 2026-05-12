@@ -309,16 +309,39 @@ export async function getOrganizationByName(name: string): Promise<Organization 
 
 export async function createOrganization(org: Omit<Organization, "id" | "created_at">): Promise<Organization | null> {
   if (!supabase) return null;
-  const { data, error } = await supabase.from("organizations").insert(org).select().single();
+  const payload = { ...org, name: org.name?.trim() ?? org.name };
+  const { data, error } = await supabase.from("organizations").insert(payload).select().single();
   if (error) { console.error("[Supabase] createOrganization:", error.message); return null; }
   return data;
 }
 
 export async function updateOrganization(id: string, updates: Partial<Organization>): Promise<Organization | null> {
   if (!supabase) return null;
-  const { data, error } = await supabase.from("organizations").update(updates).eq("id", id).select().single();
+  const payload = updates.name !== undefined ? { ...updates, name: updates.name.trim() } : updates;
+  const { data, error } = await supabase.from("organizations").update(payload).eq("id", id).select().single();
   if (error) { console.error("[Supabase] updateOrganization:", error.message); return null; }
   return data;
+}
+
+// ─── Startup: trim org names that have leading/trailing whitespace ─────────────
+// Fixes any existing records (e.g. "The Financial Academy ") created before the
+// trim was enforced on save, so that name-exact-match lookups work correctly.
+export async function trimOrgNamesInSupabase(): Promise<void> {
+  if (!supabase) return;
+  try {
+    const { data, error } = await supabase.from("organizations").select("id,name");
+    if (error || !data) return;
+    const dirty = data.filter((o: { id: string; name: string }) => o.name !== o.name.trim());
+    if (dirty.length === 0) return;
+    await Promise.all(
+      dirty.map((o: { id: string; name: string }) =>
+        supabase!.from("organizations").update({ name: o.name.trim() }).eq("id", o.id)
+      )
+    );
+    console.log(`[Supabase] ✓ Trimmed org names for ${dirty.length} record(s):`, dirty.map((o: { id: string; name: string }) => JSON.stringify(o.name)));
+  } catch (e: any) {
+    console.error("[Supabase] trimOrgNamesInSupabase error:", e.message);
+  }
 }
 
 export async function getOrgEnvironments(orgId: string): Promise<OrgEnvironment[]> {

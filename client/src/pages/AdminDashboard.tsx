@@ -551,7 +551,7 @@ function OrgDialog({ existing, onClose }: { existing?: any; onClose: () => void 
   );
 }
 
-// ─── EnvCard (shows env info + join code with copy button) ──────────────────
+// ─── EnvCard (shows env info + prominent join code banner) ───────────────────
 
 function EnvCard({ env }: { env: any }) {
   const [copied, setCopied] = useState(false);
@@ -565,30 +565,44 @@ function EnvCard({ env }: { env: any }) {
   };
 
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-800 border border-slate-700">
-      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: env.theme_color ?? "#7c3aed" }} />
-      <div className="flex-1 min-w-0">
-        <p className="text-white text-sm font-medium truncate" data-testid={`text-env-name-${env.id}`}>{env.display_name}</p>
-        <p className="text-slate-300 text-xs font-mono">{env.slug}</p>
+    <div className="rounded-xl bg-slate-800 border border-slate-700 overflow-hidden">
+      {/* Header row */}
+      <div className="flex items-center gap-3 px-3 py-2.5">
+        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: env.theme_color ?? "#7c3aed" }} />
+        <div className="flex-1 min-w-0">
+          <p className="text-white text-sm font-medium truncate" data-testid={`text-env-name-${env.id}`}>{env.display_name}</p>
+          <p className="text-slate-400 text-xs font-mono">{env.slug}</p>
+        </div>
+        {(env.features_enabled ?? []).length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {(env.features_enabled ?? []).map((f: string) => (
+              <span key={f} className="text-xs bg-indigo-900/60 text-indigo-300 px-1.5 py-0.5 rounded">{f.replace("_", " ")}</span>
+            ))}
+          </div>
+        )}
       </div>
+      {/* Join code banner */}
       {env.join_code && (
-        <button
-          onClick={copyCode}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-900/50 border border-indigo-700/50 hover:bg-indigo-800/70 transition-colors group"
-          title="Copy join code"
-          data-testid={`button-copy-join-code-${env.id}`}
-        >
-          <span className="text-indigo-200 font-mono font-bold text-xs tracking-widest">{env.join_code}</span>
-          {copied
-            ? <Check className="w-3.5 h-3.5 text-emerald-400" />
-            : <Copy className="w-3.5 h-3.5 text-indigo-400 group-hover:text-indigo-200" />}
-        </button>
+        <div className="mx-3 mb-3 rounded-lg bg-indigo-950 border border-indigo-700/60 px-3 py-2.5">
+          <p className="text-indigo-300 text-[10px] uppercase tracking-widest font-semibold mb-1.5">Student join code — share this with your class</p>
+          <div className="flex items-center justify-between gap-3">
+            <span
+              className="text-white font-mono font-bold text-2xl tracking-[0.25em]"
+              data-testid={`text-join-code-${env.id}`}
+            >
+              {env.join_code}
+            </span>
+            <button
+              onClick={copyCode}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-700 hover:bg-indigo-600 active:bg-indigo-800 transition-colors text-white text-xs font-semibold"
+              data-testid={`button-copy-join-code-${env.id}`}
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? "Copied!" : "Copy code"}
+            </button>
+          </div>
+        </div>
       )}
-      <div className="flex flex-wrap gap-1">
-        {(env.features_enabled ?? []).map((f: string) => (
-          <span key={f} className="text-xs bg-indigo-900/60 text-indigo-300 px-1.5 py-0.5 rounded">{f.replace("_", " ")}</span>
-        ))}
-      </div>
     </div>
   );
 }
@@ -599,15 +613,63 @@ function EnvDialog({ orgId, onClose }: { orgId: string; onClose: () => void }) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [form, setForm] = useState({ slug: "", display_name: "", theme_color: "#7c3aed" });
+  const [createdEnv, setCreatedEnv] = useState<{ join_code: string; display_name: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
   const save = useMutation({
     mutationFn: () => apiRequest("POST", `/api/admin/organizations/${orgId}/environments`, form).then(r => r.json()),
-    onSuccess: () => {
+    onSuccess: (env: any) => {
       qc.invalidateQueries({ queryKey: ["/api/admin/organizations", orgId, "environments"] });
-      toast({ title: "Environment created" });
-      onClose();
+      setCreatedEnv({ join_code: env.join_code, display_name: env.display_name });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
+
+  const copyCode = () => {
+    if (!createdEnv?.join_code) return;
+    navigator.clipboard.writeText(createdEnv.join_code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  if (createdEnv) {
+    return (
+      <div className="space-y-4 pt-2">
+        <div className="flex flex-col items-center gap-1 text-center pb-1">
+          <div className="w-10 h-10 rounded-full bg-emerald-900/60 border border-emerald-600/50 flex items-center justify-center mb-1">
+            <Check className="w-5 h-5 text-emerald-400" />
+          </div>
+          <p className="text-white font-semibold text-base">Environment created!</p>
+          <p className="text-slate-400 text-sm">Share this code with your students so they can join <span className="text-white font-medium">{createdEnv.display_name}</span>.</p>
+        </div>
+        <div className="rounded-xl bg-indigo-950 border border-indigo-600/60 px-4 py-4 text-center">
+          <p className="text-indigo-300 text-[10px] uppercase tracking-widest font-semibold mb-3">Student join code</p>
+          <p
+            className="text-white font-mono font-bold text-4xl tracking-[0.3em] mb-4"
+            data-testid="text-new-join-code"
+          >
+            {createdEnv.join_code}
+          </p>
+          <button
+            onClick={copyCode}
+            className="flex items-center gap-2 mx-auto px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 transition-colors text-white text-sm font-semibold"
+            data-testid="button-copy-new-join-code"
+          >
+            {copied ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
+            {copied ? "Copied!" : "Copy code"}
+          </button>
+        </div>
+        <p className="text-slate-500 text-xs text-center">You can always find this code again by viewing the environment in the org panel.</p>
+        <div className="flex justify-end pt-1">
+          <Button onClick={onClose} className="bg-indigo-600 hover:bg-indigo-700" data-testid="button-done-env">
+            Done
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3 pt-2">
       <div>
