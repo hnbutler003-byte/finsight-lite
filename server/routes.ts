@@ -133,9 +133,21 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Sitemap
-  app.get("/sitemap.xml", (_req, res) => {
-    const base = "https://finsightlite.replit.app";
+  // Global SEO headers — tell crawlers this app is indexable.
+  // On *.replit.dev (dev preview) Replit's CDN overrides this with noindex,
+  // but on the deployed *.replit.app domain it takes full effect.
+  app.use((req, res, next) => {
+    if (!req.path.startsWith("/api/")) {
+      res.setHeader("X-Robots-Tag", "index, follow");
+    }
+    next();
+  });
+
+  // Sitemap — uses the request's own host so it's correct on every domain
+  app.get("/sitemap.xml", (req, res) => {
+    const proto = req.headers["x-forwarded-proto"] || req.protocol || "https";
+    const host  = req.headers["x-forwarded-host"]  || req.headers.host || "localhost";
+    const base  = `${proto}://${host}`;
     const urls = [
       { loc: "/", priority: "1.0", changefreq: "weekly" },
       { loc: "/auth", priority: "0.8", changefreq: "monthly" },

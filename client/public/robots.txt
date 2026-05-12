@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /org/dashboard
+Disallow: /teacher/dashboard
 
-Sitemap: https://finsightlite.replit.app/sitemap.xml
+Sitemap: /sitemap.xml
