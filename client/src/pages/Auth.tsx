@@ -180,8 +180,7 @@ export default function AuthPage() {
             <div className="space-y-3">
               <button
                 onClick={() => { clearError(); setFlow("student"); setStep("student-access"); }}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left"
-                style={{ background: 'hsl(262 55% 32%)', border: '1px solid hsl(262 60% 50% / 0.7)', boxShadow: '0 8px 32px rgba(0,0,0,0.45)' }}
+                className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left bg-white/10 backdrop-blur-lg border border-white/20 hover:bg-white/[0.16] hover:border-violet-400/50 shadow-lg"
                 data-testid="button-student"
               >
                 <span className="text-3xl">👩🏽‍🎓</span>
@@ -194,8 +193,7 @@ export default function AuthPage() {
 
               <button
                 onClick={() => setLocation("/teacher/login")}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left"
-                style={{ background: 'hsl(262 55% 32%)', border: '1px solid hsl(262 60% 50% / 0.7)', boxShadow: '0 8px 32px rgba(0,0,0,0.45)' }}
+                className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left bg-white/10 backdrop-blur-lg border border-white/20 hover:bg-white/[0.16] hover:border-blue-400/50 shadow-lg"
                 data-testid="button-teacher"
               >
                 <span className="text-3xl">👩🏽‍🏫</span>
@@ -208,8 +206,7 @@ export default function AuthPage() {
 
               <button
                 onClick={() => { clearError(); setFlow("guest"); setStep("guest-name"); }}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left"
-                style={{ background: 'hsl(262 55% 32%)', border: '1px solid hsl(262 60% 50% / 0.7)', boxShadow: '0 8px 32px rgba(0,0,0,0.45)' }}
+                className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left bg-white/10 backdrop-blur-lg border border-white/20 hover:bg-white/[0.16] hover:border-amber-400/50 shadow-lg"
                 data-testid="button-guest"
               >
                 <span className="text-3xl">⚡</span>
