@@ -25,7 +25,8 @@ export function useAuth() {
     queryKey: ["/api/auth/user"],
     queryFn: fetchUser,
     retry: false,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 15,   // treat auth as fresh for 15 min
+    gcTime:   1000 * 60 * 60,    // keep in cache for 1 hr even when unused
   });
 
   const registerMutation = useMutation({
@@ -44,6 +45,7 @@ export function useAuth() {
     },
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/auth/user"], user);
+      localStorage.setItem("fsl_had_session", "1");
     },
   });
 
@@ -53,6 +55,7 @@ export function useAuth() {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/auth/user"], null);
+      localStorage.removeItem("fsl_had_session");
     },
   });
 

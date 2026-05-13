@@ -14,7 +14,7 @@ declare module "express-session" {
 }
 
 export function getSession() {
-  const sessionTtl = 7 * 24 * 60 * 60 * 1000;
+  const sessionTtl = 30 * 24 * 60 * 60 * 1000; // 30 days
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
@@ -27,6 +27,7 @@ export function getSession() {
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
+    rolling: true, // reset the cookie expiry on every request — keeps active users logged in indefinitely
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

@@ -59,12 +59,21 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 function Router() {
   const { user, isLoading } = useAuth();
 
-  if (isLoading) {
+  // If loading AND the browser has a hint that this user was previously logged in,
+  // hold on the spinner so we don't flash the auth page for a fraction of a second.
+  const hadSession = typeof window !== "undefined" && !!localStorage.getItem("fsl_had_session");
+
+  if (isLoading || (hadSession && !user && isLoading)) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="h-screen w-screen flex items-center justify-center caribbean-bg">
+        <Loader2 className="w-8 h-8 animate-spin text-white/70" />
       </div>
     );
+  }
+
+  // Once confirmed logged in, keep the hint fresh
+  if (user && typeof window !== "undefined") {
+    localStorage.setItem("fsl_had_session", "1");
   }
 
   if (!user) {
