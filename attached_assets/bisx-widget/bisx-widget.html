@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BISX Price Widget</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f0f3fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .ticker-container {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
+      overflow: hidden;
+      width: 100%;
+      max-width: 760px;
+    }
+
+    .ticker-header {
+      background: #0A1F44;
+      color: #fff;
+      padding: 14px 22px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    .exchange-badge {
+      background: #C9A84C;
+      color: #0A1F44;
+      padding: 3px 9px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .header-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      background: #22c55e;
+      border-radius: 50%;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.25; }
+    }
+
+    .live-label {
+      font-size: 11px;
+      color: #86efac;
+      font-weight: 600;
+    }
+
+    .ticker-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .ticker-card {
+      padding: 20px 22px;
+      border-right: 1px solid #eef1f8;
+      transition: background 0.15s;
+      cursor: default;
+    }
+
+    .ticker-card:last-child {
+      border-right: none;
+    }
+
+    .ticker-card:hover {
+      background: #f6f9ff;
+    }
+
+    .ticker-symbol {
+      font-size: 20px;
+      font-weight: 800;
+      color: #0A1F44;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ticker-name {
+      font-size: 11px;
+      color: #8a96b3;
+      margin: 3px 0 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ticker-price {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0A1F44;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ticker-price .currency {
+      font-size: 13px;
+      color: #8a96b3;
+      font-weight: 400;
+      margin-right: 2px;
+    }
+
+    .ticker-change {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 8px;
+      padding: 4px 9px;
+      border-radius: 5px;
+    }
+
+    .ticker-change.up   { background: #dcfce7; color: #16a34a; }
+    .ticker-change.down { background: #fee2e2; color: #dc2626; }
+    .ticker-change.flat { background: #f1f5f9; color: #64748b; }
+
+    .ticker-meta {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #b0b8cc;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .ticker-footer {
+      background: #f8faff;
+      border-top: 1px solid #eef1f8;
+      padding: 10px 22px;
+      font-size: 11px;
+      color: #8a96b3;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .ticker-footer a {
+      color: #C9A84C;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .ticker-footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 540px) {
+      .ticker-grid { grid-template-columns: 1fr; }
+      .ticker-card { border-right: none; border-bottom: 1px solid #eef1f8; }
+      .ticker-card:last-child { border-bottom: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="ticker-container">
+
+  <div class="ticker-header">
+    <span class="exchange-badge">BISX</span>
+    Bahamas International Securities Exchange
+    <div class="header-right">
+      <span class="live-dot"></span>
+      <span class="live-label">End of Day</span>
+    </div>
+  </div>
+
+  <div class="ticker-grid" id="tickerGrid"></div>
+
+  <div class="ticker-footer">
+    <span>Prices in BSD · Updated after market close (Mon–Fri, after 3 pm EST)</span>
+    <a href="https://www.bisxbahamas.com/price-sheet/" target="_blank" rel="noopener noreferrer">
+      Full price sheet →
+    </a>
+  </div>
+
+</div>
+
+<script>
+  /**
+   * BISX Price Widget
+   * -----------------
+   * BISX does not publish a public API. Update the values below manually
+   * after each trading session from: https://www.bisxbahamas.com/price-sheet/
+   *
+   * Fields per stock:
+   *   symbol    — BISX ticker symbol
+   *   name      — Full company name
+   *   price     — Last traded price (BSD)
+   *   change    — Price change from prior close (positive or negative)
+   *   changePct — Percentage change from prior close
+   *   open      — Opening price
+   *   high      — Day high
+   *   low       — Day low
+   *   vol       — Volume traded (as a formatted string, e.g. "12,400")
+   */
+  const stocks = [
+    {
+      symbol:    "CBL",
+      name:      "Commonwealth Bank Ltd.",
+      price:     17.00,
+      change:    +0.25,
+      changePct: +1.49,
+      open:      16.75,
+      high:      17.10,
+      low:       16.75,
+      vol:       "8,200"
+    },
+    {
+      symbol:    "FCL",
+      name:      "FOCOL Holdings Ltd.",
+      price:     11.50,
+      change:    -0.10,
+      changePct: -0.86,
+      open:      11.60,
+      high:      11.65,
+      low:       11.48,
+      vol:       "3,500"
+    },
+    {
+      symbol:    "CAB",
+      name:      "Cable Bahamas Ltd.",
+      price:     4.10,
+      change:    0.00,
+      changePct: 0.00,
+      open:      4.10,
+      high:      4.15,
+      low:       4.08,
+      vol:       "1,100"
+    },
+    {
+      symbol:    "DHS",
+      name:      "Doctors Hospital Health System",
+      price:     10.25,
+      change:    +0.05,
+      changePct: +0.49,
+      open:      10.20,
+      high:      10.30,
+      low:       10.18,
+      vol:       "600"
+    },
+    {
+      symbol:    "JSJ",
+      name:      "J.S. Johnson & Company Ltd.",
+      price:     13.75,
+      change:    -0.25,
+      changePct: -1.79,
+      open:      14.00,
+      high:      14.00,
+      low:       13.70,
+      vol:       "400"
+    },
+    {
+      symbol:    "CHB",
+      name:      "Colina Holdings (Bahamas) Ltd.",
+      price:     7.75,
+      change:    +0.10,
+      changePct: +1.31,
+      open:      7.65,
+      high:      7.80,
+      low:       7.65,
+      vol:       "950"
+    }
+  ];
+
+  function renderTickers() {
+    const grid = document.getElementById("tickerGrid");
+    grid.style.gridTemplateColumns = stocks.length <= 3
+      ? `repeat(${stocks.length}, 1fr)`
+      : "repeat(3, 1fr)";
+
+    grid.innerHTML = stocks.map((s, idx) => {
+      const dir   = s.change > 0 ? "up" : s.change < 0 ? "down" : "flat";
+      const arrow = s.change > 0 ? "▲" : s.change < 0 ? "▼" : "—";
+      const sign  = s.change > 0 ? "+" : "";
+      const isLastInRow  = (idx + 1) % 3 === 0;
+      const borderStyle  = isLastInRow ? "border-right: none;" : "";
+      return `
+        <div class="ticker-card" style="${borderStyle}">
+          <div class="ticker-symbol">${s.symbol}</div>
+          <div class="ticker-name">${s.name}</div>
+          <div class="ticker-price">
+            <span class="currency">BSD</span>${s.price.toFixed(2)}
+          </div>
+          <div class="ticker-change ${dir}">
+            ${arrow}&nbsp;${sign}${s.change.toFixed(2)} (${sign}${s.changePct.toFixed(2)}%)
+          </div>
+          <div class="ticker-meta">
+            <span>O: ${s.open.toFixed(2)} &nbsp;·&nbsp; H: ${s.high.toFixed(2)} &nbsp;·&nbsp; L: ${s.low.toFixed(2)}</span>
+            <span>Vol: ${s.vol}</span>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  renderTickers();
+</script>
+
+</body>
+</html>
