@@ -6,7 +6,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import {
   BookOpen, Plus, Loader2, Eye, EyeOff, ChevronDown, ChevronUp,
-  GraduationCap, Clock, Tag, Target, Trash2, Pencil, Minus
+  GraduationCap, Clock, Tag, Target, Trash2, Pencil, Minus,
+  PlayCircle, ArrowLeft, CheckCircle2, XCircle, ListChecks,
+  Video, X, Star
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
@@ -701,12 +703,389 @@ function DeleteConfirmDialog({ lesson, onClose }: { lesson: LessonPlan; onClose:
   );
 }
 
+// ── Video helpers (mirrors Lessons.tsx) ─────────────────────────────────────
+const HTML5_VIDEO_EXTS = [".mp4", ".webm", ".ogg"];
+
+function getYouTubeEmbedUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (u.hostname === "youtu.be") {
+      const id = u.pathname.slice(1).split("?")[0];
+      const start = u.searchParams.get("t") || u.searchParams.get("start");
+      return `https://www.youtube.com/embed/${id}${start ? `?start=${start}` : ""}`;
+    }
+    if (u.hostname.includes("youtube.com")) {
+      const id = u.searchParams.get("v");
+      if (id) {
+        const start = u.searchParams.get("t") || u.searchParams.get("start");
+        return `https://www.youtube.com/embed/${id}${start ? `?start=${start}` : ""}`;
+      }
+      if (u.pathname.startsWith("/embed/")) return url;
+    }
+  } catch { /* not a URL */ }
+  return null;
+}
+
+function PreviewVideoPlayer({ url }: { url: string | null | undefined }) {
+  if (!url) return null;
+  if (url === "coming_soon") {
+    return (
+      <div className="flex items-center gap-3 rounded-2xl border bg-muted/50 p-4">
+        <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
+          <Video className="w-5 h-5 text-violet-500" />
+        </div>
+        <div>
+          <p className="font-bold text-sm">Video Coming Soon</p>
+          <p className="text-xs text-muted-foreground mt-0.5">A video for this lesson will be available shortly.</p>
+        </div>
+      </div>
+    );
+  }
+  const embedUrl = getYouTubeEmbedUrl(url);
+  if (embedUrl) {
+    return (
+      <div className="rounded-2xl overflow-hidden border border-border">
+        <div className="aspect-video w-full">
+          <iframe
+            src={embedUrl}
+            title="Lesson Video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="w-full h-full"
+          />
+        </div>
+      </div>
+    );
+  }
+  const isHtml5 = HTML5_VIDEO_EXTS.some(ext => url.toLowerCase().endsWith(ext));
+  if (isHtml5) {
+    return (
+      <div className="rounded-2xl overflow-hidden border border-border">
+        <video controls className="w-full">
+          <source src={url} />
+          Your browser does not support video playback.
+        </video>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border bg-muted/50 p-4">
+      <div className="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center shrink-0">
+        <Video className="w-5 h-5 text-teal-500" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-bold text-sm">Lesson Video</p>
+        <p className="text-xs text-muted-foreground mt-0.5 truncate">{url}</p>
+      </div>
+      <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-teal-600 hover:text-teal-700 shrink-0">Open →</a>
+    </div>
+  );
+}
+
+// ── Lesson Preview Modal ─────────────────────────────────────────────────────
+type PreviewLesson = LessonPlan & {
+  questions: {
+    id: string; lesson_id: string; question: string;
+    option_a: string; option_b: string; option_c: string; option_d: string;
+    correct_answer: string; order_index: number;
+  }[];
+};
+
+type PreviewPage = "reading" | "quiz" | "results";
+const OPTS = ["option_a", "option_b", "option_c", "option_d"] as const;
+const LETTERS = ["A", "B", "C", "D"];
+
+function LessonPreviewModal({ lesson, onClose }: { lesson: LessonPlan; onClose: () => void }) {
+  const [previewLesson, setPreviewLesson] = useState<PreviewLesson | null>(null);
+  const [loadError, setLoadError] = useState("");
+  const [page, setPage] = useState<PreviewPage>("reading");
+  const [currentQ, setCurrentQ] = useState(0);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [showResult, setShowResult] = useState(false);
+  const [answers, setAnswers] = useState<string[]>([]);
+  const [finalCorrect, setFinalCorrect] = useState(0);
+
+  useEffect(() => {
+    fetch(`/api/org-admin/lessons/${lesson.id}/preview`, { credentials: "include" })
+      .then(r => r.json())
+      .then(data => {
+        if (data.message) setLoadError(data.message);
+        else setPreviewLesson(data as PreviewLesson);
+      })
+      .catch(() => setLoadError("Failed to load lesson preview."));
+  }, [lesson.id]);
+
+  const handleAnswer = (letter: string) => {
+    if (showResult || !previewLesson) return;
+    setSelected(letter);
+    setShowResult(true);
+    const newAnswers = [...answers, letter];
+    setAnswers(newAnswers);
+
+    setTimeout(() => {
+      if (currentQ < previewLesson.questions.length - 1) {
+        setCurrentQ(i => i + 1);
+        setSelected(null);
+        setShowResult(false);
+      } else {
+        const correct = newAnswers.filter((a, i) => a === previewLesson.questions[i]?.correct_answer).length;
+        setFinalCorrect(correct);
+        setPage("results");
+      }
+    }, 1400);
+  };
+
+  const resetQuiz = () => {
+    setCurrentQ(0); setSelected(null); setShowResult(false);
+    setAnswers([]); setFinalCorrect(0); setPage("reading");
+  };
+
+  const pct = previewLesson ? Math.round((finalCorrect / (previewLesson.questions.length || 1)) * 100) : 0;
+  const currentQuestion = previewLesson?.questions[currentQ];
+  const correctCount = answers.filter((a, i) => a === previewLesson?.questions[i]?.correct_answer).length;
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-background" data-testid="modal-lesson-preview">
+      {/* Preview banner */}
+      <div className="shrink-0 bg-amber-500 text-white px-4 py-2 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm font-bold">
+          <PlayCircle className="w-4 h-4" />
+          Preview Mode — this is how students see this lesson. Quiz results are not saved.
+        </div>
+        <button
+          onClick={onClose}
+          className="p-1.5 rounded-lg hover:bg-amber-600 transition-colors"
+          data-testid="button-close-preview"
+          aria-label="Close preview"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Scrollable content area — caribbean-bg to match student experience */}
+      <div className="flex-1 overflow-y-auto caribbean-bg">
+        <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+
+          {!previewLesson && !loadError && (
+            <div className="flex justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-white/70" />
+            </div>
+          )}
+
+          {loadError && (
+            <div className="text-center py-20 text-white/80">
+              <p className="font-bold text-lg">Could not load preview</p>
+              <p className="text-sm mt-1">{loadError}</p>
+            </div>
+          )}
+
+          {/* ── Reading view ── */}
+          {previewLesson && page === "reading" && (
+            <>
+              <div>
+                <h1 className="font-display text-2xl font-bold text-white">{previewLesson.title}</h1>
+                <div className="flex items-center gap-3 text-white/75 text-sm flex-wrap mt-1">
+                  {previewLesson.duration && <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{previewLesson.duration}</span>}
+                  {previewLesson.instructor && <span>{previewLesson.instructor}</span>}
+                  {previewLesson.subject && <span>· {previewLesson.subject}</span>}
+                </div>
+              </div>
+
+              <PreviewVideoPlayer url={previewLesson.video_url} />
+
+              {previewLesson.objectives.length > 0 && (
+                <Card className="glass-card rounded-glass border-0">
+                  <CardContent className="p-6">
+                    <h2 className="font-display font-bold text-lg flex items-center gap-2 mb-4">
+                      <div className="w-8 h-8 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                        <Target className="w-4 h-4 text-violet-400" />
+                      </div>
+                      Learning Objectives
+                    </h2>
+                    <ul className="space-y-2">
+                      {previewLesson.objectives.map((obj, i) => (
+                        <li key={i} className="flex items-start gap-3 text-sm">
+                          <div className="w-6 h-6 rounded-full bg-teal-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                            <span className="text-teal-400 font-bold text-xs">{i + 1}</span>
+                          </div>
+                          <span className="text-foreground">{obj}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {previewLesson.content_sections.map((section, i) => (
+                <Card key={i} className="glass-card rounded-glass border-0">
+                  <CardContent className="p-6">
+                    <h2 className="font-display font-bold text-lg flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                        <BookOpen className="w-4 h-4 text-amber-400" />
+                      </div>
+                      {section.heading}
+                    </h2>
+                    <p className="text-foreground text-sm leading-relaxed mb-3">{section.body}</p>
+                    {section.examples && section.examples.length > 0 && (
+                      <div>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
+                          <ListChecks className="w-3.5 h-3.5" /> Examples
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {section.examples.map((ex, j) => (
+                            <span key={j} className="text-sm bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30 px-3 py-1.5 rounded-xl font-medium">{ex}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+
+              {previewLesson.questions.length > 0 ? (
+                <Card className="glass-card-coral rounded-glass border-0">
+                  <CardContent className="p-6 flex items-center justify-between gap-4">
+                    <div>
+                      <h3 className="font-display font-bold text-lg text-foreground">Ready to test yourself?</h3>
+                      <p className="text-sm text-muted-foreground mt-0.5">{previewLesson.questions.length} questions · Preview only — no XP saved</p>
+                    </div>
+                    <Button
+                      onClick={() => { setPage("quiz"); setCurrentQ(0); setSelected(null); setShowResult(false); setAnswers([]); }}
+                      className="rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold px-6 shadow-lg shrink-0"
+                      data-testid="button-preview-start-quiz"
+                    >
+                      Start Quiz
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="glass-card rounded-glass border-0">
+                  <CardContent className="p-5 text-center text-muted-foreground text-sm">No quiz questions added to this lesson yet.</CardContent>
+                </Card>
+              )}
+            </>
+          )}
+
+          {/* ── Quiz view ── */}
+          {previewLesson && page === "quiz" && currentQuestion && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="icon" className="rounded-2xl border-2 border-white/20 text-white hover:bg-white/10" onClick={() => setPage("reading")} data-testid="button-preview-back-reading">
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-white/85">Question {currentQ + 1} / {previewLesson.questions.length}</span>
+                    <span className="text-sm font-bold text-amber-400 flex items-center gap-1">
+                      <Star className="w-4 h-4" /> {correctCount} correct
+                    </span>
+                  </div>
+                  <div className="h-2 bg-white/20 rounded-full mt-2 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full transition-all duration-500"
+                      style={{ width: `${((currentQ + 1) / previewLesson.questions.length) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Card className="glass-card rounded-glass border-0">
+                <CardContent className="p-6 lg:p-8">
+                  <h2 className="text-xl font-bold leading-relaxed text-foreground">{currentQuestion.question}</h2>
+                </CardContent>
+              </Card>
+
+              <div className="grid gap-3">
+                {OPTS.map((opt, i) => {
+                  const letter = LETTERS[i];
+                  const optionText = currentQuestion[opt];
+                  const isSelected = selected === letter;
+                  const isCorrect = letter === currentQuestion.correct_answer;
+                  let cls = "border-border hover:border-teal-400 hover:scale-[1.01]";
+                  if (showResult) {
+                    if (isCorrect) cls = "border-green-500 bg-green-500/10 scale-[1.01]";
+                    else if (isSelected) cls = "border-red-500 bg-red-500/10";
+                    else cls = "border-border/50 opacity-50";
+                  }
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => handleAnswer(letter)}
+                      disabled={showResult}
+                      className={`w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center gap-3 glass-card ${cls}`}
+                      data-testid={`preview-option-${i}`}
+                    >
+                      <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm transition-colors ${
+                        showResult && isCorrect ? "bg-green-500 text-white" :
+                        showResult && isSelected ? "bg-red-500 text-white" :
+                        "bg-muted text-foreground"
+                      }`}>
+                        {showResult && isCorrect ? <CheckCircle2 className="w-5 h-5" /> :
+                         showResult && isSelected ? <XCircle className="w-5 h-5" /> : letter}
+                      </span>
+                      <span className="font-medium text-sm leading-snug text-foreground">{optionText}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── Results view ── */}
+          {previewLesson && page === "results" && (
+            <div className="space-y-6 text-center">
+              <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto shadow-xl text-5xl">
+                {pct >= 80 ? "🏆" : pct >= 50 ? "⭐" : "💪"}
+              </div>
+              <div className="text-white">
+                <h1 className="font-display text-3xl font-bold">Quiz Complete!</h1>
+                <p className="text-white/85 mt-2">{previewLesson.title}</p>
+                <p className="text-amber-300 text-sm mt-1 font-semibold">Preview only — no XP or progress was saved</p>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <Card className="glass-card rounded-glass border-0">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-teal-400">{finalCorrect}/{previewLesson.questions.length}</p>
+                    <p className="text-xs font-bold text-muted-foreground mt-1">Correct</p>
+                  </CardContent>
+                </Card>
+                <Card className="glass-card rounded-glass border-0">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-amber-400">{pct}%</p>
+                    <p className="text-xs font-bold text-muted-foreground mt-1">Score</p>
+                  </CardContent>
+                </Card>
+                <Card className="glass-card rounded-glass border-0">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-violet-400">{previewLesson.questions.length}</p>
+                    <p className="text-xs font-bold text-muted-foreground mt-1">Questions</p>
+                  </CardContent>
+                </Card>
+              </div>
+              <div className="flex gap-3 justify-center">
+                <Button variant="outline" onClick={() => setPage("reading")} className="rounded-2xl border-white/30 text-white hover:bg-white/10">
+                  <BookOpen className="w-4 h-4 mr-2" /> Review Lesson
+                </Button>
+                <Button onClick={resetQuiz} className="rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold">
+                  Retake Quiz
+                </Button>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function LessonCard({ lesson }: { lesson: LessonPlan }) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [expanded, setExpanded] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const publishMutation = useMutation({
     mutationFn: (isPublished: boolean) =>
@@ -730,6 +1109,7 @@ function LessonCard({ lesson }: { lesson: LessonPlan }) {
 
   return (
     <>
+      {showPreview && <LessonPreviewModal lesson={lesson} onClose={() => setShowPreview(false)} />}
       {showEdit && <EditLessonModal lesson={lesson} onClose={() => setShowEdit(false)} />}
       {showDelete && <DeleteConfirmDialog lesson={lesson} onClose={() => setShowDelete(false)} />}
       <Card
@@ -776,6 +1156,14 @@ function LessonCard({ lesson }: { lesson: LessonPlan }) {
                 {publishMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> :
                   lesson.is_published ? <><EyeOff className="w-3 h-3" /> Unpublish</> : <><Eye className="w-3 h-3" /> Publish</>}
               </Button>
+              <button
+                onClick={() => setShowPreview(true)}
+                className="p-1.5 rounded-xl text-muted-foreground hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-950/20 transition-all"
+                title="Preview as student"
+                data-testid={`button-preview-lesson-${lesson.id}`}
+              >
+                <PlayCircle className="w-4 h-4" />
+              </button>
               <button
                 onClick={() => setShowEdit(true)}
                 className="p-1.5 rounded-xl text-muted-foreground hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-all"

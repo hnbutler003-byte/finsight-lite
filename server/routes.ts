@@ -4214,6 +4214,20 @@ If the user asks about FinSight Lite features, you can mention:
     }
   });
 
+  app.get("/api/org-admin/lessons/:id/preview", isOrgAdmin, async (req: any, res) => {
+    try {
+      const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+      if (!admin) return res.status(401).json({ message: "Not found" });
+      const lesson = await getLessonWithQuestions(req.params.id);
+      if (!lesson || lesson.org_id !== admin.orgId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      res.json(lesson);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
   app.post("/api/org-admin/lessons", isOrgAdmin, async (req: any, res) => {
     try {
       const admin = await storage.getOrgAdminById(req.session.orgAdminId);
