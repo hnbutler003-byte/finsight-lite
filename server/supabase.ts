@@ -1025,12 +1025,12 @@ const REGIONAL_CONTENT_DATA: RegionRecord[] = [
 export async function seedRegionalContent(): Promise<void> {
   if (!supabase) return;
   try {
-    const { data: existing } = await supabase.from("regional_content").select("region_code").limit(1);
-    if (existing && existing.length > 0) { console.log("[Supabase] ✓ Regional content already seeded."); return; }
+    let upserted = 0;
     for (const region of REGIONAL_CONTENT_DATA) {
-      await supabase.from("regional_content").upsert(region, { onConflict: "region_code" });
+      const { error } = await supabase.from("regional_content").upsert(region, { onConflict: "region_code" });
+      if (!error) upserted++;
     }
-    console.log("[Supabase] ✓ Seeded regional content.");
+    if (upserted > 0) console.log(`[Supabase] ✓ Upserted ${upserted} regional content row(s).`);
   } catch (e: any) { console.error("[Supabase] seedRegionalContent:", e.message); }
 }
 
@@ -1100,12 +1100,12 @@ const GAME_CONTENT_DATA: Array<{ game_id: string; item_type: string; payload: Re
 export async function seedGameContent(): Promise<void> {
   if (!supabase) return;
   try {
-    const { data: existing } = await supabase.from("game_content").select("id").limit(1);
-    if (existing && existing.length > 0) { console.log("[Supabase] ✓ Game content already seeded."); return; }
+    let upserted = 0;
     for (const item of GAME_CONTENT_DATA) {
-      await supabase.from("game_content").upsert(item, { onConflict: "game_id,item_type,display_order" });
+      const { error } = await supabase.from("game_content").upsert(item, { onConflict: "game_id,item_type,display_order" });
+      if (!error) upserted++;
     }
-    console.log("[Supabase] ✓ Seeded game content.");
+    if (upserted > 0) console.log(`[Supabase] ✓ Upserted ${upserted} game content row(s).`);
   } catch (e: any) { console.error("[Supabase] seedGameContent:", e.message); }
 }
 
