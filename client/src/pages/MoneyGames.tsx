@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft, ShoppingCart, Zap, Target, Plus, Minus, CheckCircle2,
   XCircle, TrendingUp, TrendingDown, Minus as FlatIcon,
@@ -90,81 +91,19 @@ const GAMES = [
   },
 ];
 
-const GROCERY_ITEMS = [
-  { name: "White Rice (5 lb)", price: 6.50, emoji: "🍚" },
-  { name: "Whole Wheat Bread", price: 4.25, emoji: "🍞" },
-  { name: "Chicken Thighs (3 lb)", price: 12.00, emoji: "🍗" },
-  { name: "Fresh Fish (1 lb)", price: 9.50, emoji: "🐟" },
-  { name: "Eggs (dozen)", price: 5.00, emoji: "🥚" },
-  { name: "Milk (1 gal)", price: 6.75, emoji: "🥛" },
-  { name: "Cheddar Cheese", price: 5.50, emoji: "🧀" },
-  { name: "Bananas (bunch)", price: 2.50, emoji: "🍌" },
-  { name: "Orange Juice (64 oz)", price: 7.00, emoji: "🍊" },
-  { name: "Canned Corned Beef", price: 4.50, emoji: "🥫" },
-  { name: "Peas & Rice Mix", price: 3.75, emoji: "🫘" },
-  { name: "Cooking Oil (32 oz)", price: 5.25, emoji: "🫗" },
-  { name: "Sugar (2 lb)", price: 3.00, emoji: "🍬" },
-  { name: "Grits / Oatmeal", price: 3.50, emoji: "🥣" },
-  { name: "Crackers (box)", price: 4.00, emoji: "🍘" },
-  { name: "Peanut Butter", price: 5.00, emoji: "🥜" },
-  { name: "Frozen Vegetables", price: 4.50, emoji: "🥦" },
-  { name: "Toilet Paper (4 roll)", price: 4.75, emoji: "🧻" },
-  { name: "Dish Soap", price: 3.25, emoji: "🧴" },
-  { name: "Snack Chips", price: 3.50, emoji: "🍿" },
-];
-
-const SPEED_STOCKS = [
-  { name: "Bahamas Tourism Holdings", ticker: "BTH" },
-  { name: "Caribbean Cement Co.", ticker: "CCC" },
-  { name: "Island Telecom Ltd.", ticker: "ITL" },
-  { name: "Junkanoo Media Group", ticker: "JMG" },
-  { name: "Nassau Port Authority", ticker: "NPA" },
-  { name: "Reef Energy Corp.", ticker: "REC" },
-  { name: "Tropical Grocers Inc.", ticker: "TGI" },
-  { name: "Conch Republic Bank", ticker: "CRB" },
-  { name: "Palm Breeze Airlines", ticker: "PBA" },
-  { name: "Blue Lagoon Resorts", ticker: "BLR" },
-];
-
-const SPEED_NEWS = [
-  { text: "Tourism is booming this season in The Bahamas!", trend: "up" as const },
-  { text: "Hurricane season warning issued for the Caribbean.", trend: "down" as const },
-  { text: "New cruise port opens in Nassau — record visitors expected!", trend: "up" as const },
-  { text: "Global oil prices rising, fuel costs spike across islands.", trend: "down" as const },
-  { text: "Caribbean tech startup scene grows rapidly.", trend: "up" as const },
-  { text: "Fishing industry reports record catch this quarter.", trend: "up" as const },
-  { text: "Construction slowdown due to material shortages.", trend: "down" as const },
-  { text: "International investors eye Caribbean real estate.", trend: "up" as const },
-  { text: "Inflation concerns grow across the region.", trend: "down" as const },
-  { text: "Renewable energy project launched on multiple islands.", trend: "up" as const },
-  { text: "Supply chain delays impact local retailers.", trend: "down" as const },
-  { text: "Major hotel chain announces Caribbean expansion.", trend: "up" as const },
-  { text: "Regional bank reports lower profits this quarter.", trend: "down" as const },
-  { text: "Local farmers market program boosts food production.", trend: "up" as const },
-  { text: "Water shortage concerns in southern islands.", trend: "down" as const },
-];
-
-const SAVINGS_GOALS = [
-  { name: "New Phone", amount: 800, emoji: "📱" },
-  { name: "Gaming Console", amount: 500, emoji: "🎮" },
-  { name: "Laptop for School", amount: 1200, emoji: "💻" },
-  { name: "Sneakers", amount: 200, emoji: "👟" },
-  { name: "Island Trip with Friends", amount: 600, emoji: "🏝️" },
-  { name: "Bicycle", amount: 350, emoji: "🚲" },
-];
-
-const TRADEOFF_SCENARIOS = [
-  { text: "Skip buying a snack at school every day", weeklySaving: 20, emoji: "🍫" },
-  { text: "Do extra chores around the house for allowance", weeklySaving: 15, emoji: "🧹" },
-  { text: "Skip the movie night out once a month", weeklySaving: 8, emoji: "🎬" },
-  { text: "Make lunch at home instead of buying it", weeklySaving: 25, emoji: "🥪" },
-  { text: "Sell old clothes or toys you don't use", weeklySaving: 10, emoji: "👕" },
-  { text: "Walk or bike instead of taking a taxi", weeklySaving: 12, emoji: "🚶" },
-  { text: "Skip buying a new game this month", weeklySaving: 5, emoji: "🎯" },
-];
+type GroceryItem = { name: string; price: number; emoji: string };
+type SpeedStock = { name: string; ticker: string };
+type SpeedNews = { text: string; trend: "up" | "down" };
+type SavingsGoal = { name: string; amount: number; emoji: string };
+type Tradeoff = { text: string; weeklySaving: number; emoji: string };
 
 function GroceryGame({ currency }: { currency: string }) {
   const sym = getSymbol(currency);
+  const { data: groceryData } = useQuery<{ item: GroceryItem[] }>({
+    queryKey: ["/api/game-content/grocery"],
+    staleTime: Infinity,
+  });
+  const GROCERY_ITEMS: GroceryItem[] = groceryData?.item ?? [];
   const [budget, setBudget] = useState(0);
   const [cart, setCart] = useState<Record<number, number>>({});
   const [checkedOut, setCheckedOut] = useState(false);
@@ -326,12 +265,18 @@ function GroceryGame({ currency }: { currency: string }) {
 
 function SpeedInvestorGame({ currency }: { currency: string }) {
   const sym = getSymbol(currency);
+  const { data: speedData } = useQuery<{ stock: SpeedStock[]; news: SpeedNews[] }>({
+    queryKey: ["/api/game-content/speed"],
+    staleTime: Infinity,
+  });
+  const SPEED_STOCKS: SpeedStock[] = speedData?.stock ?? [];
+  const SPEED_NEWS: SpeedNews[] = speedData?.news ?? [];
   const [gameState, setGameState] = useState<"instructions" | "countdown" | "playing" | "reveal" | "end">("instructions");
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
   const [balance, setBalance] = useState(1000);
   const [countdownNum, setCountdownNum] = useState(3);
-  const [rounds, setRounds] = useState<Array<{ stock: typeof SPEED_STOCKS[0]; news: typeof SPEED_NEWS[0]; price: number; actualTrend: "up" | "down"; choice?: "buy" | "hold" | "sell"; correct?: boolean }>>([]);
+  const [rounds, setRounds] = useState<Array<{ stock: SpeedStock; news: SpeedNews; price: number; actualTrend: "up" | "down"; choice?: "buy" | "hold" | "sell"; correct?: boolean }>>([]);
   const [currentChoice, setCurrentChoice] = useState<"buy" | "hold" | "sell" | null>(null);
   const [roundTimer, setRoundTimer] = useState(10);
 
@@ -673,21 +618,27 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
 
 function SavingsGoalGame({ currency }: { currency: string }) {
   const sym = getSymbol(currency);
+  const { data: savingsData } = useQuery<{ goal: SavingsGoal[]; tradeoff: Tradeoff[] }>({
+    queryKey: ["/api/game-content/savings"],
+    staleTime: Infinity,
+  });
+  const SAVINGS_GOALS: SavingsGoal[] = savingsData?.goal ?? [];
+  const TRADEOFF_SCENARIOS: Tradeoff[] = savingsData?.tradeoff ?? [];
   const [step, setStep] = useState<"pick" | "calculate" | "quiz" | "result">("pick");
-  const [selectedGoal, setSelectedGoal] = useState<typeof SAVINGS_GOALS[0] | null>(null);
+  const [selectedGoal, setSelectedGoal] = useState<SavingsGoal | null>(null);
   const [customAmount, setCustomAmount] = useState("");
   const [customName, setCustomName] = useState("");
   const [months, setMonths] = useState(3);
   const [quizIndex, setQuizIndex] = useState(0);
   const [acceptedSavings, setAcceptedSavings] = useState<number[]>([]);
-  const [scenarios, setScenarios] = useState<typeof TRADEOFF_SCENARIOS>([]);
+  const [scenarios, setScenarios] = useState<Tradeoff[]>([]);
 
   const goalAmount = selectedGoal?.amount || Number(customAmount) || 0;
   const goalName = selectedGoal?.name || customName || "your goal";
   const weeklyNeeded = goalAmount / (months * 4.33);
   const monthlyNeeded = goalAmount / months;
 
-  const startCalculation = (goal: typeof SAVINGS_GOALS[0] | null) => {
+  const startCalculation = (goal: SavingsGoal | null) => {
     setSelectedGoal(goal);
     setStep("calculate");
   };

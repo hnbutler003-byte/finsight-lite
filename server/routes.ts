@@ -99,6 +99,13 @@ import {
   enrollStudentInOrg,
   getPublishedLessonsByEnv,
   type Organization,
+  getStaticModulesWithLessons,
+  getRegionalContent,
+  getGameContent,
+  initStaticContentTables,
+  seedStaticModules,
+  seedRegionalContent,
+  seedGameContent,
 } from "./supabase";
 
 const upload = multer({ 
@@ -2798,6 +2805,10 @@ If the user asks about FinSight Lite features, you can mention:
   initSupabaseTables()
     .then(() => trimOrgNamesInSupabase())
     .then(() => seedFinancialAcademyLesson())
+    .then(() => initStaticContentTables())
+    .then(() => seedStaticModules())
+    .then(() => seedRegionalContent())
+    .then(() => seedGameContent())
     .catch(e => console.error("[Supabase] Init error:", e));
 
   app.get("/api/supabase/status", async (_req, res) => {
@@ -3133,6 +3144,57 @@ If the user asks about FinSight Lite features, you can mention:
       res.json({ success: true });
     } catch (e: any) {
       res.status(400).json({ message: e.message });
+    }
+  });
+
+  // === STATIC CONTENT API ===
+
+  app.get("/api/lessons/static", async (_req, res) => {
+    try {
+      const modules = await getStaticModulesWithLessons();
+      res.json(modules);
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  app.get("/api/regional-content/:regionCode", async (req, res) => {
+    try {
+      const { regionCode } = req.params;
+      const region = await getRegionalContent(regionCode.toUpperCase());
+      if (!region) return res.status(404).json({ message: "Region not found" });
+      res.json({
+        country: region.country,
+        currency: region.currency,
+        currencyCode: region.currency_code,
+        symbol: region.symbol,
+        mainBank: region.main_bank,
+        exchange: region.exchange_name,
+        exchangeAbbr: region.exchange_abbr,
+        exampleCompany1: region.example_company1,
+        exampleCompany1Ticker: region.example_company1_ticker,
+        exampleCompany1Desc: region.example_company1_desc,
+        exampleCompany2: region.example_company2,
+        exampleCompany2Ticker: region.example_company2_ticker,
+        exampleCompany2Desc: region.example_company2_desc,
+        centralBank: region.central_bank,
+        bondName: region.bond_name,
+        bondRate: region.bond_rate,
+        pegged: region.pegged,
+        pegNote: region.peg_note,
+      });
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  app.get("/api/game-content/:gameId", async (req, res) => {
+    try {
+      const { gameId } = req.params;
+      const content = await getGameContent(gameId);
+      res.json(content);
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
     }
   });
 

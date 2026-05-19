@@ -68,7 +68,67 @@ type PageState = "list" | "reading" | "quiz" | "results";
 const OPTIONS: ("option_a" | "option_b" | "option_c" | "option_d")[] = ["option_a", "option_b", "option_c", "option_d"];
 const LETTERS = ["A", "B", "C", "D"];
 
-// ─── OECD-Aligned Static Modules ─────────────────────────────────────────────
+// ─── Static Module Types & Visual Config (content loaded from API) ────────────
+
+type StaticLessonFromAPI = {
+  id: string;
+  static_lesson_id: string;
+  title: string;
+  description: string;
+  duration: string | null;
+  video_url: string | null;
+  objectives: string[];
+  content_sections: ContentSection[];
+  questions: QuizQuestion[];
+};
+
+type StaticModuleFromAPI = {
+  id: string;
+  title: string;
+  subtitle: string;
+  objective: string;
+  display_order: number;
+  lessons: StaticLessonFromAPI[];
+};
+
+type StaticModuleVisual = {
+  icon: React.ReactNode;
+  lessonIcon: (staticId: string) => React.ReactNode;
+  colorFrom: string;
+  colorTo: string;
+  textColor: string;
+  bgMuted: string;
+  borderColor: string;
+};
+
+type StaticModuleUI = StaticModuleFromAPI & StaticModuleVisual;
+
+const MODULE_VISUAL_CONFIG: Record<string, StaticModuleVisual> = {
+  budgeting: {
+    icon: <Wallet className="w-6 h-6" />,
+    lessonIcon: (id) => id === "static-budget-2" ? <BarChart3 className="w-5 h-5" /> : id === "static-budget-3" ? <Lightbulb className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />,
+    colorFrom: "from-amber-500", colorTo: "to-orange-500",
+    textColor: "text-amber-400", bgMuted: "bg-amber-500/10", borderColor: "border-amber-500/30",
+  },
+  saving: {
+    icon: <PiggyBank className="w-6 h-6" />,
+    lessonIcon: (id) => id === "static-save-2" ? <Target className="w-5 h-5" /> : id === "static-save-3" ? <Star className="w-5 h-5" /> : <PiggyBank className="w-5 h-5" />,
+    colorFrom: "from-teal-500", colorTo: "to-cyan-500",
+    textColor: "text-teal-400", bgMuted: "bg-teal-500/10", borderColor: "border-teal-500/30",
+  },
+  investing: {
+    icon: <TrendingUp className="w-6 h-6" />,
+    lessonIcon: (id) => id === "static-invest-2" ? <Layers className="w-5 h-5" /> : id === "static-invest-3" ? <Award className="w-5 h-5" /> : <TrendingUp className="w-5 h-5" />,
+    colorFrom: "from-violet-500", colorTo: "to-purple-600",
+    textColor: "text-violet-400", bgMuted: "bg-violet-500/10", borderColor: "border-violet-500/30",
+  },
+};
+
+function getModuleVisual(moduleId: string): StaticModuleVisual {
+  return MODULE_VISUAL_CONFIG[moduleId] ?? MODULE_VISUAL_CONFIG.budgeting;
+}
+
+// ─── OECD-Aligned Static Modules (legacy reference — unused, tree-shaken in prod) ──
 
 type StaticLesson = {
   id: string;
@@ -96,7 +156,7 @@ type StaticModule = {
   lessons: StaticLesson[];
 };
 
-const STATIC_MODULES: StaticModule[] = [
+const _STATIC_MODULES_LEGACY: StaticModule[] = [
   {
     id: "budgeting",
     title: "Budgeting Basics",
@@ -653,12 +713,12 @@ function ModuleCard({
   completed,
   onOpenLesson,
 }: {
-  module: StaticModule;
+  module: StaticModuleUI;
   completed: string[];
-  onOpenLesson: (lesson: StaticLesson, module: StaticModule) => void;
+  onOpenLesson: (lesson: StaticLessonFromAPI, module: StaticModuleUI) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
-  const doneCount = module.lessons.filter(l => completed.includes(l.id)).length;
+  const doneCount = module.lessons.filter(l => completed.includes(l.static_lesson_id)).length;
   const pct = Math.round((doneCount / module.lessons.length) * 100);
 
   return (
@@ -715,20 +775,20 @@ function ModuleCard({
           {/* Lessons List */}
           <div className="space-y-2">
             {module.lessons.map((lesson, idx) => {
-              const isDone = completed.includes(lesson.id);
+              const isDone = completed.includes(lesson.static_lesson_id);
               return (
                 <button
-                  key={lesson.id}
+                  key={lesson.static_lesson_id}
                   onClick={() => onOpenLesson(lesson, module)}
                   className="w-full text-left p-4 rounded-xl bg-background border border-border hover:bg-muted hover:border-border transition-all group flex items-center gap-3"
-                  data-testid={`lesson-item-${lesson.id}`}
+                  data-testid={`lesson-item-${lesson.static_lesson_id}`}
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
                     isDone
                       ? "bg-green-500/20 text-green-400"
                       : `${module.bgMuted} ${module.textColor}`
                   }`}>
-                    {isDone ? <CheckCircle2 className="w-5 h-5" /> : lesson.icon}
+                    {isDone ? <CheckCircle2 className="w-5 h-5" /> : module.lessonIcon(lesson.static_lesson_id)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -739,9 +799,11 @@ function ModuleCard({
                     <p className="text-xs text-muted-foreground mt-0.5 leading-snug line-clamp-1">{lesson.description}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-xs text-muted-foreground hidden sm:flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />{lesson.duration}
-                    </span>
+                    {lesson.duration && (
+                      <span className="text-xs text-muted-foreground hidden sm:flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />{lesson.duration}
+                      </span>
+                    )}
                     <ChevronRight className={`w-4 h-4 text-muted-foreground group-hover:${module.textColor} transition-colors`} />
                   </div>
                 </button>
@@ -758,7 +820,7 @@ function ModuleCard({
             </span>
             <Button
               onClick={() => {
-                const next = module.lessons.find(l => !completed.includes(l.id)) ?? module.lessons[0];
+                const next = module.lessons.find(l => !completed.includes(l.static_lesson_id)) ?? module.lessons[0];
                 onOpenLesson(next, module);
               }}
               size="sm"
@@ -785,7 +847,7 @@ export default function Lessons() {
   })();
   const [pageState, setPageState] = useState<PageState>("list");
   const [selectedLesson, setSelectedLesson] = useState<LessonWithQuestions | null>(null);
-  const [activeModule, setActiveModule] = useState<StaticModule | null>(null);
+  const [activeModule, setActiveModule] = useState<StaticModuleUI | null>(null);
   const [currentQ, setCurrentQ] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
@@ -806,6 +868,12 @@ export default function Lessons() {
   const { data: lessons = [], isLoading } = useQuery<Lesson[]>({
     queryKey: ["/api/lessons"],
   });
+
+  const { data: staticModulesRaw = [], isLoading: staticLoading } = useQuery<StaticModuleFromAPI[]>({
+    queryKey: ["/api/lessons/static"],
+    staleTime: Infinity,
+  });
+  const staticModules: StaticModuleUI[] = staticModulesRaw.map(mod => ({ ...mod, ...getModuleVisual(mod.id) }));
 
   const markStaticDone = (lessonId: string): string[] => {
     if (completedStatic.includes(lessonId)) return completedStatic;
@@ -878,13 +946,13 @@ export default function Lessons() {
     }
   };
 
-  const openStaticLesson = (staticLesson: StaticLesson, mod: StaticModule) => {
+  const openStaticLesson = (staticLesson: StaticLessonFromAPI, mod: StaticModuleUI) => {
     const asLesson: LessonWithQuestions = {
-      id: staticLesson.id,
+      id: staticLesson.static_lesson_id,
       org_id: "static",
       title: staticLesson.title,
-      duration: staticLesson.duration,
-      video_url: staticLesson.videoUrl ?? null,
+      duration: staticLesson.duration ?? undefined,
+      video_url: staticLesson.video_url ?? null,
       objectives: staticLesson.objectives,
       content_sections: staticLesson.content_sections,
       questions: staticLesson.questions,
@@ -936,7 +1004,7 @@ export default function Lessons() {
           }
           // Detect module completion: all lessons in activeModule completed with 80%+
           const moduleComplete = activeModule
-            ? activeModule.lessons.every(l => updatedCompleted.includes(l.id))
+            ? activeModule.lessons.every(l => updatedCompleted.includes(l.static_lesson_id))
             : false;
           setQuizResults({ finalCorrect, total, xpEarned, moduleComplete });
           setPageState("results");
@@ -988,16 +1056,22 @@ export default function Lessons() {
                   <h2 className="font-display font-bold text-lg text-white">Core Curriculum</h2>
                   <span className="text-xs bg-violet-500/20 text-violet-300 border border-violet-500/30 px-2.5 py-0.5 rounded-full font-semibold">OECD-Aligned</span>
                 </div>
-                <div className="space-y-4">
-                  {STATIC_MODULES.map(mod => (
-                    <ModuleCard
-                      key={mod.id}
-                      module={mod}
-                      completed={completedStatic}
-                      onOpenLesson={openStaticLesson}
-                    />
-                  ))}
-                </div>
+                {staticLoading ? (
+                  <div className="flex justify-center py-10">
+                    <Loader2 className="w-8 h-8 animate-spin text-white/75" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {staticModules.map(mod => (
+                      <ModuleCard
+                        key={mod.id}
+                        module={mod}
+                        completed={completedStatic}
+                        onOpenLesson={openStaticLesson}
+                      />
+                    ))}
+                  </div>
+                )}
               </section>
 
               {/* ── Org / Class Lessons ── */}

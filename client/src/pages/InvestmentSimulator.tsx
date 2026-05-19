@@ -89,7 +89,7 @@ function BISXWidget() {
   );
 }
 import type { SimulatedStock, LearningModule, UserLearningProgress, PortfolioHolding, PortfolioTransaction, UserVirtualBalance } from "@shared/schema";
-import { getLocalizedModuleContent } from "@/data/learning-content";
+import { getLocalizedModuleContent, type RegionInfo } from "@/data/learning-content";
 
 const CURRENCIES = [
   { code: "BSD", name: "Bahamian Dollar", symbol: "B$" },
@@ -108,6 +108,15 @@ function getSymbol(code: string) {
   return CURRENCIES.find(c => c.code === code)?.symbol || "$";
 }
 
+const BSD_FALLBACK: RegionInfo = {
+  country: "The Bahamas", currency: "Bahamian Dollar", currencyCode: "BSD", symbol: "B$",
+  mainBank: "Commonwealth Bank", exchange: "Bahamas International Securities Exchange", exchangeAbbr: "BISX",
+  exampleCompany1: "Focol Holdings", exampleCompany1Ticker: "FCL", exampleCompany1Desc: "distributes fuel across The Bahamas",
+  exampleCompany2: "Cable Bahamas", exampleCompany2Ticker: "CAB", exampleCompany2Desc: "provides cable TV, internet, and phone services",
+  centralBank: "Central Bank of The Bahamas", bondName: "Bahamas Government Registered Stock", bondRate: "4.5%",
+  pegged: true, pegNote: "The Bahamian Dollar is pegged (locked) 1:1 to the US Dollar, so the exchange rate stays the same.",
+};
+
 export default function InvestmentSimulator() {
   const [currency, setCurrency] = useState("BSD");
   const [selectedModule, setSelectedModule] = useState<LearningModule | null>(null);
@@ -116,6 +125,16 @@ export default function InvestmentSimulator() {
   const [selectedStock, setSelectedStock] = useState<SimulatedStock | null>(null);
   const [quantity, setQuantity] = useState(1);
   const { toast } = useToast();
+
+  const { data: regionData } = useQuery<RegionInfo>({
+    queryKey: ["/api/regional-content", currency],
+    queryFn: async () => {
+      const res = await fetch(`/api/regional-content/${currency}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch regional content");
+      return res.json();
+    },
+    staleTime: Infinity,
+  });
 
   const { data: market, isLoading: marketLoading } = useQuery<SimulatedStock[]>({
     queryKey: ["/api/investments/market", currency],
@@ -295,12 +314,12 @@ export default function InvestmentSimulator() {
                     </Button>
                     <CardTitle className="text-2xl font-display">{selectedModule.title}</CardTitle>
                     <p className="text-muted-foreground">
-                      {getLocalizedModuleContent(selectedModule.slug, currency)?.description || selectedModule.description}
+                      {getLocalizedModuleContent(selectedModule.slug, regionData ?? BSD_FALLBACK)?.description || selectedModule.description}
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="prose prose-sm dark:prose-invert max-w-none">
-                      {(getLocalizedModuleContent(selectedModule.slug, currency)?.content || selectedModule.content)
+                      {(getLocalizedModuleContent(selectedModule.slug, regionData ?? BSD_FALLBACK)?.content || selectedModule.content)
                         .split("\n\n").map((paragraph, i) => (
                         <p key={i} className="text-foreground leading-relaxed mb-4">{paragraph}</p>
                       ))}
@@ -356,7 +375,7 @@ export default function InvestmentSimulator() {
                           <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-base">{mod.title}</h3>
                             <p className="text-sm text-muted-foreground line-clamp-1">
-                              {getLocalizedModuleContent(mod.slug, currency)?.description || mod.description}
+                              {getLocalizedModuleContent(mod.slug, regionData ?? BSD_FALLBACK)?.description || mod.description}
                             </p>
                           </div>
                           <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
