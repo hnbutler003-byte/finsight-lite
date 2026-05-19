@@ -126,7 +126,7 @@ export default function InvestmentSimulator() {
   const [quantity, setQuantity] = useState(1);
   const { toast } = useToast();
 
-  const { data: regionData } = useQuery<RegionInfo>({
+  const { data: regionData, isLoading: regionLoading } = useQuery<RegionInfo>({
     queryKey: ["/api/regional-content", currency],
     queryFn: async () => {
       const res = await fetch(`/api/regional-content/${currency}`, { credentials: "include" });
@@ -312,7 +312,10 @@ export default function InvestmentSimulator() {
                     >
                       &larr; Back to all lessons
                     </Button>
-                    <CardTitle className="text-2xl font-display">{selectedModule.title}</CardTitle>
+                    <CardTitle className="text-2xl font-display flex items-center gap-2">
+                      {selectedModule.title}
+                      {regionLoading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                    </CardTitle>
                     <p className="text-muted-foreground">
                       {getLocalizedModuleContent(selectedModule.slug, regionData ?? BSD_FALLBACK)?.description || selectedModule.description}
                     </p>

@@ -9,7 +9,7 @@ import {
   ArrowLeft, ShoppingCart, Zap, Target, Plus, Minus, CheckCircle2,
   XCircle, TrendingUp, TrendingDown, Minus as FlatIcon,
   Trophy, Star, Sparkles, RotateCcw, ShoppingBag, PiggyBank,
-  Gamepad2, ArrowRight, Wallet, BarChart3, Clock, Timer, Hourglass
+  Gamepad2, ArrowRight, Wallet, BarChart3, Clock, Timer, Hourglass, Loader2
 } from "lucide-react";
 
 const CURRENCIES = [
@@ -99,7 +99,7 @@ type Tradeoff = { text: string; weeklySaving: number; emoji: string };
 
 function GroceryGame({ currency }: { currency: string }) {
   const sym = getSymbol(currency);
-  const { data: groceryData } = useQuery<{ item: GroceryItem[] }>({
+  const { data: groceryData, isLoading: groceryLoading } = useQuery<{ item: GroceryItem[] }>({
     queryKey: ["/api/game-content/grocery"],
     staleTime: Infinity,
   });
@@ -115,6 +115,10 @@ function GroceryGame({ currency }: { currency: string }) {
   }, []);
 
   useEffect(() => { randomizeBudget(); }, [randomizeBudget]);
+
+  if (groceryLoading) {
+    return <div className="flex justify-center items-center py-16"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+  }
 
   const cartTotal = Object.entries(cart).reduce((sum, [idx, qty]) => {
     return sum + GROCERY_ITEMS[Number(idx)].price * qty;
@@ -265,7 +269,7 @@ function GroceryGame({ currency }: { currency: string }) {
 
 function SpeedInvestorGame({ currency }: { currency: string }) {
   const sym = getSymbol(currency);
-  const { data: speedData } = useQuery<{ stock: SpeedStock[]; news: SpeedNews[] }>({
+  const { data: speedData, isLoading: speedLoading } = useQuery<{ stock: SpeedStock[]; news: SpeedNews[] }>({
     queryKey: ["/api/game-content/speed"],
     staleTime: Infinity,
   });
@@ -289,7 +293,7 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
       return { stock, news: newsItem, price, actualTrend };
     });
     return newRounds;
-  }, []);
+  }, [SPEED_STOCKS, SPEED_NEWS]);
 
   const startCountdown = () => {
     setRounds(generateRounds());
@@ -438,8 +442,8 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
           </div>
 
           <div className="flex justify-center">
-            <Button size="lg" className="rounded-2xl gap-2 px-8 text-lg" onClick={startCountdown} data-testid="button-start-speed">
-              <Zap className="w-5 h-5" /> I'm Ready!
+            <Button size="lg" className="rounded-2xl gap-2 px-8 text-lg" onClick={startCountdown} disabled={speedLoading || SPEED_STOCKS.length === 0} data-testid="button-start-speed">
+              {speedLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Loading...</> : <><Zap className="w-5 h-5" /> I'm Ready!</>}
             </Button>
           </div>
         </CardContent>
@@ -618,7 +622,7 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
 
 function SavingsGoalGame({ currency }: { currency: string }) {
   const sym = getSymbol(currency);
-  const { data: savingsData } = useQuery<{ goal: SavingsGoal[]; tradeoff: Tradeoff[] }>({
+  const { data: savingsData, isLoading: savingsLoading } = useQuery<{ goal: SavingsGoal[]; tradeoff: Tradeoff[] }>({
     queryKey: ["/api/game-content/savings"],
     staleTime: Infinity,
   });
@@ -684,6 +688,9 @@ function SavingsGoalGame({ currency }: { currency: string }) {
           <h3 className="font-display text-xl font-bold">What do you want to save for?</h3>
           <p className="text-sm text-muted-foreground">Pick a goal or create your own!</p>
         </div>
+        {savingsLoading ? (
+          <div className="flex justify-center items-center py-8"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+        ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {SAVINGS_GOALS.map((goal, i) => (
             <Card
@@ -700,6 +707,7 @@ function SavingsGoalGame({ currency }: { currency: string }) {
             </Card>
           ))}
         </div>
+        )}
         <Card className="rounded-2xl border-2 border-dashed">
           <CardContent className="p-4">
             <p className="font-semibold text-sm mb-3 text-center">Or set your own goal:</p>
