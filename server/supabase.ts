@@ -791,7 +791,13 @@ async function applyStaticContentTablesViaPg(): Promise<void> {
       `);
       console.log("[Supabase] ✓ Static content tables verified/created.");
     } finally { await client.end().catch(() => {}); }
-  } catch (e: any) { console.warn("[Supabase] applyStaticContentTablesViaPg:", e?.message ?? e); }
+  } catch (e: any) {
+    const msg: string = e?.message ?? String(e);
+    if (msg.includes("password authentication") || msg.includes("ENETUNREACH") || msg.includes("ENOTFOUND")) {
+      return;
+    }
+    console.warn("[Supabase] applyStaticContentTablesViaPg:", msg);
+  }
 }
 
 export async function initStaticContentTables(): Promise<void> {

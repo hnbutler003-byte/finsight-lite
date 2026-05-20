@@ -35,7 +35,7 @@ import {
   type UserXp,
   type UserBadge, type InsertUserBadge,
 } from "@shared/schema";
-import { type BudgetResponse } from "@shared/routes";
+import { type BudgetResponse, type TransactionResponse } from "@shared/routes";
 import { db } from "./db";
 import { eq, and, desc, asc, sql, gte, lte, inArray } from "drizzle-orm";
 import { authStorage, type IAuthStorage } from "./replit_integrations/auth/storage";
@@ -50,12 +50,12 @@ export interface IStorage extends IAuthStorage {
     endDate?: string, 
     categoryId?: number,
     limit?: number 
-  }): Promise<(Transaction & { category: Category | null })[]>;
+  }): Promise<TransactionResponse[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   updateTransaction(id: number, userId: string, data: Partial<InsertTransaction>): Promise<Transaction>;
   deleteTransaction(id: number, userId: string): Promise<void>;
   
-  getBudgets(userId: string): Promise<(Budget & { category: Category | null })[]>;
+  getBudgets(userId: string): Promise<(Budget & { category?: Category; spent: number })[]>;
   createBudget(budget: InsertBudget): Promise<Budget>;
   deleteBudget(id: number, userId: string): Promise<void>;
 
@@ -225,7 +225,7 @@ export class DatabaseStorage implements IStorage {
     categoryId?: number,
     limit?: number,
     offset?: number,
-  }): Promise<(Transaction & { category: Category | null })[]> {
+  }): Promise<TransactionResponse[]> {
     let conditions = [eq(transactions.userId, userId)];
     if (filters?.startDate) conditions.push(gte(transactions.date, new Date(filters.startDate)));
     if (filters?.endDate) conditions.push(lte(transactions.date, new Date(filters.endDate)));
@@ -245,7 +245,7 @@ export class DatabaseStorage implements IStorage {
     if (filters?.offset) query = query.offset(filters.offset);
 
     const results = await query;
-    return results.map(r => ({ ...r.transaction, category: r.category || undefined }));
+    return results.map(r => ({ ...r.transaction, category: r.category ?? undefined })) as TransactionResponse[];
   }
 
   async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
@@ -271,7 +271,7 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(transactions.id, id), eq(transactions.userId, userId)));
   }
 
-  async getBudgets(userId: string): Promise<(BudgetResponse)[]> {
+  async getBudgets(userId: string): Promise<(Budget & { category?: Category; spent: number })[]> {
     // Single round trip: join budgets + category + a per-category spent-this-month subquery.
     const spentSub = db.$with("spent_this_month").as(
       db.select({
@@ -299,7 +299,7 @@ export class DatabaseStorage implements IStorage {
 
     return rows.map(r => ({
       ...r.budget,
-      category: r.category,
+      category: r.category ?? undefined,
       spent: Number(r.spent || 0),
     }));
   }

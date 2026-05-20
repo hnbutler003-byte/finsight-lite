@@ -506,7 +506,7 @@ ${urls.map(u => `  <url>
           ...Object.keys(previousMonth.categories),
         ]);
 
-        for (const cat of allCategories) {
+        for (const cat of Array.from(allCategories)) {
           const current = currentMonth.categories[cat] || 0;
           const previous = previousMonth.categories[cat] || 0;
           if (previous > 0 && current > previous * 1.2) {
@@ -1313,7 +1313,6 @@ Rules:
           category: categoryMap.get(b.categoryId!) || "Unknown",
           limit: Number(b.amount),
           spent: Math.round((categoryTotals[categoryMap.get(b.categoryId!) || ""] || 0) * 100) / 100,
-          currency: b.currency,
         })),
       };
 
@@ -2042,7 +2041,7 @@ If the user asks about FinSight Lite features, you can mention:
 
       const passwordHash = await bcrypt.hash(password, 12);
       const teacher = await storage.createTeacher({ firstName, lastName, email: email.toLowerCase(), passwordHash, schoolName });
-      req.session.teacherId = teacher.id;
+      req.session.teacherId = String(teacher.id);
       const { passwordHash: _, ...safe } = teacher;
       return res.json(safe);
     } catch (e: any) {
@@ -2058,7 +2057,7 @@ If the user asks about FinSight Lite features, you can mention:
       if (!teacher.passwordHash) return res.status(401).json({ message: "This account uses Google sign-in. Please use the 'Sign in with Google' button." });
       const valid = await bcrypt.compare(password, teacher.passwordHash);
       if (!valid) return res.status(401).json({ message: "Invalid email or password" });
-      req.session.teacherId = teacher.id;
+      req.session.teacherId = String(teacher.id);
       const { passwordHash: _, ...safe } = teacher;
       return res.json(safe);
     } catch (e: any) {
@@ -2089,7 +2088,7 @@ If the user asks about FinSight Lite features, you can mention:
           passwordHash: null,
         });
       }
-      req.session.teacherId = teacher.id;
+      req.session.teacherId = String(teacher.id);
       const { passwordHash: _, ...safe } = teacher;
       return res.json(safe);
     } catch (e: any) {
@@ -2377,7 +2376,7 @@ If the user asks about FinSight Lite features, you can mention:
       if (!creds?.teacher) return res.status(404).json({ message: "Demo data not set up yet" });
       const teacher = await storage.getTeacherByEmail("demo@finsightlite.com");
       if (!teacher) return res.status(404).json({ message: "Demo teacher not found" });
-      req.session.teacherId = teacher.id;
+      req.session.teacherId = String(teacher.id);
       res.json({ ok: true, redirect: "/teacher/dashboard" });
     } catch (e: any) {
       res.status(500).json({ message: e.message });
