@@ -13,6 +13,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { VideoField } from "@/components/VideoField";
+import { useVideoEmbed } from "@/hooks/use-video-embed";
 
 type QuizQuestion = {
   question: string;
@@ -703,30 +704,12 @@ function DeleteConfirmDialog({ lesson, onClose }: { lesson: LessonPlan; onClose:
   );
 }
 
-// ── Video helpers (mirrors Lessons.tsx) ─────────────────────────────────────
+// ── Video helpers ────────────────────────────────────────────────────────────
 const HTML5_VIDEO_EXTS = [".mp4", ".webm", ".ogg"];
 
-function getYouTubeEmbedUrl(url: string): string | null {
-  try {
-    const u = new URL(url);
-    if (u.hostname === "youtu.be") {
-      const id = u.pathname.slice(1).split("?")[0];
-      const start = u.searchParams.get("t") || u.searchParams.get("start");
-      return `https://www.youtube.com/embed/${id}${start ? `?start=${start}` : ""}`;
-    }
-    if (u.hostname.includes("youtube.com")) {
-      const id = u.searchParams.get("v");
-      if (id) {
-        const start = u.searchParams.get("t") || u.searchParams.get("start");
-        return `https://www.youtube.com/embed/${id}${start ? `?start=${start}` : ""}`;
-      }
-      if (u.pathname.startsWith("/embed/")) return url;
-    }
-  } catch { /* not a URL */ }
-  return null;
-}
-
 function PreviewVideoPlayer({ url }: { url: string | null | undefined }) {
+  const { embedUrl, isLoading, isYouTube } = useVideoEmbed(url ?? "");
+
   if (!url) return null;
   if (url === "coming_soon") {
     return (
@@ -741,22 +724,32 @@ function PreviewVideoPlayer({ url }: { url: string | null | undefined }) {
       </div>
     );
   }
-  const embedUrl = getYouTubeEmbedUrl(url);
-  if (embedUrl) {
-    return (
-      <div className="rounded-2xl overflow-hidden border border-border">
-        <div className="aspect-video w-full">
-          <iframe
-            src={embedUrl}
-            title="Lesson Video"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="w-full h-full"
-          />
+
+  if (isYouTube) {
+    if (isLoading) {
+      return (
+        <div className="rounded-2xl border border-border flex items-center justify-center p-6">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
-      </div>
-    );
+      );
+    }
+    if (embedUrl) {
+      return (
+        <div className="rounded-2xl overflow-hidden border border-border">
+          <div className="aspect-video w-full">
+            <iframe
+              src={embedUrl}
+              title="Lesson Video"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        </div>
+      );
+    }
   }
+
   const isHtml5 = HTML5_VIDEO_EXTS.some(ext => url.toLowerCase().endsWith(ext));
   if (isHtml5) {
     return (

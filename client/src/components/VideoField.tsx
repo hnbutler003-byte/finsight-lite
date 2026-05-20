@@ -1,27 +1,24 @@
 import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Link2, Upload, Library, X, PlayCircle, Loader2, Video, Check } from "lucide-react";
+import { Link2, Upload, Library, X, PlayCircle, Loader2, Video, Check, AlertTriangle } from "lucide-react";
+import { useVideoEmbed } from "@/hooks/use-video-embed";
 
-function getYouTubeId(url: string): string | null {
+function extractYouTubeThumbUrl(url: string): string | null {
   try {
     const u = new URL(url);
-    if (u.hostname === "youtu.be") return u.pathname.slice(1).split("?")[0];
+    if (u.hostname === "youtu.be") {
+      const id = u.pathname.slice(1).split("?")[0];
+      return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
+    }
     if (u.hostname.includes("youtube.com")) {
       const v = u.searchParams.get("v");
-      if (v) return v;
-      const embed = u.pathname.match(/\/embed\/([^/?]+)/);
-      if (embed) return embed[1];
+      if (v) return `https://img.youtube.com/vi/${v}/mqdefault.jpg`;
+      const m = u.pathname.match(/\/(?:shorts|live|embed)\/([^/?]+)/);
+      if (m) return `https://img.youtube.com/vi/${m[1]}/mqdefault.jpg`;
     }
-  } catch {
-    // ignore parse errors
-  }
+  } catch {}
   return null;
-}
-
-function getYouTubeThumbnail(url: string): string | null {
-  const id = getYouTubeId(url);
-  return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
 }
 
 function isDirectVideoUrl(url: string): boolean {
@@ -41,7 +38,7 @@ function VideoThumbnailCard({
   onClose: () => void;
   darkMode?: boolean;
 }) {
-  const ytThumb = getYouTubeThumbnail(video.url);
+  const ytThumb = extractYouTubeThumbUrl(video.url);
   const isDirect = isDirectVideoUrl(video.url);
   const cardBg = darkMode
     ? "bg-slate-700 border-slate-600 hover:border-indigo-400"
@@ -198,7 +195,7 @@ export function VideoField({
     ? "border-slate-600 text-slate-300 hover:border-indigo-400 hover:text-indigo-300"
     : "border-input text-muted-foreground hover:border-blue-400 hover:text-blue-600";
 
-  const ytThumb = value ? getYouTubeThumbnail(value) : null;
+  const { thumbnailUrl, isLoading: embedLoading, isError: embedError, isYouTube } = useVideoEmbed(value || null);
   const isDirect = value ? isDirectVideoUrl(value) : false;
 
   const handleFileUpload = async (file: File) => {
@@ -290,10 +287,17 @@ export function VideoField({
         </button>
       </div>
 
-      {ytThumb && (
+      {isYouTube && embedLoading && (
+        <div className={`flex items-center gap-2 text-xs ${mutedText}`}>
+          <Loader2 className="w-3 h-3 animate-spin" />
+          Checking video…
+        </div>
+      )}
+
+      {thumbnailUrl && (
         <div className="relative rounded-xl overflow-hidden border-2 border-input group">
           <img
-            src={ytThumb}
+            src={thumbnailUrl}
             alt="YouTube thumbnail"
             className="w-full h-36 object-cover"
             data-testid="img-youtube-thumbnail"
@@ -307,6 +311,13 @@ export function VideoField({
         </div>
       )}
 
+      {isYouTube && embedError && !embedLoading && (
+        <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1.5" data-testid="warning-video-unresolvable">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+          This YouTube URL could not be verified. Students may not see an embedded player.
+        </p>
+      )}
+
       {isDirect && (
         <div className="rounded-xl overflow-hidden border-2 border-input">
           <video
@@ -318,7 +329,7 @@ export function VideoField({
         </div>
       )}
 
-      {value && !ytThumb && !isDirect && (
+      {value && !isYouTube && !isDirect && (
         <p className={`text-xs ${mutedText} flex items-center gap-1`}>
           <Link2 className="w-3 h-3" />
           External video URL saved. Preview not available for this URL type.

@@ -354,6 +354,43 @@ ${urls.map(u => `  <url>
 
   // Protected API routes
 
+  // ── YouTube oEmbed proxy ───────────────────────────────────────────────────
+  // Resolves any YouTube URL (watch, shorts, live, youtu.be, mobile) to an
+  // embed URL via YouTube's own public oEmbed API. Results are cached in-memory
+  // for 1 hour so repeated lesson views don't hit YouTube on every render.
+  const _oembedCache = new Map<string, { data: { embedUrl: string; thumbnailUrl: string; title: string }; expiry: number }>();
+
+  app.get("/api/video/oembed", isAuthenticated, async (req, res) => {
+    const url = req.query.url as string;
+    if (!url) return res.status(400).json({ error: "Missing url parameter" });
+
+    const now = Date.now();
+    const cached = _oembedCache.get(url);
+    if (cached && cached.expiry > now) return res.json(cached.data);
+
+    try {
+      const r = await fetch(
+        `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+        { signal: AbortSignal.timeout(5000) }
+      );
+      if (!r.ok) return res.status(404).json({ error: "Video not found or not embeddable" });
+
+      const json = await r.json() as any;
+      const srcMatch = (json.html as string | undefined)?.match(/src="([^"]+)"/);
+      if (!srcMatch) return res.status(404).json({ error: "Could not parse embed URL" });
+
+      const data = {
+        embedUrl: srcMatch[1],
+        thumbnailUrl: (json.thumbnail_url as string) ?? "",
+        title: (json.title as string) ?? "",
+      };
+      _oembedCache.set(url, { data, expiry: now + 60 * 60 * 1000 });
+      return res.json(data);
+    } catch {
+      return res.status(404).json({ error: "Could not resolve video URL" });
+    }
+  });
+
   // Currency exchange rates (Caribbean pegged rates to USD)
   const EXCHANGE_RATES_TO_USD: Record<string, number> = {
     USD: 1,

@@ -1,3 +1,4 @@
+import { useVideoEmbed } from "@/hooks/use-video-embed";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -262,21 +263,9 @@ function generateCertificate(
 
 const HTML5_VIDEO_EXTS = [".mp4", ".webm", ".ogg"];
 
-function getYouTubeEmbedUrl(url: string): string | null {
-  try {
-    const u = new URL(url);
-    let videoId: string | null = null;
-    if (u.hostname.includes("youtube.com")) {
-      videoId = u.searchParams.get("v");
-    } else if (u.hostname === "youtu.be") {
-      videoId = u.pathname.slice(1);
-    }
-    if (videoId) return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
-  } catch {}
-  return null;
-}
-
 function LessonVideoPlayer({ url }: { url: string | null | undefined }) {
+  const { embedUrl, isLoading, isYouTube } = useVideoEmbed(url ?? "");
+
   if (!url) return null;
 
   if (url === "coming_soon") {
@@ -295,21 +284,31 @@ function LessonVideoPlayer({ url }: { url: string | null | undefined }) {
     );
   }
 
-  const embedUrl = getYouTubeEmbedUrl(url);
-  if (embedUrl) {
-    return (
-      <Card className="glass-card rounded-glass border-0 overflow-hidden">
-        <div className="aspect-video w-full">
-          <iframe
-            src={embedUrl}
-            title="Lesson Video"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="w-full h-full"
-          />
-        </div>
-      </Card>
-    );
+  if (isYouTube) {
+    if (isLoading) {
+      return (
+        <Card className="glass-card rounded-glass border-0">
+          <CardContent className="p-6 flex items-center justify-center">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </CardContent>
+        </Card>
+      );
+    }
+    if (embedUrl) {
+      return (
+        <Card className="glass-card rounded-glass border-0 overflow-hidden">
+          <div className="aspect-video w-full">
+            <iframe
+              src={embedUrl}
+              title="Lesson Video"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        </Card>
+      );
+    }
   }
 
   const isHtml5 = HTML5_VIDEO_EXTS.some(ext => url.toLowerCase().endsWith(ext));
