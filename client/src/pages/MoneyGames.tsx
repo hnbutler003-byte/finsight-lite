@@ -156,10 +156,10 @@ function GroceryGame({ currency }: { currency: string }) {
             🛒
           </div>
           <div>
-            <h3 className="font-display text-xl font-bold" data-testid="text-grocery-budget">
+            <h3 className="font-display text-xl font-bold text-white" data-testid="text-grocery-budget">
               Your Budget: {sym}{budget.toFixed(2)}
             </h3>
-            <p className="text-sm text-muted-foreground">Fill your cart without going over!</p>
+            <p className="text-sm text-white/70">Fill your cart without going over!</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -685,8 +685,8 @@ function SavingsGoalGame({ currency }: { currency: string }) {
       <div className="space-y-6">
         <div className="text-center space-y-2">
           <div className="text-5xl">🎯</div>
-          <h3 className="font-display text-xl font-bold">What do you want to save for?</h3>
-          <p className="text-sm text-muted-foreground">Pick a goal or create your own!</p>
+          <h3 className="font-display text-xl font-bold text-white">What do you want to save for?</h3>
+          <p className="text-sm text-white/70">Pick a goal or create your own!</p>
         </div>
         {savingsLoading ? (
           <div className="flex justify-center items-center py-8"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
@@ -748,8 +748,8 @@ function SavingsGoalGame({ currency }: { currency: string }) {
       <div className="space-y-6">
         <div className="text-center space-y-2">
           <div className="text-5xl">{selectedGoal?.emoji || "🎯"}</div>
-          <h3 className="font-display text-xl font-bold">{goalName}</h3>
-          <p className="text-3xl font-bold text-primary">{sym}{goalAmount.toFixed(2)}</p>
+          <h3 className="font-display text-xl font-bold text-white">{goalName}</h3>
+          <p className="text-3xl font-bold text-white">{sym}{goalAmount.toFixed(2)}</p>
         </div>
         <Card className="rounded-2xl border-2">
           <CardContent className="p-6 space-y-4">
@@ -1123,8 +1123,8 @@ function BeatTheBudgetGame({ currency }: { currency: string }) {
             💰
           </div>
           <div>
-            <h3 className="font-display text-xl font-bold">Weekly Allowance: {sym}100</h3>
-            <p className="text-sm text-muted-foreground">Choose what to spend on — but watch out for surprises!</p>
+            <h3 className="font-display text-xl font-bold text-white">Weekly Allowance: {sym}100</h3>
+            <p className="text-sm text-white/70">Choose what to spend on — but watch out for surprises!</p>
           </div>
         </div>
         <Badge variant="outline" className={`text-lg px-4 py-2 rounded-2xl font-bold ${balance < 20 ? "border-red-400 text-red-500" : "border-green-400 text-green-600"}`} data-testid="text-beat-balance">
@@ -1212,8 +1212,8 @@ function CompoundItGame({ currency }: { currency: string }) {
     <div className="space-y-6">
       <div className="text-center space-y-2">
         <div className="text-5xl">📈</div>
-        <h3 className="font-display text-2xl font-bold">Compound It!</h3>
-        <p className="text-sm text-muted-foreground">See how your savings grow with 7% annual compound interest</p>
+        <h3 className="font-display text-2xl font-bold text-white">Compound It!</h3>
+        <p className="text-sm text-white/70">See how your savings grow with 7% annual compound interest</p>
       </div>
 
       <Card className="rounded-2xl border-2">
