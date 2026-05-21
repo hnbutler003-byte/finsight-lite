@@ -45,11 +45,7 @@ export default function MoneyLabPlay() {
   const [gameResults, setGameResults] = useState<any>(null);
 
   const { data: papers, isLoading: papersLoading } = useQuery<any[]>({
-    queryKey: ["/api/moneylab/papers/all"],
-    queryFn: async () => {
-      const res = await fetch("/api/moneylab/papers/all?limit=200", { credentials: "include" });
-      return res.json();
-    },
+    queryKey: ["/api/moneylab/papers"],
   });
 
   const submitMutation = useMutation({
