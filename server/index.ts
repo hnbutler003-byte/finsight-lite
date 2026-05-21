@@ -9,7 +9,7 @@ import { createServer } from "http";
 import { seedDatabase } from "./seed";
 import { startJobWorker, enqueueJob } from "./jobs";
 import { registerJobHandlers } from "./jobHandlers";
-import { db } from "./db";
+import { db, probeDatabase } from "./db";
 import { weeklyDigestRuns, aiUsagePurgeRuns } from "@shared/schema";
 import { and, eq } from "drizzle-orm";
 
@@ -223,6 +223,17 @@ process.on("SIGTERM", stopUptimeWorker);
 process.on("SIGINT", stopUptimeWorker);
 
 (async () => {
+  // Probe DB connectivity before anything else so a misconfigured
+  // DATABASE_URL or network partition surfaces immediately on startup
+  // rather than silently failing on the first real request.
+  try {
+    await probeDatabase();
+    log("database connectivity verified", "startup");
+  } catch (e: any) {
+    console.error("[startup] Database unreachable — cannot continue:", e.message);
+    process.exit(1);
+  }
+
   await registerRoutes(httpServer, app);
   await seedDatabase();
   registerJobHandlers();

@@ -17,3 +17,26 @@ export const pool = new Pool({
   connectionTimeoutMillis: 2_000, // fail fast if no connection available within 2 s
 });
 export const db = drizzle(pool, { schema });
+
+/**
+ * Startup connectivity probe.
+ * Runs a lightweight SELECT 1 against the pool and throws if the database
+ * is unreachable or doesn't respond within `timeoutMs`. Call this once at
+ * boot so failures surface immediately rather than on the first real request.
+ */
+export async function probeDatabase(timeoutMs = 5_000): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await Promise.race([
+      client.query("SELECT 1"),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error(`DB probe timed out after ${timeoutMs} ms`)),
+          timeoutMs,
+        )
+      ),
+    ]);
+  } finally {
+    client.release();
+  }
+}

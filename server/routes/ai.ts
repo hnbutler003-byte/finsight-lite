@@ -170,7 +170,8 @@ export async function registerAiRoutes(app: Express): Promise<void> {
     }
   });
 
-  app.get("/api/moneylab/papers/all", isAuthenticated, async (req, res) => {
+  // SECURITY: admin-only — exposes all students' papers; must not be accessible to students.
+  app.get("/api/moneylab/papers/all", isAdmin, async (req, res) => {
     try {
       const { examPapers } = await import("@shared/schema");
       const { db } = await import("../db");
@@ -186,10 +187,13 @@ export async function registerAiRoutes(app: Express): Promise<void> {
     }
   });
 
+  // SECURITY: ownership enforced — students may only fetch their own paper.
   app.get("/api/moneylab/papers/:id", isAuthenticated, async (req, res) => {
     try {
+      const userId = (req.user as any).id;
       const paper = await storage.getExamPaper(parseInt(req.params.id));
       if (!paper) return res.status(404).json({ message: "Paper not found" });
+      if (paper.userId !== userId) return res.status(403).json({ message: "Forbidden" });
       const questions = await storage.getQuestionsByPaper(paper.id);
       res.json({ paper, questions });
     } catch (err: any) {

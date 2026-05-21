@@ -15,6 +15,11 @@ import { isAuthenticated } from "../replit_integrations/auth";
 
 export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@finsightlite.com";
 export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+// SECURITY: warn loudly if admin credentials are using insecure defaults in production
+if (process.env.NODE_ENV === "production") {
+  if (!process.env.ADMIN_EMAIL) console.warn("[security] ADMIN_EMAIL env var not set — using insecure default");
+  if (!process.env.ADMIN_PASSWORD) console.warn("[security] ADMIN_PASSWORD env var not set — using insecure default 'admin123'");
+}
 
 export const isTeacher = (req: any, res: any, next: any) => {
   if (!req.session?.teacherId) return res.status(401).json({ message: "Teacher not authenticated" });
@@ -451,9 +456,17 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
     }
   });
 
+  // SECURITY: only allows login as a student whose ID is listed in the stored demo credentials,
+  // preventing this endpoint from being used to impersonate arbitrary students.
   app.post("/api/demo/login/student/:studentId", async (req: any, res) => {
     try {
-      const student = await storage.getUser(req.params.studentId);
+      const creds = await storage.getDemoCredentials();
+      const demoStudentIds: string[] = (creds?.students ?? []).map((s: any) => String(s.id ?? s.userId ?? ""));
+      const requestedId = String(req.params.studentId);
+      if (!demoStudentIds.includes(requestedId)) {
+        return res.status(403).json({ message: "Not a demo student" });
+      }
+      const student = await storage.getUser(requestedId);
       if (!student) return res.status(404).json({ message: "Demo student not found" });
       req.session.userId = student.id;
       res.json({ ok: true, redirect: "/" });

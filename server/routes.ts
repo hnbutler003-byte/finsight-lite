@@ -16,12 +16,6 @@ import {
   seedGameContent,
 } from "./supabase";
 
-import { registerAuthDomainRoutes } from "./routes/auth";
-import { registerStudentRoutes } from "./routes/students";
-import { registerAiRoutes } from "./routes/ai";
-import { registerOrgRoutes } from "./routes/orgs";
-import { registerLessonRoutes } from "./routes/lessons";
-import { registerEmailRoutes } from "./routes/emails";
 
 const objectStorage = new ObjectStorageService();
 
@@ -128,7 +122,23 @@ ${urls.map(u => `  <url>
     .then(() => seedGameContent())
     .catch(e => console.error("[Supabase] Init error:", e));
 
-  // Domain routers
+  // Domain routers — loaded in parallel to reduce cold-start time
+  const [
+    { registerAuthDomainRoutes },
+    { registerStudentRoutes },
+    { registerAiRoutes },
+    { registerOrgRoutes },
+    { registerLessonRoutes },
+    { registerEmailRoutes },
+  ] = await Promise.all([
+    import("./routes/auth"),
+    import("./routes/students"),
+    import("./routes/ai"),
+    import("./routes/orgs"),
+    import("./routes/lessons"),
+    import("./routes/emails"),
+  ]);
+
   await registerAuthDomainRoutes(app);
   await registerStudentRoutes(app);
   await registerAiRoutes(app);
