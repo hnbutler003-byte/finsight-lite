@@ -1,0 +1,733 @@
+import { Express } from "express";
+import { storage } from "../storage";
+import { isAuthenticated } from "../replit_integrations/auth";
+import { z } from "zod";
+import multer from "multer";
+import path from "path";
+import { openai } from "../replit_integrations/chat/routes";
+import { enqueueJob, listRecentJobs } from "../jobs";
+import {
+  reserveQuota,
+  finalizeUsage,
+  releaseReservation,
+  recordCachedUsage,
+  quotaErrorMessage,
+  hashTutorQuestion,
+  getCachedExplanation,
+  setCachedExplanation,
+  getOrgUsageToday,
+  getOrgUsageThisMonth,
+  getOrgQuotaSettings,
+  updateOrgQuotaSettings,
+} from "../aiUsage";
+import { audit } from "../audit";
+import { db as emailDb } from "../db";
+import { aiUsageEvents } from "@shared/schema";
+import { lt as ltDrizzle, sql as sqlEmail } from "drizzle-orm";
+import { getStudentOrgIds } from "../supabase";
+import { isAdmin, isOrgAdmin, ADMIN_EMAIL } from "./auth";
+import fs from "fs";
+import * as nodePath from "path";
+
+const examUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [".pdf", ".jpg", ".jpeg", ".png"];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only PDF, JPG, and PNG files are supported"));
+    }
+  },
+});
+
+export async function registerAiRoutes(app: Express): Promise<void> {
+
+  // AI Insights
+  app.get("/api/ai/insights", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+
+      const orgIds = await getStudentOrgIds(userId).catch(() => [] as string[]);
+      const orgId = orgIds[0] ?? null;
+
+      const reservation = await reserveQuota({ userId, orgId, kind: "ai_insights", model: "gpt-4o-mini" });
+      if (!reservation.ok) {
+        return res.status(429).json({ message: quotaErrorMessage(reservation), quota: reservation });
+      }
+      let finalized = false;
+      try {
+        const transactions = await storage.getTransactions(userId);
+        const recentTransactions = transactions.slice(0, 50);
+
+        if (recentTransactions.length === 0) {
+          await releaseReservation(reservation.reservationId);
+          return res.json({ insights: [], message: "No transactions to analyze yet" });
+        }
+
+        const transactionSummary = recentTransactions.map(t =>
+          `${t.date}: ${t.type === "income" ? "+" : "-"}${t.amount} ${t.currency} - ${t.description || "Unknown"} (${t.category?.name || "Uncategorized"})`
+        ).join("\n");
+
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: "You are a financial advisor for a Caribbean student. Analyze their transactions and provide 3 practical, encouraging insights about their spending patterns and savings opportunities. Keep insights brief (1-2 sentences each) and actionable. Return JSON with an 'insights' array.",
+            },
+            {
+              role: "user",
+              content: `Here are my recent transactions:\n${transactionSummary}\n\nProvide 3 financial insights as JSON: {"insights": [{"title": "...", "message": "...", "type": "positive|warning|tip"}]}`,
+            },
+          ],
+          response_format: { type: "json_object" },
+          max_completion_tokens: 512,
+        });
+
+        await finalizeUsage(reservation.reservationId, {
+          tokensIn: response.usage?.prompt_tokens ?? 0,
+          tokensOut: response.usage?.completion_tokens ?? 0,
+          model: "gpt-4o-mini",
+        });
+        finalized = true;
+
+        const parsed = JSON.parse(response.choices[0].message.content || "{}");
+        res.json(parsed);
+      } finally {
+        if (!finalized) await releaseReservation(reservation.reservationId);
+      }
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  // === MONEYLAB ROUTES ===
+  app.post("/api/moneylab/upload", isAuthenticated, examUpload.single("file"), async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const title = req.body.title || file.originalname.replace(/\.[^/.]+$/, "");
+      const subject = req.body.subject || "General";
+      const ext = path.extname(file.originalname).toLowerCase();
+
+      const paper = await storage.createExamPaper({
+        userId,
+        title,
+        subject,
+        fileName: file.originalname,
+        fileType: ext.replace(".", ""),
+      });
+
+      const job = await enqueueJob({
+        kind: "extract-paper",
+        ownerId: userId,
+        payload: {
+          paperId: paper.id,
+          fileB64: file.buffer.toString("base64"),
+          ext,
+          subject,
+        },
+      });
+
+      res.json({ paper, jobId: job.id, message: "Processing..." });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/moneylab/papers", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const papers = await storage.getExamPapers(userId);
+      res.json(papers);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/moneylab/papers/all", isAuthenticated, async (req, res) => {
+    try {
+      const { examPapers } = await import("@shared/schema");
+      const { db } = await import("../db");
+      const { eq, desc } = await import("drizzle-orm");
+      const rawLimit = Number(req.query.limit);
+      const rawOffset = Number(req.query.offset);
+      const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(Math.floor(rawLimit), 200) : 50;
+      const offset = Number.isFinite(rawOffset) && rawOffset >= 0 ? Math.floor(rawOffset) : 0;
+      const allPapers = await db.select().from(examPapers).where(eq(examPapers.status, "completed")).orderBy(desc(examPapers.createdAt)).limit(limit).offset(offset);
+      res.json(allPapers);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/moneylab/papers/:id", isAuthenticated, async (req, res) => {
+    try {
+      const paper = await storage.getExamPaper(parseInt(req.params.id));
+      if (!paper) return res.status(404).json({ message: "Paper not found" });
+      const questions = await storage.getQuestionsByPaper(paper.id);
+      res.json({ paper, questions });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.delete("/api/moneylab/papers/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      await storage.deleteExamPaper(parseInt(req.params.id), userId);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.post("/api/moneylab/games/submit", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { paperId, mode, score, totalQuestions, correctAnswers, timeSpent } = req.body;
+
+      if (!mode || score === undefined || !totalQuestions || correctAnswers === undefined) {
+        return res.status(400).json({ message: "Missing required game data" });
+      }
+
+      const baseXp = correctAnswers * 10;
+      const modeBonus = mode === "challenge" ? 1.5 : mode === "timed" ? 1.25 : 1;
+      const accuracyBonus = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 20) : 0;
+      const xpEarned = Math.round(baseXp * modeBonus + accuracyBonus);
+
+      const session = await storage.createGameSession({
+        userId,
+        paperId: paperId || null,
+        mode,
+        score,
+        totalQuestions,
+        correctAnswers,
+        timeSpent: timeSpent || null,
+        xpEarned,
+      });
+
+      const currentXp = await storage.getUserXp(userId);
+      const newTotalXp = currentXp.totalXp + xpEarned;
+      const newLevel = Math.floor(newTotalXp / 100) + 1;
+
+      const now = new Date();
+      const lastPlayed = currentXp.lastPlayedAt ? new Date(currentXp.lastPlayedAt) : null;
+      let newStreak = currentXp.currentStreak;
+      if (lastPlayed) {
+        const todayStr = now.toISOString().slice(0, 10);
+        const lastStr = lastPlayed.toISOString().slice(0, 10);
+        if (todayStr === lastStr) {
+          newStreak = currentXp.currentStreak;
+        } else {
+          const lastDate = new Date(lastStr);
+          const todayDate = new Date(todayStr);
+          const diffDays = Math.round((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+          if (diffDays === 1) {
+            newStreak = currentXp.currentStreak + 1;
+          } else {
+            newStreak = 1;
+          }
+        }
+      } else {
+        newStreak = 1;
+      }
+      const longestStreak = Math.max(currentXp.longestStreak, newStreak);
+
+      await storage.updateUserXp(userId, {
+        totalXp: newTotalXp,
+        level: newLevel,
+        currentStreak: newStreak,
+        longestStreak,
+        lastPlayedAt: now,
+      });
+
+      const { cacheInvalidate } = await import("../cache");
+      cacheInvalidate("moneylab:leaderboard:");
+
+      const earnedBadges: string[] = [];
+      const allSessions = await storage.getGameSessions(userId);
+      const existingBadges = await storage.getUserBadges(userId);
+      const hasBadge = (id: string) => existingBadges.some(b => b.badgeId === id);
+
+      const badgeChecks = [
+        { id: "first_game", condition: allSessions.length >= 1, label: "First Steps" },
+        { id: "ten_games", condition: allSessions.length >= 10, label: "Game Veteran" },
+        { id: "perfect_score", condition: correctAnswers === totalQuestions && totalQuestions >= 5, label: "Perfect Score" },
+        { id: "streak_3", condition: newStreak >= 3, label: "On Fire" },
+        { id: "streak_7", condition: newStreak >= 7, label: "Week Warrior" },
+        { id: "level_5", condition: newLevel >= 5, label: "Rising Star" },
+        { id: "level_10", condition: newLevel >= 10, label: "Money Master" },
+        { id: "xp_500", condition: newTotalXp >= 500, label: "XP Hunter" },
+        { id: "xp_1000", condition: newTotalXp >= 1000, label: "XP Legend" },
+        { id: "challenge_win", condition: mode === "challenge" && correctAnswers >= totalQuestions * 0.8, label: "Challenge Champion" },
+        { id: "speed_demon", condition: mode === "timed" && timeSpent && timeSpent < totalQuestions * 10, label: "Speed Demon" },
+      ];
+
+      for (const check of badgeChecks) {
+        if (check.condition && !hasBadge(check.id)) {
+          await storage.addUserBadge({ userId, badgeId: check.id });
+          earnedBadges.push(check.id);
+        }
+      }
+
+      res.json({
+        session,
+        xpEarned,
+        totalXp: newTotalXp,
+        level: newLevel,
+        streak: newStreak,
+        newBadges: earnedBadges,
+      });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/moneylab/xp", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const xp = await storage.getUserXp(userId);
+      const badges = await storage.getUserBadges(userId);
+      const sessions = await storage.getGameSessions(userId);
+      res.json({ xp, badges, totalGames: sessions.length });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/moneylab/leaderboard", isAuthenticated, async (req, res) => {
+    try {
+      const period = (req.query.period as string) || "all";
+      const rawLimit = Number(req.query.limit);
+      const rawOffset = Number(req.query.offset);
+      const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(Math.floor(rawLimit), 100) : 20;
+      const offset = Number.isFinite(rawOffset) && rawOffset >= 0 ? Math.floor(rawOffset) : 0;
+      const { cached } = await import("../cache");
+      const leaderboard = await cached(
+        `moneylab:leaderboard:${period}:${limit}:${offset}`,
+        15_000,
+        () => storage.getLeaderboard({ period, limit, offset }),
+      );
+      res.json(leaderboard);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.post("/api/moneylab/tutor/explain", isAuthenticated, async (req, res) => {
+    try {
+      const { questionText, options, correctAnswer, subject } = req.body;
+      const userId = (req.user as any).id;
+      const userName = (req.user as any).firstName || "friend";
+
+      if (!questionText) {
+        return res.status(400).json({ message: "Question text is required" });
+      }
+
+      const orgIds = await getStudentOrgIds(userId).catch(() => [] as string[]);
+      const orgId = orgIds[0] ?? null;
+
+      const model = "gpt-4o-mini";
+      const modelVersion = `${model}-v1`;
+      const questionHash = hashTutorQuestion({ questionText, options, correctAnswer, subject });
+
+      const cached = await getCachedExplanation(questionHash, modelVersion);
+      if (cached) {
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+        const personalized = cached.split("[STUDENT_NAME]").join(userName);
+        const chunkSize = 64;
+        for (let i = 0; i < personalized.length; i += chunkSize) {
+          res.write(`data: ${JSON.stringify({ content: personalized.slice(i, i + chunkSize) })}\n\n`);
+        }
+        res.write(`data: ${JSON.stringify({ done: true, cached: true })}\n\n`);
+        res.end();
+        await recordCachedUsage({ userId, orgId, kind: "tutor_explain", model });
+        return;
+      }
+
+      const reservation = await reserveQuota({ userId, orgId, kind: "tutor_explain", model });
+      if (!reservation.ok) {
+        return res.status(429).json({ message: quotaErrorMessage(reservation), quota: reservation });
+      }
+      let finalized = false;
+      try {
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const NAME_PLACEHOLDER = "[STUDENT_NAME]";
+      const systemPrompt = `You are an AI Tutor for Caribbean high school students (ages 14-18). 
+You explain exam questions in simple, friendly language.
+
+Your style:
+- Warm, encouraging, like a helpful older sibling
+- Use simple language, avoid jargon
+- Give real-world Caribbean examples when possible
+- Break complex concepts into digestible pieces
+- Use analogies kids can relate to (food, sports, social media, gaming)
+- Keep it concise (3-5 paragraphs max)
+- End with a "Quick Tip" for remembering the concept
+
+Format:
+1. Start with "Hey ${NAME_PLACEHOLDER}!" as the greeting (use the literal string ${NAME_PLACEHOLDER} — do NOT substitute a name yourself).
+2. Explain what the question is asking
+3. Walk through why the correct answer is right
+4. Briefly mention why other options are wrong
+5. Give a real-world example
+6. End with a memorable tip
+
+IMPORTANT: Use the exact placeholder ${NAME_PLACEHOLDER} wherever you would address the student. Do not use any other names. Do not invent names.`;
+
+      const questionContext = `Subject: ${subject || "General"}
+Question: ${questionText}
+${options ? `Options: ${options.join(", ")}` : ""}
+${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
+
+      const stream = await openai.chat.completions.create({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Please explain this exam question to me:\n\n${questionContext}` },
+        ],
+        stream: true,
+        stream_options: { include_usage: true },
+        max_completion_tokens: 1024,
+        temperature: 0.7,
+      });
+
+      let fullContent = "";
+      let pending = "";
+      let promptTokens = 0;
+      let completionTokens = 0;
+      const PLACEHOLDER = "[STUDENT_NAME]";
+      const HOLDBACK = PLACEHOLDER.length - 1;
+      for await (const chunk of stream) {
+        if (chunk.usage) {
+          promptTokens = chunk.usage.prompt_tokens ?? 0;
+          completionTokens = chunk.usage.completion_tokens ?? 0;
+        }
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (!content) continue;
+        fullContent += content;
+        pending += content;
+        if (pending.length > HOLDBACK) {
+          const emit = pending.slice(0, pending.length - HOLDBACK).split(PLACEHOLDER).join(userName);
+          pending = pending.slice(pending.length - HOLDBACK);
+          if (emit) res.write(`data: ${JSON.stringify({ content: emit })}\n\n`);
+        }
+      }
+      if (pending) {
+        const emit = pending.split(PLACEHOLDER).join(userName);
+        res.write(`data: ${JSON.stringify({ content: emit })}\n\n`);
+      }
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+
+      await setCachedExplanation(questionHash, modelVersion, fullContent.trim());
+      await finalizeUsage(reservation.reservationId, {
+        tokensIn: promptTokens, tokensOut: completionTokens, model,
+      });
+      finalized = true;
+      } finally {
+        if (!finalized) await releaseReservation(reservation.reservationId);
+      }
+    } catch (err: any) {
+      console.error("Tutor explain error:", err);
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ error: "Something went wrong" })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ message: err.message });
+      }
+    }
+  });
+
+  app.get("/api/moneylab/history", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const sessions = await storage.getGameSessions(userId);
+      res.json(sessions);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  // Money Guide AI Chat
+  app.post("/api/guide/chat", isAuthenticated, async (req, res) => {
+    try {
+      const { messages: userMessages } = req.body;
+      const userId = (req.user as any).id;
+      const userName = (req.user as any).firstName || "friend";
+
+      if (!Array.isArray(userMessages) || userMessages.length === 0) {
+        return res.status(400).json({ message: "Messages are required." });
+      }
+
+      const validRoles = new Set(["user", "assistant"]);
+      const sanitizedMessages = userMessages
+        .filter((m: any) => m && typeof m.content === "string" && m.content.trim().length > 0 && validRoles.has(m.role))
+        .map((m: any) => ({ role: m.role as "user" | "assistant", content: m.content.slice(0, 4000) }));
+
+      if (sanitizedMessages.length === 0) {
+        return res.status(400).json({ message: "No valid messages provided." });
+      }
+
+      const orgIds = await getStudentOrgIds(userId).catch(() => [] as string[]);
+      const orgId = orgIds[0] ?? null;
+
+      const totalChars = sanitizedMessages.reduce((sum: number, m: any) => sum + m.content.length, 0);
+      const useMini = sanitizedMessages.length <= 2 && totalChars < 1500;
+      const model = useMini ? "gpt-4o-mini" : "gpt-4o";
+
+      const reservation = await reserveQuota({ userId, orgId, kind: "guide_chat", model });
+      if (!reservation.ok) {
+        return res.status(429).json({ message: quotaErrorMessage(reservation), quota: reservation });
+      }
+      let finalized = false;
+      try {
+
+      const systemPrompt = `You are "Money Guide" — FinSight Lite's AI-powered financial mentor for kids and teens aged 10–17 in The Bahamas and the Caribbean.
+
+PERSONALITY:
+- You're like a fun, knowledgeable older cousin or mentor
+- Friendly, encouraging, lightly humorous, Caribbean-infused tone
+- Use Caribbean expressions naturally (e.g., "dat's smart!", "you on the right track!")
+- Empowering, non-judgmental, positive — never guilt-based
+- Treat the teen as capable and curious, not naive
+- Keep responses SHORT (2-4 paragraphs max), fun, and interactive
+- Use emojis naturally but don't overdo it (1-3 per response)
+
+The user's name is "${userName}".
+
+WHAT YOU DO:
+1. Help teens learn about saving, budgeting, goal-setting, and money decisions
+2. Explain financial concepts in plain language using relatable examples (allowance, birthday money, school fundraisers, snacks, games, gadgets)
+3. Encourage short-term and long-term savings goals
+4. Suggest fun "what-if" scenarios and comparisons
+5. Celebrate small wins and encourage good habits
+6. Reference Caribbean context: BSD currency, Bahamian/Caribbean prices, local stores and activities
+
+CONCEPTS YOU TEACH (in kid-friendly language):
+- Saving vs spending
+- Needs vs wants
+- Budgeting basics
+- Compound interest ("your money making money!")
+- Stocks (ownership in companies)
+- Bonds (lending money to governments)
+- Fixed deposits / CDs ("treasure chests that grow")
+- Risk vs reward
+- Goal-based saving
+- The power of starting early
+
+RESPONSE STYLE:
+- Start with something encouraging or relatable
+- Give the core advice/explanation clearly
+- End with a question, suggestion, or mini-challenge to keep them engaged
+- Use simple numbers and examples they can relate to
+- When comparing options, use clear A vs B format
+- For calculations, show the math simply
+
+EXAMPLES OF GOOD RESPONSES:
+- "Hey ${userName}! If you save just $5 a week, you'd have $260 in a year — that's enough for those sneakers you want! 🎯"
+- "A bond is like lending your money to the government. They promise to give it back with a little extra on top. Think of it as your money going on a trip and bringing back souvenirs! 🏝️"
+- "Want a mini challenge? Try the 'Skip a Snack' challenge — skip one $3 snack this week and put that money aside. By month end, you could have $12 saved! 💪"
+
+THINGS TO AVOID:
+- Financial jargon without explanation
+- Long, boring lectures
+- Guilt-based messaging ("you shouldn't have bought that")
+- Overly complex calculations
+- Talking down to the user
+- Recommending real investments (this is educational only)
+
+If the user asks about FinSight Lite features, you can mention:
+- Money Games: fun financial games to practice skills
+- Investment Simulator: practice buying/selling stocks and bonds with virtual money
+- Savings Goals: track what they're saving for
+- Budgets: plan their spending
+- Learning Modules: lessons about money topics`;
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const chatMessages = [
+        { role: "system" as const, content: systemPrompt },
+        ...sanitizedMessages,
+      ];
+
+      const stream = await openai.chat.completions.create({
+        model,
+        messages: chatMessages,
+        stream: true,
+        stream_options: { include_usage: true },
+        max_completion_tokens: 1024,
+        temperature: 0.8,
+      });
+
+      let promptTokens = 0;
+      let completionTokens = 0;
+      for await (const chunk of stream) {
+        if (chunk.usage) {
+          promptTokens = chunk.usage.prompt_tokens ?? 0;
+          completionTokens = chunk.usage.completion_tokens ?? 0;
+        }
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) {
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
+      }
+
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+      await finalizeUsage(reservation.reservationId, {
+        tokensIn: promptTokens, tokensOut: completionTokens, model,
+      });
+      finalized = true;
+      } finally {
+        if (!finalized) await releaseReservation(reservation.reservationId);
+      }
+    } catch (error) {
+      console.error("Guide chat error:", error);
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ error: "Something went wrong" })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ message: "Failed to get response" });
+      }
+    }
+  });
+
+  // === ORG ADMIN AI USAGE ===
+  app.get("/api/org-admin/ai-usage", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+    try {
+      const usage = await getOrgUsageToday(admin.orgId);
+      res.json(usage);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/org-admin/ai-usage-monthly", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+    try {
+      const usage = await getOrgUsageThisMonth(admin.orgId);
+      res.json(usage);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/org-admin/ai-quotas", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+    try {
+      const settings = await getOrgQuotaSettings(admin.orgId);
+      res.json(settings);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.patch("/api/org-admin/ai-quotas", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+    try {
+      const limitField = z.union([z.number().int().min(1).max(100000), z.null()]).optional();
+      const QuotaPatch = z.object({
+        guide_chat_per_user: limitField,
+        tutor_explain_per_user: limitField,
+        ai_insights_per_user: limitField,
+        guide_chat_per_org: limitField,
+        tutor_explain_per_org: limitField,
+        ai_insights_per_org: limitField,
+      }).strict();
+      const parsed = QuotaPatch.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid quota values", errors: parsed.error.flatten() });
+      }
+      await updateOrgQuotaSettings(admin.orgId, parsed.data);
+      const settings = await getOrgQuotaSettings(admin.orgId);
+      await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org_admin.ai_quota.update", orgId: admin.orgId, meta: parsed.data, req });
+      res.json(settings);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  // === ADMIN AI USAGE MAINTENANCE ===
+  app.get("/api/admin/maintenance/ai-usage-stats", isAdmin, async (req, res) => {
+    try {
+      const rawDays = parseInt(String(req.query.olderThanDays ?? 180)) || 180;
+      const cutoffDays = Math.max(30, rawDays);
+      const cutoff = new Date(Date.now() - cutoffDays * 24 * 60 * 60 * 1000);
+      const [totalRow] = await emailDb.select({ n: sqlEmail<number>`count(*)::int` }).from(aiUsageEvents);
+      const [purgeableRow] = await emailDb.select({ n: sqlEmail<number>`count(*)::int` }).from(aiUsageEvents).where(ltDrizzle(aiUsageEvents.createdAt, cutoff));
+      res.json({ total: totalRow.n, purgeable: purgeableRow.n, cutoffDays, cutoffDate: cutoff.toISOString() });
+    } catch (e) {
+      res.status(500).json({ message: (e as Error).message });
+    }
+  });
+
+  app.post("/api/admin/maintenance/purge-ai-usage", isAdmin, async (req, res) => {
+    const olderThanDays = Math.max(1, parseInt(String((req.body as any)?.olderThanDays ?? 180)) || 180);
+    const job = await enqueueJob({ kind: "purge-ai-usage", payload: { olderThanDays } });
+    res.json({ jobId: job.id });
+  });
+
+  // === PERFORMANCE AGENT ===
+  app.post("/api/admin/perf-scan", isAdmin, async (_req, res) => {
+    try {
+      const job = await enqueueJob({ kind: "perf-scan", payload: { triggeredBy: "admin" } });
+      res.json({ jobId: job.id });
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  app.get("/api/admin/perf-reports", isAdmin, (_req, res) => {
+    try {
+      const dir = nodePath.join(process.cwd(), "agent-reports");
+      if (!fs.existsSync(dir)) return res.json([]);
+      const files = fs.readdirSync(dir)
+        .filter(f => f.endsWith(".md"))
+        .sort()
+        .reverse()
+        .slice(0, 30)
+        .map(f => {
+          const stat = fs.statSync(nodePath.join(dir, f));
+          return { name: f, sizeBytes: stat.size, createdMs: stat.mtimeMs };
+        });
+      res.json(files);
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  app.get("/api/admin/perf-reports/:filename", isAdmin, (req, res) => {
+    try {
+      const safe = nodePath.basename(req.params.filename);
+      if (!safe.endsWith(".md")) return res.status(400).json({ message: "Invalid filename" });
+      const filePath = nodePath.join(process.cwd(), "agent-reports", safe);
+      if (!fs.existsSync(filePath)) return res.status(404).json({ message: "Report not found" });
+      const content = fs.readFileSync(filePath, "utf-8");
+      res.json({ name: safe, content });
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+}
