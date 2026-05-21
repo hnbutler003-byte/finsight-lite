@@ -53,54 +53,72 @@ export async function registerAiRoutes(app: Express): Promise<void> {
       const orgIds = await getStudentOrgIds(userId).catch(() => [] as string[]);
       const orgId = orgIds[0] ?? null;
 
-      const reservation = await reserveQuota({ userId, orgId, kind: "ai_insights", model: "gpt-4o-mini" });
+      const model = "gpt-4o-mini";
+      const reservation = await reserveQuota({ userId, orgId, kind: "ai_insights", model });
       if (!reservation.ok) {
         return res.status(429).json({ message: quotaErrorMessage(reservation), quota: reservation });
       }
       let finalized = false;
       try {
-        const transactions = await storage.getTransactions(userId);
-        const recentTransactions = transactions.slice(0, 50);
 
-        if (recentTransactions.length === 0) {
-          await releaseReservation(reservation.reservationId);
-          return res.json({ insights: [], message: "No transactions to analyze yet" });
-        }
+      const transactions = await storage.getTransactions(userId, { limit: 100 });
+      const budgets = await storage.getBudgets(userId);
+      const selectedCurrency = req.query.currency as string || "BSD";
+      
+      const prompt = `Analyze this user's financial data.
+      Current Currency Context: ${selectedCurrency}
+      
+      Transactions: ${JSON.stringify(transactions.map(t => ({ amount: t.amount, currency: t.currency, category: t.category?.name })))}
+      Budgets: ${JSON.stringify(budgets.map(b => ({ amount: b.amount, category: b.category?.name })))}
+      
+      Please provide:
+      1. Smart Insights: Analyze spending patterns and budget adherence.
+      2. Currency Insights: 
+         - Mention the current approximate exchange rate of ${selectedCurrency} to USD (use your internal knowledge of typical regional rates).
+         - Provide specific advice for users holding ${selectedCurrency} (e.g., inflation concerns, regional travel tips, or import costs).
+         - Suggest how to optimize spending based on the ${selectedCurrency} value.
 
-        const transactionSummary = recentTransactions.map(t =>
-          `${t.date}: ${t.type === "income" ? "+" : "-"}${t.amount} ${t.currency} - ${t.description || "Unknown"} (${t.category?.name || "Uncategorized"})`
-        ).join("\n");
+      Format the response as a JSON object with three keys:
+      - "spendingInsights": Array of { "title": string, "behavior": string, "suggestion": string }
+      - "currencyInsights": Array of { "title": string, "content": string, "impact": "positive" | "neutral" | "negative", "rate": string }
+      - "newsClippings": Array of { "source": string, "headline": string, "summary": string, "url": string }
+      
+      For "currencyInsights", the "rate" field should show the numerical exchange rate formatted like: "1 ${selectedCurrency} : X USD". Keep the "content" very brief.
+      For "newsClippings", provide 2-3 current financial news items from reputable sources strictly relevant to ${selectedCurrency}'s country.
+      Sources by Currency:
+      - BSD: http://www.tribune242.com/, http://www.thenassauguardian.com/, http://ewnews.com/, http://znsbahamas.com/
+      - JMD: http://jamaica-gleaner.com/, http://www.jamaicaobserver.com/
+      - TTD: http://newsday.co.tt/, http://trinidadexpress.com/
+      - BBD: http://barbadostoday.bb/, http://www.nationnews.com/
+      - XCD: http://oecsbusinessfocus.com/, http://caribbeannewsglobal.com/
+      - GYD: http://guyanachronicle.com/, http://www.stabroeknews.com/
+      - HTG: http://lenouvelliste.com/, http://juno7.ht/
+      - USD: http://www.caribbeanjournal.com/, http://www.cnbc.com/
+      
+      IMPORTANT: Only use sources from the list above that match the ${selectedCurrency}. Ensure the "url" field is the EXACT home page URL provided above. For the "source" field, use clean names like "The Tribune", "The Nassau Guardian", "Eyewitness News", or "ZNS Bahamas". Always link directly to the main home page to ensure the link works.
+      
+      Keep the tone helpful and Caribbean-focused.`;
 
-        const response = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content: "You are a financial advisor for a Caribbean student. Analyze their transactions and provide 3 practical, encouraging insights about their spending patterns and savings opportunities. Keep insights brief (1-2 sentences each) and actionable. Return JSON with an 'insights' array.",
-            },
-            {
-              role: "user",
-              content: `Here are my recent transactions:\n${transactionSummary}\n\nProvide 3 financial insights as JSON: {"insights": [{"title": "...", "message": "...", "type": "positive|warning|tip"}]}`,
-            },
-          ],
-          response_format: { type: "json_object" },
-          max_completion_tokens: 512,
-        });
+      const response = await openai.chat.completions.create({
+        model,
+        messages: [{ role: "system", content: "You are a senior financial advisor specializing in Caribbean economies and personal finance." }, { role: "user", content: prompt }],
+        response_format: { type: "json_object" }
+      });
 
-        await finalizeUsage(reservation.reservationId, {
-          tokensIn: response.usage?.prompt_tokens ?? 0,
-          tokensOut: response.usage?.completion_tokens ?? 0,
-          model: "gpt-4o-mini",
-        });
-        finalized = true;
+      await finalizeUsage(reservation.reservationId, {
+        tokensIn: response.usage?.prompt_tokens ?? 0,
+        tokensOut: response.usage?.completion_tokens ?? 0,
+      });
+      finalized = true;
 
-        const parsed = JSON.parse(response.choices[0].message.content || "{}");
-        res.json(parsed);
+      const content = response.choices[0].message.content || "{}";
+      res.json(JSON.parse(content));
       } finally {
         if (!finalized) await releaseReservation(reservation.reservationId);
       }
     } catch (err: any) {
-      res.status(500).json({ message: err.message });
+      console.error("AI Insight error:", err?.message || "Unknown error");
+      res.status(500).json({ message: "Failed to generate insights" });
     }
   });
 

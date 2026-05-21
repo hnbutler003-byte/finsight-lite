@@ -8,7 +8,10 @@ import {
   getOrganization,
   getOrgEnvironments,
   getOrgEnvironmentByJoinCode,
+  getOrgEnvironmentById,
+  enrollStudentInOrg,
 } from "../supabase";
+import { isAuthenticated } from "../replit_integrations/auth";
 
 export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@finsightlite.com";
 export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
@@ -34,43 +37,122 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
   app.post("/api/auth/google", async (req, res) => {
     try {
       if (!googleEnabled()) return res.status(503).json({ message: "Google sign-in is not configured." });
-      const { idToken } = z.object({ idToken: z.string().min(1) }).parse(req.body);
+      const { idToken, classCode } = z.object({
+        idToken: z.string().min(1),
+        classCode: z.string().optional(),
+      }).parse(req.body);
       const profile = await verifyGoogleToken(idToken);
 
+      // Resolve class or org by join code first (before creating user) so we can
+      // enforce allowed_email_domains before account creation.
+      let resolvedClass: Awaited<ReturnType<typeof storage.getClassByCode>> | null = null;
+      let resolvedOrgEnv: Awaited<ReturnType<typeof getOrgEnvironmentByJoinCode>> | null = null;
+      if (classCode) {
+        const code = classCode.toUpperCase().trim();
+        // Try class code first
+        resolvedClass = (await storage.getClassByCode(code)) ?? null;
+        if (resolvedClass) {
+          // If this class belongs to an org environment, enforce domain allowlist
+          if (resolvedClass.envId) {
+            const classEnv = await getOrgEnvironmentById(resolvedClass.envId);
+            if (classEnv) {
+              const classOrg = await getOrganization(classEnv.org_id);
+              if (classOrg?.allowed_email_domains && classOrg.allowed_email_domains.length > 0) {
+                const emailDomain = profile.email.split("@")[1]?.toLowerCase() ?? "";
+                const allowed = classOrg.allowed_email_domains.map((d: string) => d.toLowerCase());
+                if (!allowed.includes(emailDomain)) {
+                  return res.status(403).json({
+                    message: `Your email domain (@${emailDomain}) is not permitted for this school. Allowed: ${classOrg.allowed_email_domains.join(", ")}`,
+                  });
+                }
+              }
+            }
+          }
+        } else {
+          // Try org environment join code
+          resolvedOrgEnv = (await getOrgEnvironmentByJoinCode(code)) ?? null;
+          if (!resolvedOrgEnv) {
+            return res.status(400).json({ message: "Invalid class or organization code." });
+          }
+          // Enforce allowed_email_domains for org joins
+          const org = await getOrganization(resolvedOrgEnv.org_id);
+          if (org?.allowed_email_domains && org.allowed_email_domains.length > 0) {
+            const emailDomain = profile.email.split("@")[1]?.toLowerCase() ?? "";
+            const allowed = org.allowed_email_domains.map((d: string) => d.toLowerCase());
+            if (!allowed.includes(emailDomain)) {
+              return res.status(403).json({
+                message: `Your email domain (@${emailDomain}) is not permitted for this organization. Allowed: ${org.allowed_email_domains.join(", ")}`,
+              });
+            }
+          }
+        }
+      }
+
       const { authStorage } = await import("../replit_integrations/auth/storage");
-      let user = await authStorage.getUserByUsername(profile.email);
+      let user = await authStorage.getUserByEmail(profile.email);
       if (!user) {
+        const base = (profile.givenName || "Student").replace(/[^a-zA-Z0-9]/g, "");
+        const baseFormatted = base.charAt(0).toUpperCase() + base.slice(1).toLowerCase() || "Student";
+        let username = "";
+        for (let i = 0; i < 10; i++) {
+          const digits = Math.floor(1000 + Math.random() * 9000);
+          username = `${baseFormatted}_${digits}`;
+          if (!(await authStorage.getUserByUsername(username))) break;
+        }
         user = await authStorage.upsertUser({
-          username: profile.email,
-          firstName: profile.givenName || profile.name.split(" ")[0] || "Student",
-          lastName: profile.familyName || profile.name.split(" ").slice(1).join(" ") || "",
-          email: profile.email,
+          username,
           avatar: "star",
+          firstName: profile.givenName || profile.name.split(" ")[0] || "Student",
+          lastName: profile.familyName || null,
+          email: profile.email,
+          profileImageUrl: profile.picture || null,
         });
       }
-      (req as any).session.userId = user.id;
-      return res.json({ ok: true, user });
+
+      // Enroll in class / org atomically
+      if (resolvedClass) {
+        await storage.enrollStudent(resolvedClass.id, user.id).catch((err) => {
+          if (!/already|duplicate|unique/i.test(String(err))) console.warn("[Google Auth] enrollStudent:", err);
+        });
+        if (resolvedClass.envId) {
+          const env = await getOrgEnvironmentById(resolvedClass.envId);
+          if (env) {
+            await enrollStudentInOrg(env.org_id, env.id, user.id).catch((err) => {
+              console.warn("[Google Auth] enrollStudentInOrg (class):", err);
+            });
+          }
+        }
+      } else if (resolvedOrgEnv) {
+        await enrollStudentInOrg(resolvedOrgEnv.org_id, resolvedOrgEnv.id, user.id).catch((err) => {
+          console.warn("[Google Auth] enrollStudentInOrg (org):", err);
+        });
+      }
+
+      await new Promise<void>((resolve, reject) => {
+        req.session.userId = user!.id;
+        req.session.save((err) => (err ? reject(err) : resolve()));
+      });
+      return res.json(user);
     } catch (e: any) {
       console.error("[Google Auth] Student:", e.message);
       return res.status(400).json({ message: e.message || "Google sign-in failed." });
     }
   });
 
-  app.post("/api/auth/google-link", async (req, res) => {
+  // Link Google email to existing student account
+  app.post("/api/auth/google-link", isAuthenticated, async (req: any, res) => {
     try {
       if (!googleEnabled()) return res.status(503).json({ message: "Google sign-in is not configured." });
-      const { idToken, userId } = z.object({ idToken: z.string().min(1), userId: z.string().min(1) }).parse(req.body);
+      const { idToken } = z.object({ idToken: z.string().min(1) }).parse(req.body);
       const profile = await verifyGoogleToken(idToken);
 
       const { authStorage } = await import("../replit_integrations/auth/storage");
-      const user = await authStorage.getUser(userId);
-      if (!user) return res.status(404).json({ message: "User not found" });
-
-      const updated = await authStorage.upsertUser({
-        ...user,
-        email: profile.email,
-      });
-      return res.json({ ok: true, user: updated });
+      const existing = await authStorage.getUserByEmail(profile.email);
+      if (existing && existing.id !== req.user.id) {
+        return res.status(409).json({ message: "This Google account is already linked to another FinSight account." });
+      }
+      const updated = await authStorage.linkEmail(req.user.id, profile.email, profile.picture);
+      return res.json(updated);
     } catch (e: any) {
       console.error("[Google Auth] Link:", e.message);
       return res.status(400).json({ message: e.message || "Google link failed." });
