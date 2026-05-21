@@ -11,6 +11,28 @@ import { and, eq } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import { log } from "./index";
 
+const FROM_EMAIL_SANDBOX = "FinSight Lite <onboarding@resend.dev>";
+
+// Startup warning: RESEND_FROM_EMAIL should be set to a verified custom domain address
+// (e.g. "FinSight Lite <noreply@finsightlite.com>") so emails aren't blocked by school
+// spam filters. In production this is a loud error; in development it's just a notice.
+if (!process.env.RESEND_FROM_EMAIL) {
+  if (process.env.NODE_ENV === "production") {
+    console.error(
+      "[email] RESEND_FROM_EMAIL is not set. Emails will send from the shared Resend " +
+      "sandbox address (onboarding@resend.dev), which school and institutional spam " +
+      "filters may block. Set RESEND_FROM_EMAIL in Replit Secrets to a verified custom " +
+      "domain address (e.g. 'FinSight Lite <noreply@finsightlite.com>')."
+    );
+  } else {
+    console.warn("[email] RESEND_FROM_EMAIL not set — using Resend sandbox address (fine for development).");
+  }
+}
+
+function resolveFromEmail(connectorFromEmail?: string): string {
+  return connectorFromEmail || process.env.RESEND_FROM_EMAIL || FROM_EMAIL_SANDBOX;
+}
+
 let cachedSettings: { apiKey: string; fromEmail: string } | null = null;
 let cachedAt = 0;
 const SETTINGS_TTL_MS = 5 * 60 * 1000;
@@ -33,7 +55,7 @@ async function getResendCredentials(): Promise<{ apiKey: string; fromEmail: stri
     if (!conn?.settings?.api_key) return null;
     cachedSettings = {
       apiKey: conn.settings.api_key as string,
-      fromEmail: (conn.settings.from_email as string) || "FinSight Lite <onboarding@resend.dev>",
+      fromEmail: resolveFromEmail(conn.settings.from_email as string),
     };
     cachedAt = Date.now();
     return cachedSettings;

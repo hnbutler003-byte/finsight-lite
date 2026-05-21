@@ -17,6 +17,7 @@ FinSight Lite is a financial literacy learning simulator that teaches school-age
 *   `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (for Supabase integration)
 *   `ADMIN_EMAIL`, `ADMIN_PASSWORD` (for Founder Admin Dashboard)
 *   `AI_PURGE_OLDER_THAN_DAYS` (optional, default 180) — how far back the monthly auto-purge of `ai_usage_events` retains records
+*   `RESEND_FROM_EMAIL` (required in production) — the verified custom-domain FROM address for all outgoing emails, e.g. `FinSight Lite <noreply@finsightlite.com>`. Without this, emails send from the shared Resend sandbox address which school spam filters may block. Must be a domain verified in your Resend account with SPF/DKIM/DMARC DNS records.
 
 ## Stack
 
