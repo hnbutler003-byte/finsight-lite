@@ -70,6 +70,7 @@ import { db as emailDb } from "./db";
 import { aiUsageEvents, emailContacts, emailEvents } from "@shared/schema";
 import { eq as eqEmail, and as andEmail, gte as gteEmail, lt as ltDrizzle, sql as sqlEmail } from "drizzle-orm";
 import { isVeryfiConfigured, parseWithVeryfi } from "./veryfi";
+import { authLimiter, strictAuthLimiter } from "./rateLimiter";
 import {
   supabase,
   initSupabaseTables,
@@ -185,6 +186,22 @@ ${urls.map(u => `  <url>
       res.status(503).json({ ok: false, error: e?.message || "db unavailable" });
     }
   });
+
+  // ── Auth rate limiting ────────────────────────────────────────────────────
+  // Applied before auth routes are registered so they intercept every method
+  // on these paths regardless of which file defines the handler.
+  // General auth limiter: 10 req / 15 min per IP (login, register, OAuth)
+  app.use("/api/auth/register", authLimiter);
+  app.use("/api/auth/google", authLimiter);
+  app.use("/api/teacher/auth/register", authLimiter);
+  app.use("/api/teacher/auth/login", authLimiter);
+  app.use("/api/teacher/auth/google", authLimiter);
+  app.use("/api/org/auth/register", authLimiter);
+  app.use("/api/org/auth/login", authLimiter);
+  app.use("/api/org/auth/google", authLimiter);
+  app.use("/api/org/auth/google-register", authLimiter);
+  // Strict limiter: 5 req / 15 min — username lookup is a brute-force target
+  app.use("/api/auth/resume", strictAuthLimiter);
 
   // Auth setup
   await setupAuth(app);

@@ -13,6 +13,11 @@ import { db } from "./db";
 import { weeklyDigestRuns, aiUsagePurgeRuns } from "@shared/schema";
 import { and, eq } from "drizzle-orm";
 
+if (!process.env.SESSION_SECRET) {
+  console.error("[startup] SESSION_SECRET env var is not set — refusing to start. Set it in your Replit Secrets.");
+  process.exit(1);
+}
+
 // How many days back the auto-scheduled purge deletes (default 180).
 const AUTO_PURGE_OLDER_THAN_DAYS = (() => {
   const v = parseInt(process.env.AI_PURGE_OLDER_THAN_DAYS ?? "180", 10);
