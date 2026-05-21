@@ -29,8 +29,16 @@ if (!process.env.RESEND_FROM_EMAIL) {
   }
 }
 
-function resolveFromEmail(connectorFromEmail?: string): string {
-  return connectorFromEmail || process.env.RESEND_FROM_EMAIL || FROM_EMAIL_SANDBOX;
+// Priority: (1) RESEND_FROM_EMAIL env var [authoritative], (2) connector's own
+// from_email setting, (3) sandbox fallback — development only.
+// Returns null in production when no verified address is configured, which
+// causes getResendCredentials to return null and email sending to be skipped
+// gracefully (logged as resend_not_configured in email_events).
+function resolveFromEmail(connectorFromEmail?: string): string | null {
+  if (process.env.RESEND_FROM_EMAIL) return process.env.RESEND_FROM_EMAIL;
+  if (connectorFromEmail) return connectorFromEmail;
+  if (process.env.NODE_ENV !== "production") return FROM_EMAIL_SANDBOX;
+  return null;
 }
 
 let cachedSettings: { apiKey: string; fromEmail: string } | null = null;
@@ -53,9 +61,11 @@ async function getResendCredentials(): Promise<{ apiKey: string; fromEmail: stri
     ).then((r) => r.json());
     const conn = data?.items?.[0];
     if (!conn?.settings?.api_key) return null;
+    const fromEmail = resolveFromEmail(conn.settings.from_email as string);
+    if (!fromEmail) return null; // production with no verified FROM address — skip sending
     cachedSettings = {
       apiKey: conn.settings.api_key as string,
-      fromEmail: resolveFromEmail(conn.settings.from_email as string),
+      fromEmail,
     };
     cachedAt = Date.now();
     return cachedSettings;
