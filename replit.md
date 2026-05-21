@@ -26,6 +26,7 @@ FinSight Lite is a financial literacy learning simulator that teaches school-age
 *   **Database:** PostgreSQL, Drizzle ORM
 *   **Build Tool:** Vite (client), esbuild (server)
 *   **Runtime:** Node.js
+*   **Deployment:** Replit Autoscale (min 0 replicas, max 5) — scales to zero when idle, spins up additional instances under load. Sessions are stored in PostgreSQL so they survive across instances.
 
 ## Where things live
 
