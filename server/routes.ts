@@ -31,6 +31,11 @@ export async function registerRoutes(
     next();
   });
 
+  // Health check — used by Railway and uptime monitors
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok", ts: Date.now() });
+  });
+
   // Sitemap
   app.get("/sitemap.xml", (req, res) => {
     const proto = req.headers["x-forwarded-proto"] || req.protocol || "https";
