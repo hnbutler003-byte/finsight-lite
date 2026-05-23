@@ -13,7 +13,7 @@ FinSight Lite is a financial literacy learning simulator that teaches school-age
 
 **Required Environment Variables:**
 *   `SESSION_SECRET` (for Express sessions)
-*   `DATABASE_URL` (for PostgreSQL connection)
+*   `SUPABASE_DATABASE_URL` (primary PostgreSQL connection string — points to Supabase). `DATABASE_URL` is accepted as a fallback but should not be relied upon; Replit may point it at an internal host.
 *   `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (for Supabase integration)
 *   `ADMIN_EMAIL`, `ADMIN_PASSWORD` (for Founder Admin Dashboard)
 *   `AI_PURGE_OLDER_THAN_DAYS` (optional, default 180) — how far back the monthly auto-purge of `ai_usage_events` retains records
