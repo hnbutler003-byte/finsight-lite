@@ -752,4 +752,90 @@ If the user asks about FinSight Lite features, you can mention:
       res.status(500).json({ message: e.message });
     }
   });
+
+  // Admin Help Chat — powered by Anthropic Claude
+  app.post("/api/admin/help-chat", isAdmin, async (req, res) => {
+    try {
+      const { messages } = req.body;
+      if (!Array.isArray(messages) || messages.length === 0) {
+        return res.status(400).json({ message: "Messages are required." });
+      }
+
+      const validRoles = new Set(["user", "assistant"]);
+      const sanitized = messages
+        .filter((m: any) => m && typeof m.content === "string" && m.content.trim().length > 0 && validRoles.has(m.role))
+        .map((m: any) => ({ role: m.role as "user" | "assistant", content: m.content.slice(0, 4000) }));
+
+      if (sanitized.length === 0) {
+        return res.status(400).json({ message: "No valid messages provided." });
+      }
+
+      const Anthropic = (await import("@anthropic-ai/sdk")).default;
+      const anthropic = new Anthropic({
+        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+      });
+
+      const systemPrompt = `You are the FinSight Lite Admin Assistant — a knowledgeable, concise helper for platform administrators.
+
+FinSight Lite is a financial literacy learning simulator for Caribbean youth (ages 10–17), helping them learn about money, saving, budgeting, and investing using virtual currency and interactive tools.
+
+YOUR ROLE:
+Help administrators navigate and use the platform confidently. Be direct, practical, and friendly. Keep answers concise (2–4 short paragraphs max).
+
+KEY ADMIN FEATURES YOU CAN HELP WITH:
+
+1. ORGANIZATIONS & SCHOOLS
+   - Organizations represent schools or institutions. Each org can have multiple schools, teachers, and student cohorts.
+   - Admins can create, edit, and deactivate organizations and schools from the Organizations/Schools tabs.
+
+2. STUDENT MANAGEMENT
+   - View all students across all orgs, search by name or school, export data as CSV.
+   - Students use passwordless avatar-based login — no email or password required.
+   - Admins can reset student progress, view virtual balances, XP, and badges.
+
+3. TEACHER ACCOUNTS
+   - Teachers log in with email and password. Admins can create, edit, reset passwords, and deactivate teacher accounts.
+   - Teachers manage their own classrooms, assign challenges, and track student progress.
+
+4. CLASSES & CHALLENGES
+   - Classes group students under a teacher. Challenges are financial tasks teachers assign to classes.
+   - Admins have read access to all classes and can manage challenges globally.
+
+5. LEARNING & LESSON MANAGEMENT
+   - Lessons and modules are managed via Supabase-backed content tables. Static content seeds automatically on startup.
+   - The MoneyLab feature lets students upload exam papers and get AI-generated quizzes and explanations.
+
+6. ANALYTICS & REPORTS
+   - The Reports tab provides exportable summaries of student activity, AI usage, and org-level engagement.
+   - The Audit Log records all admin actions with timestamps and IP addresses.
+   - The Perf Agent tab runs automated performance scans of the codebase.
+
+7. STUDENT PROGRESS TRACKING
+   - View XP earned, badges unlocked, learning module completion, and virtual portfolio performance per student.
+   - Leaderboard snapshots are stored in Supabase for historical comparison.
+
+8. BACKGROUND JOBS & DB VIEWER
+   - The Jobs tab shows background task status (AI scans, digest emails, data purges).
+   - The DB Viewer lets admins inspect raw database tables (up to 500 rows).
+
+9. SPONSORS
+   - Sponsors can be associated with organizations to support platform access.
+
+Always answer based on these features. If an admin asks about something outside your knowledge, say so honestly and suggest they check the developer documentation or contact the platform team.`;
+
+      const response = await anthropic.messages.create({
+        model: "claude-3-5-haiku-20241022",
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: sanitized,
+      });
+
+      const text = response.content[0].type === "text" ? response.content[0].text : "";
+      res.json({ reply: text });
+    } catch (e: any) {
+      console.error("Admin help chat error:", e.message);
+      res.status(500).json({ message: "Failed to get a response. Please try again." });
+    }
+  });
 }

@@ -19,10 +19,129 @@ import {
   LogOut, Search, Download, Plus, Trash2, Pencil, ChevronLeft, ChevronRight,
   LayoutDashboard, BookOpen, X, Globe, ChevronDown, ChevronUp,
   CheckCircle2, XCircle, Layers, Medal, FileText, Eye, EyeOff, Minus, Copy, Check, Loader2,
-  Zap, AlertTriangle, Info, RefreshCw, Play, Clock
+  Zap, AlertTriangle, Info, RefreshCw, Play, Clock, MessageCircle, Send, Bot
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { VideoField } from "@/components/VideoField";
+
+// ─── Admin Help Chat ─────────────────────────────────────────────────────────
+
+type ChatMessage = { role: "user" | "assistant"; content: string };
+
+function AdminHelpChat() {
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const sendMessage = async () => {
+    const text = input.trim();
+    if (!text || loading) return;
+    const next: ChatMessage[] = [...messages, { role: "user", content: text }];
+    setMessages(next);
+    setInput("");
+    setLoading(true);
+    try {
+      const res = await apiRequest("POST", "/api/admin/help-chat", { messages: next });
+      const data = await res.json();
+      if (data.reply) {
+        setMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
+      }
+    } catch {
+      setMessages(prev => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  };
+
+  return (
+    <>
+      {/* Floating button */}
+      <button
+        data-testid="button-admin-help-chat"
+        onClick={() => setOpen(o => !o)}
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-3 rounded-full shadow-lg transition-all duration-200 font-medium text-sm"
+      >
+        {open ? <X className="w-4 h-4" /> : <MessageCircle className="w-4 h-4" />}
+        {open ? "Close" : "Help"}
+      </button>
+
+      {/* Chat panel */}
+      {open && (
+        <div
+          data-testid="panel-admin-help-chat"
+          className="fixed bottom-20 right-6 z-50 w-[360px] max-h-[520px] flex flex-col rounded-2xl shadow-2xl border border-slate-700 bg-slate-900 overflow-hidden"
+        >
+          {/* Header */}
+          <div className="flex items-center gap-2 px-4 py-3 bg-indigo-700 text-white">
+            <Bot className="w-5 h-5 shrink-0" />
+            <div>
+              <p className="font-semibold text-sm leading-none">Admin Assistant</p>
+              <p className="text-xs text-indigo-200 mt-0.5">Ask me anything about the platform</p>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-[200px]">
+            {messages.length === 0 && (
+              <div className="text-slate-400 text-sm text-center mt-8 space-y-2">
+                <p>👋 Hi! I can help you navigate FinSight Lite.</p>
+                <p className="text-xs text-slate-500">Try: "How do I add a teacher?" or "Where is the audit log?"</p>
+              </div>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div
+                  data-testid={`chat-message-${i}`}
+                  className={`max-w-[85%] rounded-xl px-3 py-2 text-sm whitespace-pre-wrap ${
+                    m.role === "user"
+                      ? "bg-indigo-600 text-white rounded-br-sm"
+                      : "bg-slate-800 text-slate-200 rounded-bl-sm"
+                  }`}
+                >
+                  {m.content}
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-slate-800 text-slate-400 rounded-xl rounded-bl-sm px-3 py-2 text-sm flex items-center gap-1.5">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Thinking…
+                </div>
+              </div>
+            )}
+            <div ref={el => { if (el) el.scrollIntoView({ behavior: "smooth" }); }} />
+          </div>
+
+          {/* Input */}
+          <div className="px-3 py-3 border-t border-slate-700 flex gap-2">
+            <input
+              data-testid="input-admin-help-chat"
+              className="flex-1 bg-slate-800 text-slate-100 placeholder-slate-500 text-sm rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-indigo-500"
+              placeholder="Ask a question…"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKey}
+              disabled={loading}
+            />
+            <button
+              data-testid="button-send-admin-help"
+              onClick={sendMessage}
+              disabled={loading || !input.trim()}
+              className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white rounded-lg px-3 py-2 transition-colors"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -2471,7 +2590,8 @@ export default function AdminDashboard() {
           </div>
         )}
 
-      </main>
+      <AdminHelpChat />
+    </main>
     </div>
   );
 }
