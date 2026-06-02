@@ -64,6 +64,7 @@ export default function AuthPage() {
   const { register, isRegistering } = useAuth();
   const [, setLocation] = useLocation();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [googleAvailable, setGoogleAvailable] = useState(true);
 
   const clearError = () => setError("");
 
@@ -259,21 +260,26 @@ export default function AuthPage() {
                 <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-emerald-400 transition-colors" />
               </button>
 
-              <div className="flex items-center gap-3">
-                <div className="flex-1 border-t border-white/20" />
-                <span className="text-xs uppercase text-white/40">or</span>
-                <div className="flex-1 border-t border-white/20" />
-              </div>
+              {googleAvailable && (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 border-t border-white/20" />
+                    <span className="text-xs uppercase text-white/40">or</span>
+                    <div className="flex-1 border-t border-white/20" />
+                  </div>
 
-              <div className="rounded-2xl bg-white/8 border border-white/20 p-3">
-                <GoogleSignInButton
-                  onSuccess={handleGoogleSignIn}
-                  onError={(msg) => setError(msg || "Google sign-in failed.")}
-                  text="continue_with"
-                  theme="filled_black"
-                />
-                {isGoogleLoading && <div className="flex justify-center mt-2"><Loader2 className="w-5 h-5 animate-spin text-white/60" /></div>}
-              </div>
+                  <div className="rounded-2xl bg-white/8 border border-white/20 p-3">
+                    <GoogleSignInButton
+                      onSuccess={handleGoogleSignIn}
+                      onError={(msg) => setError(msg || "Google sign-in failed.")}
+                      onUnavailable={() => setGoogleAvailable(false)}
+                      text="continue_with"
+                      theme="filled_black"
+                    />
+                    {isGoogleLoading && <div className="flex justify-center mt-2"><Loader2 className="w-5 h-5 animate-spin text-white/60" /></div>}
+                  </div>
+                </>
+              )}
 
               {error && <p className="text-red-400 text-sm text-center" data-testid="text-auth-error">{error}</p>}
             </div>
@@ -316,24 +322,29 @@ export default function AuthPage() {
                 {isValidatingCode ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Continue <ArrowRight className="ml-2 w-4 h-4" /></>}
               </Button>
 
-              <div className="flex items-center gap-3">
-                <div className="flex-1 border-t border-white/20" />
-                <span className="text-xs uppercase text-white/40">or sign in instantly</span>
-                <div className="flex-1 border-t border-white/20" />
-              </div>
-              <div className="rounded-2xl bg-white/8 border border-white/20 p-3">
-                <GoogleSignInButton
-                  onSuccess={async (idToken) => {
-                    const code = classCode.trim().toUpperCase();
-                    if (!code) { setError("Enter a code first."); return; }
-                    await handleGoogleSignIn(idToken, code);
-                  }}
-                  onError={(msg) => setError(msg || "Google sign-in failed.")}
-                  text="continue_with"
-                  theme="filled_black"
-                />
-                {isGoogleLoading && <div className="flex justify-center mt-2"><Loader2 className="w-5 h-5 animate-spin text-white/60" /></div>}
-              </div>
+              {googleAvailable && (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 border-t border-white/20" />
+                    <span className="text-xs uppercase text-white/40">or sign in instantly</span>
+                    <div className="flex-1 border-t border-white/20" />
+                  </div>
+                  <div className="rounded-2xl bg-white/8 border border-white/20 p-3">
+                    <GoogleSignInButton
+                      onSuccess={async (idToken) => {
+                        const code = classCode.trim().toUpperCase();
+                        if (!code) { setError("Enter a code first."); return; }
+                        await handleGoogleSignIn(idToken, code);
+                      }}
+                      onError={(msg) => setError(msg || "Google sign-in failed.")}
+                      onUnavailable={() => setGoogleAvailable(false)}
+                      text="continue_with"
+                      theme="filled_black"
+                    />
+                    {isGoogleLoading && <div className="flex justify-center mt-2"><Loader2 className="w-5 h-5 animate-spin text-white/60" /></div>}
+                  </div>
+                </>
+              )}
             </div>
 
             <button onClick={() => { setStep("student-access"); clearError(); }} className="flex items-center gap-1 text-sm text-white/50 hover:text-white/80 transition-colors mx-auto" data-testid="button-back-access">

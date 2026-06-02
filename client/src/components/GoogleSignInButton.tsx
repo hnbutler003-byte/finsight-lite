@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 interface Props {
   onSuccess: (idToken: string) => void;
   onError?: (msg?: string) => void;
+  onUnavailable?: () => void;
   text?: "signin_with" | "signup_with" | "continue_with" | "signin";
   theme?: "outline" | "filled_blue" | "filled_black";
 }
@@ -43,6 +44,7 @@ interface GoogleWindow extends Window {
 export function GoogleSignInButton({
   onSuccess,
   onError,
+  onUnavailable,
   text = "signin_with",
   theme = "outline",
 }: Props) {
@@ -55,12 +57,17 @@ export function GoogleSignInButton({
   useEffect(() => {
     if (!clientId) {
       setUnavailable(true);
+      onUnavailable?.();
       return;
     }
 
     const initialize = () => {
       const g = (window as GoogleWindow).google?.accounts?.id;
-      if (!g) { setUnavailable(true); return; }
+      if (!g) {
+        setUnavailable(true);
+        onUnavailable?.();
+        return;
+      }
       g.initialize({
         client_id: clientId,
         callback: (response: GoogleCredentialResponse) => {
@@ -99,7 +106,10 @@ export function GoogleSignInButton({
       script.async = true;
       script.defer = true;
       script.onload = initialize;
-      script.onerror = () => setUnavailable(true);
+      script.onerror = () => {
+        setUnavailable(true);
+        onUnavailable?.();
+      };
       document.head.appendChild(script);
     }
   }, [clientId]);
@@ -108,10 +118,16 @@ export function GoogleSignInButton({
 
   return (
     <div className="w-full flex justify-center">
+      {!loaded && (
+        <div className="w-full h-11 rounded-md bg-white/10 animate-pulse flex items-center justify-center gap-2">
+          <div className="w-5 h-5 rounded-full bg-white/20" />
+          <div className="w-32 h-3 rounded bg-white/20" />
+        </div>
+      )}
       <div
         ref={btnRef}
         className="w-full"
-        style={{ minHeight: 44, opacity: loaded ? 1 : 0, transition: "opacity 0.2s" }}
+        style={{ display: loaded ? "block" : "none" }}
         data-testid="button-google-signin"
       />
     </div>
