@@ -36,6 +36,24 @@ export async function registerRoutes(
     res.json({ status: "ok", ts: Date.now() });
   });
 
+  // robots.txt — served dynamically so the Sitemap directive uses an absolute URL
+  app.get("/robots.txt", (req, res) => {
+    const proto = req.headers["x-forwarded-proto"] || req.protocol || "https";
+    const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost";
+    const base = `${proto}://${host}`;
+    res.setHeader("Content-Type", "text/plain");
+    res.send([
+      "User-agent: *",
+      "Allow: /",
+      "Disallow: /api/",
+      "Disallow: /admin",
+      "Disallow: /org/dashboard",
+      "Disallow: /teacher/dashboard",
+      "",
+      `Sitemap: ${base}/sitemap.xml`,
+    ].join("\n"));
+  });
+
   // Sitemap
   app.get("/sitemap.xml", (req, res) => {
     const proto = req.headers["x-forwarded-proto"] || req.protocol || "https";

@@ -1,8 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /api/
-Disallow: /admin
-Disallow: /org/dashboard
-Disallow: /teacher/dashboard
-
-Sitemap: /sitemap.xml
