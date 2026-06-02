@@ -259,11 +259,10 @@ export default function AuthPage() {
                 <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-emerald-400 transition-colors" />
               </button>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/20" /></div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-transparent px-2 text-white/40">or</span>
-                </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 border-t border-white/20" />
+                <span className="text-xs uppercase text-white/40">or</span>
+                <div className="flex-1 border-t border-white/20" />
               </div>
 
               <div className="rounded-2xl bg-white/8 border border-white/20 p-3">
@@ -317,11 +316,10 @@ export default function AuthPage() {
                 {isValidatingCode ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Continue <ArrowRight className="ml-2 w-4 h-4" /></>}
               </Button>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/20" /></div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-transparent px-2 text-white/40">or sign in instantly</span>
-                </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 border-t border-white/20" />
+                <span className="text-xs uppercase text-white/40">or sign in instantly</span>
+                <div className="flex-1 border-t border-white/20" />
               </div>
               <div className="rounded-2xl bg-white/8 border border-white/20 p-3">
                 <GoogleSignInButton
