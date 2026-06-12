@@ -34,6 +34,7 @@ const AVATARS = [
 const randomAvatar = () => AVATARS[Math.floor(Math.random() * AVATARS.length)];
 
 type Step =
+  | "hero"
   | "entry"
   | "student-access"
   | "student-code"
@@ -46,7 +47,7 @@ type Flow = "student" | "guest";
 type CodeType = "class" | "org" | null;
 
 export default function AuthPage() {
-  const [step, setStep]               = useState<Step>("entry");
+  const [step, setStep]               = useState<Step>("hero");
   const [flow, setFlow]               = useState<Flow>("guest");
   const [name, setName]               = useState("");
   const [lastName, setLastName]       = useState("");
@@ -164,6 +165,49 @@ export default function AuthPage() {
       </div>
 
       <div className="w-full max-w-sm">
+
+        {/* ── HERO / LANDING ── */}
+        {step === "hero" && (
+          <div className="space-y-8 animate-bounce-in">
+            <div className="text-center space-y-3">
+              <div className="flex items-end justify-center gap-2 mb-4 select-none">
+                <span className="text-3xl" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.4s' }}>💰</span>
+                <span className="text-6xl animate-float">🚀</span>
+                <span className="text-3xl" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.8s' }}>⭐</span>
+              </div>
+              <h1 className="text-4xl font-bold text-white tracking-tight">Welcome!</h1>
+              <p className="text-white/50 text-base">Your Caribbean financial literacy adventure starts here.</p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => { clearError(); setFlow("guest"); setStep("guest-name"); }}
+                className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left bg-white/20 backdrop-blur-lg border border-white/30 hover:bg-white/30 hover:border-white/50 shadow-lg"
+                data-testid="button-start-exploring"
+              >
+                <span className="text-3xl">⚡</span>
+                <div className="flex-1">
+                  <p className="text-white font-semibold">Start exploring — no account needed</p>
+                  <p className="text-white/70 text-sm">Jump in instantly as a guest</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-white/70 group-hover:text-white transition-colors" />
+              </button>
+
+              <button
+                onClick={() => { clearError(); setStep("entry"); }}
+                className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left bg-white/10 backdrop-blur-lg border border-white/20 hover:bg-white/[0.16] hover:border-violet-400/50 shadow-lg"
+                data-testid="button-sign-in"
+              >
+                <span className="text-3xl">🔑</span>
+                <div className="flex-1">
+                  <p className="text-white font-semibold">Sign in or create account</p>
+                  <p className="text-white/60 text-sm">Student, teacher, or organisation</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-white/50 group-hover:text-violet-300 transition-colors" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── ENTRY SCREEN ── */}
         {step === "entry" && (
@@ -530,7 +574,7 @@ export default function AuthPage() {
       </div>
 
       {/* Footer */}
-      <p className="mt-12 text-white/15 text-xs">© 2024 FinSight Financial Technologies</p>
+      <p className="mt-12 text-white/15 text-xs">© {new Date().getFullYear()} Finsight Limited</p>
     </div>
   );
 }
