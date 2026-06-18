@@ -1011,6 +1011,204 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
     res.json({ students: enriched, total: count ?? rows.length, page, pageSize: PAGE_SIZE });
   });
 
+  // ── In-memory 24-hour AI summary cache (per orgId) ────────────────────────
+  const orgSummaryCache = new Map<string, { text: string; expiresAt: number }>();
+
+  // === ORG ADMIN: AI SUMMARY (GET /api/org/summary) ===
+  app.get("/api/org/summary", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+    const orgId = admin.orgId;
+
+    const hit = orgSummaryCache.get(orgId);
+    if (hit && hit.expiresAt > Date.now()) return res.json({ summary: hit.text });
+
+    const { data: orgStudents } = supabase
+      ? await supabase.from("org_students").select("student_user_id").eq("org_id", orgId)
+      : { data: null };
+    const studentIds: string[] = (orgStudents ?? []).map((s: any) => s.student_user_id);
+    const totalStudents = studentIds.length;
+
+    if (totalStudents === 0) {
+      const text = "No students are enrolled in your organisation yet. Once students join and start learning, their progress will appear here.";
+      orgSummaryCache.set(orgId, { text, expiresAt: Date.now() + 24 * 60 * 60 * 1000 });
+      return res.json({ summary: text });
+    }
+
+    const xpRows = await Promise.all(studentIds.map((id) => storage.getUserXp(id).catch(() => null)));
+    const progressRows = await Promise.all(studentIds.map((id) => storage.getUserLearningProgress(id).catch(() => [])));
+    const validXp = xpRows.filter((r): r is NonNullable<typeof r> => r != null);
+    const avgXp = validXp.length > 0 ? Math.round(validXp.reduce((s, r) => s + r.totalXp, 0) / validXp.length) : 0;
+    const CORE_LESSONS = 9;
+    const totalCompleted = progressRows.reduce((sum, rows) => sum + rows.filter((r) => r.completed).length, 0);
+    const lessonCompletionRate = Math.round((totalCompleted / (totalStudents * CORE_LESSONS)) * 100);
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const activeStudents = studentIds.reduce((count, _id, idx) => {
+      const xp = xpRows[idx];
+      const hasRecentXp = xp?.lastPlayedAt != null && new Date(xp.lastPlayedAt).getTime() >= thirtyDaysAgo;
+      const prog = progressRows[idx] ?? [];
+      const hasRecentLesson = prog.some((p) => p.completedAt != null && new Date(p.completedAt).getTime() >= thirtyDaysAgo);
+      return hasRecentXp || hasRecentLesson ? count + 1 : count;
+    }, 0);
+
+    const statsText = `Total enrolled students: ${totalStudents}. Active (last 30 days): ${activeStudents}. Average XP per student: ${avgXp}. Lesson completion rate: ${lessonCompletionRate}%.`;
+
+    try {
+      const AnthropicSDK = (await import("@anthropic-ai/sdk")).default;
+      const anthropic = new AnthropicSDK();
+      const message = await anthropic.messages.create({
+        model: "claude-3-5-haiku-20241022",
+        max_tokens: 256,
+        system: "You are a helpful assistant for Finsight Lite, a Caribbean financial literacy platform for youth ages 12-17. Write a 2-3 sentence plain-English summary of this organisation's student engagement this month. Be specific with the numbers. Keep the tone warm and encouraging. Do not use em dashes.",
+        messages: [{ role: "user", content: statsText }],
+      });
+      const summary = (message.content[0] as any).text as string;
+      orgSummaryCache.set(orgId, { text: summary, expiresAt: Date.now() + 24 * 60 * 60 * 1000 });
+      res.json({ summary });
+    } catch {
+      res.status(500).json({ message: "AI summary unavailable" });
+    }
+  });
+
+  // === ORG ADMIN: PDF REPORT (GET /api/org/report/pdf) ===
+  app.get("/api/org/report/pdf", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+
+    const org = await getOrganization(admin.orgId);
+    const orgName: string = (org as any)?.name ?? admin.orgId;
+    const territory: string = (org as any)?.territory ?? "";
+    const orgId = admin.orgId;
+
+    const { data: orgStudents } = supabase
+      ? await supabase.from("org_students").select("student_user_id").eq("org_id", orgId)
+      : { data: null };
+    const studentIds: string[] = (orgStudents ?? []).map((s: any) => s.student_user_id);
+
+    const xpRows = await Promise.all(studentIds.map((id) => storage.getUserXp(id).catch(() => null)));
+    const progressRows = await Promise.all(studentIds.map((id) => storage.getUserLearningProgress(id).catch(() => [])));
+    const validXp = xpRows.filter((r): r is NonNullable<typeof r> => r != null);
+    const avgXp = validXp.length > 0 ? Math.round(validXp.reduce((s, r) => s + r.totalXp, 0) / validXp.length) : 0;
+    const CORE_LESSONS = 9;
+    const totalCompleted = progressRows.reduce((sum, rows) => sum + rows.filter((r) => r.completed).length, 0);
+    const lessonCompletionRate = studentIds.length > 0
+      ? Math.round((totalCompleted / (studentIds.length * CORE_LESSONS)) * 100) : 0;
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const activeCount = studentIds.reduce((count, _id, idx) => {
+      const xp = xpRows[idx];
+      const hasRecentXp = xp?.lastPlayedAt != null && new Date(xp.lastPlayedAt).getTime() >= thirtyDaysAgo;
+      const prog = progressRows[idx] ?? [];
+      const hasRecentLesson = prog.some((p) => p.completedAt != null && new Date(p.completedAt).getTime() >= thirtyDaysAgo);
+      return hasRecentXp || hasRecentLesson ? count + 1 : count;
+    }, 0);
+
+    // Student table — up to 25 rows, sorted by XP desc
+    const tableIds = studentIds.slice(0, 25);
+    const tableRows: Array<{ name: string; totalXp: number; lessonsCompleted: number; lastActive: string }> = [];
+    for (let i = 0; i < tableIds.length; i++) {
+      const id = tableIds[i];
+      const user = await storage.getUser(id).catch(() => null);
+      const displayName = user
+        ? [(user as any).firstName, (user as any).lastName].filter(Boolean).join(" ") || (user as any).username || id
+        : id;
+      const xpData = xpRows[i];
+      const prog = progressRows[i] ?? [];
+      tableRows.push({
+        name: String(displayName),
+        totalXp: xpData?.totalXp ?? 0,
+        lessonsCompleted: prog.filter((p) => p.completed).length,
+        lastActive: xpData?.lastPlayedAt ? new Date(xpData.lastPlayedAt).toLocaleDateString("en-GB") : "—",
+      });
+    }
+    tableRows.sort((a, b) => b.totalXp - a.totalXp);
+
+    const now = new Date();
+    const periodLabel = now.toLocaleString("en-US", { month: "long", year: "numeric" });
+
+    const pdfkitMod = await import("pdfkit");
+    const PDFDocument = (pdfkitMod as any).default ?? pdfkitMod;
+    const doc: any = new (PDFDocument as any)({ margin: 50, size: "A4" });
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="finsight-report-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}.pdf"`);
+    doc.pipe(res);
+
+    const W = 495;
+    const TEAL = "#0d9488";
+    const DARK = "#0f172a";
+    const MID = "#374151";
+    const LIGHT = "#6b7280";
+
+    // Header
+    doc.fillColor(TEAL).fontSize(22).font("Helvetica-Bold").text("Finsight Lite", 50, 50);
+    doc.fillColor(DARK).fontSize(16).font("Helvetica-Bold").text(orgName, 50, 78);
+    if (territory) doc.fillColor(LIGHT).fontSize(11).font("Helvetica").text(territory, 50, 98);
+    doc.fillColor(TEAL).moveTo(50, 118).lineTo(545, 118).lineWidth(1.5).stroke();
+    doc.fillColor(MID).fontSize(11).font("Helvetica").text(`Monthly Report — ${periodLabel}`, 50, 128);
+    doc.fillColor(LIGHT).fontSize(9).text(
+      `Generated: ${now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} ${now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} UTC`,
+      50, 143,
+    );
+
+    // Metrics grid (2 rows × 3 cols)
+    const metrics = [
+      { label: "Total Students", value: String(studentIds.length) },
+      { label: "Active (Last 30 Days)", value: String(activeCount) },
+      { label: "Avg XP per Student", value: String(avgXp) },
+      { label: "Lesson Completion", value: `${lessonCompletionRate}%` },
+      { label: "Lessons Completed", value: String(totalCompleted) },
+      { label: "Top Games", value: "— coming soon" }, // TODO: wire up top-games query
+    ];
+    const cellW = (W - 10) / 3;
+    const cellH = 54;
+    const gridTop = 168;
+    metrics.forEach((m, i) => {
+      const col = i % 3;
+      const row = Math.floor(i / 3);
+      const x = 50 + col * (cellW + 5);
+      const y = gridTop + row * (cellH + 8);
+      doc.roundedRect(x, y, cellW, cellH, 6).fillColor("#f8fafc").fill();
+      doc.fillColor(LIGHT).fontSize(8).font("Helvetica").text(m.label.toUpperCase(), x + 10, y + 10, { width: cellW - 20 });
+      doc.fillColor(DARK).fontSize(18).font("Helvetica-Bold").text(m.value, x + 10, y + 24, { width: cellW - 20 });
+    });
+
+    // Student table
+    const tableTop = gridTop + 2 * (cellH + 8) + 24;
+    doc.fillColor(DARK).fontSize(12).font("Helvetica-Bold").text("Student Activity", 50, tableTop);
+    if (studentIds.length > 25) {
+      doc.fillColor(LIGHT).fontSize(8).font("Helvetica").text(`(Top 25 of ${studentIds.length} by XP)`, 164, tableTop + 3);
+    }
+    const colXs = [50, 232, 328, 412, 545];
+    const headers = ["Name", "Total XP", "Lessons", "Last Active"];
+    const thY = tableTop + 18;
+    doc.rect(50, thY, W, 20).fillColor("#f1f5f9").fill();
+    headers.forEach((h, i) => {
+      doc.fillColor(MID).fontSize(8).font("Helvetica-Bold").text(h, colXs[i] + 4, thY + 6, { width: colXs[i + 1] - colXs[i] - 8 });
+    });
+    let rowY = thY + 20;
+    tableRows.forEach((row, i) => {
+      if (i % 2 === 1) doc.rect(50, rowY, W, 18).fillColor("#f8fafc").fill();
+      const vals = [row.name, String(row.totalXp), String(row.lessonsCompleted), row.lastActive];
+      vals.forEach((v, ci) => {
+        doc.fillColor(ci === 0 ? DARK : MID).fontSize(8).font("Helvetica")
+          .text(v, colXs[ci] + 4, rowY + 5, { width: colXs[ci + 1] - colXs[ci] - 8, ellipsis: true });
+      });
+      rowY += 18;
+    });
+    if (tableRows.length === 0) {
+      doc.fillColor(LIGHT).fontSize(9).font("Helvetica").text("No students enrolled yet.", 54, rowY + 6);
+      rowY += 24;
+    }
+
+    // Footer
+    const footerY = Math.max(rowY + 20, 790);
+    doc.fillColor("#e2e8f0").moveTo(50, footerY).lineTo(545, footerY).lineWidth(0.5).stroke();
+    doc.fillColor(LIGHT).fontSize(8).font("Helvetica")
+      .text("Finsight Lite · Finsight Limited · www.finsightlite.com", 50, footerY + 6, { align: "center", width: W });
+
+    doc.end();
+  });
+
   // === ORG ADMIN: BRANDING ===
   app.get("/api/org-admin/branding", isOrgAdmin, async (req: any, res) => {
     const admin = await storage.getOrgAdminById(req.session.orgAdminId);

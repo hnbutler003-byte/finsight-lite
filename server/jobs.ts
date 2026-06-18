@@ -45,6 +45,9 @@ export interface JobPayloads {
   "perf-scan": {
     triggeredBy?: string;
   };
+  "org-weekly-email": {
+    weekStart: string;
+  };
 }
 
 export interface JobResults {
@@ -82,6 +85,10 @@ export interface JobResults {
     warningCount: number;
     durationMs: number;
     filesScanned: number;
+  };
+  "org-weekly-email": {
+    orgsProcessed: number;
+    emailsSent: number;
   };
 }
 

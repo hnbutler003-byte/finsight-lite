@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useOrgAuth } from "@/hooks/use-org-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Users, BookOpen, Globe, Copy, Check, Loader2, Building2, Layers, Sparkles, Settings2, Save, Mail, Send, Trophy, TrendingUp, Gamepad2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Users, BookOpen, Globe, Copy, Check, Loader2, Building2, Layers, Sparkles, Settings2, Save, Mail, Send, Trophy, TrendingUp, Gamepad2, ChevronLeft, ChevronRight, FileDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -67,6 +67,13 @@ export default function OrgDashboard() {
     queryFn: () => fetch("/api/org/admin/email-stats", { credentials: "include" }).then(r => r.json()),
     enabled: !!admin,
     refetchInterval: 60_000,
+  });
+
+  const { data: orgSummary } = useQuery<{ summary: string }>({
+    queryKey: ["/api/org/summary"],
+    queryFn: () => fetch("/api/org/summary", { credentials: "include" }).then(r => r.json()),
+    enabled: !!admin,
+    staleTime: 24 * 60 * 60 * 1000,
   });
 
   const triggerDigest = useMutation({
@@ -142,7 +149,27 @@ export default function OrgDashboard() {
               </h1>
               <p className="text-muted-foreground mt-1">{admin.orgName} — {admin.envName}</p>
             </div>
+            <a
+              href="/api/org/report/pdf"
+              className="btn-primary inline-flex items-center gap-2 no-underline"
+              data-testid="link-export-report"
+            >
+              <FileDown className="w-4 h-4" />
+              Export Report
+            </a>
           </div>
+
+          {orgSummary?.summary && (
+            <Card className="glass-card-teal rounded-glass" data-testid="card-ai-summary">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-white/80" />
+                  <p className="font-display font-bold text-white text-xs uppercase tracking-wider">This Month at a Glance</p>
+                </div>
+                <p className="text-white/90 text-sm leading-relaxed">{orgSummary.summary}</p>
+              </CardContent>
+            </Card>
+          )}
 
           {isLoading ? (
             <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>

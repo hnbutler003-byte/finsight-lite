@@ -10,8 +10,8 @@ import { seedDatabase } from "./seed";
 import { startJobWorker, enqueueJob } from "./jobs";
 import { registerJobHandlers } from "./jobHandlers";
 import { db, probeDatabase } from "./db";
-import { weeklyDigestRuns, aiUsagePurgeRuns } from "@shared/schema";
-import { and, eq } from "drizzle-orm";
+import { weeklyDigestRuns, aiUsagePurgeRuns, jobs } from "@shared/schema";
+import { and, eq, gte } from "drizzle-orm";
 
 if (!process.env.SESSION_SECRET) {
   console.error("[startup] SESSION_SECRET env var is not set — refusing to start. Set it in your Replit Secrets.");
@@ -161,6 +161,40 @@ function startAiUsagePurgeScheduler() {
   setInterval(() => { void maybeRunAiUsagePurge(); }, 6 * 60 * 60 * 1000);
 }
 
+// ── Org weekly email scheduler ─────────────────────────────────────────────
+// Sends a weekly summary email to all org admins on Monday at 08:00 UTC.
+// Uses the jobs table for deduplication — checks for an existing job of
+// kind "org-weekly-email" scheduled on or after this week's Monday trigger
+// before enqueuing a new one.
+async function maybeRunOrgWeeklyEmail() {
+  try {
+    const now = new Date();
+    // Roll back to most recent Monday at 08:00 UTC.
+    const trigger = new Date(now);
+    trigger.setUTCHours(8, 0, 0, 0);
+    const dow = trigger.getUTCDay(); // 0=Sun, 1=Mon, …
+    trigger.setUTCDate(trigger.getUTCDate() - ((dow + 6) % 7));
+    if (trigger.getTime() > now.getTime()) return; // Not yet reached this week's send time.
+    const weekKey = trigger.toISOString().slice(0, 10); // "YYYY-MM-DD"
+    // Deduplication: skip if we already enqueued this week's job.
+    const [existing] = await db
+      .select({ id: jobs.id })
+      .from(jobs)
+      .where(and(eq(jobs.kind, "org-weekly-email"), gte(jobs.scheduledAt, trigger)))
+      .limit(1);
+    if (existing) return;
+    await enqueueJob({ kind: "org-weekly-email", payload: { weekStart: weekKey } });
+    log(`enqueued org-weekly-email for ${weekKey}`);
+  } catch (e) {
+    log(`org weekly email scheduler error: ${(e as Error).message}`);
+  }
+}
+
+function startOrgWeeklyEmailScheduler() {
+  setTimeout(() => { void maybeRunOrgWeeklyEmail(); }, 45_000);
+  setInterval(() => { void maybeRunOrgWeeklyEmail(); }, 15 * 60 * 1000);
+}
+
 // ── Performance scan scheduler ─────────────────────────────────────────────
 // Enqueues a perf-scan job on a configurable interval (default: 1 hour).
 // Set PERF_SCAN_INTERVAL_MS env var to override (e.g. "1800000" for 30 min).
@@ -241,6 +275,7 @@ process.on("SIGINT", stopUptimeWorker);
   startWeeklyDigestScheduler();
   startAiUsagePurgeScheduler();
   startPerfScanScheduler();
+  startOrgWeeklyEmailScheduler();
 
 
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {

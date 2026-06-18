@@ -557,5 +557,84 @@ function renderTeacherDigest(d: { classes: Array<{ name: string; total: number; 
   `, d.baseUrl);
 }
 
+// === ORG WEEKLY EMAIL =========================================================
+registerJobHandler("org-weekly-email", async (job) => {
+  const { weekStart } = job.payload as { weekStart: string };
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const baseUrl = appBaseUrl();
+  let orgsProcessed = 0;
+  let emailsSent = 0;
+
+  const { supabase, getOrganizations } = await import("./supabase");
+  if (!supabase) return { orgsProcessed: 0, emailsSent: 0 };
+
+  const orgs = await getOrganizations();
+  for (const org of orgs as Array<{ id: string; name: string }>) {
+    const { data: orgStudents } = await supabase
+      .from("org_students")
+      .select("student_user_id")
+      .eq("org_id", org.id);
+    const studentIds: string[] = (orgStudents ?? []).map((s: any) => s.student_user_id);
+    if (studentIds.length === 0) continue;
+
+    const xpRows = await Promise.all(studentIds.map((id) => storage.getUserXp(id).catch(() => null)));
+    const progressRows = await Promise.all(studentIds.map((id) => storage.getUserLearningProgress(id).catch(() => [])));
+
+    const hasActivity = studentIds.some((_id, idx) => {
+      const xp = xpRows[idx];
+      if (xp?.lastPlayedAt && new Date(xp.lastPlayedAt) >= sevenDaysAgo) return true;
+      const prog = progressRows[idx] ?? [];
+      return prog.some((p: any) => p.completedAt && new Date(p.completedAt) >= sevenDaysAgo);
+    });
+    if (!hasActivity) continue;
+
+    orgsProcessed++;
+
+    const validXp = xpRows.filter((r): r is NonNullable<typeof r> => r != null);
+    const avgXp = validXp.length > 0 ? Math.round(validXp.reduce((s, r) => s + r.totalXp, 0) / validXp.length) : 0;
+    const CORE_LESSONS = 9;
+    const totalCompleted = progressRows.reduce((sum, rows) => sum + rows.filter((r: any) => r.completed).length, 0);
+    const lessonCompletionRate = studentIds.length > 0
+      ? Math.round((totalCompleted / (studentIds.length * CORE_LESSONS)) * 100) : 0;
+    const activeCount = studentIds.filter((_id, idx) => {
+      const xp = xpRows[idx];
+      if (xp?.lastPlayedAt && new Date(xp.lastPlayedAt) >= sevenDaysAgo) return true;
+      const prog = progressRows[idx] ?? [];
+      return prog.some((p: any) => p.completedAt && new Date(p.completedAt) >= sevenDaysAgo);
+    }).length;
+
+    const admins = await storage.getOrgAdminsByOrgId(org.id).catch(() => []);
+    for (const admin of admins) {
+      if (!admin.email) continue;
+      const html = `
+<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a">
+  <h2 style="color:#0d9488;margin-bottom:4px">Finsight Lite</h2>
+  <h3 style="margin-top:0">Your weekly update &mdash; ${escapeHtml(org.name)}</h3>
+  <p>Here is how your students are doing for the week of <strong>${escapeHtml(weekStart)}</strong>:</p>
+  <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin:16px 0">
+    <tr style="background:#f1f5f9"><td style="padding:8px 12px;font-weight:600">Total students enrolled</td><td style="padding:8px 12px">${studentIds.length}</td></tr>
+    <tr><td style="padding:8px 12px;font-weight:600">Active this week</td><td style="padding:8px 12px">${activeCount}</td></tr>
+    <tr style="background:#f1f5f9"><td style="padding:8px 12px;font-weight:600">Average XP per student</td><td style="padding:8px 12px">${avgXp}</td></tr>
+    <tr><td style="padding:8px 12px;font-weight:600">Lesson completion rate</td><td style="padding:8px 12px">${lessonCompletionRate}%</td></tr>
+  </table>
+  <p>Keep encouraging your students to log on and learn!</p>
+  <p><a href="${escapeHtml(baseUrl)}/org/dashboard" style="background:#0d9488;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;display:inline-block">Open your dashboard</a></p>
+  <p style="font-size:12px;color:#6b7280;margin-top:24px">Finsight Lite &middot; Finsight Limited</p>
+</div>`;
+      await sendEmail({
+        to: admin.email,
+        subject: `Your Finsight Lite weekly update — ${org.name}`,
+        html,
+        text: `Finsight Lite weekly update — ${org.name}\n\nWeek of: ${weekStart}\nTotal students: ${studentIds.length}\nActive this week: ${activeCount}\nAvg XP: ${avgXp}\nLesson completion: ${lessonCompletionRate}%\n\nDashboard: ${baseUrl}/org/dashboard`,
+        kind: "org_weekly_email",
+        orgId: org.id,
+      });
+      emailsSent++;
+    }
+  }
+
+  return { orgsProcessed, emailsSent };
+});
+
 // Re-export so route handlers can stream the resulting CSV.
 export { uploadPrivateObject };
