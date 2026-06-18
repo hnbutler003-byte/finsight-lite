@@ -213,6 +213,12 @@ ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_right_role text;
 
 -- Add Google SSO domain allowlist (Task #29)
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS allowed_email_domains text[];
+
+-- Add multi-tenant licensing columns to organizations
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS territory text;
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS slug text UNIQUE;
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS plan text NOT NULL DEFAULT 'standard';
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS student_limit integer NOT NULL DEFAULT 500;
 `;
 
 async function applyBrandingColumnsViaPg(): Promise<boolean> {
@@ -232,6 +238,10 @@ async function applyBrandingColumnsViaPg(): Promise<boolean> {
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_right_name text;
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_right_role text;
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS allowed_email_domains text[];
+        ALTER TABLE organizations ADD COLUMN IF NOT EXISTS territory text;
+        ALTER TABLE organizations ADD COLUMN IF NOT EXISTS slug text UNIQUE;
+        ALTER TABLE organizations ADD COLUMN IF NOT EXISTS plan text NOT NULL DEFAULT 'standard';
+        ALTER TABLE organizations ADD COLUMN IF NOT EXISTS student_limit integer NOT NULL DEFAULT 500;
       `);
       return true;
     } finally {

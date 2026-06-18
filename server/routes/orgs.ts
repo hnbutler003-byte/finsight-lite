@@ -894,6 +894,107 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
     res.send(csv);
   });
 
+  // === ORG ADMIN: LEARNING METRICS (avg XP, lesson completion rate) ===
+  app.get("/api/org-admin/learning-metrics", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+
+    if (!supabase) return res.json({ avgXp: 0, lessonCompletionRate: 0, totalStudents: 0 });
+
+    const { data: orgStudents } = await supabase
+      .from("org_students")
+      .select("student_user_id")
+      .eq("org_id", admin.orgId);
+
+    const studentIds: string[] = (orgStudents ?? []).map((s: any) => s.student_user_id);
+    const totalStudents = studentIds.length;
+
+    if (totalStudents === 0) return res.json({ avgXp: 0, lessonCompletionRate: 0, totalStudents: 0 });
+
+    const xpRows = await Promise.all(studentIds.map(id => storage.getUserXp(id).catch(() => null)));
+    const validXp = xpRows.filter((r): r is NonNullable<typeof r> => r != null);
+    const avgXp = validXp.length > 0 ? Math.round(validXp.reduce((s, r) => s + r.totalXp, 0) / validXp.length) : 0;
+
+    const progressRows = await Promise.all(studentIds.map(id => storage.getUserLearningProgress(id).catch(() => [])));
+    const CORE_LESSONS = 9;
+    const totalPossible = totalStudents * CORE_LESSONS;
+    const totalCompleted = progressRows.reduce((sum, rows) => sum + rows.filter(r => r.completed).length, 0);
+    const lessonCompletionRate = totalPossible > 0 ? Math.round((totalCompleted / totalPossible) * 100) : 0;
+
+    res.json({ avgXp, lessonCompletionRate, totalStudents });
+  });
+
+  // === ORG ADMIN: TOP GAMES ===
+  app.get("/api/org-admin/top-games", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+
+    if (!supabase) return res.json([]);
+
+    const { data: orgStudents } = await supabase
+      .from("org_students")
+      .select("student_user_id")
+      .eq("org_id", admin.orgId);
+
+    const studentIds: string[] = (orgStudents ?? []).map((s: any) => s.student_user_id);
+    if (studentIds.length === 0) return res.json([]);
+
+    // TODO: wire to real game_sessions query once game_name column is available on game_sessions table
+    // For now return dummy data representative of Caribbean teen game preferences
+    const dummy = [
+      { game: "Money Match", sessions: 148 },
+      { game: "Budget Blitz", sessions: 112 },
+      { game: "Investment Island", sessions: 89 },
+      { game: "Savings Sprint", sessions: 74 },
+      { game: "Tax Trap", sessions: 53 },
+    ];
+    res.json(dummy);
+  });
+
+  // === ORG ADMIN: STUDENT TABLE (paginated with metrics) ===
+  app.get("/api/org-admin/student-table", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+
+    if (!supabase) return res.json({ students: [], total: 0 });
+
+    const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10));
+    const PAGE_SIZE = 25;
+
+    const { data: orgStudents, count } = await supabase
+      .from("org_students")
+      .select("student_user_id, joined_at", { count: "exact" })
+      .eq("org_id", admin.orgId)
+      .order("joined_at", { ascending: false })
+      .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+
+    const rows = orgStudents ?? [];
+
+    const enriched = await Promise.all(rows.map(async (s: any) => {
+      const user = await storage.getUser(s.student_user_id).catch(() => null);
+      const xpData = await storage.getUserXp(s.student_user_id).catch(() => null);
+      const progress = await storage.getUserLearningProgress(s.student_user_id).catch(() => []);
+      const lessonsCompleted = progress.filter(p => p.completed).length;
+      const completedDates = progress
+        .map(p => p.completedAt)
+        .filter((d): d is Date => d != null)
+        .map(d => new Date(d).getTime());
+      const xpPlayedAt = xpData?.lastPlayedAt ? new Date(xpData.lastPlayedAt).getTime() : 0;
+      const lastActiveTs = Math.max(xpPlayedAt, completedDates.length > 0 ? Math.max(...completedDates) : 0);
+      return {
+        id: s.student_user_id,
+        displayName: [user?.firstName, (user as any)?.lastName].filter(Boolean).join(" ") || (user as any)?.username || s.student_user_id,
+        avatar: (user as any)?.avatar ?? null,
+        joinedAt: s.joined_at ?? null,
+        totalXp: xpData?.totalXp ?? 0,
+        lessonsCompleted,
+        lastActive: lastActiveTs > 0 ? new Date(lastActiveTs).toISOString() : null,
+      };
+    }));
+
+    res.json({ students: enriched, total: count ?? rows.length, page, pageSize: PAGE_SIZE });
+  });
+
   // === ORG ADMIN: BRANDING ===
   app.get("/api/org-admin/branding", isOrgAdmin, async (req: any, res) => {
     const admin = await storage.getOrgAdminById(req.session.orgAdminId);

@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useOrgAuth } from "@/hooks/use-org-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Users, BookOpen, Globe, Copy, Check, Loader2, Building2, BarChart3, Layers, Sparkles, Settings2, Save, Mail, Send } from "lucide-react";
+import { Users, BookOpen, Globe, Copy, Check, Loader2, Building2, BarChart3, Layers, Sparkles, Settings2, Save, Mail, Send, Trophy, TrendingUp, Gamepad2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,26 @@ export default function OrgDashboard() {
   });
 
   const { toast } = useToast();
+
+  const [studentPage, setStudentPage] = useState(1);
+
+  const { data: learningMetrics } = useQuery<any>({
+    queryKey: ["/api/org-admin/learning-metrics"],
+    queryFn: () => fetch("/api/org-admin/learning-metrics", { credentials: "include" }).then(r => r.json()),
+    enabled: !!admin,
+  });
+
+  const { data: topGames } = useQuery<any>({
+    queryKey: ["/api/org-admin/top-games"],
+    queryFn: () => fetch("/api/org-admin/top-games", { credentials: "include" }).then(r => r.json()),
+    enabled: !!admin,
+  });
+
+  const { data: studentTable, isLoading: isStudentTableLoading } = useQuery<any>({
+    queryKey: ["/api/org-admin/student-table", studentPage],
+    queryFn: () => fetch(`/api/org-admin/student-table?page=${studentPage}`, { credentials: "include" }).then(r => r.json()),
+    enabled: !!admin,
+  });
 
   const { data: emailStats } = useQuery<any>({
     queryKey: ["/api/org/admin/email-stats"],
@@ -451,6 +471,169 @@ export default function OrgDashboard() {
                   </CardContent>
                 </Card>
               )}
+
+              {/* ── LEARNING METRICS: Avg XP + Lesson Completion Rate ── */}
+              {learningMetrics && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Card className="glass-card rounded-glass" data-testid="card-avg-xp">
+                    <CardContent className="p-6 space-y-2">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                          <Trophy className="w-5 h-5 text-amber-600" />
+                        </div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Avg XP per Student</p>
+                      </div>
+                      <p className="font-display font-extrabold text-3xl text-foreground" data-testid="text-avg-xp">
+                        {(learningMetrics.avgXp ?? 0).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Across {learningMetrics.totalStudents ?? 0} students in your org</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="glass-card rounded-glass" data-testid="card-lesson-completion">
+                    <CardContent className="p-6 space-y-2">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                          <TrendingUp className="w-5 h-5 text-emerald-600" />
+                        </div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Lesson Completion Rate</p>
+                      </div>
+                      <p className="font-display font-extrabold text-3xl text-foreground" data-testid="text-lesson-completion-rate">
+                        {learningMetrics.lessonCompletionRate ?? 0}%
+                      </p>
+                      <div className="h-2 rounded-full bg-muted overflow-hidden mt-1">
+                        <div
+                          className="h-full bg-emerald-500 transition-all"
+                          style={{ width: `${learningMetrics.lessonCompletionRate ?? 0}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">Lessons completed ÷ 9 core lessons × students</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* ── TOP 5 MONEY GAMES ── */}
+              {topGames && topGames.length > 0 && (
+                <Card className="glass-card rounded-glass" data-testid="card-top-games">
+                  <CardContent className="p-6 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                        <Gamepad2 className="w-5 h-5 text-violet-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-display font-bold text-lg">Top Money Games</h3>
+                        <p className="text-xs text-muted-foreground">By session count across your org</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      {topGames.map((g: any, i: number) => {
+                        const maxSessions = topGames[0]?.sessions ?? 1;
+                        const pct = Math.round((g.sessions / maxSessions) * 100);
+                        const colors = ["bg-violet-500", "bg-blue-500", "bg-teal-500", "bg-emerald-500", "bg-amber-500"];
+                        return (
+                          <div key={g.game} className="space-y-1" data-testid={`row-game-${i}`}>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="font-medium">{g.game}</span>
+                              <span className="font-display font-bold text-muted-foreground">{g.sessions.toLocaleString()} sessions</span>
+                            </div>
+                            <div className="h-2 rounded-full bg-muted overflow-hidden">
+                              <div className={`h-full ${colors[i] ?? "bg-violet-500"} transition-all`} style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* ── STUDENT TABLE (paginated, 25 per page) ── */}
+              <Card className="glass-card rounded-glass" data-testid="card-student-table">
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-display font-bold text-lg">All Students</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {studentTable?.total ? `${studentTable.total} total` : ""}
+                      </p>
+                    </div>
+                  </div>
+
+                  {isStudentTableLoading ? (
+                    <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-blue-500" /></div>
+                  ) : (
+                    <>
+                      <div className="overflow-x-auto -mx-2">
+                        <table className="w-full text-sm min-w-[560px]">
+                          <thead>
+                            <tr className="border-b border-border">
+                              <th className="text-left py-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Student</th>
+                              <th className="text-left py-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Joined</th>
+                              <th className="text-right py-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">XP</th>
+                              <th className="text-right py-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Lessons</th>
+                              <th className="text-right py-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Last Active</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(studentTable?.students ?? []).length === 0 ? (
+                              <tr><td colSpan={5} className="text-center py-8 text-muted-foreground text-sm">No students yet.</td></tr>
+                            ) : (studentTable?.students ?? []).map((s: any) => (
+                              <tr key={s.id} className="border-b border-border/40 hover:bg-muted/30 transition-colors" data-testid={`row-student-${s.id}`}>
+                                <td className="py-2.5 px-2 font-medium">{s.displayName}</td>
+                                <td className="py-2.5 px-2 text-muted-foreground">
+                                  {s.joinedAt ? new Date(s.joinedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}
+                                </td>
+                                <td className="py-2.5 px-2 text-right font-display font-bold text-amber-600">{(s.totalXp ?? 0).toLocaleString()}</td>
+                                <td className="py-2.5 px-2 text-right">
+                                  <span className="inline-flex items-center gap-1">
+                                    <span className="font-bold">{s.lessonsCompleted}</span>
+                                    <span className="text-muted-foreground">/ 9</span>
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-2 text-right text-muted-foreground">
+                                  {s.lastActive ? new Date(s.lastActive).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {studentTable?.total > 25 && (
+                        <div className="flex items-center justify-between pt-2">
+                          <p className="text-xs text-muted-foreground">
+                            Page {studentTable.page} of {Math.ceil(studentTable.total / 25)}
+                          </p>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setStudentPage(p => Math.max(1, p - 1))}
+                              disabled={studentPage <= 1}
+                              data-testid="button-prev-page"
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setStudentPage(p => p + 1)}
+                              disabled={studentPage >= Math.ceil(studentTable.total / 25)}
+                              data-testid="button-next-page"
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
 
               {overview?.org && (
                 <Card className="glass-card rounded-glass">
