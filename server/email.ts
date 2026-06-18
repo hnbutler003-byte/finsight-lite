@@ -14,7 +14,7 @@ import { log } from "./index";
 const FROM_EMAIL_SANDBOX = "FinSight Lite <onboarding@resend.dev>";
 
 // Startup warning: RESEND_FROM_EMAIL should be set to a verified custom domain address
-// (e.g. "FinSight Lite <noreply@finsightlite.com>") so emails aren't blocked by school
+// (e.g. "FinSight Lite <noreply@finsight-ltd.com>") so emails aren't blocked by school
 // spam filters. In production this is a loud error; in development it's just a notice.
 if (!process.env.RESEND_FROM_EMAIL) {
   if (process.env.NODE_ENV === "production") {
@@ -22,7 +22,7 @@ if (!process.env.RESEND_FROM_EMAIL) {
       "[email] RESEND_FROM_EMAIL is not set. Emails will send from the shared Resend " +
       "sandbox address (onboarding@resend.dev), which school and institutional spam " +
       "filters may block. Set RESEND_FROM_EMAIL in Replit Secrets to a verified custom " +
-      "domain address (e.g. 'FinSight Lite <noreply@finsightlite.com>')."
+      "domain address (e.g. 'FinSight Lite <noreply@finsight-ltd.com>')."
     );
   } else {
     console.warn("[email] RESEND_FROM_EMAIL not set — using Resend sandbox address (fine for development).");

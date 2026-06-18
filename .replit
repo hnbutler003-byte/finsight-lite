@@ -65,6 +65,7 @@ integrations = ["javascript_log_in_with_replit:2.0.0", "javascript_openai_ai_int
 
 [userenv.shared]
 SUPABASE_URL = "https://ztegnvaoxsyuchfkoyre.supabase.co"
+RESEND_FROM_EMAIL = "FinSight Lite <noreply@finsight-ltd.com>"
 
 [postMerge]
 path = "scripts/post-merge.sh"
