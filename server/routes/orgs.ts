@@ -921,7 +921,19 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
     const totalCompleted = progressRows.reduce((sum, rows) => sum + rows.filter(r => r.completed).length, 0);
     const lessonCompletionRate = totalPossible > 0 ? Math.round((totalCompleted / totalPossible) * 100) : 0;
 
-    res.json({ avgXp, lessonCompletionRate, totalStudents });
+    // Active students (last 30 days): any XP play or lesson completion within the window
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const activeStudents = studentIds.reduce((count, _id, idx) => {
+      const xp = xpRows[idx];
+      const hasRecentXp = xp?.lastPlayedAt != null && new Date(xp.lastPlayedAt).getTime() >= thirtyDaysAgo;
+      const progress = progressRows[idx] ?? [];
+      const hasRecentLesson = progress.some(
+        p => p.completedAt != null && new Date(p.completedAt).getTime() >= thirtyDaysAgo
+      );
+      return hasRecentXp || hasRecentLesson ? count + 1 : count;
+    }, 0);
+
+    res.json({ avgXp, lessonCompletionRate, totalStudents, activeStudents });
   });
 
   // === ORG ADMIN: TOP GAMES ===
@@ -939,8 +951,12 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
     const studentIds: string[] = (orgStudents ?? []).map((s: any) => s.student_user_id);
     if (studentIds.length === 0) return res.json([]);
 
-    // TODO: wire to real game_sessions query once game_name column is available on game_sessions table
-    // For now return dummy data representative of Caribbean teen game preferences
+    // TODO: table or column missing — game_name (text) column needed on game_sessions table.
+    // Currently game_sessions only tracks mode ("quiz"|"timed"|"challenge"), not the specific
+    // game title. To wire this up, either:
+    //   (a) add a game_name text column to game_sessions and populate it when sessions are created, or
+    //   (b) create a separate money_games_log table (game_name text, user_id varchar, played_at timestamp)
+    // Until then, returning placeholder data so the UI has something to render.
     const dummy = [
       { game: "Money Match", sessions: 148 },
       { game: "Budget Blitz", sessions: 112 },
