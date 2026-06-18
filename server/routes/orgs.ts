@@ -1209,6 +1209,73 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
     doc.end();
   });
 
+  // === ORG ADMIN: EMAIL TEST — TEMPORARY, remove after confirmation ===
+  app.get("/api/org/email-test", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Unauthorized" });
+    if (!admin.email) return res.status(400).json({ message: "No email address on this admin account" });
+
+    const org = await getOrganization(admin.orgId);
+    const orgName = org?.name ?? admin.orgId;
+
+    if (!supabase) return res.status(503).json({ message: "Supabase not available" });
+    const { data: orgStudents } = await supabase
+      .from("org_students")
+      .select("student_user_id")
+      .eq("org_id", admin.orgId);
+    const studentIds: string[] = (orgStudents ?? []).map((s: any) => s.student_user_id);
+
+    const xpRows = await Promise.all(studentIds.map((id) => storage.getUserXp(id).catch(() => null)));
+    const progressRows = await Promise.all(studentIds.map((id) => storage.getUserLearningProgress(id).catch(() => [])));
+
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const validXp = xpRows.filter((r): r is NonNullable<typeof r> => r != null);
+    const avgXp = validXp.length > 0
+      ? Math.round(validXp.reduce((s, r) => s + r.totalXp, 0) / validXp.length) : 0;
+    const CORE_LESSONS = 9;
+    const totalCompleted = progressRows.reduce(
+      (sum, rows) => sum + rows.filter((r: any) => r.completed).length, 0
+    );
+    const lessonCompletionRate = studentIds.length > 0
+      ? Math.round((totalCompleted / (studentIds.length * CORE_LESSONS)) * 100) : 0;
+    const activeCount = studentIds.filter((_id, idx) => {
+      const xp = xpRows[idx];
+      if (xp?.lastPlayedAt && new Date(xp.lastPlayedAt) >= sevenDaysAgo) return true;
+      const prog = progressRows[idx] ?? [];
+      return prog.some((p: any) => p.completedAt && new Date(p.completedAt) >= sevenDaysAgo);
+    }).length;
+
+    const weekStart = new Date().toISOString().slice(0, 10);
+    const baseUrl = appBaseUrl();
+    const html = `
+<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a">
+  <h2 style="color:#0d9488;margin-bottom:4px">Finsight Lite</h2>
+  <h3 style="margin-top:0">Your weekly update &mdash; ${escapeHtml(orgName)} <span style="font-size:12px;font-weight:normal;color:#dc2626;border:1px solid #dc2626;border-radius:4px;padding:2px 6px;vertical-align:middle">TEST</span></h3>
+  <p>Here is how your students are doing for the week of <strong>${escapeHtml(weekStart)}</strong>:</p>
+  <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin:16px 0">
+    <tr style="background:#f1f5f9"><td style="padding:8px 12px;font-weight:600">Total students enrolled</td><td style="padding:8px 12px">${studentIds.length}</td></tr>
+    <tr><td style="padding:8px 12px;font-weight:600">Active this week</td><td style="padding:8px 12px">${activeCount}</td></tr>
+    <tr style="background:#f1f5f9"><td style="padding:8px 12px;font-weight:600">Average XP per student</td><td style="padding:8px 12px">${avgXp}</td></tr>
+    <tr><td style="padding:8px 12px;font-weight:600">Lesson completion rate</td><td style="padding:8px 12px">${lessonCompletionRate}%</td></tr>
+  </table>
+  <p>Keep encouraging your students to log on and learn!</p>
+  <p><a href="${escapeHtml(baseUrl)}/org/dashboard" style="background:#0d9488;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;display:inline-block">Open your dashboard</a></p>
+  <p style="font-size:12px;color:#6b7280;margin-top:24px">Finsight Lite &middot; Finsight Limited</p>
+</div>`;
+
+    const result = await sendEmail({
+      to: admin.email,
+      subject: `[TEST] Your Finsight Lite weekly update — ${orgName}`,
+      html,
+      text: `[TEST] Finsight Lite weekly update — ${orgName}\n\nWeek of: ${weekStart}\nTotal students: ${studentIds.length}\nActive this week: ${activeCount}\nAvg XP: ${avgXp}\nLesson completion: ${lessonCompletionRate}%\n\nDashboard: ${baseUrl}/org/dashboard`,
+      kind: "org_weekly_email",
+      orgId: admin.orgId,
+    });
+
+    res.json({ ok: result.ok, to: admin.email, orgName, weekStart, studentIds: studentIds.length, activeCount, avgXp, lessonCompletionRate, error: result.error ?? null });
+  });
+  // === END TEMPORARY EMAIL TEST ===
+
   // === ORG ADMIN: BRANDING ===
   app.get("/api/org-admin/branding", isOrgAdmin, async (req: any, res) => {
     const admin = await storage.getOrgAdminById(req.session.orgAdminId);
