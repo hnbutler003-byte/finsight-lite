@@ -1,0 +1,59 @@
+You are working on Finsight Lite, a financial literacy EdTech platform built on React + TypeScript + Node/Express + Supabase (Drizzle ORM, pooled connection port 6543). The goal of this task is to make the app multi-tenant ready for licensing to schools, ministries, and organizations.
+Step 1 — Audit the schema before writing any code.
+Inspect the existing Supabase schema (check the Drizzle schema files, typically in shared/schema.ts or db/schema.ts). Look for the following:
+
+Is there an organizations or orgs table? If yes, note its columns.
+Do the core user/student/progress tables have an org_id or organization_id foreign key column? If yes, note which tables have it and which are missing it.
+Is Row Level Security (RLS) enabled on any tables in Supabase? Check via supabase/migrations files or by querying pg_tables and pg_policies.
+
+Based on what you find, follow the matching path below.
+
+PATH A — If org_id already exists on most tables:
+
+Identify any tables that are missing org_id and add it as a nullable foreign key to start (we will enforce NOT NULL after backfill).
+Write Supabase SQL migration files to enable RLS on all core tables and add policies so that authenticated users can only read/write rows where org_id matches their own organization, pulled from the JWT custom claim org_id.
+Add a Supabase function or trigger that auto-stamps org_id on INSERT using auth.jwt() ->> 'org_id' so the app never has to pass it manually.
+
+PATH B — If there is no org_id and no organizations table:
+
+Create an organizations table with: id (uuid, primary key), name (text), territory (text — one of: Bahamas, Barbados, Jamaica, Trinidad and Tobago, Eastern Caribbean), slug (text, unique — used for subdomain white-labeling), plan (text, default 'standard'), student_limit (integer, default 500), created_at (timestamp).
+Add org_id uuid references organizations(id) to the following tables (add as nullable first): users, and any table storing student progress, lesson completions, game scores, XP, achievements, savings goals, or streaks.
+Write Supabase SQL migration files to enable RLS on all affected tables with policies that restrict reads and writes to matching org_id from the JWT claim.
+Update the Drizzle schema file to reflect all new columns and the new organizations table.
+Seed one organization row for development: name "Financial Academy 242", territory "Bahamas", slug "fa242".
+
+PATH C — If you are not sure or the structure is ambiguous:
+
+Print a summary of what you found and ask for clarification before proceeding. Do not guess.
+
+
+Step 2 — Org Admin Dashboard (after schema work is complete)
+Build a new React page at the route /org-admin protected by role check (only users with role org_admin or super_admin can access it).
+The dashboard should display the following for the logged-in admin's organization:
+
+Organization name and territory (pulled from the organizations table)
+Total registered students
+Active students in the last 30 days (based on last login or last activity timestamp)
+Average XP across all students in the org
+Lesson completion rate: lessons completed divided by total lessons available (9 core lessons)
+Top 5 most-played money games by session count
+A simple student list table: name, join date, total XP, lessons completed, last active — paginated at 25 rows
+
+Use the existing Finsight Lite design system throughout:
+
+Wrap the page in caribbean-bg
+Use glass-card for all stat panels
+Metric numbers use font-display font-extrabold text-3xl text-white
+Labels use text-white/60 text-xs font-semibold uppercase tracking-wider
+Use real-feeling dummy data for any metric that cannot yet be queried, labeled clearly with a // TODO: wire to real query comment
+
+Use dummy student names drawn from Caribbean teen names: Jahiem, Aaliyah, Treyvon, Simone, Rashida, Kobe, Destiny, Omari, Kezia, Dante.
+Do not use placeholder names like "Student 1" or amounts like "$100".
+
+Constraints:
+
+Do not break any existing routes or auth flows.
+All new migrations go in supabase/migrations/ with timestamped filenames.
+All new Drizzle schema changes go in the existing schema file, not a new one.
+Do not remove or rename any existing columns.
+After completing both steps, print a summary of every file created or modified.
