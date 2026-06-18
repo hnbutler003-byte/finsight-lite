@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useOrgAuth } from "@/hooks/use-org-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Users, BookOpen, Globe, Copy, Check, Loader2, Building2, BarChart3, Layers, Sparkles, Settings2, Save, Mail, Send, Trophy, TrendingUp, Gamepad2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Users, BookOpen, Globe, Copy, Check, Loader2, Building2, Layers, Sparkles, Settings2, Save, Mail, Send, Trophy, TrendingUp, Gamepad2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -606,7 +606,7 @@ export default function OrgDashboard() {
                       {studentTable?.total > 25 && (
                         <div className="flex items-center justify-between pt-2">
                           <p className="text-xs text-muted-foreground">
-                            Page {studentTable.page} of {Math.ceil(studentTable.total / 25)}
+                            Page {studentTable?.page} of {Math.ceil((studentTable?.total ?? 0) / 25)}
                           </p>
                           <div className="flex gap-2">
                             <Button
@@ -622,7 +622,7 @@ export default function OrgDashboard() {
                               variant="outline"
                               size="sm"
                               onClick={() => setStudentPage(p => p + 1)}
-                              disabled={studentPage >= Math.ceil(studentTable.total / 25)}
+                              disabled={studentPage >= Math.ceil((studentTable?.total ?? 0) / 25)}
                               data-testid="button-next-page"
                             >
                               <ChevronRight className="w-4 h-4" />
