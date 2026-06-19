@@ -575,6 +575,7 @@ export async function registerStudentRoutes(app: Express): Promise<void> {
             matchCategory(["insurance", "premium", "policy", "coverage", "life insurance", "auto insurance"], "Insurance");
             matchCategory(["flight", "hotel", "airbnb", "vacation", "travel", "trip", "booking", "resort", "airline"], "Travel");
             matchCategory(["gift", "donation", "charity", "tithe", "offering", "church", "nonprofit"], "Gifts & Donations");
+            matchCategory(["allowance", "pocket money", "stipend"], "Allowance");
             matchCategory(["salary", "wage", "payroll", "deposit", "paycheck", "income"], "Salary");
             matchCategory(["freelance", "contract", "gig", "consulting", "commission", "client payment"], "Freelance");
             matchCategory(["dividend", "interest", "investment", "stock", "bond", "capital gain", "return"], "Investments");

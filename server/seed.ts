@@ -6,6 +6,7 @@ import { eq, and, isNull } from "drizzle-orm";
 export async function seedDatabase() {
   const defaultCategories = [
     { name: "Salary", type: "income", icon: "💰", color: "#10B981" },
+    { name: "Allowance", type: "income", icon: "🪙", color: "#F59E0B" },
     { name: "Food & Dining", type: "expense", icon: "🍴", color: "#EF4444" },
     { name: "Transportation", type: "expense", icon: "🚗", color: "#F59E0B" },
     { name: "Shopping", type: "expense", icon: "🛍️", color: "#3B82F6" },
