@@ -1,0 +1,39 @@
+Build two features on top of the existing Finsight Lite codebase. Audit relevant files first, do not assume schema or component structure — confirm before writing code.
+
+
+FEATURE 1 — Teacher-to-student individual feedback
+
+Goal: let a teacher leave a note or comment tied to a specific student, viewable by that student and the teacher (not by other students).
+
+Steps:
+
+
+Add a new table student_feedback with: id, student_id (FK to users), teacher_id (FK to users), org_id, message (text), created_at. Confirm the existing schema's naming conventions before adding this and match them exactly.
+In TeacherClassDetail.tsx, make each StudentRow clickable. Clicking opens a side panel or modal showing that student's existing stats (already displayed) plus a feedback history (most recent first) and a textarea to add a new note.
+On the student-facing side, add a small notification or section (wherever makes sense given existing student dashboard structure — check before assuming) showing feedback from their teacher, most recent first, with the teacher's name and date.
+Feedback is private between that student, their teacher, and org admins. No other student can see it.
+Use the existing design system: glass-card for the feedback panel, font-display for the teacher's name, text-sm font-sans for the message body, btn-primary for the submit button.
+
+
+
+FEATURE 2 — Auto-route to AI Tutor on low quiz scores
+
+Goal: when a student scores below 60% on a lesson quiz, proactively surface a prompt offering AI Tutor help, instead of requiring the student to seek it out manually.
+
+Steps:
+
+
+Find the lesson quiz results screen (likely in Lessons.tsx per existing audit). Check the score calculation logic already in place.
+If score is below 60%, add a glass-card-teal panel below the results showing: "Want help understanding this topic? Ask your AI Tutor" with a button that navigates directly to the AI Tutor (or Money Guide chatbot, whichever is the correct existing entry point per the codebase) and pre-fills or pre-contextualizes the question with the lesson topic name, so the student doesn't have to retype anything.
+If score is 60% or above, do not show this panel — show the existing "Perfect Score!" or standard results card as-is.
+Do not change scoring logic, XP calculation, or certificate logic. This is additive only.
+Use existing design system classes throughout. No new colors or fonts.
+
+
+
+Constraints:
+
+
+Do not touch the leaderboard, peer visibility, or any social features. Those are intentionally out of scope.
+Do not change any existing database columns or remove any existing functionality.
+After completing both features, print every file created or modified, and confirm both features work for a student in one organization without leaking data to another organization.

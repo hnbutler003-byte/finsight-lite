@@ -1,9 +1,9 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import {
   ArrowLeft, GraduationCap, Loader2, BookOpen, Sparkles, ChevronRight, Info, Search, Send
 } from "lucide-react";
@@ -14,6 +14,13 @@ export default function MoneyLabTutor() {
   const [explanation, setExplanation] = useState("");
   const [isExplaining, setIsExplaining] = useState(false);
   const [freeQuestion, setFreeQuestion] = useState("");
+  const search = useSearch();
+  useEffect(() => {
+    if (search) {
+      const topic = new URLSearchParams(search).get("q");
+      if (topic) setFreeQuestion(topic);
+    }
+  }, [search]);
 
   const { data: papers, isLoading: papersLoading } = useQuery<any[]>({
     queryKey: ["/api/moneylab/papers"],

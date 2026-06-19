@@ -7,7 +7,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { StatCard } from "@/components/dashboard/StatCard";
 import {
   Wallet, TrendingUp, TrendingDown, Plus, Loader2, Sparkles,
-  Lightbulb, Target, Trash2, Edit2, ChevronDown, ChevronUp,
+  Lightbulb, Target, Trash2, Edit2, ChevronDown, ChevronUp, MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

@@ -1,0 +1,30 @@
+Answer the following questions by checking the actual codebase and configuration. Do not guess.
+
+
+QUESTION 1 — Where is data physically stored?
+
+Check the Supabase project settings or connection string for the configured region (e.g. us-east-1, eu-west-1, etc.). Also confirm: is Google Cloud Storage (used for media/assets) configured in the same region, or a different one? Report both regions clearly.
+
+
+QUESTION 2 — Does an account/data deletion feature exist?
+
+Search the codebase for any existing route, button, or admin function that lets a user or admin delete a student account and their associated data (progress, XP, game history, AI chat logs, teacher feedback if built). Report exactly what exists, if anything.
+
+
+If no deletion feature exists, build one with these requirements:
+
+
+Add a "Delete my account" option in the student-facing account/settings page (check existing structure before assuming layout). Clicking it shows a confirmation modal explaining that this is permanent and erases their progress, XP, and history. Require a second confirmation step before deleting (e.g. type "DELETE" or a double confirm) so it cannot happen accidentally.
+Add a parallel "Delete student" action available to Org Admins for use when a parent or guardian requests removal of a specific student's data on their behalf, since a minor may not always be the one initiating the request.
+On deletion, permanently remove: the user record, all lesson/quiz progress, game history and scores, XP and streak data, any AI Tutor or Money Guide chat logs tied to that user, and any teacher feedback notes tied to that student (if that feature has been built).
+Do not delete organization-level aggregate stats in a way that breaks other students' data. Only the specific student's individual records should be removed.
+Log that a deletion occurred (user id, org id, timestamp) in a simple deletion_log table for audit purposes, without retaining any of the actual personal data that was deleted.
+Use the existing design system for any UI (glass-card, btn-primary for safe actions, a clearly distinct/serious style for the final destructive confirm button, not the default coral gamification styling).
+
+
+After completing, report:
+
+
+The confirmed data storage regions
+Whether a deletion feature already existed or was newly built
+Every file created or modified

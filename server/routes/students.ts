@@ -1309,6 +1309,46 @@ Rules:
     res.json({ ok: true });
   });
 
+  // === STUDENT FEEDBACK ROUTES ===
+  app.post("/api/teacher/feedback", isTeacher, async (req: any, res) => {
+    try {
+      const body = z.object({
+        studentId: z.string().min(1),
+        classId: z.number().int().positive(),
+        message: z.string().min(1).max(2000),
+      }).parse(req.body);
+      const cls = await storage.getClassById(body.classId);
+      if (!cls || cls.teacherId !== req.session.teacherId) return res.status(403).json({ message: "Forbidden" });
+      const enrollments = await storage.getEnrollmentsByClass(body.classId);
+      const enrolled = enrollments.some(e => e.studentId === body.studentId);
+      if (!enrolled) return res.status(403).json({ message: "Student not in your class" });
+      const teacher = await storage.getTeacherById(req.session.teacherId);
+      const feedback = await storage.createStudentFeedback({
+        studentId: body.studentId,
+        teacherId: req.session.teacherId,
+        classId: body.classId,
+        orgId: teacher?.orgId ?? null,
+        message: body.message,
+      });
+      res.json(feedback);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  app.get("/api/teacher/feedback/:studentId", isTeacher, async (req: any, res) => {
+    const data = await storage.getStudentFeedbackByTeacherAndStudent(
+      req.session.teacherId as number,
+      req.params.studentId,
+    );
+    res.json(data);
+  });
+
+  app.get("/api/student/feedback", isAuthenticated, async (req: any, res) => {
+    const data = await storage.getStudentFeedbackByStudent(req.session.userId);
+    res.json(data);
+  });
+
   // === DEMO ACCESS ===
   app.post("/api/demo/setup", async (_req, res) => {
     try {

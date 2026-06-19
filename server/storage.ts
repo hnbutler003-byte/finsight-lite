@@ -3,7 +3,7 @@ import {
   simulatedStocks, portfolioHoldings, portfolioTransactions, learningModules, userLearningProgress, userVirtualBalance,
   examPapers, extractedQuestions, gameSessions, userXp, userBadges,
   schools, sponsors,
-  teachers, classes, classEnrollments, challenges, classNotifications,
+  teachers, classes, classEnrollments, challenges, classNotifications, studentFeedback,
   orgAdmins,
   type School, type InsertSchool,
   type Sponsor, type InsertSponsor,
@@ -12,6 +12,7 @@ import {
   type ClassEnrollment, type InsertClassEnrollment,
   type Challenge, type InsertChallenge,
   type ClassNotification, type InsertClassNotification,
+  type StudentFeedback, type InsertStudentFeedback,
   type OrgAdmin, type InsertOrgAdmin,
   type User, type UpsertUser,
   type Category, type InsertCategory,
@@ -145,6 +146,9 @@ export interface IStorage extends IAuthStorage {
   getNotificationsByClass(classId: number): Promise<ClassNotification[]>;
   createNotification(data: InsertClassNotification): Promise<ClassNotification>;
   deleteNotification(id: number, teacherId: number): Promise<void>;
+  createStudentFeedback(data: InsertStudentFeedback): Promise<StudentFeedback>;
+  getStudentFeedbackByStudent(studentId: string): Promise<Array<StudentFeedback & { teacherName: string }>>;
+  getStudentFeedbackByTeacherAndStudent(teacherId: number, studentId: string): Promise<Array<StudentFeedback & { teacherName: string }>>;
   getClassLeaderboard(classId: number): Promise<any[]>;
   getClassAnalytics(classId: number): Promise<any>;
 
@@ -979,6 +983,31 @@ export class DatabaseStorage implements IStorage {
 
   async deleteNotification(id: number, teacherId: number): Promise<void> {
     await db.delete(classNotifications).where(and(eq(classNotifications.id, id), eq(classNotifications.teacherId, teacherId)));
+  }
+
+  async createStudentFeedback(data: InsertStudentFeedback): Promise<StudentFeedback> {
+    const [feedback] = await db.insert(studentFeedback).values(data).returning();
+    return feedback;
+  }
+
+  async getStudentFeedbackByStudent(studentId: string): Promise<Array<StudentFeedback & { teacherName: string }>> {
+    const rows = await db
+      .select({ sf: studentFeedback, firstName: teachers.firstName, lastName: teachers.lastName })
+      .from(studentFeedback)
+      .innerJoin(teachers, eq(studentFeedback.teacherId, teachers.id))
+      .where(eq(studentFeedback.studentId, studentId))
+      .orderBy(desc(studentFeedback.createdAt));
+    return rows.map(r => ({ ...r.sf, teacherName: `${r.firstName} ${r.lastName}` }));
+  }
+
+  async getStudentFeedbackByTeacherAndStudent(teacherId: number, studentId: string): Promise<Array<StudentFeedback & { teacherName: string }>> {
+    const rows = await db
+      .select({ sf: studentFeedback, firstName: teachers.firstName, lastName: teachers.lastName })
+      .from(studentFeedback)
+      .innerJoin(teachers, eq(studentFeedback.teacherId, teachers.id))
+      .where(and(eq(studentFeedback.teacherId, teacherId), eq(studentFeedback.studentId, studentId)))
+      .orderBy(desc(studentFeedback.createdAt));
+    return rows.map(r => ({ ...r.sf, teacherName: `${r.firstName} ${r.lastName}` }));
   }
 
   async getClassLeaderboard(classId: number): Promise<any[]> {

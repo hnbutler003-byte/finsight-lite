@@ -1005,6 +1005,25 @@ export default function Lessons() {
                 </Card>
               </div>
 
+              {pct < 60 && (
+                <Card className="glass-card-teal rounded-glass border-0" data-testid="card-ai-tutor-prompt">
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center flex-shrink-0">
+                      <GraduationCap className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-sm text-teal-800 dark:text-teal-200">Need help with this topic?</p>
+                      <p className="text-xs text-teal-700 dark:text-teal-300 mt-0.5">Your AI Tutor can explain <span className="font-bold">{selectedLesson.title}</span> in simple steps.</p>
+                    </div>
+                    <Link href={`/moneylab/tutor?q=${encodeURIComponent(selectedLesson.title)}`}>
+                      <Button size="sm" className="rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-bold shrink-0" data-testid="button-ask-ai-tutor">
+                        Ask AI Tutor
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              )}
+
               {pct === 100 && (
                 <Card className="glass-card-coral rounded-glass border-0">
                   <CardContent className="p-4 flex items-center gap-3">

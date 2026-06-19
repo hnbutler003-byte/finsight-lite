@@ -232,6 +232,21 @@ export const classNotifications = pgTable("class_notifications", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// === STUDENT FEEDBACK TABLE ===
+
+export const studentFeedback = pgTable("student_feedback", {
+  id: serial("id").primaryKey(),
+  studentId: varchar("student_id").notNull().references(() => users.id),
+  teacherId: integer("teacher_id").notNull().references(() => teachers.id),
+  classId: integer("class_id").notNull().references(() => classes.id),
+  orgId: text("org_id"),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertStudentFeedbackSchema = createInsertSchema(studentFeedback).omit({ id: true, createdAt: true });
+export type StudentFeedback = typeof studentFeedback.$inferSelect;
+export type InsertStudentFeedback = z.infer<typeof insertStudentFeedbackSchema>;
+
 // === ORGANIZATION ADMIN TABLE ===
 
 export const orgAdmins = pgTable("org_admins", {
