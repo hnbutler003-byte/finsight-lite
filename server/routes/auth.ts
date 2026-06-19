@@ -6,6 +6,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import {
   getOrganization,
+  getOrganizations,
   getOrgEnvironments,
   getOrgEnvironmentByJoinCode,
   getOrgEnvironmentById,
@@ -311,7 +312,59 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
 
   app.post("/api/org/auth/login", async (req, res) => {
     try {
-      const { email, password } = z.object({ email: z.string().email(), password: z.string() }).parse(req.body);
+      const { email, password, orgId: selectedOrgId } = z.object({
+        email: z.string().email(),
+        password: z.string(),
+        orgId: z.string().optional(),
+      }).parse(req.body);
+
+      const isFounderAdmin =
+        email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase() &&
+        password === ADMIN_PASSWORD;
+
+      if (isFounderAdmin) {
+        // Find or create a real org_admins record for the founder
+        let admin = await storage.getOrgAdminByEmail(email.trim().toLowerCase());
+
+        if (!admin) {
+          const orgs = await getOrganizations();
+          if (orgs.length === 0) {
+            return res.status(400).json({
+              message: "No organizations found. Create one first from the Admin Dashboard.",
+            });
+          }
+          if (orgs.length > 1 && !selectedOrgId) {
+            return res.status(200).json({
+              needsOrgSelection: true,
+              orgs: orgs.map((o: any) => ({ id: o.id, name: o.name })),
+            });
+          }
+          const targetOrgId = selectedOrgId ?? orgs[0].id;
+          const envs = await getOrgEnvironments(targetOrgId);
+          if (envs.length === 0) {
+            return res.status(400).json({ message: "Selected organization has no environments configured." });
+          }
+          admin = await storage.createOrgAdmin({
+            firstName: "Founder",
+            lastName: "Admin",
+            email: email.trim().toLowerCase(),
+            passwordHash: null,
+            orgId: targetOrgId,
+            envId: envs[0].id,
+            role: "founder",
+          });
+        }
+
+        (req as any).session.orgAdminId = admin.id;
+        (req as any).session.orgId = admin.orgId;
+        const { passwordHash: _p, ...safe } = admin;
+        const org = await getOrganization(admin.orgId);
+        const envs = await getOrgEnvironments(admin.orgId);
+        const env = envs.find((e: any) => e.id === admin!.envId);
+        return res.json({ ...safe, orgName: org?.name ?? "", envName: env?.display_name ?? "" });
+      }
+
+      // Normal org admin login
       const admin = await storage.getOrgAdminByEmail(email);
       if (!admin) return res.status(401).json({ message: "Invalid email or password" });
       if (!admin.passwordHash) return res.status(401).json({ message: "This account uses Google sign-in. Please use the 'Sign in with Google' button." });

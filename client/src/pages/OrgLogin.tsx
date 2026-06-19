@@ -2,10 +2,12 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Building2, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Building2, Eye, EyeOff, Loader2, ChevronRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+
+type OrgOption = { id: string; name: string };
 
 export default function OrgLogin() {
   const [, setLocation] = useLocation();
@@ -15,6 +17,7 @@ export default function OrgLogin() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [orgOptions, setOrgOptions] = useState<OrgOption[] | null>(null);
 
   const handleGoogle = async (idToken: string) => {
     setGoogleLoading(true);
@@ -44,17 +47,20 @@ export default function OrgLogin() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doLogin = async (orgId?: string) => {
     setLoading(true);
     try {
       const res = await fetch("/api/org/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, ...(orgId ? { orgId } : {}) }),
       });
       const data = await res.json();
+      if (res.ok && data.needsOrgSelection) {
+        setOrgOptions(data.orgs);
+        return;
+      }
       if (!res.ok) throw new Error(data.message);
       qc.setQueryData(["/api/org/auth/me"], data);
       setLocation("/org/dashboard");
@@ -65,6 +71,50 @@ export default function OrgLogin() {
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    doLogin();
+  };
+
+  // ── Org picker (founder admin with multiple orgs) ──────────────────────────
+  if (orgOptions) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 p-4">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center space-y-2">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg mb-2">
+              <Building2 className="w-9 h-9 text-white" />
+            </div>
+            <h1 className="font-display font-bold text-3xl">Choose Organization</h1>
+            <p className="text-muted-foreground">Select which org to manage</p>
+          </div>
+
+          <Card className="glass-card rounded-glass shadow-xl">
+            <CardContent className="p-6 space-y-3">
+              {orgOptions.map(org => (
+                <button
+                  key={org.id}
+                  onClick={() => doLogin(org.id)}
+                  disabled={loading}
+                  className="w-full flex items-center justify-between rounded-2xl border-2 border-input bg-background px-5 py-4 text-left hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
+                  data-testid={`button-org-select-${org.id}`}
+                >
+                  <span className="font-semibold">{org.name}</span>
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                </button>
+              ))}
+            </CardContent>
+          </Card>
+
+          <p className="text-center text-xs text-muted-foreground">
+            <button onClick={() => setOrgOptions(null)} className="text-blue-600 hover:underline font-semibold">← Back to login</button>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Normal login form ──────────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 p-4">
       <div className="w-full max-w-md space-y-6">
