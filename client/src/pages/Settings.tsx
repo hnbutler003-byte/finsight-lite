@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, UserCog, Award, Mail, ShieldCheck, Users, Chrome, Sun, Moon, Palette } from "lucide-react";
+import { Loader2, UserCog, Award, Mail, ShieldCheck, Users, Chrome, Sun, Moon, Palette, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { useLocation } from "wouter";
 
 type EmailContact = {
   id: number;
@@ -27,10 +29,13 @@ export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { theme, toggleTheme } = useTheme();
+  const [, setLocation] = useLocation();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [emailInput, setEmailInput] = useState("");
   const [guardianInput, setGuardianInput] = useState("");
+  const [deleteStep, setDeleteStep] = useState(0);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   useEffect(() => {
     setFirstName(user?.firstName ?? "");
@@ -103,6 +108,19 @@ export default function Settings() {
   const previewName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ") || user?.username || "Student";
   const contact = contactData?.contact;
   const guardian = contactData?.guardian;
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("DELETE", "/api/auth/account");
+      if (!res.ok) { const d = await res.json(); throw new Error(d.message || "Failed"); }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.clear();
+      window.location.href = "/";
+    },
+    onError: (e: any) => toast({ title: "Could not delete account", description: e.message, variant: "destructive" }),
+  });
 
   const [googleLinkLoading, setGoogleLinkLoading] = useState(false);
   const handleLinkGoogle = async (idToken: string) => {
@@ -335,8 +353,71 @@ export default function Settings() {
               )}
             </CardContent>
           </Card>
+          {/* ── Delete Account ── */}
+          <Card className="glass-card-heavy rounded-glass border border-red-200/50 dark:border-red-900/30">
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-red-500/15 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-red-500 dark:text-red-400" />
+                </div>
+                <div>
+                  <h2 className="font-display font-bold text-lg text-foreground">Delete account</h2>
+                  <p className="text-sm text-muted-foreground">Permanently erase all your data.</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                This removes your profile, transactions, savings, investment portfolio, quiz history, and learning progress.{" "}
+                <strong className="text-foreground">This cannot be undone.</strong>
+              </p>
+              <Button
+                variant="destructive"
+                onClick={() => setDeleteStep(1)}
+                className="rounded-2xl"
+                data-testid="button-open-delete-account"
+              >
+                <Trash2 className="w-4 h-4 mr-2" /> Delete my account
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </main>
+
+      <Dialog open={deleteStep === 1} onOpenChange={(o) => { if (!o) { setDeleteStep(0); setDeleteConfirmText(""); } }}>
+        <DialogContent className="glass-card rounded-glass border-0">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Delete your account?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            All your data will be permanently erased — progress, portfolio, quiz history, everything.
+            To confirm, type <strong className="text-foreground">DELETE</strong> below.
+          </p>
+          <Input
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            placeholder="Type DELETE to confirm"
+            className="card-input rounded-2xl"
+            data-testid="input-delete-confirm"
+          />
+          <div className="flex gap-3 pt-1">
+            <Button
+              variant="outline"
+              onClick={() => { setDeleteStep(0); setDeleteConfirmText(""); }}
+              className="flex-1 rounded-2xl"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteAccountMutation.mutate()}
+              disabled={deleteConfirmText !== "DELETE" || deleteAccountMutation.isPending}
+              className="flex-1 rounded-2xl"
+              data-testid="button-confirm-delete-account"
+            >
+              {deleteAccountMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete everything"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

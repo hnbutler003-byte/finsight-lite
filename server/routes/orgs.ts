@@ -658,6 +658,22 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
     res.json({ ok: true });
   });
 
+  // === FULL STUDENT DATA PURGE (org admin) ===
+  app.delete("/api/org-admin/students/:studentUserId/purge", isOrgAdmin, async (req: any, res) => {
+    const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+    if (!admin) return res.status(401).json({ message: "Not found" });
+    const { studentUserId } = req.params;
+    if (supabase) {
+      await supabase.from("org_students").delete()
+        .eq("org_id", admin.orgId)
+        .eq("student_user_id", studentUserId);
+    }
+    await storage.deleteUserAllData(studentUserId);
+    await storage.logDeletion({ userId: studentUserId, orgId: admin.orgId, deletedBy: "org_admin", adminActorId: admin.id });
+    await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org_admin.student.purge", targetType: "user", targetId: studentUserId, orgId: admin.orgId, req });
+    res.json({ ok: true });
+  });
+
   // === BULK STUDENT IMPORT ===
   app.post(
     "/api/org-admin/students/import/preview",

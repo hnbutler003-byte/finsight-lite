@@ -456,6 +456,22 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
     }
   });
 
+  // === STUDENT SELF-DELETE ===
+  app.delete("/api/auth/account", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId: string = req.user?.claims?.sub ?? req.session?.userId;
+      if (!userId) return res.status(401).json({ message: "Not authenticated" });
+      const orgId: string | null = req.session?.orgId ?? null;
+      await storage.deleteUserAllData(userId);
+      await storage.logDeletion({ userId, orgId, deletedBy: "student_self" });
+      req.session.destroy(() => {});
+      res.json({ ok: true });
+    } catch (e: any) {
+      console.error("[delete-account]", e);
+      res.status(500).json({ message: "Could not delete account. Please contact support." });
+    }
+  });
+
   // SECURITY: only allows login as a student whose ID is listed in the stored demo credentials,
   // preventing this endpoint from being used to impersonate arbitrary students.
   app.post("/api/demo/login/student/:studentId", async (req: any, res) => {

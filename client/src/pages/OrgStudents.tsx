@@ -66,6 +66,7 @@ export default function OrgStudents() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [confirmPurge, setConfirmPurge] = useState<EnrichedStudent | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
@@ -89,6 +90,20 @@ export default function OrgStudents() {
     },
     onError: () => {
       toast({ title: "Error", description: "Could not remove student. Please try again.", variant: "destructive" });
+    },
+  });
+
+  const purgeMutation = useMutation({
+    mutationFn: (studentUserId: string) =>
+      fetch(`/api/org-admin/students/${studentUserId}/purge`, { method: "DELETE", credentials: "include" }).then(r => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/org-admin/students"] });
+      qc.invalidateQueries({ queryKey: ["/api/org-admin/overview"] });
+      toast({ title: "Student data deleted", description: "All personal data has been permanently erased." });
+      setConfirmPurge(null);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Could not delete student data. Please try again.", variant: "destructive" });
     },
   });
 
@@ -235,13 +250,24 @@ export default function OrgStudents() {
                       </Button>
                     </div>
                   ) : (
-                    <button
-                      onClick={() => setConfirmDelete(s.student_user_id)}
-                      className="p-2 rounded-xl text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
-                      data-testid={`button-remove-student-${s.student_user_id}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => setConfirmDelete(s.student_user_id)}
+                        className="p-2 rounded-xl text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
+                        title="Remove from organisation"
+                        data-testid={`button-remove-student-${s.student_user_id}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setConfirmPurge(s)}
+                        className="p-2 rounded-xl text-muted-foreground hover:text-red-800 hover:bg-red-100 dark:hover:bg-red-950/40 transition-all"
+                        title="Delete all personal data"
+                        data-testid={`button-purge-student-${s.student_user_id}`}
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}
@@ -249,6 +275,36 @@ export default function OrgStudents() {
           )}
         </div>
       </main>
+
+      {/* ── Purge Confirmation Dialog ── */}
+      <Dialog open={!!confirmPurge} onOpenChange={(o) => { if (!o) setConfirmPurge(null); }}>
+        <DialogContent className="glass-card rounded-glass border-0">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Delete all data for {confirmPurge?.displayName}?</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              This permanently erases the student account and all personal data — progress, portfolio, quiz history, and learning records. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 flex-col sm:flex-row">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmPurge(null)}
+              className="flex-1 rounded-2xl"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => purgeMutation.mutate(confirmPurge!.student_user_id)}
+              disabled={purgeMutation.isPending}
+              className="flex-1 rounded-2xl"
+              data-testid="button-confirm-purge"
+            >
+              {purgeMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete everything"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

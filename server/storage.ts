@@ -4,6 +4,7 @@ import {
   examPapers, extractedQuestions, gameSessions, userXp, userBadges,
   schools, sponsors,
   teachers, classes, classEnrollments, challenges, classNotifications, studentFeedback,
+  deletionLog, emailContacts,
   orgAdmins,
   type School, type InsertSchool,
   type Sponsor, type InsertSponsor,
@@ -13,6 +14,7 @@ import {
   type Challenge, type InsertChallenge,
   type ClassNotification, type InsertClassNotification,
   type StudentFeedback, type InsertStudentFeedback,
+  type DeletionLog, type InsertDeletionLog,
   type OrgAdmin, type InsertOrgAdmin,
   type User, type UpsertUser,
   type Category, type InsertCategory,
@@ -149,6 +151,8 @@ export interface IStorage extends IAuthStorage {
   createStudentFeedback(data: InsertStudentFeedback): Promise<StudentFeedback>;
   getStudentFeedbackByStudent(studentId: string): Promise<Array<StudentFeedback & { teacherName: string }>>;
   getStudentFeedbackByTeacherAndStudent(teacherId: number, studentId: string): Promise<Array<StudentFeedback & { teacherName: string }>>;
+  deleteUserAllData(userId: string): Promise<void>;
+  logDeletion(data: InsertDeletionLog): Promise<void>;
   getClassLeaderboard(classId: number): Promise<any[]>;
   getClassAnalytics(classId: number): Promise<any>;
 
@@ -1008,6 +1012,32 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(studentFeedback.teacherId, teacherId), eq(studentFeedback.studentId, studentId)))
       .orderBy(desc(studentFeedback.createdAt));
     return rows.map(r => ({ ...r.sf, teacherName: `${r.firstName} ${r.lastName}` }));
+  }
+
+  async deleteUserAllData(userId: string): Promise<void> {
+    await db.delete(studentFeedback).where(eq(studentFeedback.studentId, userId));
+    await db.delete(classEnrollments).where(eq(classEnrollments.studentId, userId));
+    await db.delete(examPapers).where(eq(examPapers.userId, userId));
+    await db.delete(gameSessions).where(eq(gameSessions.userId, userId));
+    await db.delete(userXp).where(eq(userXp.userId, userId));
+    await db.delete(userBadges).where(eq(userBadges.userId, userId));
+    await db.delete(userLearningProgress).where(eq(userLearningProgress.userId, userId));
+    await db.delete(portfolioTransactions).where(eq(portfolioTransactions.userId, userId));
+    await db.delete(portfolioHoldings).where(eq(portfolioHoldings.userId, userId));
+    await db.delete(userVirtualBalance).where(eq(userVirtualBalance.userId, userId));
+    await db.delete(transactions).where(eq(transactions.userId, userId));
+    await db.delete(budgets).where(eq(budgets.userId, userId));
+    await db.delete(savingsGoals).where(eq(savingsGoals.userId, userId));
+    await db.delete(billReminders).where(eq(billReminders.userId, userId));
+    await db.delete(linkedCards).where(eq(linkedCards.userId, userId));
+    await db.delete(documentUploads).where(eq(documentUploads.userId, userId));
+    await db.delete(categories).where(eq(categories.userId, userId));
+    await db.delete(emailContacts).where(eq(emailContacts.userId, userId));
+    await db.delete(users).where(eq(users.id, userId));
+  }
+
+  async logDeletion(data: InsertDeletionLog): Promise<void> {
+    await db.insert(deletionLog).values(data);
   }
 
   async getClassLeaderboard(classId: number): Promise<any[]> {

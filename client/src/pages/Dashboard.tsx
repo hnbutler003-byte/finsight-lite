@@ -68,6 +68,10 @@ export default function Dashboard() {
     }
   });
 
+  const { data: teacherFeedback } = useQuery<any[]>({
+    queryKey: ["/api/student/feedback"],
+  });
+
   const selectedCurrency = CURRENCIES.find(c => c.code === currency) || CURRENCIES[1];
 
   if (authLoading || statsLoading) {
@@ -343,6 +347,31 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+
+          {teacherFeedback && teacherFeedback.length > 0 && (
+            <div className="glass-card rounded-glass p-5 space-y-3" data-testid="section-teacher-feedback">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center shrink-0">
+                  <MessageSquare className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                </div>
+                <div>
+                  <h3 className="font-display text-lg font-bold text-foreground">Teacher Feedback</h3>
+                  <p className="text-xs text-muted-foreground">Messages from your teacher</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {teacherFeedback.slice(0, 5).map((item: any) => (
+                  <div key={item.id} className="rounded-2xl border border-border/50 p-4 bg-muted/20" data-testid={`feedback-item-${item.id}`}>
+                    <div className="flex items-center justify-between mb-1.5 gap-2 flex-wrap">
+                      <p className="text-xs font-bold text-teal-700 dark:text-teal-300">{item.teacherName}</p>
+                      <p className="text-xs text-muted-foreground">{format(new Date(item.createdAt), 'MMM d, yyyy')}</p>
+                    </div>
+                    <p className="text-sm text-foreground leading-relaxed">{item.message}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <Card className="glass-card p-5 rounded-glass" data-testid="card-learning-progress">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

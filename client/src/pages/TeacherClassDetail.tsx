@@ -1,6 +1,8 @@
 import { TeacherSidebar } from "@/components/layout/TeacherSidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTeacherAuth } from "@/hooks/use-teacher-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useParams } from "wouter";
@@ -8,9 +10,11 @@ import { useState } from "react";
 import {
   ArrowLeft, Users, Trophy, Bell, BarChart3, Loader2, Copy, Check,
   Download, Trash2, Plus, Medal, Star, BookOpen, Gamepad2, Zap, Target,
-  Send, Crown, TrendingUp, AlertCircle, Sparkles, BookMarked, GraduationCap, Clock
+  Send, Crown, TrendingUp, AlertCircle, Sparkles, BookMarked, GraduationCap, Clock,
+  MessageSquarePlus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 const AVATAR_MAP: Record<string, string> = {
   lion: "🦁", dolphin: "🐬", parrot: "🦜", turtle: "🐢",
@@ -43,10 +47,16 @@ const BASE_TABS = [
 ];
 const LESSONS_TAB = { id: "lessons", label: "Lessons", icon: BookMarked };
 
-function StudentRow({ s }: { s: StudentData }) {
+type FeedbackItem = { id: number; message: string; createdAt: string; teacherName: string };
+
+function StudentRow({ s, onSelect }: { s: StudentData; onSelect: (s: StudentData) => void }) {
   const pct = Math.round((s.lessonsCompleted / s.totalLessons) * 100);
   return (
-    <div className="flex items-center gap-4 p-4 rounded-2xl border-2 hover:border-emerald-200 dark:hover:border-emerald-800 transition-all">
+    <button
+      onClick={() => onSelect(s)}
+      className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 hover:border-emerald-300 dark:hover:border-emerald-700 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 transition-all text-left group"
+      data-testid={`button-student-${s.id}`}
+    >
       <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-xl shrink-0">
         {AVATAR_MAP[s.avatar] || "🧑‍🎓"}
       </div>
@@ -79,7 +89,8 @@ function StudentRow({ s }: { s: StudentData }) {
           <p>Badges</p>
         </div>
       </div>
-    </div>
+      <MessageSquarePlus className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+    </button>
   );
 }
 
@@ -280,6 +291,34 @@ export default function TeacherClassDetail() {
 
   const TABS = cls?.envId ? [...BASE_TABS, LESSONS_TAB] : BASE_TABS;
 
+  const [selectedStudent, setSelectedStudent] = useState<StudentData | null>(null);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+
+  const { data: studentFeedback = [], isLoading: feedbackLoading } = useQuery<FeedbackItem[]>({
+    queryKey: [`/api/teacher/feedback`, selectedStudent?.id],
+    queryFn: () => fetch(`/api/teacher/feedback/${selectedStudent!.id}`, { credentials: "include" }).then(r => r.json()),
+    enabled: !!selectedStudent,
+  });
+
+  const submitFeedback = useMutation({
+    mutationFn: async (message: string) => {
+      const res = await fetch("/api/teacher/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ studentId: selectedStudent!.id, classId, message }),
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.message || "Failed"); }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [`/api/teacher/feedback`, selectedStudent?.id] });
+      setFeedbackMessage("");
+      toast({ title: "Feedback sent", description: `Your note was saved for ${selectedStudent?.name}.` });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   const deleteChallenge = useMutation({
     mutationFn: (id: number) => fetch(`/api/teacher/challenges/${id}`, { method: "DELETE", credentials: "include" }).then(r => r.json()),
     onSuccess: () => qc.invalidateQueries({ queryKey: [`/api/teacher/classes/${classId}/challenges`] }),
@@ -403,7 +442,7 @@ export default function TeacherClassDetail() {
                     ))}
                   </div>
                   <div className="space-y-2">
-                    {progress.students.map(s => <StudentRow key={s.id} s={s} />)}
+                    {progress.students.map(s => <StudentRow key={s.id} s={s} onSelect={setSelectedStudent} />)}
                   </div>
                 </>
               )}
@@ -663,6 +702,87 @@ export default function TeacherClassDetail() {
           )}
         </div>
       </main>
+
+      {/* ── Student Feedback Dialog ── */}
+      <Dialog
+        open={!!selectedStudent}
+        onOpenChange={(open) => { if (!open) { setSelectedStudent(null); setFeedbackMessage(""); } }}
+      >
+        <DialogContent className="max-w-lg glass-card rounded-glass border-0 p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-0">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-2xl shrink-0">
+                {AVATAR_MAP[selectedStudent?.avatar ?? ""] || "🧑‍🎓"}
+              </div>
+              <div>
+                <DialogTitle className="font-display font-bold text-lg">{selectedStudent?.name}</DialogTitle>
+                <p className="text-sm text-muted-foreground">
+                  Level {selectedStudent?.level} · {selectedStudent?.xp} XP
+                  {(selectedStudent?.streak ?? 0) > 0 && <span className="ml-2">🔥 {selectedStudent?.streak}</span>}
+                </p>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "Avg Score", value: `${selectedStudent?.avgScore ?? 0}%` },
+                { label: "Games", value: selectedStudent?.gamesPlayed ?? 0 },
+                { label: "Badges", value: selectedStudent?.badges ?? 0 },
+              ].map(s => (
+                <div key={s.label} className="rounded-2xl bg-muted/30 p-3 text-center">
+                  <p className="font-display font-bold text-base">{s.value}</p>
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Feedback History */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <MessageSquarePlus className="w-3.5 h-3.5" /> Previous Notes
+              </p>
+              {feedbackLoading ? (
+                <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-emerald-500" /></div>
+              ) : studentFeedback.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-3 rounded-2xl bg-muted/20">No notes yet — add the first one below.</p>
+              ) : (
+                <div className="space-y-2">
+                  {studentFeedback.map(fb => (
+                    <div key={fb.id} className="rounded-2xl border border-border/50 p-3 bg-muted/20" data-testid={`feedback-history-${fb.id}`}>
+                      <p className="text-xs text-muted-foreground mb-1">{format(new Date(fb.createdAt), 'MMM d, yyyy · h:mm a')}</p>
+                      <p className="text-sm text-foreground">{fb.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* New Feedback Form */}
+            <div className="space-y-3">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Add a note</p>
+              <Textarea
+                placeholder={`Write feedback for ${selectedStudent?.name}...`}
+                value={feedbackMessage}
+                onChange={(e) => setFeedbackMessage(e.target.value)}
+                className="card-input rounded-2xl resize-none min-h-[90px]"
+                data-testid="textarea-feedback-message"
+              />
+              <Button
+                onClick={() => { if (feedbackMessage.trim()) submitFeedback.mutate(feedbackMessage.trim()); }}
+                disabled={!feedbackMessage.trim() || submitFeedback.isPending}
+                className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold gap-2"
+                data-testid="button-submit-feedback"
+              >
+                {submitFeedback.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                Send Feedback
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

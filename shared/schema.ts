@@ -232,6 +232,20 @@ export const classNotifications = pgTable("class_notifications", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// === DELETION AUDIT LOG ===
+
+export const deletionLog = pgTable("deletion_log", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  orgId: text("org_id"),
+  deletedBy: text("deleted_by", { enum: ["student_self", "org_admin"] }).notNull(),
+  adminActorId: integer("admin_actor_id"),
+  deletedAt: timestamp("deleted_at").defaultNow().notNull(),
+});
+export const insertDeletionLogSchema = createInsertSchema(deletionLog).omit({ id: true });
+export type DeletionLog = typeof deletionLog.$inferSelect;
+export type InsertDeletionLog = z.infer<typeof insertDeletionLogSchema>;
+
 // === STUDENT FEEDBACK TABLE ===
 
 export const studentFeedback = pgTable("student_feedback", {
