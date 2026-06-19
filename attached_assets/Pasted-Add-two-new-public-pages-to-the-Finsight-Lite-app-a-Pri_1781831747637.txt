@@ -1,0 +1,288 @@
+Add two new public pages to the Finsight Lite app: a Privacy Policy page and a Terms of Service page. Audit the existing routing and page structure first before adding anything, so this matches how other pages are built.
+
+---
+
+STEP 1 — Audit
+
+Check how existing public/static pages are routed (for example, how the landing page or any About page is set up) so the new pages follow the same pattern, file structure, and routing approach already used in this codebase.
+
+---
+
+STEP 2 — Create the pages
+
+Create two new routes:
+- `/privacy` — renders the Privacy Policy content provided below
+- `/terms` — renders the Terms of Service content provided below
+
+Each page should:
+- Use the existing site layout/header if one exists (so navigation back to the main site is consistent), or a simple clean header with the Finsight Lite logo linking back to the homepage if no shared layout exists
+- Render the content as readable long-form text: clear headings for each section, normal paragraph text below each heading
+- Use `font-display` for headings and `font-sans` for body text, consistent with the rest of the app
+- Be readable on a plain white or light background, not the `caribbean-bg` gradient, since this is a long-form legal document and needs to be easy to read, not decorative
+- Include the "Last updated" date near the top
+- Be accessible without logging in (no auth required to view these pages)
+
+---
+
+STEP 3 — Link from the footer
+
+Find the existing site footer (already corrected to reference Finsight Limited per prior work). Add two links in the footer: "Privacy Policy" linking to `/privacy` and "Terms of Service" linking to `/terms`. Match the existing footer's text styling.
+
+---
+
+PRIVACY POLICY CONTENT TO USE:
+
+# Finsight Lite Privacy Policy
+
+**Last updated: June 18, 2026**
+
+Finsight Lite is operated by Finsight Limited, a company based in Nassau, Bahamas. This policy explains what information we collect, how we use it, and the choices available to students, parents, teachers, and organizations using the platform.
+
+This policy applies to www.finsightlite.com and the Finsight Lite platform.
+
+---
+
+## Who this policy is for
+
+Finsight Lite is used by students ages 12 to 17, their teachers, school and organization administrators, and parents or guardians. Some users on the platform may be under the age of 13. Where this policy refers to a "student," this includes users under 13, and the protections in the Children's Privacy section below apply specifically to them.
+
+---
+
+## Information we collect
+
+We collect the following categories of information:
+
+**Account information.** Name, email address, role (student, teacher, org admin), and organization affiliation, provided when an account is created.
+
+**Learning activity data.** Lesson and module progress, quiz scores, completed games, XP, streaks, achievements, and savings goal activity within the platform.
+
+**Investment Simulator activity.** Simulated buy and sell decisions made within the platform's Investment Simulator. This is a learning simulation only. No real money, real brokerage accounts, or real securities transactions are involved.
+
+**AI Tutor and Money Guide conversations.** Questions and messages submitted to the AI Tutor or Money Guide chatbot, and the responses generated. These conversations may be reviewed in aggregate to improve the quality of AI responses, but are not sold or shared with third parties for advertising purposes.
+
+**Teacher feedback.** Notes or messages a teacher leaves for an individual student through the platform's feedback feature. This information is visible only to that student, their teacher, and their organization's administrators.
+
+**Technical information.** Standard technical data such as IP address, browser type, and device information, collected automatically for security and platform functionality.
+
+We do not collect financial account numbers, real banking credentials, or government identification numbers. Nothing in the platform requires a student to connect a real bank account or investment account.
+
+---
+
+## How we use this information
+
+We use the information collected to:
+
+- Operate the platform and track individual student progress
+- Allow teachers and organization administrators to view aggregate and individual student engagement and performance within their own organization
+- Generate AI Tutor and Money Guide responses to student questions
+- Send organization administrators periodic summary reports of their organization's usage
+- Maintain the security and integrity of the platform
+- Improve the platform's curriculum, games, and features over time
+
+We do not sell personal information. We do not use student data for targeted advertising. We do not share student data with any organization other than the school, academy, or organization the student is enrolled with.
+
+---
+
+## Where data is stored
+
+All personal data collected by Finsight Lite is stored on servers located in the United States, through our infrastructure providers Supabase (database) and Google Cloud Storage (files and media).
+
+---
+
+## Data access and organization boundaries
+
+Student data is only visible to:
+
+- The student themselves
+- Teachers within the student's own organization
+- Organization administrators within the student's own organization
+- Finsight Limited staff, for the purposes of providing technical support and maintaining the platform
+
+Organizations cannot view or access data belonging to students in a different organization. Each organization's data is kept separate within the platform.
+
+---
+
+## Children's privacy
+
+Some users of Finsight Lite are under the age of 13. We are committed to protecting the privacy of younger students and limiting the data we collect from them to what is necessary to provide the educational service.
+
+For students under 13, account creation and continued use of the platform should occur with the knowledge and involvement of a parent, guardian, teacher, or school administrator who has authorized the student's participation, typically through the student's school or organization's own enrollment and consent process.
+
+We do not knowingly collect more information from a student under 13 than is necessary for the platform's educational features described in this policy. We do not use data from students under 13 for advertising, and we do not permit students to publicly share personal information with people outside their own organization through the platform.
+
+Parents or guardians who wish to review, correct, or request deletion of their child's information may do so by contacting their child's school or organization administrator, or by contacting Finsight Limited directly using the information at the end of this policy.
+
+---
+
+## Account and data deletion
+
+Students may permanently delete their own account and all associated personal data at any time through the Settings page within the platform. This action is permanent and cannot be undone, and requires a confirmation step before it is completed.
+
+Organization administrators may also process a full account and data deletion on behalf of a student, including in response to a request from a parent or guardian, through the organization admin dashboard.
+
+When an account is deleted, we permanently remove the student's personal records, including progress, scores, AI conversation history, and any teacher feedback associated with that student. We retain a minimal record that a deletion occurred, including the date and which administrator or student initiated it, for audit and security purposes only. This audit record does not contain the personal data that was deleted.
+
+Removing a student from an organization (for example, when they graduate or transfer) is a separate action from full account deletion, and does not by itself delete the student's personal data.
+
+---
+
+## Data sharing with third parties
+
+We use the following third-party service providers to operate Finsight Lite:
+
+- **Supabase**, for database hosting
+- **Google Cloud Storage**, for file and media storage
+- **Anthropic**, to power the AI Tutor and Money Guide chatbot features
+
+These providers process data on our behalf and are not permitted to use it for their own independent purposes.
+
+We do not otherwise share, sell, or rent personal information to third parties.
+
+---
+
+## Security
+
+We take reasonable technical and organizational measures to protect the information stored on Finsight Lite, including access controls that restrict data visibility to a student's own organization. No system is perfectly secure, and we encourage organizations to promptly report any suspected security concern to us using the contact information below.
+
+---
+
+## Changes to this policy
+
+We may update this policy from time to time as the platform evolves. The "last updated" date at the top of this page will reflect the most recent revision. Material changes affecting how student data is used will be communicated to organization administrators.
+
+---
+
+## Contact us
+
+Questions about this policy, or requests related to accessing, correcting, or deleting personal data, can be directed to Finsight Limited at the contact information available on www.finsightlite.com.
+
+---
+
+*This policy describes Finsight Lite as it currently operates. It does not claim certifications, compliance frameworks, or third-party validations that have not been formally obtained.*
+
+
+---
+
+TERMS OF SERVICE CONTENT TO USE:
+
+# Finsight Lite Terms of Service
+
+**Last updated: June 18, 2026**
+
+These Terms of Service govern access to and use of Finsight Lite, operated by Finsight Limited, a company based in Nassau, Bahamas. By creating an account or using the platform, you agree to these terms.
+
+If you are a student under the age of 18, you should use Finsight Lite under the supervision of a parent, guardian, teacher, or school administrator who has authorized your participation.
+
+---
+
+## What Finsight Lite is
+
+Finsight Lite is a financial literacy education platform for youth ages 12 to 17, offering interactive lessons, money games, an Investment Simulator, and AI-assisted learning tools (Money Guide and AI Tutor), designed for use by schools, academies, and other organizations across the Bahamas, Barbados, Jamaica, Trinidad and Tobago, and the Eastern Caribbean.
+
+**The Investment Simulator is a learning tool only.** It does not involve real money, real brokerage accounts, or real securities transactions. Stock data shown in the simulator, including any BISX-listed companies, is used for educational illustration and does not constitute financial advice or a real trading platform.
+
+**The AI Tutor and Money Guide chatbot provide general educational information.** They do not provide personalized financial, investment, tax, or legal advice, and should not be relied upon as a substitute for guidance from a qualified professional.
+
+---
+
+## Accounts and roles
+
+Finsight Lite supports four account types: Student, Teacher, Org Admin, and Super Admin. Each organization is responsible for the accuracy of the information it provides when creating accounts for its students and staff, and for ensuring it has appropriate authorization to enroll students, including any required parental or guardian consent under its own policies.
+
+A guest entry option may be available for users to explore the platform before creating an account. Activity under guest access may not be saved.
+
+---
+
+## Acceptable use
+
+When using Finsight Lite, you agree not to:
+
+- Provide false information when creating an account
+- Attempt to access another organization's data, or another student's individual data, without authorization
+- Use the platform to harass, bully, or share inappropriate content with other users
+- Attempt to interfere with, disrupt, or reverse-engineer the platform
+- Use the AI Tutor or Money Guide chatbot to attempt to extract harmful, inappropriate, or off-topic content
+
+We reserve the right to suspend or terminate accounts that violate these terms.
+
+---
+
+## Organization responsibilities
+
+Organizations (schools, academies, ministries, and other entities) that license Finsight Lite are responsible for:
+
+- Obtaining any consent required under their own jurisdiction's laws before enrolling students, particularly students under 13
+- Designating appropriate Org Admins and Teachers within their own organization
+- Promptly notifying Finsight Limited of any suspected unauthorized access to their organization's data
+
+---
+
+## Content ownership
+
+**Our content.** The curriculum, lessons, games, and platform design are owned by Finsight Limited. Organizations and users are granted a license to use this content for educational purposes while their account is active, not ownership of the content itself.
+
+**Content you upload.** Teachers who upload their own content or link external videos (such as YouTube) for their class retain ownership of that content, but grant Finsight Limited a license to host and display it within the platform for the purpose of delivering it to their students. Teachers are responsible for ensuring they have the right to share any content they upload or link.
+
+---
+
+## Data and privacy
+
+Use of Finsight Lite is also governed by our Privacy Policy, available at www.finsightlite.com, which explains what information we collect and how it is used, stored, and protected.
+
+---
+
+## Service availability
+
+We aim to keep Finsight Lite available and reliable, but we do not guarantee uninterrupted access. We may perform maintenance, updates, or changes to the platform from time to time. We are not liable for temporary unavailability of the service.
+
+---
+
+## Disclaimers
+
+Finsight Lite is provided for educational purposes. Nothing on the platform constitutes financial, investment, legal, or tax advice. Decisions made within the Investment Simulator or based on information from the AI Tutor or Money Guide chatbot are for learning purposes and should not be applied to real financial decisions without independent verification.
+
+The platform is provided "as is" without warranties of any kind, to the extent permitted by applicable law.
+
+---
+
+## Limitation of liability
+
+To the extent permitted by law, Finsight Limited is not liable for indirect, incidental, or consequential damages arising from use of the platform. Our total liability for any claim relating to the platform is limited to the amount paid by the organization for access to the platform in the twelve months preceding the claim, where a fee has been paid.
+
+---
+
+## Termination
+
+An organization or individual user may stop using Finsight Lite at any time. We may suspend or terminate access for violation of these terms, non-payment of applicable fees, or at the end of a licensing agreement, with reasonable notice where practicable.
+
+Upon termination, data may be deleted in accordance with our Privacy Policy and any data retention terms agreed with the organization.
+
+---
+
+## Changes to these terms
+
+We may update these terms as the platform evolves. Continued use of Finsight Lite after an update constitutes acceptance of the revised terms. Material changes will be communicated to organization administrators where practicable.
+
+---
+
+## Governing law
+
+These terms are governed by the laws of the Commonwealth of the Bahamas, without regard to conflict of law principles, except where a different governing law is required by an organization's licensing agreement or local regulation.
+
+---
+
+## Contact us
+
+Questions about these terms can be directed to Finsight Limited using the contact information available on www.finsightlite.com.
+
+---
+
+*These terms describe Finsight Lite as it currently operates and do not claim certifications, compliance frameworks, or features not yet built.*
+
+
+---
+
+Constraints:
+- Do not modify any existing routes, pages, or footer links beyond adding these two new links.
+- Convert the markdown-style headings (##, ###) in the content above into actual styled heading elements (h2, h3) rather than literal hash symbols on the page.
+- After completing, print the live URLs for both new pages and confirm the footer links work.

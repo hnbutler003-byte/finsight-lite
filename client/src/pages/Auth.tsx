@@ -574,7 +574,13 @@ export default function AuthPage() {
       </div>
 
       {/* Footer */}
-      <p className="mt-12 text-white/15 text-xs">© {new Date().getFullYear()} Finsight Limited</p>
+      <div className="mt-12 flex flex-col items-center gap-2">
+        <p className="text-white/15 text-xs">© {new Date().getFullYear()} Finsight Limited</p>
+        <div className="flex gap-4">
+          <a href="/privacy" className="text-white/20 text-xs hover:text-white/40 transition-colors">Privacy Policy</a>
+          <a href="/terms" className="text-white/20 text-xs hover:text-white/40 transition-colors">Terms of Service</a>
+        </div>
+      </div>
     </div>
   );
 }
