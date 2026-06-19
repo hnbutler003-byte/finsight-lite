@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { useTeacherAuth } from "@/hooks/use-teacher-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Users, BookOpen, Plus, Copy, Check, Loader2, Trophy, BarChart3,
-  GraduationCap, ArrowRight, Sparkles
+  GraduationCap, ArrowRight, Sparkles, X, CheckCircle2, Circle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -143,6 +143,16 @@ export default function TeacherDashboard() {
   const { teacher, isLoading: authLoading } = useTeacherAuth();
   const [, setLocation] = useLocation();
   const [showCreate, setShowCreate] = useState(false);
+  const [checklistDismissed, setChecklistDismissed] = useState(false);
+
+  useEffect(() => {
+    setChecklistDismissed(localStorage.getItem("teacher_checklist_dismissed") === "true");
+  }, []);
+
+  const dismissChecklist = () => {
+    localStorage.setItem("teacher_checklist_dismissed", "true");
+    setChecklistDismissed(true);
+  };
 
   const { data: classes, isLoading } = useQuery<ClassItem[]>({
     queryKey: ["/api/teacher/classes"],
@@ -186,6 +196,41 @@ export default function TeacherDashboard() {
               New Class
             </Button>
           </div>
+
+          {!checklistDismissed && (
+            <Card className="glass-card rounded-glass border border-emerald-200 dark:border-emerald-800/50" data-testid="card-teacher-onboarding-checklist">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="font-display font-bold text-sm mb-3">Getting started</p>
+                    <div className="space-y-2">
+                      {[
+                        { label: "Create your first class", done: (classes?.length ?? 0) > 0 },
+                        { label: "Add students to a class", done: totalStudents > 0 },
+                        { label: "Post a challenge or quiz", done: false },
+                        { label: "Explore the lesson library", done: false },
+                      ].map(item => (
+                        <div key={item.label} className="flex items-center gap-2.5">
+                          {item.done
+                            ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                            : <Circle className="w-4 h-4 text-muted-foreground/40 shrink-0" />}
+                          <span className={`text-sm ${item.done ? "text-muted-foreground line-through" : "text-foreground"}`}>{item.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    onClick={dismissChecklist}
+                    className="text-muted-foreground hover:text-foreground transition-colors mt-0.5 shrink-0"
+                    data-testid="button-dismiss-teacher-checklist"
+                    title="Dismiss checklist"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[

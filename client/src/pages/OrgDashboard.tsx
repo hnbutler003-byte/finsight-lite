@@ -3,18 +3,29 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useOrgAuth } from "@/hooks/use-org-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Users, BookOpen, Globe, Copy, Check, Loader2, Building2, Layers, Sparkles, Settings2, Save, Mail, Send, Trophy, TrendingUp, Gamepad2, ChevronLeft, ChevronRight, FileDown } from "lucide-react";
+import { Users, BookOpen, Globe, Copy, Check, Loader2, Building2, Layers, Sparkles, Settings2, Save, Mail, Send, Trophy, TrendingUp, Gamepad2, ChevronLeft, ChevronRight, FileDown, CheckCircle2, Circle, X, Info } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function OrgDashboard() {
   const { admin, isLoading: authLoading } = useOrgAuth();
   const [, setLocation] = useLocation();
   const [copied, setCopied] = useState(false);
+  const [checklistDismissed, setChecklistDismissed] = useState(false);
+
+  useEffect(() => {
+    setChecklistDismissed(localStorage.getItem("org_checklist_dismissed") === "true");
+  }, []);
+
+  const dismissChecklist = () => {
+    localStorage.setItem("org_checklist_dismissed", "true");
+    setChecklistDismissed(true);
+  };
 
   const { data: overview, isLoading } = useQuery<any>({
     queryKey: ["/api/org-admin/overview"],
@@ -159,6 +170,41 @@ export default function OrgDashboard() {
             </a>
           </div>
 
+          {!checklistDismissed && (
+            <Card className="glass-card rounded-glass border border-blue-200 dark:border-blue-800/50" data-testid="card-org-onboarding-checklist">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="font-display font-bold text-sm mb-3">Getting started</p>
+                    <div className="space-y-2">
+                      {[
+                        { label: "Share your student join code", done: (overview?.stats?.studentCount ?? 0) > 0 },
+                        { label: "Enrol at least one student", done: (overview?.stats?.studentCount ?? 0) > 0 },
+                        { label: "Publish your first lesson", done: (overview?.stats?.publishedLessons ?? 0) > 0 },
+                        { label: "Customise your branding", done: false },
+                      ].map(item => (
+                        <div key={item.label} className="flex items-center gap-2.5">
+                          {item.done
+                            ? <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" />
+                            : <Circle className="w-4 h-4 text-muted-foreground/40 shrink-0" />}
+                          <span className={`text-sm ${item.done ? "text-muted-foreground line-through" : "text-foreground"}`}>{item.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    onClick={dismissChecklist}
+                    className="text-muted-foreground hover:text-foreground transition-colors mt-0.5 shrink-0"
+                    data-testid="button-dismiss-org-checklist"
+                    title="Dismiss checklist"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {orgSummary?.summary && (
             <Card className="glass-card-teal rounded-glass" data-testid="card-ai-summary">
               <CardContent className="p-5">
@@ -289,9 +335,19 @@ export default function OrgDashboard() {
                         </div>
                         <div>
                           <h3 className="font-display font-bold text-lg">AI Usage Today</h3>
-                          <p className="text-xs text-muted-foreground font-medium">
-                            Daily limits — resets at midnight UTC. Cached answers are free.
-                          </p>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <p className="text-xs text-muted-foreground font-medium flex items-center gap-1 cursor-default">
+                                  Daily limits — resets at midnight UTC. Cached answers are free.
+                                  <Info className="w-3 h-3 inline shrink-0" />
+                                </p>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" className="max-w-xs text-xs">
+                                <p>These limits control how many times per day each student (and your whole org) can use AI features. "Cached" means the same question was asked before — it doesn't count toward the limit. Edit limits to raise or lower them.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
                       </div>
                       <Button

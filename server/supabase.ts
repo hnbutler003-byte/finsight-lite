@@ -39,8 +39,9 @@ export type Organization = {
   signature_right_role?: string | null;
   allowed_email_domains?: string[] | null;
   is_active: boolean;
-  subscription_tier: "free" | "standard" | "premium";
+  subscription_tier: "starter" | "academy" | "institution" | string;
   max_students: number;
+  display_label?: string | null;
   created_at: string;
 };
 
@@ -219,6 +220,7 @@ ALTER TABLE organizations ADD COLUMN IF NOT EXISTS territory text;
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS slug text UNIQUE;
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS plan text NOT NULL DEFAULT 'standard';
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS student_limit integer NOT NULL DEFAULT 500;
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS display_label text;
 `;
 
 async function applyBrandingColumnsViaPg(): Promise<boolean> {
@@ -242,6 +244,7 @@ async function applyBrandingColumnsViaPg(): Promise<boolean> {
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS slug text UNIQUE;
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS plan text NOT NULL DEFAULT 'standard';
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS student_limit integer NOT NULL DEFAULT 500;
+        ALTER TABLE organizations ADD COLUMN IF NOT EXISTS display_label text;
       `);
       return true;
     } finally {

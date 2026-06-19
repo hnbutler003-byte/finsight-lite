@@ -1,0 +1,54 @@
+This prompt covers two separate workstreams. Audit before changing anything in either.
+
+---
+
+WORKSTREAM 1 — Fix pricing tier mismatch
+
+The Founder/Super Admin section currently has pricing tier options that do not match the actual pricing structure used in partner proposals (for example, the proposal sent to The Financial Academy 242). Find every place in the codebase where pricing tiers are defined, referenced, or selectable (this likely includes the `organizations` table's `plan` column, any admin UI for setting an org's tier, and any pricing-related logic gating features by tier).
+
+Replace the existing tier options ("Free", "Standard", etc., wherever they currently appear) with these three real tiers:
+
+1. **Starter** — up to 50 students, $2,400/year ($48/student). Features: core platform access, org dashboard, invite code system, email support.
+2. **Academy** — up to 100 students, $4,800/year ($48/student). Features: everything in Starter, plus cohort management, progress tracking and CSV export, sponsor cost-sharing option, priority support.
+3. **Institution** — 250 or more students, custom enterprise pricing. Features: everything in Academy, plus custom logo and certificate branding, advanced analytics, dedicated account management, SLA and onboarding call.
+
+Update the `student_limit` field logic so it reflects each tier's actual cap (50 for Starter, 100 for Academy, no hard cap or a configurable cap for Institution since it's custom).
+
+Do not change any organization's currently assigned tier in the live database without confirming first — if any existing org (such as Financial Academy 242) is currently set to "Free" or another old tier name, flag this and ask before reassigning it, since that may have billing or feature-access implications.
+
+**Critical display rule — no pricing inside the logged-in product, anywhere.** Dollar amounts must never appear inside the Org Admin portal, Teacher portal, or Student-facing app. Pricing exists only in external sales materials, never inside the app itself. Search the codebase for any place a dollar amount, price, or cost might currently render inside an authenticated view and remove it. The internal tier name and student capacity (e.g. "47/100 students used") are fine to show — the price is not.
+
+**Add a custom display label per organization, separate from the internal tier.** Add a new field, e.g. `display_label` (text, nullable) on the `organizations` table. This lets a Founder/Super Admin set a custom name shown to that specific org's users in place of the internal tier name — for example, an org on the "Institution" tier internally could have their `display_label` set to "Ministry Partner" or any other client-preferred name, without changing their actual tier, student limit, or feature access. If `display_label` is not set for an org, fall back to showing the standard tier name (Starter, Academy, or Institution). This label should be editable from the Founder/Super Admin section, not by the org's own admin.
+
+After this workstream, report every file changed, confirm no dollar amounts render anywhere inside an authenticated session, and confirm the custom display label works and falls back correctly when unset.
+
+---
+
+WORKSTREAM 2 — Confidence-building upgrades for Org Admin and Teacher portals
+
+Goal: reduce confusion and support requests by making the existing portals clearer, not by adding new AI capabilities. Do not modify or expand the existing chatbot's abilities in this workstream — text/help-answering only, no new actions.
+
+Audit first: check how file uploads, content creation, and settings changes currently behave in both the Org Admin and Teacher portals (e.g. when a teacher uploads content or links a YouTube video, when an org admin changes a setting). Identify whether the following already exist before building:
+
+1. **Clear success/failure confirmation on every save or upload action.** Any button that saves, uploads, or submits something should show an unambiguous confirmation (a toast or inline message saying e.g. "Saved" or "Video added to your class") and a clear error message if something fails, explaining what went wrong in plain language, not a generic error.
+
+2. **Upload guidance and constraints shown up front.** Wherever a teacher uploads content or links a video, show accepted file types/formats and any size limits before they attempt the upload, not after a failed attempt.
+
+3. **Empty states with clear next steps.** Anywhere a list could be empty (no students yet, no content uploaded yet, no feedback given yet), show a short explanation and a clear call-to-action button, rather than a blank or broken-looking section.
+
+4. **A lightweight onboarding checklist for new Org Admins and Teachers.** On first login, show a simple checklist (e.g. for an org admin: "Invite your first teacher," "Review your dashboard," "Export your first report") with items that check off as completed. This reduces "what do I do now" support questions. Use `glass-card` styling and keep it dismissible.
+
+5. **A visible "last saved" or "last updated" timestamp on key admin settings pages**, so admins have confidence a change actually took effect.
+
+6. **Inline tooltips (using existing UI patterns already in the app) on any setting or field whose purpose isn't immediately obvious**, particularly around pricing tier, student limits, and cohort management, so org admins understand what each option does without needing to ask.
+
+Use the existing Finsight Lite design system throughout: `glass-card` for panels, `font-display` for headings, `btn-primary` for primary actions, `text-white/60` for secondary/help text on the Caribbean background, or `text-muted-foreground` on light glass cards.
+
+Do not add any new AI-driven actions, do not let the chatbot perform uploads, edits, or content changes on a user's behalf in this workstream. This is explicitly out of scope for now.
+
+---
+
+Constraints for both workstreams:
+- Do not break any existing functionality.
+- Do not change any existing routes unless necessary for the pricing fix.
+- After completing both workstreams, print every file created or modified, and clearly separate the report into "Workstream 1" and "Workstream 2" sections.

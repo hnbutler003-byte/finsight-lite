@@ -40,6 +40,7 @@ export default function OrgBranding() {
   const [rightName, setRightName] = useState("");
   const [rightRole, setRightRole] = useState("");
   const [dirty, setDirty] = useState(false);
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [allowedDomains, setAllowedDomains] = useState<string[]>([]);
@@ -120,6 +121,7 @@ export default function OrgBranding() {
       queryClient.invalidateQueries({ queryKey: ["/api/org-admin/branding"] });
       toast({ title: "Certificate branding saved" });
       setDirty(false);
+      setSavedAt(new Date());
     },
     onError: (e: any) => toast({ title: "Save failed", description: e.message, variant: "destructive" }),
   });
@@ -419,7 +421,11 @@ export default function OrgBranding() {
 
               <div className="flex items-center justify-end gap-3">
                 <p className="text-sm text-muted-foreground" data-testid="text-dirty-status">
-                  {dirty ? "Unsaved changes" : "All changes saved"}
+                  {dirty
+                    ? "Unsaved changes"
+                    : savedAt
+                      ? `Saved at ${savedAt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`
+                      : "All changes saved"}
                 </p>
                 <Button
                   onClick={() => save.mutate()}

@@ -591,8 +591,9 @@ function OrgDialog({ existing, onClose }: { existing?: any; onClose: () => void 
     website: existing?.website ?? "",
     contact_name: existing?.contact_name ?? "",
     contact_email: existing?.contact_email ?? "",
-    subscription_tier: existing?.subscription_tier ?? "free",
-    max_students: existing?.max_students ?? 100,
+    subscription_tier: existing?.subscription_tier ?? "starter",
+    max_students: existing?.max_students ?? 50,
+    display_label: existing?.display_label ?? "",
   });
   const save = useMutation({
     mutationFn: () => existing
@@ -627,12 +628,21 @@ function OrgDialog({ existing, onClose }: { existing?: any; onClose: () => void 
         </div>
         <div>
           <Label className="text-slate-300 text-xs mb-1 block">Tier</Label>
-          <Select value={form.subscription_tier} onValueChange={v => setForm(p => ({ ...p, subscription_tier: v }))}>
+          <Select value={form.subscription_tier} onValueChange={v => setForm(p => ({
+              ...p,
+              subscription_tier: v,
+              max_students: v === "starter" ? 50 : v === "academy" ? 100 : v === "institution" ? 250 : p.max_students,
+            }))}>
             <SelectTrigger className="bg-slate-700 border-slate-600 text-white" data-testid="select-org-tier"><SelectValue /></SelectTrigger>
             <SelectContent className="bg-slate-800 border-slate-700">
-              {["free","standard","premium"].map(t => (
-                <SelectItem key={t} value={t} className="text-white hover:bg-slate-700 capitalize">{t}</SelectItem>
-              ))}
+              <SelectItem value="starter" className="text-white hover:bg-slate-700">Starter — up to 50 students</SelectItem>
+              <SelectItem value="academy" className="text-white hover:bg-slate-700">Academy — up to 100 students</SelectItem>
+              <SelectItem value="institution" className="text-white hover:bg-slate-700">Institution — 250+ students (custom)</SelectItem>
+              {existing?.subscription_tier && !["starter","academy","institution"].includes(existing.subscription_tier) && (
+                <SelectItem value={existing.subscription_tier} className="text-yellow-300 hover:bg-slate-700">
+                  {existing.subscription_tier} (legacy — please reassign)
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -659,6 +669,11 @@ function OrgDialog({ existing, onClose }: { existing?: any; onClose: () => void 
         <div>
           <Label className="text-slate-300 text-xs mb-1 block">Max Students</Label>
           <Input value={form.max_students} onChange={e => setForm(p => ({ ...p, max_students: Number(e.target.value) }))} type="number" min={1} className="bg-slate-700 border-slate-600 text-white" data-testid="input-org-max-students" />
+        </div>
+        <div className="col-span-2">
+          <Label className="text-slate-300 text-xs mb-1 block">Display Label <span className="text-slate-500 font-normal">(optional)</span></Label>
+          <Input value={form.display_label} onChange={f("display_label")} placeholder="e.g. Ministry Partner, Gold Partner…" className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500" data-testid="input-org-display-label" />
+          <p className="text-slate-500 text-xs mt-1">Custom name shown to this org's users. Falls back to the org name if left blank.</p>
         </div>
       </div>
       <div className="flex justify-end gap-2 pt-2">
@@ -1333,9 +1348,12 @@ function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
   });
 
   const tierColors: Record<string, string> = {
+    starter: "bg-emerald-900 text-emerald-300",
+    academy: "bg-blue-900 text-blue-300",
+    institution: "bg-amber-900 text-amber-300",
     free: "bg-slate-700 text-slate-300",
-    standard: "bg-blue-900 text-blue-300",
-    premium: "bg-amber-900 text-amber-300",
+    standard: "bg-sky-900 text-sky-300",
+    premium: "bg-violet-900 text-violet-300",
   };
   const typeColors: Record<string, string> = {
     school: "bg-indigo-900 text-indigo-300",
@@ -1384,6 +1402,9 @@ function OrgCard({ org, onEdit }: { org: any; onEdit: (org: any) => void }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-white truncate" data-testid={`text-org-name-${org.id}`}>{org.name}</span>
+            {org.display_label && (
+              <span className="text-xs text-slate-400 font-normal">· {org.display_label}</span>
+            )}
             <Badge className={`text-xs px-2 py-0 ${typeColors[org.type] ?? "bg-slate-700 text-slate-300"} capitalize`}>
               {org.type?.replace("_", " ")}
             </Badge>
@@ -2206,7 +2227,7 @@ export default function AdminDashboard() {
                 <div className="flex gap-4 text-sm text-slate-300 px-1">
                   <span><strong className="text-white">{organizations.length}</strong> total</span>
                   <span><strong className="text-emerald-400">{organizations.filter((o: any) => o.is_active).length}</strong> active</span>
-                  <span><strong className="text-amber-400">{organizations.filter((o: any) => o.subscription_tier === "premium").length}</strong> premium</span>
+                  <span><strong className="text-amber-400">{organizations.filter((o: any) => o.subscription_tier === "institution").length}</strong> institution</span>
                 </div>
                 {organizations.map((org: any) => (
                   <div key={org.id}>

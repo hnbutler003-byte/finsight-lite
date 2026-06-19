@@ -497,8 +497,9 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
         website: z.string().optional(),
         contact_name: z.string().optional(),
         contact_email: z.string().optional(),
-        subscription_tier: z.enum(["free", "standard", "premium"]).default("free"),
-        max_students: z.number().default(100),
+        subscription_tier: z.enum(["starter", "academy", "institution", "free", "standard", "premium"]).default("starter"),
+        max_students: z.number().default(50),
+        display_label: z.string().optional(),
       }).parse(req.body);
       const org = await createOrganization({ ...body, is_active: true, logo_url: undefined });
       if (!org) return res.status(500).json({ message: "Failed to create organization" });
