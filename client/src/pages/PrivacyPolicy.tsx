@@ -16,14 +16,16 @@ export default function PrivacyPolicy() {
         <h1 className="font-display font-bold text-4xl text-gray-900 dark:text-gray-50 mb-2">Privacy Policy</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-10">Last updated: June 18, 2026</p>
 
-        <div className="prose-custom space-y-10 font-sans text-gray-700 dark:text-gray-300 leading-relaxed">
+        <div className="space-y-10 font-sans text-gray-700 dark:text-gray-300 leading-relaxed">
 
-          <p>
-            Finsight Lite is operated by Finsight Limited, a company based in Nassau, Bahamas. This policy explains what
-            information we collect, how we use it, and the choices available to students, parents, teachers, and
-            organizations using the platform.
-          </p>
-          <p>This policy applies to www.finsightlite.com and the Finsight Lite platform.</p>
+          <div className="space-y-3">
+            <p>
+              Finsight Lite is operated by Finsight Limited, a company based in Nassau, Bahamas. This policy explains what
+              information we collect, how we use it, and the choices available to students, parents, teachers, and
+              organizations using the platform.
+            </p>
+            <p>This policy applies to www.finsightlite.com and the Finsight Lite platform.</p>
+          </div>
 
           <section>
             <h2 className="font-display font-bold text-2xl text-gray-900 dark:text-gray-50 mb-3">Who this policy is for</h2>

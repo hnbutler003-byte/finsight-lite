@@ -18,14 +18,16 @@ export default function TermsOfService() {
 
         <div className="space-y-10 font-sans text-gray-700 dark:text-gray-300 leading-relaxed">
 
-          <p>
-            These Terms of Service govern access to and use of Finsight Lite, operated by Finsight Limited, a company
-            based in Nassau, Bahamas. By creating an account or using the platform, you agree to these terms.
-          </p>
-          <p>
-            If you are a student under the age of 18, you should use Finsight Lite under the supervision of a parent,
-            guardian, teacher, or school administrator who has authorized your participation.
-          </p>
+          <div className="space-y-3">
+            <p>
+              These Terms of Service govern access to and use of Finsight Lite, operated by Finsight Limited, a company
+              based in Nassau, Bahamas. By creating an account or using the platform, you agree to these terms.
+            </p>
+            <p>
+              If you are a student under the age of 18, you should use Finsight Lite under the supervision of a parent,
+              guardian, teacher, or school administrator who has authorized your participation.
+            </p>
+          </div>
 
           <section>
             <h2 className="font-display font-bold text-2xl text-gray-900 dark:text-gray-50 mb-3">What Finsight Lite is</h2>
