@@ -10,7 +10,8 @@ import {
   Star, Award, Loader2, ChevronRight, Clock, GraduationCap,
   Target, ListChecks, BookMarked, KeyRound, PiggyBank,
   TrendingUp, Wallet, Lightbulb, ShoppingCart, BarChart3,
-  Layers, ChevronDown, ChevronUp, Play, Lock, Download, Video
+  Layers, ChevronDown, ChevronUp, Play, Lock, Download, Video,
+  Globe, Smartphone, Shield,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { jsPDF } from "jspdf";
@@ -89,6 +90,7 @@ type StaticModuleFromAPI = {
   subtitle: string;
   objective: string;
   display_order: number;
+  territories?: string[];
   lessons: StaticLessonFromAPI[];
 };
 
@@ -122,6 +124,12 @@ const MODULE_VISUAL_CONFIG: Record<string, StaticModuleVisual> = {
     lessonIcon: (id) => id === "static-invest-2" ? <Layers className="w-5 h-5" /> : id === "static-invest-3" ? <Award className="w-5 h-5" /> : <TrendingUp className="w-5 h-5" />,
     colorFrom: "from-violet-500", colorTo: "to-purple-600",
     textColor: "text-violet-400", bgMuted: "bg-violet-500/10", borderColor: "border-violet-500/30",
+  },
+  "sand-dollar": {
+    icon: <Smartphone className="w-6 h-6" />,
+    lessonIcon: (id) => id === "static-cbdc-2" ? <Globe className="w-5 h-5" /> : id === "static-cbdc-3" ? <KeyRound className="w-5 h-5" /> : id === "static-cbdc-4" ? <Shield className="w-5 h-5" /> : <Smartphone className="w-5 h-5" />,
+    colorFrom: "from-blue-500", colorTo: "to-indigo-600",
+    textColor: "text-blue-400", bgMuted: "bg-blue-500/10", borderColor: "border-blue-500/30",
   },
 };
 
@@ -499,6 +507,11 @@ export default function Lessons() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]"); } catch { return []; }
   });
 
+  // Territory: read from localStorage (persisted when user picks a currency in the Investment Simulator)
+  const [userCurrency] = useState<string>(() => {
+    try { return localStorage.getItem("finsight_currency") ?? "BSD"; } catch { return "BSD"; }
+  });
+
   // Inline join code state
   const [joinCode, setJoinCode] = useState("");
   const [joinError, setJoinError] = useState("");
@@ -510,10 +523,17 @@ export default function Lessons() {
   });
 
   const { data: staticModulesRaw = [], isLoading: staticLoading } = useQuery<StaticModuleFromAPI[]>({
-    queryKey: ["/api/lessons/static"],
+    queryKey: ["/api/lessons/static", userCurrency],
+    queryFn: async () => {
+      const res = await fetch(`/api/lessons/static?currency=${userCurrency}`, { credentials: "include" });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    },
     staleTime: Infinity,
   });
-  const staticModules: StaticModuleUI[] = staticModulesRaw.map(mod => ({ ...mod, ...getModuleVisual(mod.id) }));
+  const staticModules: StaticModuleUI[] = staticModulesRaw
+    .filter(mod => !mod.territories || mod.territories.includes(userCurrency))
+    .map(mod => ({ ...mod, ...getModuleVisual(mod.id) }));
 
   const markStaticDone = (lessonId: string): string[] => {
     if (completedStatic.includes(lessonId)) return completedStatic;

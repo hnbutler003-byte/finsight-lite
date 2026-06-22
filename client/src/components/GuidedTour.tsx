@@ -7,49 +7,42 @@ import {
 
 const TOUR_STEPS = [
   {
-    emoji: "👋",
     icon: Sparkles,
     title: "Welcome to FinSight Lite!",
     description: "Let's take a quick tour so you know where everything is. This will only take a minute!",
     color: "from-violet-500 to-pink-500",
   },
   {
-    emoji: "💰",
     icon: Wallet,
     title: "My Money Dashboard",
     description: "This is your home base. Track your income, spending, and see how your money moves, all in one place.",
     color: "from-emerald-500 to-teal-500",
   },
   {
-    emoji: "🎮",
     icon: Gamepad2,
     title: "Money Games",
     description: "Play 7 fun games that teach you real-world money skills: budgeting, saving, investing, and more!",
     color: "from-amber-500 to-orange-500",
   },
   {
-    emoji: "📈",
     icon: TrendingUp,
     title: "Investment Simulator",
     description: "Practice buying and selling stocks with virtual cash. Learn how the market works, zero risk!",
     color: "from-blue-500 to-cyan-500",
   },
   {
-    emoji: "🤖",
     icon: Bot,
     title: "AI Money Guide",
     description: "Got a money question? Ask your personal AI mentor anything. No question is too simple!",
     color: "from-purple-500 to-violet-500",
   },
   {
-    emoji: "🎓",
     icon: GraduationCap,
     title: "MoneyLab Exams",
     description: "Test what you've learned with real exams, earn XP, and climb the leaderboard. Show what you know!",
     color: "from-pink-500 to-rose-500",
   },
   {
-    emoji: "🎉",
     icon: PartyPopper,
     title: "You're All Set!",
     description: "Start exploring and have fun learning about money. You've got this!",
@@ -66,6 +59,7 @@ export function GuidedTour({ onComplete }: GuidedTourProps) {
   const current = TOUR_STEPS[step];
   const isFirst = step === 0;
   const isLast = step === TOUR_STEPS.length - 1;
+  const CurrentIcon = current.icon;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" data-testid="guided-tour-overlay">
@@ -83,7 +77,7 @@ export function GuidedTour({ onComplete }: GuidedTourProps) {
 
         <div className="flex flex-col items-center text-center space-y-5">
           <div className={`w-20 h-20 rounded-3xl bg-gradient-to-br ${current.color} flex items-center justify-center shadow-xl animate-float`}>
-            <span className="text-4xl">{current.emoji}</span>
+            <CurrentIcon className="w-10 h-10 text-white drop-shadow-sm" />
           </div>
 
           <div className="space-y-2">

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, ArrowRight, ArrowLeft, KeyRound, RotateCcw, PartyPopper } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, KeyRound, RotateCcw, PartyPopper, Zap, Sparkles, GraduationCap, TrendingUp, Coins, Users } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
@@ -171,10 +171,16 @@ export default function AuthPage() {
         {step === "hero" && (
           <div className="space-y-8 animate-bounce-in">
             <div className="text-center space-y-3">
-              <div className="flex items-end justify-center gap-2 mb-4 select-none">
-                <span className="text-3xl" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.4s' }}>💰</span>
-                <span className="text-6xl animate-float">🚀</span>
-                <span className="text-3xl" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.8s' }}>⭐</span>
+              <div className="flex items-center justify-center gap-3 mb-4 select-none">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/30 backdrop-blur-sm border border-emerald-400/30 flex items-center justify-center" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.4s' }}>
+                  <Coins className="w-6 h-6 text-emerald-300" />
+                </div>
+                <div className="w-16 h-16 rounded-3xl bg-violet-500/40 backdrop-blur-sm border border-violet-400/30 flex items-center justify-center animate-float shadow-lg">
+                  <TrendingUp className="w-8 h-8 text-white" />
+                </div>
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/30 backdrop-blur-sm border border-amber-400/30 flex items-center justify-center" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.8s' }}>
+                  <Sparkles className="w-6 h-6 text-amber-300" />
+                </div>
               </div>
               <h1 className="text-4xl font-bold text-white tracking-tight">Welcome!</h1>
               <p className="text-white/50 text-base">Your Caribbean financial literacy adventure starts here.</p>
@@ -186,7 +192,9 @@ export default function AuthPage() {
                 className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left bg-white/20 backdrop-blur-lg border border-white/30 hover:bg-white/30 hover:border-white/50 shadow-lg"
                 data-testid="button-start-exploring"
               >
-                <span className="text-3xl">⚡</span>
+                <div className="w-10 h-10 rounded-xl bg-amber-500/30 flex items-center justify-center shrink-0">
+                  <Zap className="w-5 h-5 text-amber-300" />
+                </div>
                 <div className="flex-1">
                   <p className="text-white font-semibold">Start exploring, no account needed</p>
                   <p className="text-white/70 text-sm">Jump in instantly as a guest</p>
@@ -199,7 +207,9 @@ export default function AuthPage() {
                 className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left bg-white/10 backdrop-blur-lg border border-white/20 hover:bg-white/[0.16] hover:border-violet-400/50 shadow-lg"
                 data-testid="button-sign-in"
               >
-                <span className="text-3xl">🔑</span>
+                <div className="w-10 h-10 rounded-xl bg-violet-500/30 flex items-center justify-center shrink-0">
+                  <KeyRound className="w-5 h-5 text-violet-300" />
+                </div>
                 <div className="flex-1">
                   <p className="text-white font-semibold">Sign in or create account</p>
                   <p className="text-white/60 text-sm">Student, teacher, or organisation</p>
@@ -214,10 +224,16 @@ export default function AuthPage() {
         {step === "entry" && (
           <div className="space-y-8 animate-bounce-in">
             <div className="text-center space-y-3">
-              <div className="flex items-end justify-center gap-2 mb-4 select-none">
-                <span className="text-3xl" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.4s' }}>💰</span>
-                <span className="text-6xl animate-float">🚀</span>
-                <span className="text-3xl" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.8s' }}>⭐</span>
+              <div className="flex items-center justify-center gap-3 mb-4 select-none">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/30 backdrop-blur-sm border border-emerald-400/30 flex items-center justify-center" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.4s' }}>
+                  <Coins className="w-6 h-6 text-emerald-300" />
+                </div>
+                <div className="w-16 h-16 rounded-3xl bg-violet-500/40 backdrop-blur-sm border border-violet-400/30 flex items-center justify-center animate-float shadow-lg">
+                  <TrendingUp className="w-8 h-8 text-white" />
+                </div>
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/30 backdrop-blur-sm border border-amber-400/30 flex items-center justify-center" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.8s' }}>
+                  <Sparkles className="w-6 h-6 text-amber-300" />
+                </div>
               </div>
               <h1 className="text-4xl font-bold text-white tracking-tight">Welcome!</h1>
               <p className="text-white/50 text-base">Who are you today?</p>
@@ -229,7 +245,9 @@ export default function AuthPage() {
                 className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left bg-white/10 backdrop-blur-lg border border-white/20 hover:bg-white/[0.16] hover:border-violet-400/50 shadow-lg"
                 data-testid="button-student"
               >
-                <span className="text-3xl">👩🏽‍🎓</span>
+                <div className="w-10 h-10 rounded-xl bg-violet-500/30 flex items-center justify-center shrink-0">
+                  <GraduationCap className="w-5 h-5 text-violet-300" />
+                </div>
                 <div className="flex-1">
                   <p className="text-white font-semibold">I'm a Student</p>
                   <p className="text-white/60 text-sm">Join a class or organisation</p>
@@ -242,7 +260,9 @@ export default function AuthPage() {
                 className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left bg-white/10 backdrop-blur-lg border border-white/20 hover:bg-white/[0.16] hover:border-blue-400/50 shadow-lg"
                 data-testid="button-teacher"
               >
-                <span className="text-3xl">👩🏽‍🏫</span>
+                <div className="w-10 h-10 rounded-xl bg-blue-500/30 flex items-center justify-center shrink-0">
+                  <Users className="w-5 h-5 text-blue-300" />
+                </div>
                 <div className="flex-1">
                   <p className="text-white font-semibold">I'm a Teacher</p>
                   <p className="text-white/60 text-sm">Manage classes and students</p>
@@ -255,7 +275,9 @@ export default function AuthPage() {
                 className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left bg-white/10 backdrop-blur-lg border border-white/20 hover:bg-white/[0.16] hover:border-amber-400/50 shadow-lg"
                 data-testid="button-guest"
               >
-                <span className="text-3xl">⚡</span>
+                <div className="w-10 h-10 rounded-xl bg-amber-500/30 flex items-center justify-center shrink-0">
+                  <Zap className="w-5 h-5 text-amber-300" />
+                </div>
                 <div className="flex-1">
                   <p className="text-white font-semibold">Continue as Guest</p>
                   <p className="text-white/60 text-sm">Jump in with no sign-up</p>
@@ -270,7 +292,9 @@ export default function AuthPage() {
         {step === "student-access" && (
           <div className="space-y-8 animate-bounce-in">
             <div className="text-center space-y-3">
-              <div className="text-5xl mb-2">🎓</div>
+              <div className="w-14 h-14 rounded-2xl bg-violet-500/30 backdrop-blur-sm border border-violet-400/30 flex items-center justify-center mx-auto mb-2">
+                <GraduationCap className="w-7 h-7 text-violet-300" />
+              </div>
               <h1 className="text-3xl font-bold text-white">How are you joining?</h1>
             </div>
 
@@ -481,7 +505,7 @@ export default function AuthPage() {
                 className="w-full h-12 font-bold rounded-2xl bg-violet-600 hover:bg-violet-500 text-white transition-all disabled:opacity-50"
                 data-testid="button-next"
               >
-                {isRegistering || isJoiningClass ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Let's go! 🚀</>}
+                {isRegistering || isJoiningClass ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Let's go! <ArrowRight className="w-4 h-4 ml-1 inline" /></>}
               </Button>
             </div>
 
@@ -495,7 +519,9 @@ export default function AuthPage() {
         {step === "guest-name" && (
           <div className="space-y-8 animate-bounce-in">
             <div className="text-center space-y-3">
-              <div className="text-5xl mb-2">⚡</div>
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/30 backdrop-blur-sm border border-amber-400/30 flex items-center justify-center mx-auto mb-2">
+                <Zap className="w-7 h-7 text-amber-300" />
+              </div>
               <h1 className="text-3xl font-bold text-white">What's your name?</h1>
               <p className="text-white/50 text-sm">Just to get you started</p>
             </div>
@@ -527,7 +553,7 @@ export default function AuthPage() {
                 className="w-full h-12 font-bold rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-900 transition-all disabled:opacity-50"
                 data-testid="button-next"
               >
-                {isRegistering || isJoiningClass ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Let's go! 🚀</>}
+                {isRegistering || isJoiningClass ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Let's go! <ArrowRight className="w-4 h-4 ml-1 inline" /></>}
               </Button>
             </div>
 

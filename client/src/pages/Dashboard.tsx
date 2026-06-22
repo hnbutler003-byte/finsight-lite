@@ -8,6 +8,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import {
   Wallet, TrendingUp, TrendingDown, Plus, Loader2, Sparkles,
   Lightbulb, Target, Trash2, Edit2, ChevronDown, ChevronUp, MessageSquare,
+  ArrowUpCircle, ArrowDownCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -225,7 +226,11 @@ export default function Dashboard() {
                         <div className="w-9 h-9 rounded-xl bg-secondary/20 text-secondary-foreground flex items-center justify-center text-base shrink-0">
                           {tx.category?.icon ? (
                             <span dangerouslySetInnerHTML={{ __html: tx.category.icon }} />
-                          ) : tx.type === "income" ? "💰" : "💸"}
+                          ) : tx.type === "income" ? (
+                            <ArrowUpCircle className="w-5 h-5 text-green-500" />
+                          ) : (
+                            <ArrowDownCircle className="w-5 h-5 text-red-500" />
+                          )}
                         </div>
                         <div className="min-w-0">
                           <p className="font-medium text-sm truncate">{tx.description || tx.category?.name || "Transaction"}</p>

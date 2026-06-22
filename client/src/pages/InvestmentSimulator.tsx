@@ -88,6 +88,78 @@ function BISXWidget() {
     </div>
   );
 }
+
+// ── JSE Widget ─────────────────────────────────────────────────────────────
+const JSE_STOCKS = [
+  { symbol: "NCBFG",  name: "NCB Financial Group Ltd.",          price: 80.00,  change: +1.50, changePct: +1.91, open: 78.50,  high: 80.50,  low: 78.25,  vol: "145,200" },
+  { symbol: "GK",     name: "GraceKennedy Limited",              price: 95.00,  change: -0.50, changePct: -0.52, open: 95.50,  high: 96.00,  low: 94.75,  vol: "62,800"  },
+  { symbol: "JNBS",   name: "Jamaica Nat'l Building Society",    price: 125.00, change: +0.25, changePct: +0.20, open: 124.75, high: 125.50, low: 124.50, vol: "28,400"  },
+  { symbol: "SEP",    name: "Scotia Group Jamaica Ltd.",         price: 45.00,  change: -0.25, changePct: -0.55, open: 45.25,  high: 45.50,  low: 44.80,  vol: "91,300"  },
+  { symbol: "PROVEN", name: "Proven Investments Ltd.",           price: 35.00,  change: +0.75, changePct: +2.19, open: 34.25,  high: 35.25,  low: 34.00,  vol: "52,600"  },
+];
+
+function JSEWidget() {
+  return (
+    <div className="rounded-2xl overflow-hidden shadow-lg border border-white/10" data-testid="jse-widget">
+      <div className="flex items-center gap-2.5 px-5 py-3.5 text-sm font-semibold" style={{ background: "#1B4332", color: "#fff" }}>
+        <span className="px-2 py-0.5 rounded text-xs font-extrabold tracking-wide" style={{ background: "#FFD700", color: "#1B4332" }}>JSE</span>
+        Jamaica Stock Exchange
+        <div className="ml-auto flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-green-400" style={{ animation: "pulse 1.8s ease-in-out infinite" }} />
+          <span className="text-xs font-semibold text-green-300">End of Day</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 bg-white dark:bg-slate-900">
+        {JSE_STOCKS.map((s, idx) => {
+          const dir      = s.change > 0 ? "up" : s.change < 0 ? "down" : "flat";
+          const arrow    = s.change > 0 ? "▲" : s.change < 0 ? "▼" : "-";
+          const sign     = s.change > 0 ? "+" : "";
+          const changeBg = dir === "up"   ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
+                         : dir === "down" ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
+                         : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400";
+          const col = idx % 3;
+          const row = Math.floor(idx / 3);
+          return (
+            <div
+              key={s.symbol}
+              className={`p-4 transition-colors hover:bg-green-50 dark:hover:bg-slate-800 ${col < 2 ? "border-r border-slate-100 dark:border-slate-700" : ""} ${row > 0 ? "border-t border-slate-100 dark:border-slate-700" : ""}`}
+              data-testid={`jse-ticker-${s.symbol}`}
+            >
+              <p className="text-xl font-extrabold tabular-nums dark:text-white" style={{ color: "#1B4332" }}>{s.symbol}</p>
+              <p className="text-xs text-slate-400 mt-0.5 mb-3 truncate">{s.name}</p>
+              <p className="text-2xl font-bold tabular-nums text-slate-800 dark:text-slate-100">
+                <span className="text-xs text-slate-400 font-normal mr-0.5">J$</span>{s.price.toFixed(2)}
+              </p>
+              <span className={`inline-flex items-center gap-1 text-xs font-bold mt-2 px-2 py-1 rounded ${changeBg}`}>
+                {arrow}&nbsp;{sign}{s.change.toFixed(2)} ({sign}{s.changePct.toFixed(2)}%)
+              </span>
+              <div className="mt-2 text-xs text-slate-400 space-y-0.5">
+                <p>O: {s.open.toFixed(2)} · H: {s.high.toFixed(2)} · L: {s.low.toFixed(2)}</p>
+                <p>Vol: {s.vol}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center justify-between flex-wrap gap-2 px-5 py-2.5 text-xs text-slate-500 bg-slate-50 dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700">
+        <span>Prices in J$ · Updated after market close (Mon–Fri, after 3 pm EST)</span>
+        <a
+          href="https://www.jamstockex.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1 font-semibold hover:underline"
+          style={{ color: "#FFD700", textShadow: "0 1px 3px rgba(0,0,0,0.3)" }}
+          data-testid="link-jse-full-sheet"
+        >
+          View JSE <ExternalLink className="w-3 h-3" />
+        </a>
+      </div>
+    </div>
+  );
+}
+
 import type { SimulatedStock, LearningModule, UserLearningProgress, PortfolioHolding, PortfolioTransaction, UserVirtualBalance } from "@shared/schema";
 import { getLocalizedModuleContent, type RegionInfo } from "@/data/learning-content";
 
@@ -247,7 +319,7 @@ export default function InvestmentSimulator() {
                   Virtual Cash: {currSymbol}{virtualBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
               </div>
-              <Select value={currency} onValueChange={setCurrency}>
+              <Select value={currency} onValueChange={(val) => { setCurrency(val); try { localStorage.setItem("finsight_currency", val); } catch {} }}>
                 <SelectTrigger className="w-[200px] bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl text-white font-medium shadow-lg focus:ring-2 focus:ring-white/40 data-[placeholder]:text-white/75" data-testid="select-currency">
                   <SelectValue placeholder="Filter by Currency" />
                 </SelectTrigger>
@@ -443,6 +515,17 @@ export default function InvestmentSimulator() {
                     <span className="text-xs text-white/50">Check today's actual BISX prices before you trade</span>
                   </div>
                   <BISXWidget />
+                </div>
+              )}
+
+              {/* JSE live-price widget — JMD only */}
+              {currency === "JMD" && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-white/80">Real Market Prices</h3>
+                    <span className="text-xs text-white/50">Check today's actual JSE prices before you trade</span>
+                  </div>
+                  <JSEWidget />
                 </div>
               )}
 

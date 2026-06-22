@@ -292,9 +292,10 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
   });
 
   // === STATIC CONTENT API ===
-  app.get("/api/lessons/static", async (_req, res) => {
+  app.get("/api/lessons/static", async (req, res) => {
     try {
-      const modules = await getStaticModulesWithLessons();
+      const currency = typeof req.query.currency === "string" ? req.query.currency : undefined;
+      const modules = await getStaticModulesWithLessons(currency);
       res.json(modules);
     } catch (e: any) {
       res.status(500).json({ message: e.message });

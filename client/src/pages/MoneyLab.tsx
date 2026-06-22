@@ -8,18 +8,18 @@ import {
   BookOpen, Target, Sparkles, ChevronRight
 } from "lucide-react";
 
-const BADGE_INFO: Record<string, { label: string; icon: string; color: string }> = {
-  first_game: { label: "First Steps", icon: "👶", color: "bg-green-100 text-green-700" },
-  ten_games: { label: "Game Veteran", icon: "🎮", color: "bg-blue-100 text-blue-700" },
-  perfect_score: { label: "Perfect Score", icon: "💯", color: "bg-yellow-100 text-yellow-700" },
-  streak_3: { label: "On Fire", icon: "🔥", color: "bg-orange-100 text-orange-700" },
-  streak_7: { label: "Week Warrior", icon: "⚔️", color: "bg-red-100 text-red-700" },
-  level_5: { label: "Rising Star", icon: "⭐", color: "bg-purple-100 text-purple-700" },
-  level_10: { label: "Money Master", icon: "👑", color: "bg-amber-100 text-amber-700" },
-  xp_500: { label: "XP Hunter", icon: "🎯", color: "bg-cyan-100 text-cyan-700" },
-  xp_1000: { label: "XP Legend", icon: "🏆", color: "bg-pink-100 text-pink-700" },
-  challenge_win: { label: "Challenge Champion", icon: "🏅", color: "bg-indigo-100 text-indigo-700" },
-  speed_demon: { label: "Speed Demon", icon: "⚡", color: "bg-rose-100 text-rose-700" },
+const BADGE_INFO: Record<string, { label: string; Icon: typeof Star; color: string }> = {
+  first_game: { label: "First Steps", Icon: Star, color: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" },
+  ten_games: { label: "Game Veteran", Icon: Gamepad2, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
+  perfect_score: { label: "Perfect Score", Icon: Target, color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300" },
+  streak_3: { label: "On Fire", Icon: Flame, color: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300" },
+  streak_7: { label: "Week Warrior", Icon: Flame, color: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300" },
+  level_5: { label: "Rising Star", Icon: Star, color: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300" },
+  level_10: { label: "Money Master", Icon: Trophy, color: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
+  xp_500: { label: "XP Hunter", Icon: Zap, color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300" },
+  xp_1000: { label: "XP Legend", Icon: Trophy, color: "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300" },
+  challenge_win: { label: "Challenge Champion", Icon: Award, color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300" },
+  speed_demon: { label: "Speed Demon", Icon: Zap, color: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300" },
 };
 
 const SECTIONS = [
@@ -138,9 +138,10 @@ export default function MoneyLab() {
                     {badges.map((b) => {
                       const info = BADGE_INFO[b.badgeId];
                       if (!info) return null;
+                      const BadgeIcon = info.Icon;
                       return (
-                        <span key={b.badgeId} className={`badge-coral`} data-testid={`badge-${b.badgeId}`}>
-                          {info.icon} {info.label}
+                        <span key={b.badgeId} className={`badge-coral flex items-center gap-1`} data-testid={`badge-${b.badgeId}`}>
+                          <BadgeIcon className="w-3.5 h-3.5 flex-shrink-0" /> {info.label}
                         </span>
                       );
                     })}

@@ -749,6 +749,7 @@ export type StaticModuleRow = {
   subtitle: string;
   objective: string;
   display_order: number;
+  territories?: string[];
 };
 
 export type StaticLessonRow = {
@@ -832,6 +833,7 @@ const STATIC_MODULES_DATA = [
   { id: "budgeting", title: "Budgeting Basics", subtitle: "Plan & Manage Money", objective: "Students will learn how to plan and manage their money by distinguishing needs from wants, building simple budgets, and tracking their spending.", display_order: 0 },
   { id: "saving",    title: "Saving Smart",       subtitle: "Build Your Future",   objective: "Students will understand why saving is essential, how to set meaningful savings goals, and the strategy of paying yourself first to build lasting financial security.", display_order: 1 },
   { id: "investing", title: "Investing Fundamentals", subtitle: "Grow Your Money", objective: "Students will understand what investing is, how risk relates to return, and how compound interest makes money grow exponentially over time.", display_order: 2 },
+  { id: "sand-dollar", title: "The Sand Dollar", subtitle: "Digital Money in The Bahamas", objective: "Students will understand what the Sand Dollar is, why the Central Bank of The Bahamas created it, how to use a digital wallet, and how a government-issued digital currency differs from cryptocurrency.", display_order: 3, territories: ["BSD"] },
 ];
 
 const STATIC_LESSONS_DATA: Array<{
@@ -1028,6 +1030,92 @@ const STATIC_LESSONS_DATA: Array<{
       { order_index: 3, question: "Who famously called compound interest 'the eighth wonder of the world'?", option_a: "Warren Buffett", option_b: "Isaac Newton", option_c: "Albert Einstein", option_d: "Benjamin Franklin", correct_answer: "C" },
     ],
   },
+
+  // ── Sand Dollar module (Bahamas only) ──────────────────────────────────────
+  {
+    grade_level: "static-cbdc-1", topic: "sand-dollar", title: "What Is the Sand Dollar?",
+    instructor: "Learn what the Sand Dollar is, who issues it, and why it is different from physical cash.",
+    duration: "10 min", video_url: null,
+    objectives: [
+      "Define what a Central Bank Digital Currency (CBDC) is.",
+      "Explain who issues the Sand Dollar and what guarantees its value.",
+      "Describe how the Sand Dollar is similar to and different from physical Bahamian cash.",
+    ],
+    content_sections: [
+      { heading: "A Digital Version of the Bahamian Dollar", body: "The Sand Dollar is the official digital currency of The Bahamas. It is issued directly by the Central Bank of The Bahamas, which means it is just as official and trustworthy as the physical Bahamian Dollar (BSD) in your wallet. Think of it as Bahamian cash on your smartphone: same value, same government backing, just in a digital form.\n\nOne Sand Dollar is always worth exactly one Bahamian Dollar, which is also worth one US Dollar. The value never changes based on speculation or market forces because it is backed by the full authority of the Bahamian government.", examples: ["1 Sand Dollar = B$1.00 = US$1.00", "Issued by the Central Bank of The Bahamas", "Legal tender accepted across The Bahamas"] },
+      { heading: "What Makes It a CBDC?", body: "CBDC stands for Central Bank Digital Currency. It is a type of digital money that a country's official central bank issues and manages. The Central Bank of The Bahamas launched the Sand Dollar in 2020, making The Bahamas one of the world's first countries to have a fully operational CBDC.\n\nA CBDC is different from cryptocurrencies like Bitcoin because it has a fixed, stable value and is backed by a government institution. It is also different from regular bank balances because it is a direct form of central bank money, similar to holding actual banknotes.", examples: ["CBDC = Central Bank Digital Currency", "Launched in 2020 by The Bahamas", "Backed by the Central Bank, not a private company"] },
+      { heading: "Why This Matters for Bahamians", body: "For many Bahamians, especially those living on outer islands far from bank branches, the Sand Dollar solves a real everyday problem. Instead of keeping physical cash or traveling long distances to access banking services, you can hold and spend Sand Dollars right from your phone.\n\nThe Sand Dollar works everywhere payment is accepted digitally in The Bahamas: shops, service providers, schools, and government offices. It gives every Bahamian a safe, modern way to manage their money.", examples: ["Works on any smartphone with a Sand Dollar wallet app", "Accepted at participating merchants across The Bahamas", "No physical cash needed for everyday payments"] },
+    ],
+    questions: [
+      { order_index: 0, question: "What is the Sand Dollar?", option_a: "A cryptocurrency created by private investors", option_b: "The official digital currency issued by the Central Bank of The Bahamas", option_c: "A foreign currency used in The Bahamas", option_d: "A reward point system for Bahamian shoppers", correct_answer: "B" },
+      { order_index: 1, question: "How much is 1 Sand Dollar worth?", option_a: "It changes based on the market every day", option_b: "Exactly B$0.50 (half a Bahamian Dollar)", option_c: "Exactly B$1.00, the same as one Bahamian Dollar", option_d: "It depends on how many Sand Dollars are in circulation", correct_answer: "C" },
+      { order_index: 2, question: "What does CBDC stand for?", option_a: "Caribbean Blockchain Digital Coin", option_b: "Central Bank Digital Currency", option_c: "Commonwealth Bahamian Dollar Certificate", option_d: "Central Bureau of Digital Commerce", correct_answer: "B" },
+      { order_index: 3, question: "When did The Bahamas launch the Sand Dollar?", option_a: "1973, when The Bahamas gained independence", option_b: "2015, as part of a banking technology trial", option_c: "2020, becoming one of the world's first operational CBDCs", option_d: "2023, following trials in other Caribbean countries", correct_answer: "C" },
+    ],
+  },
+  {
+    grade_level: "static-cbdc-2", topic: "sand-dollar", title: "Why the Sand Dollar Exists",
+    instructor: "Discover the financial inclusion problem the Sand Dollar was designed to solve for Bahamians on remote islands.",
+    duration: "10 min", video_url: null,
+    objectives: [
+      "Explain what 'financial inclusion' means and why it matters.",
+      "Describe the geographic challenge that motivated the creation of the Sand Dollar.",
+      "Identify how digital money helps residents on outer islands access financial services.",
+    ],
+    content_sections: [
+      { heading: "The Island Challenge", body: "The Bahamas is made up of more than 700 islands and cays spread across the Atlantic Ocean. About 30 of these islands have permanent populations, but many are small and remote. On these outer islands, residents often have no local bank branch, no ATM, and no reliable way to access financial services without taking a long and expensive boat ride to a larger island like Nassau or Freeport.\n\nImagine needing to pay a bill, send money to a family member, or receive your pay cheque, but the nearest bank is a two-hour boat ride away. This is the everyday reality for thousands of Bahamians.", examples: ["The Bahamas has 700+ islands", "About 30 islands have permanent populations", "Many outer islands have no bank branch or ATM"] },
+      { heading: "What Financial Inclusion Means", body: "Financial inclusion means making sure that every person has access to useful and affordable financial products and services, including bank accounts, payment systems, savings, and credit. When people are excluded from the financial system, they are forced to rely entirely on physical cash, which is risky and limiting.\n\nWithout banking access, residents cannot easily save securely, receive digital payments, pay bills electronically, or build a credit history. Financial exclusion makes it much harder to grow financially and participate fully in the modern economy.", examples: ["Financial inclusion = access to banking for everyone", "Excluded residents rely on cash only", "No digital payments means no credit history"] },
+      { heading: "The Sand Dollar Solution", body: "The Central Bank of The Bahamas created the Sand Dollar specifically to solve this problem. When residents can use a phone app instead of visiting a physical bank, distance no longer determines who gets access to financial services.\n\nA fisherman on a remote island can now receive payment from a buyer in Nassau instantly. A small shop owner can accept digital payments without a card machine or bank account. A parent can send lunch money to a child in school on another island in seconds.\n\nThe Bahamas became one of the first countries in the world to deploy a fully operational CBDC, and other countries are now studying the Bahamian model as a blueprint.", examples: ["Send money across islands instantly", "Accept payments without a bank account", "No boat ride required to access banking services"] },
+    ],
+    questions: [
+      { order_index: 0, question: "Why was the Sand Dollar created?", option_a: "To replace the physical Bahamian Dollar completely", option_b: "To attract cryptocurrency investors to The Bahamas", option_c: "To give all Bahamians access to financial services, especially on remote islands", option_d: "To compete with the US Dollar as an international currency", correct_answer: "C" },
+      { order_index: 1, question: "What is 'financial inclusion'?", option_a: "Adding more bank branches in Nassau", option_b: "Making financial services accessible and affordable for everyone", option_c: "A government program that gives money to low-income families", option_d: "Allowing only Bahamian citizens to open bank accounts", correct_answer: "B" },
+      { order_index: 2, question: "Approximately how many islands make up The Bahamas?", option_a: "About 30 islands", option_b: "About 200 islands", option_c: "More than 700 islands and cays", option_d: "Exactly 100 inhabited islands", correct_answer: "C" },
+      { order_index: 3, question: "How does the Sand Dollar help a shop owner on a remote island?", option_a: "It delivers physical cash directly to their door", option_b: "They can accept digital payments without a traditional bank account or card machine", option_c: "It allows them to borrow money from the Central Bank for free", option_d: "They receive a monthly government grant through the app", correct_answer: "B" },
+    ],
+  },
+  {
+    grade_level: "static-cbdc-3", topic: "sand-dollar", title: "Using Your Sand Dollar Wallet",
+    instructor: "Learn how to set up a Sand Dollar wallet, the two account tiers, and how to pay using QR codes.",
+    duration: "12 min", video_url: null,
+    objectives: [
+      "Describe the two tiers of Sand Dollar wallet accounts and their limits.",
+      "Explain how QR code payments work in practice.",
+      "Identify what information is needed to sign up for each wallet tier.",
+    ],
+    content_sections: [
+      { heading: "Getting a Sand Dollar Wallet", body: "To use the Sand Dollar, you need a wallet app on your smartphone. Authorized financial institutions across The Bahamas provide these apps at no cost. You can download a wallet app from official app stores and sign up using your phone number and a basic form of identification.\n\nThe wallet stores your Sand Dollars digitally, just like a regular bank app, but it is connected directly to the Central Bank's digital payment system. You can send money, receive money, and pay merchants all from within the app.", examples: ["Download from official app stores", "Sign up with your phone number and ID", "Free to open and use"] },
+      { heading: "Basic Tier vs Premium Tier", body: "There are two levels of Sand Dollar wallet accounts, designed for different needs:\n\nBasic Tier: Requires minimal identity verification (just a phone number and basic ID). You can hold up to B$500 in your wallet at one time, and you can spend up to B$1,500 per month. This is ideal for everyday purchases: groceries, bus fare, school supplies.\n\nPremium Tier: Requires full identity verification, similar to opening a traditional bank account (passport, proof of address, etc.). There are higher holding and spending limits, making it suitable for larger purchases or running a small business.", examples: ["Basic: hold up to B$500, spend up to B$1,500/month", "Premium: higher limits for larger needs", "Basic ID for Basic Tier, full documents for Premium"] },
+      { heading: "Paying with a QR Code", body: "The most common way to pay with Sand Dollars is by scanning a QR code. Here is how it works step by step:\n\n1. The merchant shows you a QR code (on their phone screen, a printed sign, or a QR sticker at the counter).\n2. You open your Sand Dollar wallet app and tap 'Scan to Pay'.\n3. You point your phone camera at the QR code.\n4. The app shows you the payment amount and the merchant's name.\n5. You tap 'Confirm' to send the money.\n6. Both you and the merchant receive an instant confirmation.\n\nThe entire process takes about 5 seconds. No card swipe, no cash, no change needed.", examples: ["Merchant shows QR code", "You scan with your wallet app", "Confirm the amount and pay instantly"] },
+    ],
+    questions: [
+      { order_index: 0, question: "How much can a Basic Tier Sand Dollar wallet hold at one time?", option_a: "Up to B$100", option_b: "Up to B$500", option_c: "Up to B$5,000", option_d: "There is no limit for Basic Tier", correct_answer: "B" },
+      { order_index: 1, question: "What is the maximum monthly spending for a Basic Tier wallet?", option_a: "B$500 per month", option_b: "B$1,000 per month", option_c: "B$1,500 per month", option_d: "B$10,000 per month", correct_answer: "C" },
+      { order_index: 2, question: "How do most Sand Dollar payments work at a shop?", option_a: "You hand your phone to the cashier who enters the amount", option_b: "You scan the merchant's QR code and confirm the amount in your wallet app", option_c: "You type in your PIN at a card machine connected to the Sand Dollar network", option_d: "You send a text message with the payment amount to the merchant's number", correct_answer: "B" },
+      { order_index: 3, question: "What does the Premium Tier wallet account require compared to Basic?", option_a: "A monthly subscription fee", option_b: "A minimum balance of B$1,000", option_c: "Full identity verification with official documents like a passport", option_d: "An existing traditional bank account in The Bahamas", correct_answer: "C" },
+    ],
+  },
+  {
+    grade_level: "static-cbdc-4", topic: "sand-dollar", title: "Sand Dollar vs Cryptocurrency",
+    instructor: "Understand the key differences between a government-backed digital currency and decentralized cryptocurrencies like Bitcoin.",
+    duration: "12 min", video_url: null,
+    objectives: [
+      "List at least three key differences between the Sand Dollar and Bitcoin.",
+      "Explain why the Sand Dollar has a stable value while Bitcoin does not.",
+      "Describe the legal status of the Sand Dollar versus cryptocurrency in The Bahamas.",
+    ],
+    content_sections: [
+      { heading: "What They Have in Common", body: "Both the Sand Dollar and cryptocurrencies like Bitcoin exist entirely in digital form. Neither is printed on paper or minted as a coin. Both can be sent from one person to another using a smartphone, and both use digital ledgers to record transactions.\n\nBecause they share these surface-level features, many people assume they are the same thing. They are not. The differences between them are actually more important than the similarities.", examples: ["Both are digital: no physical coins or notes", "Both use digital ledgers to record transfers", "Both can be sent using a smartphone"] },
+      { heading: "Key Differences: Who Issues It and What It Is Worth", body: "The most important difference is who is responsible for the currency and what backs its value.\n\nThe Sand Dollar is issued by the Central Bank of The Bahamas, a government institution. It is always worth exactly B$1.00. Its value is stable because the government guarantees it, the same way physical cash is guaranteed.\n\nBitcoin is issued by no one. It is a decentralized system controlled by a global network of computers, with no government or institution behind it. Its price changes every second based on supply and demand. Bitcoin has lost more than 50% of its value in a matter of weeks before, and it has also gained 200% in months. This unpredictability is called volatility.", examples: ["Sand Dollar: issued by Central Bank, always = B$1.00", "Bitcoin: no issuer, price changes every second", "Sand Dollar: stable. Bitcoin: highly volatile"] },
+      { heading: "Legal Status and Purpose", body: "The Sand Dollar is legal tender in The Bahamas. This means businesses and individuals are required by law to accept it as payment. It is designed specifically for everyday transactions: paying for groceries, settling bills, sending money to family.\n\nBitcoin and most other cryptocurrencies are not legal tender in The Bahamas. Businesses can choose whether to accept them, but they are under no obligation to do so. Cryptocurrencies are primarily used as speculative investments: people buy them hoping the price will rise, not to pay for groceries.\n\nThe Central Bank of The Bahamas has clearly stated that the Sand Dollar complements the physical dollar. It is not a replacement, and it is not a cryptocurrency. It is simply Bahamian money in a new digital format.", examples: ["Sand Dollar: legal tender, must be accepted", "Bitcoin: not legal tender, acceptance is optional", "Sand Dollar purpose: everyday spending. Crypto purpose: speculation"] },
+    ],
+    questions: [
+      { order_index: 0, question: "What is the most important difference between the Sand Dollar and Bitcoin?", option_a: "The Sand Dollar can only be used in The Bahamas while Bitcoin works everywhere", option_b: "The Sand Dollar is government-issued with a stable value; Bitcoin is decentralized with a volatile price", option_c: "Bitcoin is safer because it is backed by gold reserves", option_d: "The Sand Dollar requires internet access while Bitcoin does not", correct_answer: "B" },
+      { order_index: 1, question: "Why does the Sand Dollar have a stable value?", option_a: "Because many people want to buy it, keeping demand high", option_b: "Because the Central Bank of The Bahamas guarantees it is always worth B$1.00", option_c: "Because it is pegged to Bitcoin's value", option_d: "Because international banks have agreed to support it", correct_answer: "B" },
+      { order_index: 2, question: "Is the Sand Dollar legal tender in The Bahamas?", option_a: "No, businesses can choose whether to accept it", option_b: "Only for government payments, not private businesses", option_c: "Yes, businesses and individuals are required by law to accept it", option_d: "Only for transactions over B$100", correct_answer: "C" },
+      { order_index: 3, question: "What is cryptocurrency like Bitcoin primarily used for?", option_a: "Everyday grocery and bill payments around the world", option_b: "Government-to-government international transfers", option_c: "Speculative investment, buying in hopes the price will rise", option_d: "Backing the value of currencies like the Bahamian Dollar", correct_answer: "C" },
+    ],
+  },
 ];
 
 // ─── Regional content seed data ────────────────────────────────────────────────
@@ -1176,7 +1264,7 @@ for (const item of GAME_CONTENT_DATA) {
 
 // ─── Getter functions ──────────────────────────────────────────────────────────
 
-export async function getStaticModulesWithLessons(): Promise<StaticModuleWithLessons[]> {
+export async function getStaticModulesWithLessons(territory?: string): Promise<StaticModuleWithLessons[]> {
   if (!supabase) return [];
   try {
     const { data: lessons, error: lessonsErr } = await supabase
@@ -1192,7 +1280,10 @@ export async function getStaticModulesWithLessons(): Promise<StaticModuleWithLes
       if (!qByLesson[q.lesson_id]) qByLesson[q.lesson_id] = [];
       qByLesson[q.lesson_id].push(q);
     }
-    return STATIC_MODULES_DATA
+    const activeModules = territory
+      ? STATIC_MODULES_DATA.filter(mod => !mod.territories || mod.territories.includes(territory))
+      : STATIC_MODULES_DATA;
+    return activeModules
       .sort((a, b) => a.display_order - b.display_order)
       .map(mod => ({
         ...mod,
