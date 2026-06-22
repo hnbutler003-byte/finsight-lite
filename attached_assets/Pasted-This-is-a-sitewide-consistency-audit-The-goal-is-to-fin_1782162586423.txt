@@ -1,0 +1,45 @@
+This is a sitewide consistency audit. The goal is to find every page, route, and component in the app, no exceptions, and bring each one in line with the existing design system's typography rules and the em dash ban. Previous prompts addressing this only caught some pages and missed others (the demo/landing page, for example). This prompt must be exhaustive.
+
+---
+
+STEP 1 — Build a complete page inventory
+
+Search the entire codebase for every route, page, and standalone component that renders user-visible text. This includes but is not limited to:
+- The main app (student, teacher, org admin, super admin views)
+- The demo/landing page
+- The privacy policy page
+- The terms of service page
+- Any marketing or public-facing pages
+- Login and signup pages
+- Any error pages, 404 pages, or empty states
+- Email templates if they exist in the codebase
+
+List every file found before making any changes. Do not skip a file because it seems unlikely to have issues, check all of them.
+
+---
+
+STEP 2 — Apply consistent typography rules to every page found
+
+For every page in the inventory, confirm and fix as needed:
+- All headings use font-display (Baloo 2), matching the existing h1-h6 base rule already defined in the CSS.
+- All body text uses font-sans (Nunito), not Baloo 2.
+- Heading sizes follow the existing type scale already documented: hero titles at the largest size, section headers smaller, card titles smaller still, body text at the smallest, consistent across every page, not just the main app screens.
+- Text color follows the existing contrast rules already defined in index.css: text-white or text-white/80 on the Caribbean gradient background, text-foreground or semantic tokens on glass-card or light backgrounds, never a hardcoded color that could break in dark mode.
+- The privacy policy and terms of service pages specifically should match this same typography system, headings in font-display, body in font-sans, even though they are long-form legal text. Do not leave them in a different font or default browser styling.
+
+---
+
+STEP 3 — Remove every em dash, sitewide, with no exceptions
+
+Search every single file identified in Step 1 for the em dash character (\u2014) and replace each instance with grammatically correct punctuation: a comma, a period starting a new sentence, a colon, or parentheses, whichever fits the sentence. Never simply delete the em dash and leave broken grammar, rewrite the punctuation properly.
+
+This includes the privacy policy, terms of service, the demo page, every marketing page, every in-app screen, button labels, tooltips, error messages, and empty states. Do not assume a page is already clean because a previous task claimed to fix it, re-check every file in the Step 1 inventory regardless of prior claims.
+
+After completing this, run a final search across the entire codebase for the em dash character and report the exact count. It must be zero. If it is not zero, list every remaining file and instance found.
+
+---
+
+Constraints:
+- Do not change any routing, functionality, or business logic, this is a visual and copy consistency pass only.
+- Do not introduce new fonts, sizes, or colors outside what is already defined in the existing design system files.
+- After completing all steps, print the full list of every file modified, organized by step, and confirm the final em dash count is zero with the search command output shown.

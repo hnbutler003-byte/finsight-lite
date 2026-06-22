@@ -110,7 +110,7 @@ export default function DemoAccess() {
         <div className="glass-card-heavy rounded-glass p-6 shadow-2xl">
         {isSettingUp ? (
           <div className="text-center py-12">
-            <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-6 py-3 text-gray-700">
+            <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-6 py-3 text-foreground">
               <div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
               Setting up demo environment...
             </div>
