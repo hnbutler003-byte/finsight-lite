@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   GraduationCap, Users, BookOpen, Trophy,
-  School, ArrowRight, Sparkles, CheckCircle, Star, Zap, ShieldCheck
+  School, ArrowRight, Sparkles, CheckCircle, Star, Zap, ShieldCheck, Flame
 } from "lucide-react";
 
 const AVATAR_EMOJI: Record<string, string> = {
@@ -227,7 +227,7 @@ export default function DemoAccess() {
                         <div className="flex items-center gap-3">
                           <span className="text-orange-600 dark:text-orange-400 text-sm font-semibold">480 XP</span>
                           <span className="text-orange-500 dark:text-orange-500 text-sm">5/6 lessons done</span>
-                          <span className="text-orange-500 dark:text-orange-500 text-sm">🔥 7-day streak</span>
+                          <span className="flex items-center gap-1 text-orange-500 dark:text-orange-500 text-sm"><Flame className="w-3.5 h-3.5" /> 7-day streak</span>
                         </div>
                       </div>
                       {loadingId === featuredStudent.id && loginStudent.isPending ? (
