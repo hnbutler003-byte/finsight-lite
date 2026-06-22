@@ -236,7 +236,7 @@ export default function TeacherDashboard() {
             {[
               { label: "Total Classes", value: classes?.length ?? 0, icon: BookOpen, color: "emerald" },
               { label: "Total Students", value: totalStudents, icon: Users, color: "blue" },
-              { label: "Active Challenges", value: "—", icon: Trophy, color: "amber" },
+              { label: "Active Challenges", value: "0", icon: Trophy, color: "amber" },
             ].map(stat => (
               <Card key={stat.label} className="glass-card rounded-glass">
                 <CardContent className="p-6 flex items-center gap-4">

@@ -282,7 +282,7 @@ export default function OrgStudents() {
           <DialogHeader>
             <DialogTitle className="text-foreground">Delete all data for {confirmPurge?.displayName}?</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              This permanently erases the student account and all personal data — progress, portfolio, quiz history, and learning records. This cannot be undone.
+              This permanently erases the student account and all personal data: progress, portfolio, quiz history, and learning records. This cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 flex-col sm:flex-row">
@@ -469,9 +469,9 @@ function ImportStudentsDialog({
                         <tr key={r.rowNum} className="border-t" data-testid={`row-import-${r.rowNum}`}>
                           <td className="p-2 text-muted-foreground">{r.rowNum}</td>
                           <td className="p-2 font-medium">{r.firstName}{r.lastName ? ` ${r.lastName}` : ""}</td>
-                          <td className="p-2 text-xs font-mono">{r.username || "—"}</td>
-                          <td className="p-2 text-xs">{r.email ?? <span className="text-muted-foreground">—</span>}</td>
-                          <td className="p-2 text-xs">{r.classRef?.name ?? <span className="text-muted-foreground">—</span>}</td>
+                          <td className="p-2 text-xs font-mono">{r.username || "-"}</td>
+                          <td className="p-2 text-xs">{r.email ?? <span className="text-muted-foreground">-</span>}</td>
+                          <td className="p-2 text-xs">{r.classRef?.name ?? <span className="text-muted-foreground">-</span>}</td>
                           <td className="p-2">
                             {r.status === "ok" ? (
                               <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600">
@@ -537,7 +537,7 @@ function ImportStudentsDialog({
                         <td className="p-2">{c.firstName}</td>
                         <td className="p-2 font-mono text-xs">{c.username}</td>
                         <td className="p-2 text-xs">{c.enrolled ? "Yes" : <span className="text-amber-600">Failed</span>}</td>
-                        <td className="p-2 text-xs">{c.emailSent ? "Sent" : "—"}</td>
+                        <td className="p-2 text-xs">{c.emailSent ? "Sent" : "-"}</td>
                       </tr>
                     ))}
                   </tbody>

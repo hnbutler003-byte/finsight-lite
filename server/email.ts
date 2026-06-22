@@ -25,7 +25,7 @@ if (!process.env.RESEND_FROM_EMAIL) {
       "domain address (e.g. 'FinSight Lite <noreply@finsight-ltd.com>')."
     );
   } else {
-    console.warn("[email] RESEND_FROM_EMAIL not set — using Resend sandbox address (fine for development).");
+    console.warn("[email] RESEND_FROM_EMAIL not set, using Resend sandbox address (fine for development).");
   }
 }
 

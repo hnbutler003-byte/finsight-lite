@@ -40,7 +40,7 @@ import {
 } from "@shared/schema";
 import { type BudgetResponse, type TransactionResponse } from "@shared/routes";
 import { db } from "./db";
-import { eq, and, desc, asc, sql, gte, lte, inArray } from "drizzle-orm";
+import { eq, and, desc, asc, sql, gte, lte, inArray, isNull } from "drizzle-orm";
 import { authStorage, type IAuthStorage } from "./replit_integrations/auth/storage";
 import { conversations, messages } from "@shared/models/chat";
 
@@ -544,7 +544,7 @@ export class DatabaseStorage implements IStorage {
       { name: "Bahamas Treasury Bill (91-Day)", ticker: "BTB-91", type: "bond", description: "A short-term bond from the Bahamas government lasting about 3 months. T-Bills are one of the safest investments because the government backs them.", currentPrice: "99.00", currency: "BSD", issuer: "Central Bank of The Bahamas", region: "Bahamas", riskLevel: "low", annualReturnPct: "3.25" },
       { name: "Jamaica National Building Society", ticker: "JNBS-JM", type: "stock", description: "A major financial institution in Jamaica that helps people save money and buy homes through mortgages.", currentPrice: "125.00", currency: "JMD", issuer: "JN Group", region: "Jamaica", riskLevel: "medium", annualReturnPct: "6.00" },
       { name: "GraceKennedy Limited", ticker: "GK-JM", type: "stock", description: "A large Jamaican company that makes and sells food products across the Caribbean. You might recognize their brands in your local supermarket!", currentPrice: "95.50", currency: "JMD", issuer: "GraceKennedy Ltd.", region: "Jamaica", riskLevel: "medium", annualReturnPct: "5.50" },
-      { name: "Bank of Jamaica Investment Note", ticker: "BOJ-IN", type: "bond", description: "An investment note issued by the Bank of Jamaica. Similar to a savings bond — you lend money to Jamaica's central bank and earn interest.", currentPrice: "100.00", currency: "JMD", issuer: "Bank of Jamaica", region: "Jamaica", riskLevel: "low", annualReturnPct: "7.00" },
+      { name: "Bank of Jamaica Investment Note", ticker: "BOJ-IN", type: "bond", description: "An investment note issued by the Bank of Jamaica. Similar to a savings bond: you lend money to Jamaica's central bank and earn interest.", currentPrice: "100.00", currency: "JMD", issuer: "Bank of Jamaica", region: "Jamaica", riskLevel: "low", annualReturnPct: "7.00" },
       { name: "Republic Financial Holdings", ticker: "RFHL-TT", type: "stock", description: "One of the biggest banking groups in Trinidad & Tobago. They operate banks across the Caribbean.", currentPrice: "145.00", currency: "TTD", issuer: "Republic Financial Holdings", region: "Trinidad & Tobago", riskLevel: "medium", annualReturnPct: "5.80" },
       { name: "Trinidad Cement Limited", ticker: "TCL-TT", type: "stock", description: "A company that makes building materials. When new buildings go up in the Caribbean, companies like this do well.", currentPrice: "12.50", currency: "TTD", issuer: "TCL Group", region: "Trinidad & Tobago", riskLevel: "high", annualReturnPct: "4.00" },
       { name: "Government of T&T Bond (10-Year)", ticker: "GOTT-10Y", type: "bond", description: "A 10-year bond from the Trinidad & Tobago government. Longer bonds usually pay more interest because your money is locked up for longer.", currentPrice: "100.00", currency: "TTD", issuer: "Central Bank of Trinidad and Tobago", region: "Trinidad & Tobago", riskLevel: "low", annualReturnPct: "5.25" },
@@ -564,7 +564,7 @@ export class DatabaseStorage implements IStorage {
         title: "What is Money?",
         slug: "what-is-money",
         description: "Learn why different countries have different currencies and how money works.",
-        content: `Money is anything that people agree to use to buy and sell things. In The Bahamas, we use the Bahamian Dollar (BSD), which is worth the same as one US Dollar. Jamaica uses the Jamaican Dollar (JMD), Trinidad uses the Trinidad & Tobago Dollar (TTD), and many Eastern Caribbean islands share the East Caribbean Dollar (XCD).\n\nWhy do different countries have different currencies? Each country's government prints its own money and controls how much exists. This helps them manage their economy. Some currencies are "pegged" (locked) to the US Dollar — like the Bahamian Dollar — which means the exchange rate stays the same. Others, like the Jamaican Dollar, "float" freely and change value based on supply and demand.\n\nKey takeaway: Money is a tool. Understanding how it works in your country is the first step to using it wisely!`,
+        content: `Money is anything that people agree to use to buy and sell things. In The Bahamas, we use the Bahamian Dollar (BSD), which is worth the same as one US Dollar. Jamaica uses the Jamaican Dollar (JMD), Trinidad uses the Trinidad & Tobago Dollar (TTD), and many Eastern Caribbean islands share the East Caribbean Dollar (XCD).\n\nWhy do different countries have different currencies? Each country's government prints its own money and controls how much exists. This helps them manage their economy. Some currencies are "pegged" (locked) to the US Dollar, like the Bahamian Dollar, which means the exchange rate stays the same. Others, like the Jamaican Dollar, "float" freely and change value based on supply and demand.\n\nKey takeaway: Money is a tool. Understanding how it works in your country is the first step to using it wisely!`,
         order: 1,
         icon: "Coins",
       },
@@ -572,7 +572,7 @@ export class DatabaseStorage implements IStorage {
         title: "Saving vs. Spending",
         slug: "saving-vs-spending",
         description: "Discover the power of saving and how to make smart spending choices.",
-        content: `Every time you get money — whether it's an allowance, a gift, or pay from a part-time job — you have a choice: spend it now or save it for later.\n\nSpending gives you something right away (a snack, a game, new clothes). Saving means you wait, but your money can grow. If you put money in a savings account at a bank like Commonwealth Bank in The Bahamas, they'll pay you interest — a small reward for letting them use your money.\n\nThe 50/30/20 Rule is a simple guide:\n• 50% for needs (school supplies, lunch)\n• 30% for wants (entertainment, treats)\n• 20% for savings (your future self will thank you!)\n\nBudgeting is just making a plan for your money before you spend it. Even small amounts saved regularly can add up to something big over time!`,
+        content: `Every time you get money (whether it's an allowance, a gift, or pay from a part-time job) you have a choice: spend it now or save it for later.\n\nSpending gives you something right away (a snack, a game, new clothes). Saving means you wait, but your money can grow. If you put money in a savings account at a bank like Commonwealth Bank in The Bahamas, they'll pay you interest, a small reward for letting them use your money.\n\nThe 50/30/20 Rule is a simple guide:\n• 50% for needs (school supplies, lunch)\n• 30% for wants (entertainment, treats)\n• 20% for savings (your future self will thank you!)\n\nBudgeting is just making a plan for your money before you spend it. Even small amounts saved regularly can add up to something big over time!`,
         order: 2,
         icon: "PiggyBank",
       },
@@ -580,7 +580,7 @@ export class DatabaseStorage implements IStorage {
         title: "What is a Stock?",
         slug: "what-is-a-stock",
         description: "Learn what it means to own a piece of a company.",
-        content: `A stock (also called a "share") is a tiny piece of ownership in a company. When a company wants to raise money to grow, it can sell shares to the public. If you buy one share of Commonwealth Bank (CBL) on the Bahamas International Securities Exchange (BISX), you literally own a small piece of that bank!\n\nWhy would you buy a stock?\n1. Growth: If the company does well, its stock price goes up. You could sell your share for more than you paid.\n2. Dividends: Some companies share their profits with stockholders by paying dividends — regular cash payments just for owning the stock.\n\nBut there's risk: if the company does poorly, the stock price can go down, and you could lose money. That's why stocks are considered riskier than savings accounts.\n\nReal example: Focol Holdings (FCL) in The Bahamas distributes fuel. If more people buy gas, Focol earns more money, and its stock might go up. But if a hurricane disrupts operations, the stock might drop temporarily.\n\nKey takeaway: Stocks let you share in a company's success (and risk). They're best for money you won't need for a long time.`,
+        content: `A stock (also called a "share") is a tiny piece of ownership in a company. When a company wants to raise money to grow, it can sell shares to the public. If you buy one share of Commonwealth Bank (CBL) on the Bahamas International Securities Exchange (BISX), you literally own a small piece of that bank!\n\nWhy would you buy a stock?\n1. Growth: If the company does well, its stock price goes up. You could sell your share for more than you paid.\n2. Dividends: Some companies share their profits with stockholders by paying dividends, regular cash payments just for owning the stock.\n\nBut there's risk: if the company does poorly, the stock price can go down, and you could lose money. That's why stocks are considered riskier than savings accounts.\n\nReal example: Focol Holdings (FCL) in The Bahamas distributes fuel. If more people buy gas, Focol earns more money, and its stock might go up. But if a hurricane disrupts operations, the stock might drop temporarily.\n\nKey takeaway: Stocks let you share in a company's success (and risk). They're best for money you won't need for a long time.`,
         order: 3,
         icon: "TrendingUp",
       },
@@ -588,7 +588,7 @@ export class DatabaseStorage implements IStorage {
         title: "What is a Bond?",
         slug: "what-is-a-bond",
         description: "Understand how bonds work and why governments issue them.",
-        content: `A bond is like an IOU. When you buy a bond, you're lending money to a government or company. They promise to pay you back the full amount (called the "face value") on a set date, plus regular interest payments along the way.\n\nThe Central Bank of The Bahamas issues bonds called "Government Registered Stock." For example, a 5-year Government Registered Stock might pay 4.5% interest per year. If you invest B$1,000, you'd earn about B$45 every year for 5 years, then get your B$1,000 back.\n\nWhy are bonds considered safer than stocks?\n• You know exactly how much interest you'll earn\n• The government is very unlikely to fail to pay you back\n• Your original investment is returned at the end\n\nBut there's a trade-off: bonds usually earn less than stocks over time. A stock might gain 8-10% in a great year, but a bond gives you a steady, predictable 4-5%.\n\nOther Caribbean bonds:\n• Bank of Jamaica Investment Notes — Jamaica's central bank bonds\n• Trinidad & Tobago Government Bonds — longer-term bonds from T&T\n• EC Home Mortgage Bank bonds — help fund housing in the Eastern Caribbean\n\nKey takeaway: Bonds are a safer way to earn steady returns. They're great for money you want to protect while still earning more than a savings account.`,
+        content: `A bond is like an IOU. When you buy a bond, you're lending money to a government or company. They promise to pay you back the full amount (called the "face value") on a set date, plus regular interest payments along the way.\n\nThe Central Bank of The Bahamas issues bonds called "Government Registered Stock." For example, a 5-year Government Registered Stock might pay 4.5% interest per year. If you invest B$1,000, you'd earn about B$45 every year for 5 years, then get your B$1,000 back.\n\nWhy are bonds considered safer than stocks?\n• You know exactly how much interest you'll earn\n• The government is very unlikely to fail to pay you back\n• Your original investment is returned at the end\n\nBut there's a trade-off: bonds usually earn less than stocks over time. A stock might gain 8-10% in a great year, but a bond gives you a steady, predictable 4-5%.\n\nOther Caribbean bonds:\n• Bank of Jamaica Investment Notes: Jamaica's central bank bonds\n• Trinidad & Tobago Government Bonds: longer-term bonds from T&T\n• EC Home Mortgage Bank bonds: help fund housing in the Eastern Caribbean\n\nKey takeaway: Bonds are a safer way to earn steady returns. They're great for money you want to protect while still earning more than a savings account.`,
         order: 4,
         icon: "Shield",
       },
@@ -596,7 +596,7 @@ export class DatabaseStorage implements IStorage {
         title: "Risk and Reward",
         slug: "risk-and-reward",
         description: "Learn why higher returns come with higher risk.",
-        content: `In investing, risk and reward go hand in hand. The more risk you take, the more you might earn — but you also might lose more.\n\nThink of it like this:\n🏦 Savings Account (Low Risk, Low Reward): Your money is safe, but earns maybe 1-2% per year.\n📄 Government Bonds (Low-Medium Risk, Medium Reward): Very safe, earns 3-5% per year. Example: Bahamas Government Registered Stock pays about 4.5%.\n📈 Stocks (Medium-High Risk, Higher Reward): Can earn 5-10%+ per year on average, but prices go up AND down. Example: GraceKennedy (GK) stock in Jamaica has seen good years and tough years.\n🎲 Speculative Investments (High Risk, Highest Potential Reward): New companies or volatile markets. You could double your money — or lose most of it.\n\nThe key concept is "diversification" — don't put all your eggs in one basket! If you spread your money across different types of investments (some stocks, some bonds, some savings), a loss in one area won't wipe out everything.\n\nYour age matters too! As a teenager, you have decades ahead of you. That means you can afford to take more risk because you have time to recover from losses. An adult nearing retirement would want to play it safer.\n\nKey takeaway: There's no such thing as a guaranteed high return. Always understand the risk before you invest!`,
+        content: `In investing, risk and reward go hand in hand. The more risk you take, the more you might earn, but you also might lose more.\n\nThink of it like this:\n🏦 Savings Account (Low Risk, Low Reward): Your money is safe, but earns maybe 1-2% per year.\n📄 Government Bonds (Low-Medium Risk, Medium Reward): Very safe, earns 3-5% per year. Example: Bahamas Government Registered Stock pays about 4.5%.\n📈 Stocks (Medium-High Risk, Higher Reward): Can earn 5-10%+ per year on average, but prices go up AND down. Example: GraceKennedy (GK) stock in Jamaica has seen good years and tough years.\n🎲 Speculative Investments (High Risk, Highest Potential Reward): New companies or volatile markets. You could double your money, or lose most of it.\n\nThe key concept is "diversification": don't put all your eggs in one basket! If you spread your money across different types of investments (some stocks, some bonds, some savings), a loss in one area won't wipe out everything.\n\nYour age matters too! As a teenager, you have decades ahead of you. That means you can afford to take more risk because you have time to recover from losses. An adult nearing retirement would want to play it safer.\n\nKey takeaway: There's no such thing as a guaranteed high return. Always understand the risk before you invest!`,
         order: 5,
         icon: "Scale",
       },
@@ -604,7 +604,7 @@ export class DatabaseStorage implements IStorage {
         title: "Building a Portfolio",
         slug: "building-a-portfolio",
         description: "Learn how to combine different investments for a balanced approach.",
-        content: `A portfolio is simply the collection of all your investments put together. Building a good portfolio means mixing different types of investments so that your money is balanced and protected.\n\nA simple starter portfolio for a young investor might look like:\n• 50% Stocks — for growth (e.g., Commonwealth Bank, GraceKennedy)\n• 30% Bonds — for stability (e.g., Bahamas Government Registered Stock)\n• 20% Savings — for emergencies and short-term needs\n\nThis is called "asset allocation." The idea is:\n• Stocks grow your money over time\n• Bonds provide steady income and protect against stock market drops\n• Savings give you quick access to cash when you need it\n\nRebalancing: Over time, if your stocks do really well, they might become 70% of your portfolio. That means more risk than you planned! Rebalancing means selling some stocks and buying more bonds to get back to your target mix.\n\nDollar-Cost Averaging: Instead of investing all your money at once, invest a small amount regularly (like B$50 every month). This way, you buy more shares when prices are low and fewer when prices are high, which averages out your cost over time.\n\nReal-world tip: In The Bahamas, you can invest through BISX (Bahamas International Securities Exchange). In Jamaica, the Jamaica Stock Exchange (JSE) is one of the best-performing stock markets in the world. The Trinidad & Tobago Stock Exchange offers access to energy and finance companies.\n\nKey takeaway: A good portfolio is diversified. Start small, stay consistent, and let time work in your favor!`,
+        content: `A portfolio is simply the collection of all your investments put together. Building a good portfolio means mixing different types of investments so that your money is balanced and protected.\n\nA simple starter portfolio for a young investor might look like:\n• 50% Stocks: for growth (e.g., Commonwealth Bank, GraceKennedy)\n• 30% Bonds: for stability (e.g., Bahamas Government Registered Stock)\n• 20% Savings: for emergencies and short-term needs\n\nThis is called "asset allocation." The idea is:\n• Stocks grow your money over time\n• Bonds provide steady income and protect against stock market drops\n• Savings give you quick access to cash when you need it\n\nRebalancing: Over time, if your stocks do really well, they might become 70% of your portfolio. That means more risk than you planned! Rebalancing means selling some stocks and buying more bonds to get back to your target mix.\n\nDollar-Cost Averaging: Instead of investing all your money at once, invest a small amount regularly (like B$50 every month). This way, you buy more shares when prices are low and fewer when prices are high, which averages out your cost over time.\n\nReal-world tip: In The Bahamas, you can invest through BISX (Bahamas International Securities Exchange). In Jamaica, the Jamaica Stock Exchange (JSE) is one of the best-performing stock markets in the world. The Trinidad & Tobago Stock Exchange offers access to energy and finance companies.\n\nKey takeaway: A good portfolio is diversified. Start small, stay consistent, and let time work in your favor!`,
         order: 6,
         icon: "Briefcase",
       },
@@ -1099,9 +1099,9 @@ export class DatabaseStorage implements IStorage {
         id: u.id,
         studentName: u.firstName,
         username: u.username,
-        className: cls?.name ?? '—',
-        schoolName: teacher?.schoolName ?? '—',
-        teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : '—',
+        className: cls?.name ?? '-',
+        schoolName: teacher?.schoolName ?? '-',
+        teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : '-',
         lessonsCompleted: lessons.length,
         quizScore: avgScore,
         simulatorScore: xpRow?.totalXp ?? 0,
@@ -1151,8 +1151,8 @@ export class DatabaseStorage implements IStorage {
         code: c.code,
         sponsorName: c.sponsorName,
         envId: c.envId,
-        teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : '—',
-        schoolName: teacher?.schoolName ?? '—',
+        teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : '-',
+        schoolName: teacher?.schoolName ?? '-',
         studentCount: enrolled,
         challengeCount,
         createdAt: c.createdAt,
@@ -1169,8 +1169,8 @@ export class DatabaseStorage implements IStorage {
       const teacher = allTeachers.find(t => t.id === ch.teacherId);
       return {
         ...ch,
-        className: cls?.name ?? '—',
-        teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : '—',
+        className: cls?.name ?? '-',
+        teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : '-',
       };
     });
   }
@@ -1389,9 +1389,64 @@ export class DatabaseStorage implements IStorage {
     if (!existingNotifs.length) {
       await db.insert(classNotifications).values({
         classId: cls.id, teacherId: teacher.id, title: "Welcome to Financial Literacy 101!",
-        message: "Hi everyone — welcome to this demo class. Explore the platform and try completing the learning modules. Your teacher can track your progress from the Teacher Dashboard.",
+        message: "Hi everyone, welcome to this demo class. Explore the platform and try completing the learning modules. Your teacher can track your progress from the Teacher Dashboard.",
         type: "announcement",
       });
+    }
+
+    // === Demo financial data for featured student (Jamie, demo-student-001) ===
+    const catRows = await db.select().from(categories).where(isNull(categories.userId));
+    const catByName: Record<string, number> = Object.fromEntries(catRows.map((c: any) => [c.name, c.id]));
+
+    const alreadyTx = await db.select().from(transactions).where(eq(transactions.userId, "demo-student-001"));
+    if (!alreadyTx.length) {
+      const now = new Date();
+      const d = (daysAgo: number) => { const dt = new Date(now); dt.setDate(dt.getDate() - daysAgo); return dt; };
+      await db.insert(transactions).values([
+        { userId: "demo-student-001", amount: "35.00", type: "income", currency: "BSD", categoryId: catByName["Allowance"] ?? null, date: d(14), description: "Weekly allowance from mom" },
+        { userId: "demo-student-001", amount: "2.50", type: "expense", currency: "BSD", categoryId: catByName["Transportation"] ?? null, date: d(13), description: "Bus fare to school" },
+        { userId: "demo-student-001", amount: "12.75", type: "expense", currency: "BSD", categoryId: catByName["Food & Dining"] ?? null, date: d(12), description: "Lunch at Johnny Canoe's" },
+        { userId: "demo-student-001", amount: "18.50", type: "expense", currency: "BSD", categoryId: catByName["Education"] ?? null, date: d(11), description: "School supplies from Family Guardian" },
+        { userId: "demo-student-001", amount: "4.25", type: "expense", currency: "BSD", categoryId: catByName["Food & Dining"] ?? null, date: d(10), description: "Snacks at corner shop" },
+        { userId: "demo-student-001", amount: "15.00", type: "expense", currency: "BSD", categoryId: catByName["Bills & Utilities"] ?? null, date: d(9), description: "BTC mobile top-up" },
+        { userId: "demo-student-001", amount: "35.00", type: "income", currency: "BSD", categoryId: catByName["Allowance"] ?? null, date: d(7), description: "Weekly allowance from mom" },
+        { userId: "demo-student-001", amount: "8.75", type: "expense", currency: "BSD", categoryId: catByName["Food & Dining"] ?? null, date: d(6), description: "Lunch at Bahamian Cookin'" },
+        { userId: "demo-student-001", amount: "2.50", type: "expense", currency: "BSD", categoryId: catByName["Transportation"] ?? null, date: d(5), description: "Bus fare to school" },
+        { userId: "demo-student-001", amount: "20.00", type: "expense", currency: "BSD", categoryId: catByName["Personal Care"] ?? null, date: d(3), description: "Haircut at local barber" },
+        { userId: "demo-student-001", amount: "35.00", type: "income", currency: "BSD", categoryId: catByName["Allowance"] ?? null, date: d(0), description: "Weekly allowance from mom" },
+        { userId: "demo-student-001", amount: "6.50", type: "expense", currency: "BSD", categoryId: catByName["Food & Dining"] ?? null, date: d(0), description: "Cold drinks and snacks" },
+      ]);
+    }
+
+    const alreadyBudgets = await db.select().from(budgets).where(eq(budgets.userId, "demo-student-001"));
+    if (!alreadyBudgets.length && catByName["Food & Dining"]) {
+      await db.insert(budgets).values([
+        { userId: "demo-student-001", categoryId: catByName["Food & Dining"], amount: "60.00", period: "monthly" },
+        { userId: "demo-student-001", categoryId: catByName["Transportation"] ?? catByName["Food & Dining"], amount: "30.00", period: "monthly" },
+        { userId: "demo-student-001", categoryId: catByName["Personal Care"] ?? catByName["Food & Dining"], amount: "25.00", period: "monthly" },
+      ]);
+    }
+
+    const alreadyGoals = await db.select().from(savingsGoals).where(eq(savingsGoals.userId, "demo-student-001"));
+    if (!alreadyGoals.length) {
+      await db.insert(savingsGoals).values([
+        { userId: "demo-student-001", name: "School Trip to Nassau", targetAmount: "150.00", currentAmount: "87.50", currency: "BSD", deadline: new Date(Date.now() + 60 * 86400000), icon: "✈️", color: "#8B5CF6" },
+        { userId: "demo-student-001", name: "New School Bag", targetAmount: "45.00", currentAmount: "22.00", currency: "BSD", deadline: new Date(Date.now() + 30 * 86400000), icon: "🎒", color: "#F59E0B" },
+      ]);
+    }
+
+    const alreadyHoldings = await db.select().from(portfolioHoldings).where(eq(portfolioHoldings.userId, "demo-student-001"));
+    if (!alreadyHoldings.length) {
+      const cblStock = await db.select().from(simulatedStocks).where(eq(simulatedStocks.ticker, "CBL-BS"));
+      const btcStock = await db.select().from(simulatedStocks).where(eq(simulatedStocks.ticker, "BTC-BS"));
+      if (cblStock.length) {
+        await db.insert(portfolioHoldings).values({ userId: "demo-student-001", stockId: cblStock[0].id, quantity: 5, avgPurchasePrice: "7.90" });
+        await db.insert(portfolioTransactions).values({ userId: "demo-student-001", stockId: cblStock[0].id, type: "buy", quantity: 5, pricePerUnit: "7.90", currency: "BSD" });
+      }
+      if (btcStock.length) {
+        await db.insert(portfolioHoldings).values({ userId: "demo-student-001", stockId: btcStock[0].id, quantity: 10, avgPurchasePrice: "5.25" });
+        await db.insert(portfolioTransactions).values({ userId: "demo-student-001", stockId: btcStock[0].id, type: "buy", quantity: 10, pricePerUnit: "5.25", currency: "BSD" });
+      }
     }
 
     return { teacher, students: createdStudents, classData: cls };

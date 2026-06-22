@@ -213,8 +213,8 @@ function JoinOrgModal({ onClose }: { onClose: () => void }) {
             <p className="font-bold text-lg">{result.alreadyEnrolled ? "Already Enrolled!" : "You're in!"}</p>
             <p className="text-sm text-muted-foreground">
               {result.alreadyEnrolled
-                ? <>You're already part of <span className="font-bold text-indigo-600">{result.orgName}</span> — {result.envName}.</>
-                : <>You've joined <span className="font-bold text-indigo-600">{result.orgName}</span> — {result.envName}. Check your Lessons tab!</>}
+                ? <>You're already part of <span className="font-bold text-indigo-600">{result.orgName}</span> ({result.envName}).</>
+                : <>You've joined <span className="font-bold text-indigo-600">{result.orgName}</span> ({result.envName}). Check your Lessons tab!</>}
             </p>
             <Button onClick={onClose} className="w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500">Done</Button>
           </div>
@@ -281,14 +281,9 @@ export function Sidebar() {
     <div className="flex flex-col h-full caribbean-bg text-white">
       <div className="p-5 pb-4 border-b border-white/10 flex items-start justify-between gap-2">
         <div>
-          <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-            <span className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-400 via-pink-500 to-orange-400 text-white flex items-center justify-center shrink-0 text-xl shadow-lg shadow-violet-900/50 animate-float">
-              $
-            </span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-300 via-pink-400 to-orange-400">
-              FinSight Lite
-            </span>
-          </h1>
+          <div className="bg-white rounded-xl px-3 py-1.5 shadow-lg mb-1">
+            <img src="/logo.png" className="h-8 w-auto object-contain" alt="Finsight Lite" />
+          </div>
           <p className="text-[10px] text-white/75 uppercase font-bold tracking-widest mt-1 flex items-center gap-1">
             <Sparkles className="w-3 h-3 text-amber-400" />
             by FinSight Ltd.
@@ -335,7 +330,7 @@ export function Sidebar() {
           </div>
         ))}
 
-        {/* Settings — always at the bottom of the nav list */}
+        {/* Settings, always at the bottom of the nav list */}
         <div className="border-t border-white/10 pt-3">
           {(() => {
             const item = NAV_SETTINGS;
@@ -420,7 +415,7 @@ export function Sidebar() {
         </Sheet>
       </div>
 
-      {/* Desktop sidebar — full panel or slim icon rail */}
+      {/* Desktop sidebar: full panel or slim icon rail */}
       <aside className={cn(
         "hidden lg:flex flex-col h-screen border-r border-white/10 sticky top-0 overflow-hidden transition-all duration-300 ease-in-out shrink-0 caribbean-bg",
         isCollapsed ? "w-14" : "w-72"

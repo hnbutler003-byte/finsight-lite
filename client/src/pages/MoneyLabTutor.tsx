@@ -213,7 +213,7 @@ export default function MoneyLabTutor() {
                       The AI Tutor is powered by <span className="font-bold">OpenAI's GPT-4o</span>, a large language model. 
                       It generates explanations based on the question text and its general knowledge. 
                       The AI does <span className="font-bold">not</span> pull from any official textbook, syllabus, or exam board database.
-                      Explanations <span className="font-bold">may contain errors</span> — always verify with your teacher or official study materials.
+                      Explanations <span className="font-bold">may contain errors</span>. Always verify with your teacher or official study materials.
                     </p>
                   </div>
                 </div>
@@ -352,7 +352,7 @@ export default function MoneyLabTutor() {
                     <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
                       While explanations are designed to be helpful and educational, they <span className="font-bold">may contain errors or inaccuracies</span>. 
                       Always verify important information with your teacher, textbook, or official study materials. 
-                      This tool is meant to <span className="font-bold">supplement</span> your learning — not replace your teacher or curriculum.
+                      This tool is meant to <span className="font-bold">supplement</span> your learning, not replace your teacher or curriculum.
                     </p>
                   </div>
                 </div>

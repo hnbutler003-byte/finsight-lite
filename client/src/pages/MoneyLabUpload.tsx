@@ -190,9 +190,9 @@ export default function MoneyLabUpload() {
                 ) : activeJobId && jobStatus && jobStatus.status !== "completed" && jobStatus.status !== "failed" ? (
                   <div className="flex flex-col items-center gap-3" data-testid="status-job-active">
                     <Loader2 className="w-12 h-12 text-amber-500 animate-spin" />
-                    <p className="font-bold text-amber-600 capitalize">{jobStatus.status} — extracting questions...</p>
+                    <p className="font-bold text-amber-600 capitalize">{jobStatus.status}: extracting questions...</p>
                     <p className="text-sm text-muted-foreground">
-                      Attempt {jobStatus.attempts} of {jobStatus.maxAttempts}. This runs in the background — you can stay here or come back later.
+                      Attempt {jobStatus.attempts} of {jobStatus.maxAttempts}. This runs in the background. You can stay here or come back later.
                     </p>
                   </div>
                 ) : activeJobId && jobStatus?.status === "failed" ? (

@@ -388,7 +388,7 @@ export default function Settings() {
             <DialogTitle className="text-foreground">Delete your account?</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            All your data will be permanently erased — progress, portfolio, quiz history, everything.
+            All your data will be permanently erased: progress, portfolio, quiz history, everything.
             To confirm, type <strong className="text-foreground">DELETE</strong> below.
           </p>
           <Input

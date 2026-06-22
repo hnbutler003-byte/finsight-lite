@@ -42,7 +42,7 @@ function BISXWidget() {
       <div className="grid grid-cols-2 sm:grid-cols-3 bg-white dark:bg-slate-900">
         {BISX_STOCKS.map((s, idx) => {
           const dir   = s.change > 0 ? "up" : s.change < 0 ? "down" : "flat";
-          const arrow = s.change > 0 ? "▲" : s.change < 0 ? "▼" : "—";
+          const arrow = s.change > 0 ? "▲" : s.change < 0 ? "▼" : "-";
           const sign  = s.change > 0 ? "+" : "";
           const changeBg   = dir === "up" ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
                            : dir === "down" ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
@@ -238,7 +238,7 @@ export default function InvestmentSimulator() {
                 <GraduationCap className="w-8 h-8 text-primary" />
                 Investment Simulator
               </h1>
-              <p className="text-white/85">Learn how investing works with virtual money — no real risk!</p>
+              <p className="text-white/85">Learn how investing works with virtual money, no real risk!</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 bg-green-50 dark:bg-green-950/30 px-4 py-2 rounded-xl border border-green-200 dark:border-green-800">
@@ -440,7 +440,7 @@ export default function InvestmentSimulator() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-semibold text-white/80">Real Market Prices</h3>
-                    <span className="text-xs text-white/50">— Check today's actual BISX prices before you trade</span>
+                    <span className="text-xs text-white/50">Check today's actual BISX prices before you trade</span>
                   </div>
                   <BISXWidget />
                 </div>
@@ -457,7 +457,7 @@ export default function InvestmentSimulator() {
                     <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-white">
                       <TrendingUp className="w-5 h-5 text-blue-400" />
                       Stocks
-                      <span className="text-xs text-white/60 font-normal ml-1">— Own a piece of a company</span>
+                      <span className="text-xs text-white/60 font-normal ml-1">Own a piece of a company</span>
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {filteredMarket.filter(s => s.type === "stock").map(stock => (
@@ -478,7 +478,7 @@ export default function InvestmentSimulator() {
                     <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-white">
                       <Shield className="w-5 h-5 text-green-400" />
                       Bonds
-                      <span className="text-xs text-white/60 font-normal ml-1">— Lend money and earn interest</span>
+                      <span className="text-xs text-white/60 font-normal ml-1">Lend money and earn interest</span>
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {filteredMarket.filter(s => s.type === "bond").map(stock => (

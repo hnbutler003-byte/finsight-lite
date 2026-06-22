@@ -75,7 +75,7 @@ async function analyzeFile(target: (typeof SCAN_TARGETS)[0]): Promise<FileResult
     const raw = fs.readFileSync(fullPath, "utf-8");
     content = raw.slice(0, target.maxChars);
     if (raw.length > target.maxChars) {
-      content += `\n\n... [truncated — ${(raw.length - target.maxChars).toLocaleString()} more chars not shown]`;
+      content += `\n\n... [truncated, ${(raw.length - target.maxChars).toLocaleString()} more chars not shown]`;
     }
   } catch {
     return { label: target.label, file: target.file, summary: `Could not read file.`, findings: [], opportunities: [] };
@@ -98,7 +98,7 @@ File: ${target.file}
 ${content}
 \`\`\`
 
-Respond with ONLY valid JSON — no markdown, no preamble, no trailing text:
+Respond with ONLY valid JSON, no markdown, no preamble, no trailing text:
 {
   "summary": "2-3 sentences describing overall code quality and key concerns",
   "findings": [
@@ -119,7 +119,7 @@ Respond with ONLY valid JSON — no markdown, no preamble, no trailing text:
   ]
 }
 
-Rules: max 5 findings, max 3 opportunities. Only report real, specific issues — no vague advice. Be direct and practical.`;
+Rules: max 5 findings, max 3 opportunities. Only report real, specific issues, no vague advice. Be direct and practical.`;
 
   try {
     const message = await anthropic.messages.create({
@@ -155,7 +155,7 @@ function buildReport(results: FileResult[], startTime: number): string {
   const infos     = results.flatMap(r => r.findings.filter(f => f.severity === "info"));
   const opps      = results.flatMap(r => r.opportunities);
 
-  let md = `# FinSight Lite — Performance & Reliability Scan
+  let md = `# FinSight Lite: Performance & Reliability Scan
 **Scanned:** ${new Date().toUTCString()}
 **Duration:** ${elapsed}s | **Files:** ${results.length} | **Issues:** ${criticals.length} critical · ${warnings.length} warnings · ${infos.length} info
 
@@ -166,7 +166,7 @@ function buildReport(results: FileResult[], startTime: number): string {
   if (criticals.length > 0) {
     md += `## 🔴 Critical (${criticals.length})\n\n`;
     for (const f of criticals) {
-      md += `### \`${f.file}\`${f.line ? ` — ${f.line}` : ""}\n`;
+      md += `### \`${f.file}\`${f.line ? `: ${f.line}` : ""}\n`;
       md += `**Issue:** ${f.issue}\n\n**Fix:** ${f.fix}\n\n---\n\n`;
     }
   }
@@ -191,7 +191,7 @@ function buildReport(results: FileResult[], startTime: number): string {
     md += `## 💡 Opportunities\n\n`;
     for (const o of opps) {
       const badge = o.impact === "high" ? "🔥 High" : o.impact === "medium" ? "⚡ Medium" : "📌 Low";
-      md += `### ${o.title} — ${badge} Impact\n${o.description}\n\n`;
+      md += `### ${o.title}: ${badge} Impact\n${o.description}\n\n`;
     }
   }
 

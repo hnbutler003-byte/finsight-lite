@@ -727,7 +727,7 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
 
           const taken = await authStorage.getUserByUsername(row.username);
           if (taken) {
-            skipped.push({ rowNum: row.rowNum, reason: `Username "${row.username}" was just taken — please re-import this row` });
+            skipped.push({ rowNum: row.rowNum, reason: `Username "${row.username}" was just taken, please re-import this row` });
             continue;
           }
 
@@ -784,9 +784,9 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
                   <strong>Your sign-in code (username):</strong><br>
                   <code style="font-size:18px;background:#fff;padding:4px 10px;border-radius:4px;border:1px solid #e5e7eb;display:inline-block;margin-top:6px">${escapeHtml(row.username)}</code>
                 </p>
-                <p>Tap the button below to open FinSight Lite. Type your sign-in code if asked — that's all you need.</p>
+                <p>Tap the button below to open FinSight Lite. Type your sign-in code if asked, that's all you need.</p>
                 <p><a href="${escapeHtml(loginUrl)}" style="background:#2563eb;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block">Sign in to FinSight Lite</a></p>
-                <p style="font-size:12px;color:#6b7280">Keep this code private — it's how the app knows it's really you. If this wasn't expected, you can safely ignore this email.</p>
+                <p style="font-size:12px;color:#6b7280">Keep this code private. It's how the app knows it's really you. If this wasn't expected, you can safely ignore this email.</p>
               </div></body></html>`;
             const sendRes = await sendEmail({
               to: row.email,
@@ -1134,7 +1134,7 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
         name: String(displayName),
         totalXp: xpData?.totalXp ?? 0,
         lessonsCompleted: prog.filter((p) => p.completed).length,
-        lastActive: xpData?.lastPlayedAt ? new Date(xpData.lastPlayedAt).toLocaleDateString("en-GB") : "—",
+        lastActive: xpData?.lastPlayedAt ? new Date(xpData.lastPlayedAt).toLocaleDateString("en-GB") : "-",
       });
     }
     tableRows.sort((a, b) => b.totalXp - a.totalXp);
@@ -1161,7 +1161,7 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
     doc.fillColor(DARK).fontSize(16).font("Helvetica-Bold").text(orgName, 50, 78);
     if (territory) doc.fillColor(LIGHT).fontSize(11).font("Helvetica").text(territory, 50, 98);
     doc.fillColor(TEAL).moveTo(50, 118).lineTo(545, 118).lineWidth(1.5).stroke();
-    doc.fillColor(MID).fontSize(11).font("Helvetica").text(`Monthly Report — ${periodLabel}`, 50, 128);
+    doc.fillColor(MID).fontSize(11).font("Helvetica").text(`Monthly Report: ${periodLabel}`, 50, 128);
     doc.fillColor(LIGHT).fontSize(9).text(
       `Generated: ${now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} ${now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} UTC`,
       50, 143,
@@ -1174,7 +1174,7 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
       { label: "Avg XP per Student", value: String(avgXp) },
       { label: "Lesson Completion", value: `${lessonCompletionRate}%` },
       { label: "Lessons Completed", value: String(totalCompleted) },
-      { label: "Top Games", value: "— coming soon" }, // TODO: wire up top-games query
+      { label: "Top Games", value: "(coming soon)" }, // TODO: wire up top-games query
     ];
     const cellW = (W - 10) / 3;
     const cellH = 54;
@@ -1282,9 +1282,9 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
 
     const result = await sendEmail({
       to: admin.email,
-      subject: `[TEST] Your Finsight Lite weekly update — ${orgName}`,
+      subject: `[TEST] Your Finsight Lite weekly update: ${orgName}`,
       html,
-      text: `[TEST] Finsight Lite weekly update — ${orgName}\n\nWeek of: ${weekStart}\nTotal students: ${studentIds.length}\nActive this week: ${activeCount}\nAvg XP: ${avgXp}\nLesson completion: ${lessonCompletionRate}%\n\nDashboard: ${baseUrl}/org/dashboard`,
+      text: `[TEST] Finsight Lite weekly update: ${orgName}\n\nWeek of: ${weekStart}\nTotal students: ${studentIds.length}\nActive this week: ${activeCount}\nAvg XP: ${avgXp}\nLesson completion: ${lessonCompletionRate}%\n\nDashboard: ${baseUrl}/org/dashboard`,
       kind: "org_weekly_email",
       orgId: admin.orgId,
     });

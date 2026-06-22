@@ -1,0 +1,51 @@
+This prompt covers four separate fixes to the existing demo/marketing page and broader site. Audit before changing anything, and treat each section independently, do not let one fix bleed into another's scope.
+
+---
+
+FIX 1 — Simplify the Student View demo picker
+
+The current demo landing page shows 4 student options to pick from (Jamie, Chris, Taylor, Jordan) under "Student View." This is too many choices for a quick demo experience and adds friction. Reduce this to 1, at most 2, student options. Pick whichever existing demo student has the most complete, realistic-looking data already (highest XP, most lessons completed, populated activity) and feature that one prominently. If keeping a second option, make it clearly secondary (smaller, less visual weight) rather than equal-weight with the first.
+
+---
+
+FIX 2 — Make the Teacher View card more visually identifiable
+
+The Teacher View card currently looks visually similar to the Student View cards in terms of hierarchy and prominence. Increase its visual distinctiveness so a visitor immediately understands it's a different mode, not just another list item. This could mean a more prominent icon treatment, a stronger color distinction consistent with the existing design system, or restructuring the card so the "Enter as Teacher" action is clearly the primary action on that side of the page. Do not introduce new colors outside the existing brand tokens, work within violet, teal, coral, and amber only.
+
+---
+
+FIX 3 — Preload realistic demo data everywhere the demo logs in
+
+Audit the actual demo experience after logging in as both the demo teacher and the demo student. Currently, at least the student "My Money" dashboard shows an empty state: B$0.00 balances, "No spending data yet," "No activity yet," empty "Where It Goes" chart. This makes the demo look broken or unfinished to anyone exploring it, especially an external decision-maker evaluating the platform for a partnership.
+
+Preload realistic demo data for the featured demo student across every section they could land on, including but not limited to:
+- My Money dashboard: realistic balance, a handful of recent transactions with real-feeling categories (lunch, bus fare, savings deposit, etc.), populated "Where It Goes" spending breakdown chart
+- Budgets: at least one realistic active budget
+- Savings Goals: at least one in-progress goal with partial progress
+- Investment Simulator: some portfolio activity if applicable
+- Lessons and MoneyLab: partial progress already reflected, consistent with the XP and lesson completion numbers already shown on the picker card
+
+Check the Teacher View dashboard as well (the demo teacher account, Alex Morgan). If it has similarly empty sections (no challenge data, no activity in the class roster beyond names), preload realistic data there too: sample class activity, at least one active challenge, believable per-student stats in the class roster.
+
+Use realistic Bahamian dollar amounts and Caribbean-appropriate transaction names, not round numbers like "$100" or generic labels like "Transaction 1."
+
+---
+
+FIX 4 — Remove em dashes sitewide
+
+Search the entire codebase, every page, component, copy string, and content file, for em dashes (—) and replace each one with appropriate punctuation: a comma, a period and new sentence, a colon, or parentheses, whichever fits the sentence grammatically. Do not simply delete the em dash and leave a grammatically broken sentence, rewrite the punctuation properly so the sentence still reads correctly and grammatically.
+
+This applies sitewide: marketing pages, the demo page, in-app copy, dashboards, button labels, tooltips, error messages, everywhere. After completing this, run a search for the em dash character across the codebase again to confirm none remain, and report the result of that final check.
+
+---
+
+FIX 5 — Replace all Finsight Lite logo instances with the new logo
+
+I have attached the new official Finsight Lite logo file. Search the codebase for every instance of the current/old logo (image files, inline SVG, or any logo component) and replace it with the attached new logo. This includes the favicon if applicable, the header/nav logo, the demo page logo, the login pages, and any footer logo instance. Use the correct variant for context: the full logo with wordmark where there's horizontal space (headers, footers), and the icon-only mark where space is constrained (favicon, small UI elements). Do not stretch, distort, or recolor the logo, use it as provided.
+
+---
+
+Constraints for all fixes:
+- Do not break any existing routes, login flows, or functionality.
+- Do not change the underlying design system tokens (colors, fonts, border radius) while making these fixes, work within what already exists.
+- After completing all five fixes, print every file created or modified, organized by fix number, and confirm the em dash search returns zero results.

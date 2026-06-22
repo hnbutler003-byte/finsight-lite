@@ -14,7 +14,7 @@ import { weeklyDigestRuns, aiUsagePurgeRuns, jobs } from "@shared/schema";
 import { and, eq, gte } from "drizzle-orm";
 
 if (!process.env.SESSION_SECRET) {
-  console.error("[startup] SESSION_SECRET env var is not set — refusing to start. Set it in your Replit Secrets.");
+  console.error("[startup] SESSION_SECRET env var is not set, refusing to start. Set it in your Replit Secrets.");
   process.exit(1);
 }
 
@@ -264,7 +264,7 @@ process.on("SIGINT", stopUptimeWorker);
     await probeDatabase();
     log("database connectivity verified", "startup");
   } catch (e: any) {
-    console.error("[startup] Database unreachable — cannot continue:", e.message);
+    console.error("[startup] Database unreachable, cannot continue:", e.message);
     process.exit(1);
   }
 

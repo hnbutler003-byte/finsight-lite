@@ -100,7 +100,7 @@ export default function AuthPage() {
       if (!res.ok) { setError(data.message || "Code not found."); return; }
       setCodeType(data.type);
       setClassCode(code);
-      setClassName(data.type === "org" ? `${data.name} — ${data.envName}` : data.name);
+      setClassName(data.type === "org" ? `${data.name}: ${data.envName}` : data.name);
       setStep("student-name");
     } catch { setError("Could not check the code. Try again."); }
     finally { setIsValidatingCode(false); }
@@ -159,9 +159,10 @@ export default function AuthPage() {
     <div className="min-h-screen flex flex-col items-center justify-center caribbean-bg px-4 py-12">
 
       {/* Persistent micro-brand header */}
-      <div className="flex items-center gap-2 mb-10 opacity-80">
-        <span className="w-8 h-8 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center text-white font-bold text-sm">$</span>
-        <span className="text-white/60 text-sm font-semibold tracking-wide">FinSight Lite</span>
+      <div className="flex items-center gap-2 mb-10 opacity-90">
+        <div className="bg-white rounded-xl px-3 py-1.5 shadow-lg">
+          <img src="/logo.png" className="h-7 w-auto object-contain" alt="Finsight Lite" />
+        </div>
       </div>
 
       <div className="w-full max-w-sm">
@@ -187,7 +188,7 @@ export default function AuthPage() {
               >
                 <span className="text-3xl">⚡</span>
                 <div className="flex-1">
-                  <p className="text-white font-semibold">Start exploring — no account needed</p>
+                  <p className="text-white font-semibold">Start exploring, no account needed</p>
                   <p className="text-white/70 text-sm">Jump in instantly as a guest</p>
                 </div>
                 <ArrowRight className="w-4 h-4 text-white/70 group-hover:text-white transition-colors" />
@@ -417,7 +418,7 @@ export default function AuthPage() {
                 data-testid="input-resume-username"
               />
               <p className="text-white/30 text-xs text-center">
-                Looks like <span className="font-mono">Name_1234</span> — shown when you first signed up
+                Looks like <span className="font-mono">Name_1234</span>, shown when you first signed up
               </p>
 
               {error && <p className="text-red-400 text-sm text-center" data-testid="text-auth-error">{error}</p>}
@@ -558,7 +559,7 @@ export default function AuthPage() {
               <p className="text-2xl font-bold font-mono text-violet-300" data-testid="text-username">
                 {createdUser.username}
               </p>
-              <p className="text-white/30 text-xs">Save this — you'll use it to log back in</p>
+              <p className="text-white/30 text-xs">Save this. You'll use it to log back in.</p>
             </div>
 
             <Button

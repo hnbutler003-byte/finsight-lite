@@ -158,7 +158,7 @@ export default function OrgDashboard() {
               <h1 className="font-display font-bold text-3xl">
                 Welcome, {admin.firstName}!
               </h1>
-              <p className="text-muted-foreground mt-1">{admin.orgName} — {admin.envName}</p>
+              <p className="text-muted-foreground mt-1">{admin.orgName}: {admin.envName}</p>
             </div>
             <a
               href="/api/org/report/pdf"
@@ -255,7 +255,7 @@ export default function OrgDashboard() {
                       <p className="text-sm text-muted-foreground">Share this code so students can enroll in your organization</p>
                       <div className="flex items-center gap-3">
                         <div className="flex-1 bg-blue-50 dark:bg-blue-950/30 rounded-2xl p-3 border border-blue-100 dark:border-blue-800">
-                          <p className="font-display font-bold text-2xl tracking-widest text-blue-600 text-center">{overview.env.joinCode ?? "—"}</p>
+                          <p className="font-display font-bold text-2xl tracking-widest text-blue-600 text-center">{overview.env.joinCode ?? "-"}</p>
                         </div>
                         <button
                           onClick={copyJoinCode}
@@ -339,12 +339,12 @@ export default function OrgDashboard() {
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <p className="text-xs text-muted-foreground font-medium flex items-center gap-1 cursor-default">
-                                  Daily limits — resets at midnight UTC. Cached answers are free.
+                                  Daily limits, reset at midnight UTC. Cached answers are free.
                                   <Info className="w-3 h-3 inline shrink-0" />
                                 </p>
                               </TooltipTrigger>
                               <TooltipContent side="bottom" className="max-w-xs text-xs">
-                                <p>These limits control how many times per day each student (and your whole org) can use AI features. "Cached" means the same question was asked before — it doesn't count toward the limit. Edit limits to raise or lower them.</p>
+                                <p>These limits control how many times per day each student (and your whole org) can use AI features. "Cached" means the same question was asked before, so it doesn't count toward the limit. Edit limits to raise or lower them.</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -668,7 +668,7 @@ export default function OrgDashboard() {
                               <tr key={s.id} className="border-b border-border/40 hover:bg-muted/30 transition-colors" data-testid={`row-student-${s.id}`}>
                                 <td className="py-2.5 px-2 font-medium">{s.displayName}</td>
                                 <td className="py-2.5 px-2 text-muted-foreground">
-                                  {s.joinedAt ? new Date(s.joinedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}
+                                  {s.joinedAt ? new Date(s.joinedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "-"}
                                 </td>
                                 <td className="py-2.5 px-2 text-right font-display font-bold text-amber-600">{(s.totalXp ?? 0).toLocaleString()}</td>
                                 <td className="py-2.5 px-2 text-right">
@@ -678,7 +678,7 @@ export default function OrgDashboard() {
                                   </span>
                                 </td>
                                 <td className="py-2.5 px-2 text-right text-muted-foreground">
-                                  {s.lastActive ? new Date(s.lastActive).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
+                                  {s.lastActive ? new Date(s.lastActive).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "-"}
                                 </td>
                               </tr>
                             ))}
@@ -730,7 +730,7 @@ export default function OrgDashboard() {
                       ].map(d => (
                         <div key={d.label}>
                           <p className="text-muted-foreground font-medium text-xs mb-0.5">{d.label}</p>
-                          <p className="font-bold capitalize">{d.value || "—"}</p>
+                          <p className="font-bold capitalize">{d.value || "-"}</p>
                         </div>
                       ))}
                     </div>

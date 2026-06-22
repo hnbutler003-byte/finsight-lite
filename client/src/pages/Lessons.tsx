@@ -233,7 +233,7 @@ function generateCertificate(
   doc.setFontSize(9);
   doc.setTextColor(100, 116, 139);
   doc.text(`Date of Completion: ${completionDate}`, W / 2, 158, { align: "center" });
-  doc.text("FinSight Lite — Financial Literacy for Caribbean Youth", W / 2, 166, { align: "center" });
+  doc.text("FinSight Lite: Financial Literacy for Caribbean Youth", W / 2, 166, { align: "center" });
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(24);
@@ -544,7 +544,7 @@ export default function Lessons() {
       const joinData = await joinRes.json();
       if (!joinRes.ok) { setJoinError(joinData.message || "Could not join. Try again."); return; }
 
-      const label = checkData.type === "org" ? `${checkData.name} — ${checkData.envName}` : checkData.name;
+      const label = checkData.type === "org" ? `${checkData.name}: ${checkData.envName}` : checkData.name;
       setJoinSuccess(`You've joined ${label}! Your lessons will appear below.`);
       setJoinCode("");
       queryClient.invalidateQueries({ queryKey: ["/api/lessons"] });
@@ -686,7 +686,7 @@ export default function Lessons() {
                 <h1 className="font-display text-3xl lg:text-4xl font-bold text-white" data-testid="text-lessons-title">
                   My Lessons
                 </h1>
-                <p className="text-white/85 mt-1">OECD-aligned financial literacy — read, learn, and quiz yourself.</p>
+                <p className="text-white/85 mt-1">OECD-aligned financial literacy: read, learn, and quiz yourself.</p>
               </div>
 
               {/* ── Built-in OECD Modules ── */}
@@ -1030,7 +1030,7 @@ export default function Lessons() {
                     <Trophy className="w-8 h-8 text-amber-500 flex-shrink-0" />
                     <div className="text-left">
                       <p className="font-display font-bold text-foreground">Perfect Score! 🎉</p>
-                      <p className="text-sm text-muted-foreground">Outstanding work — you've mastered this lesson.</p>
+                      <p className="text-sm text-muted-foreground">Outstanding work! You've mastered this lesson.</p>
                     </div>
                   </CardContent>
                 </Card>

@@ -144,7 +144,7 @@ function GroceryGame({ currency }: { currency: string }) {
   const getRating = () => {
     if (usagePercent >= 90 && usagePercent <= 100) return { label: "Smart Shopper!", emoji: "🌟", color: "text-yellow-500" };
     if (usagePercent >= 70) return { label: "Good Job!", emoji: "👍", color: "text-green-500" };
-    if (usagePercent >= 50) return { label: "Not bad — stretch that budget more!", emoji: "💪", color: "text-blue-500" };
+    if (usagePercent >= 50) return { label: "Not bad. Stretch that budget more!", emoji: "💪", color: "text-blue-500" };
     return { label: "Try to use more of your budget wisely!", emoji: "🤔", color: "text-orange-500" };
   };
 
@@ -409,7 +409,7 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
                   <FlatIcon className="w-5 h-5 text-gray-400 shrink-0" />
                   <div>
                     <p className="font-semibold text-sm">Hold</p>
-                    <p className="text-xs text-muted-foreground">Not sure? Play it safe — you won't gain or lose anything</p>
+                    <p className="text-xs text-muted-foreground">Not sure? Play it safe. You won't gain or lose anything.</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 rounded-2xl p-3">
@@ -436,7 +436,7 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
 
             <div className="bg-orange-50 dark:bg-orange-900/20 rounded-2xl p-4 border-2 border-dashed border-orange-200 dark:border-orange-800">
               <p className="text-sm text-center">
-                <strong>Tip:</strong> Read the news headline carefully — it usually hints at whether the stock will go up or down! If time runs out, you'll automatically Hold.
+                <strong>Tip:</strong> Read the news headline carefully. It usually hints at whether the stock will go up or down! If time runs out, you'll automatically Hold.
               </p>
             </div>
           </div>
@@ -498,7 +498,7 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
               <div key={i} className={`rounded-xl p-2 text-center text-xs font-bold ${r.correct ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" : r.choice === "hold" ? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400" : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"}`}>
                 R{i + 1}: {r.choice?.toUpperCase()}
                 <br />
-                {r.correct ? "✓" : r.choice === "hold" ? "—" : "✗"}
+                {r.correct ? "✓" : r.choice === "hold" ? "-" : "✗"}
               </div>
             ))}
           </div>
@@ -571,7 +571,7 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">
-                    You chose <strong>{currentChoice?.toUpperCase()}</strong> —{" "}
+                    You chose <strong>{currentChoice?.toUpperCase()}</strong>:{" "}
                     {currentRound.correct ? <span className="text-green-600 font-bold">Nice call! +100 pts</span> : currentChoice === "hold" ? <span className="text-gray-500">Safe play, 0 pts</span> : <span className="text-red-500 font-bold">Wrong call! -50 pts</span>}
                   </p>
                 </div>
@@ -857,7 +857,7 @@ function SavingsGoalGame({ currency }: { currency: string }) {
         <div className="text-center space-y-2">
           <div className="text-5xl">{selectedGoal?.emoji || "🎯"}</div>
           <h3 className="font-display text-2xl font-bold">Your Savings Plan</h3>
-          <p className="text-muted-foreground">for <strong>{goalName}</strong> — {sym}{goalAmount.toFixed(2)}</p>
+          <p className="text-muted-foreground">for <strong>{goalName}</strong>: {sym}{goalAmount.toFixed(2)}</p>
         </div>
 
         <div className="bg-muted/30 rounded-2xl p-6 space-y-4">
@@ -932,7 +932,7 @@ const SURPRISE_EXPENSES = [
   { name: "Your phone screen cracked!", cost: 30, emoji: "📱" },
   { name: "School field trip fee due tomorrow!", cost: 25, emoji: "🏫" },
   { name: "You need medicine from the pharmacy.", cost: 20, emoji: "💊" },
-  { name: "Your backpack strap broke — need a new one!", cost: 18, emoji: "🎒" },
+  { name: "Your backpack strap broke (need a new one!)", cost: 18, emoji: "🎒" },
 ];
 
 function BeatTheBudgetGame({ currency }: { currency: string }) {
@@ -1002,13 +1002,13 @@ function BeatTheBudgetGame({ currency }: { currency: string }) {
   const getFeedback = () => {
     const good: string[] = [];
     const improve: string[] = [];
-    if (needsCovered === totalNeeds) good.push("You covered all your needs first — smart!");
+    if (needsCovered === totalNeeds) good.push("You covered all your needs first. Smart!");
     else improve.push("Try covering all your needs before spending on wants.");
-    if (balance >= 10) good.push("You kept some money saved — nice cushion!");
+    if (balance >= 10) good.push("You kept some money saved. Nice cushion!");
     else if (balance >= 0) improve.push("Try to save a bit more for unexpected costs.");
     else improve.push("You ran out of money! Always keep a buffer.");
     if (paidSurprise) good.push("You handled the surprise expense like a pro!");
-    if (skippedSurprise) improve.push("Surprise expenses happen in real life — try to keep money aside for them.");
+    if (skippedSurprise) improve.push("Surprise expenses happen in real life. Try to keep money aside for them.");
     return { good, improve };
   };
 
@@ -1062,7 +1062,7 @@ function BeatTheBudgetGame({ currency }: { currency: string }) {
           <div className="bg-violet-50 dark:bg-violet-900/20 rounded-2xl p-4 border-2 border-dashed border-violet-200 dark:border-violet-800 text-center">
             <p className="text-sm">
               <strong>Takeaway:</strong> In real life, covering your needs first and saving a little for surprises
-              is the smartest way to handle money. Wants are great — but only after your needs and savings are sorted!
+              is the smartest way to handle money. Wants are great, but only after your needs and savings are sorted!
             </p>
           </div>
 
@@ -1124,7 +1124,7 @@ function BeatTheBudgetGame({ currency }: { currency: string }) {
           </div>
           <div>
             <h3 className="font-display text-xl font-bold text-white">Weekly Allowance: {sym}100</h3>
-            <p className="text-sm text-white/70">Choose what to spend on — but watch out for surprises!</p>
+            <p className="text-sm text-white/70">Choose what to spend on, but watch out for surprises!</p>
           </div>
         </div>
         <Badge variant="outline" className={`text-lg px-4 py-2 rounded-2xl font-bold ${balance < 20 ? "border-red-400 text-red-500" : "border-green-400 text-green-600"}`} data-testid="text-beat-balance">
@@ -1309,7 +1309,7 @@ function CompoundItGame({ currency }: { currency: string }) {
           </p>
           <p className="text-sm text-muted-foreground">
             Compound interest means your money earns money, and then <em>that</em> money earns money too.
-            The longer you wait, the faster it grows — that's why starting early is a superpower!
+            The longer you wait, the faster it grows, which is why starting early is a superpower!
           </p>
         </CardContent>
       </Card>
@@ -1430,7 +1430,7 @@ function NeedsVsWantsGame() {
             <h3 className="font-display text-2xl font-bold text-foreground" data-testid="text-nw-result">
               {accuracy >= 80 ? "Amazing!" : accuracy >= 60 ? "Good job!" : "Keep learning!"}
             </h3>
-            <p className="text-lg">{score} / {items.length} correct — <strong>{accuracy}% accuracy</strong></p>
+            <p className="text-lg">{score} / {items.length} correct: <strong>{accuracy}% accuracy</strong></p>
           </div>
 
           <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 max-w-lg mx-auto">
@@ -1620,7 +1620,7 @@ function FutureMeGame({ currency }: { currency: string }) {
                     {c.chose === "now" ? `Took ${sym}${c.round.nowAmount} now` : `Waited for ${sym}${c.round.laterAmount} (${c.round.laterTime})`}
                   </span>
                   <span className="text-sm font-bold">
-                    {c.chose === "later" ? `+${sym}${c.round.laterAmount - c.round.nowAmount}` : "—"}
+                    {c.chose === "later" ? `+${sym}${c.round.laterAmount - c.round.nowAmount}` : "-"}
                   </span>
                 </div>
               ))}
@@ -1631,7 +1631,7 @@ function FutureMeGame({ currency }: { currency: string }) {
             <CardContent className="p-4 text-center space-y-2">
               <p className="text-sm">
                 <strong>The lesson:</strong> Waiting for a reward isn't always easy, but it often pays off.
-                In real investing, this is how compound interest works — your money grows more the longer you leave it alone.
+                In real investing, this is how compound interest works: your money grows more the longer you leave it alone.
                 Neither choice is "wrong," but understanding the trade-off helps you make smarter decisions!
               </p>
             </CardContent>

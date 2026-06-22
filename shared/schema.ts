@@ -734,7 +734,7 @@ export const weeklyDigestRuns = pgTable("weekly_digest_runs", {
   weekAudienceIdx: uniqueIndex("uniq_weekly_digest_week_audience").on(t.weekStart, t.audience),
 }));
 
-// One row per calendar month — prevents the auto-scheduler from
+// One row per calendar month, prevents the auto-scheduler from
 // enqueueing more than one purge-ai-usage job per month.
 export const aiUsagePurgeRuns = pgTable("ai_usage_purge_runs", {
   id: serial("id").primaryKey(),

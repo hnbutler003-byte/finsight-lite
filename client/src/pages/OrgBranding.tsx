@@ -110,7 +110,7 @@ export default function OrgBranding() {
         signatureRightRole: rightRole.trim() || null,
         allowedEmailDomains: allowedDomains,
       };
-      // Only send logoUrl when it actually changed — avoids resubmitting large legacy data URLs
+      // Only send logoUrl when it actually changed, avoids resubmitting large legacy data URLs
       if (logoUrl !== (branding?.logoUrl ?? null)) {
         body.logoUrl = logoUrl;
       }

@@ -843,7 +843,7 @@ function LessonPreviewModal({ lesson, onClose }: { lesson: LessonPlan; onClose: 
       <div className="shrink-0 bg-amber-500 text-white px-4 py-2 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm font-bold">
           <PlayCircle className="w-4 h-4" />
-          Preview Mode — this is how students see this lesson. Quiz results are not saved.
+          Preview Mode: this is how students see this lesson. Quiz results are not saved.
         </div>
         <button
           onClick={onClose}
@@ -940,7 +940,7 @@ function LessonPreviewModal({ lesson, onClose }: { lesson: LessonPlan; onClose: 
                   <CardContent className="p-6 flex items-center justify-between gap-4">
                     <div>
                       <h3 className="font-display font-bold text-lg text-foreground">Ready to test yourself?</h3>
-                      <p className="text-sm text-muted-foreground mt-0.5">{previewLesson.questions.length} questions · Preview only — no XP saved</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">{previewLesson.questions.length} questions · Preview only (no XP saved)</p>
                     </div>
                     <Button
                       onClick={() => { setPage("quiz"); setCurrentQ(0); setSelected(null); setShowResult(false); setAnswers([]); }}
@@ -1033,7 +1033,7 @@ function LessonPreviewModal({ lesson, onClose }: { lesson: LessonPlan; onClose: 
               <div className="text-white">
                 <h1 className="font-display text-3xl font-bold">Quiz Complete!</h1>
                 <p className="text-white/85 mt-2">{previewLesson.title}</p>
-                <p className="text-amber-300 text-sm mt-1 font-semibold">Preview only — no XP or progress was saved</p>
+                <p className="text-amber-300 text-sm mt-1 font-semibold">Preview only, no XP or progress was saved</p>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <Card className="glass-card rounded-glass border-0">

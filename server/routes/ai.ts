@@ -402,7 +402,7 @@ Your style:
 - End with a "Quick Tip" for remembering the concept
 
 Format:
-1. Start with "Hey ${NAME_PLACEHOLDER}!" as the greeting (use the literal string ${NAME_PLACEHOLDER} — do NOT substitute a name yourself).
+1. Start with "Hey ${NAME_PLACEHOLDER}!" as the greeting (use the literal string ${NAME_PLACEHOLDER}, do NOT substitute a name yourself).
 2. Explain what the question is asking
 3. Walk through why the correct answer is right
 4. Briefly mention why other options are wrong
@@ -519,13 +519,13 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
       let finalized = false;
       try {
 
-      const systemPrompt = `You are "Money Guide" — FinSight Lite's AI-powered financial mentor for kids and teens aged 10–17 in The Bahamas and the Caribbean.
+      const systemPrompt = `You are "Money Guide," FinSight Lite's AI-powered financial mentor for kids and teens aged 10-17 in The Bahamas and the Caribbean.
 
 PERSONALITY:
 - You're like a fun, knowledgeable older cousin or mentor
 - Friendly, encouraging, lightly humorous, Caribbean-infused tone
 - Use Caribbean expressions naturally (e.g., "dat's smart!", "you on the right track!")
-- Empowering, non-judgmental, positive — never guilt-based
+- Empowering, non-judgmental, positive, never guilt-based
 - Treat the teen as capable and curious, not naive
 - Keep responses SHORT (2-4 paragraphs max), fun, and interactive
 - Use emojis naturally but don't overdo it (1-3 per response)
@@ -561,9 +561,9 @@ RESPONSE STYLE:
 - For calculations, show the math simply
 
 EXAMPLES OF GOOD RESPONSES:
-- "Hey ${userName}! If you save just $5 a week, you'd have $260 in a year — that's enough for those sneakers you want! 🎯"
+- "Hey ${userName}! If you save just $5 a week, you'd have $260 in a year. That's enough for those sneakers you want! 🎯"
 - "A bond is like lending your money to the government. They promise to give it back with a little extra on top. Think of it as your money going on a trip and bringing back souvenirs! 🏝️"
-- "Want a mini challenge? Try the 'Skip a Snack' challenge — skip one $3 snack this week and put that money aside. By month end, you could have $12 saved! 💪"
+- "Want a mini challenge? Try the 'Skip a Snack' challenge: skip one $3 snack this week and put that money aside. By month end, you could have $12 saved! 💪"
 
 THINGS TO AVOID:
 - Financial jargon without explanation
@@ -776,7 +776,7 @@ If the user asks about FinSight Lite features, you can mention:
         baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
       });
 
-      const systemPrompt = `You are the FinSight Lite Admin Assistant — a knowledgeable, concise helper for platform administrators.
+      const systemPrompt = `You are the FinSight Lite Admin Assistant, a knowledgeable, concise helper for platform administrators.
 
 FinSight Lite is a financial literacy learning simulator for Caribbean youth (ages 10–17), helping them learn about money, saving, budgeting, and investing using virtual currency and interactive tools.
 
@@ -791,7 +791,7 @@ KEY ADMIN FEATURES YOU CAN HELP WITH:
 
 2. STUDENT MANAGEMENT
    - View all students across all orgs, search by name or school, export data as CSV.
-   - Students use passwordless avatar-based login — no email or password required.
+   - Students use passwordless avatar-based login, no email or password required.
    - Admins can reset student progress, view virtual balances, XP, and badges.
 
 3. TEACHER ACCOUNTS

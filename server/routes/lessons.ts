@@ -447,7 +447,7 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
       if (!admin) return res.status(401).json({ message: "Not found" });
       const existing = await getLessonWithQuestions(req.params.id);
       if (!existing || existing.org_id !== admin.orgId) {
-        return res.status(403).json({ message: "Access denied — lesson does not belong to your organization" });
+        return res.status(403).json({ message: "Access denied: lesson does not belong to your organization" });
       }
       const { isPublished } = z.object({ isPublished: z.boolean() }).parse(req.body);
       const lesson = await toggleLessonPublish(req.params.id, isPublished);
@@ -465,7 +465,7 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
       if (!admin) return res.status(401).json({ message: "Not found" });
       const existing = await getLessonWithQuestions(req.params.id);
       if (!existing || existing.org_id !== admin.orgId) {
-        return res.status(403).json({ message: "Access denied — lesson does not belong to your organization" });
+        return res.status(403).json({ message: "Access denied: lesson does not belong to your organization" });
       }
       const body = z.object({
         question: z.string().min(1),
@@ -500,7 +500,7 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
       if (!admin) return res.status(401).json({ message: "Not found" });
       const existing = await getLessonWithQuestions(req.params.id);
       if (!existing || existing.org_id !== admin.orgId) {
-        return res.status(403).json({ message: "Access denied — lesson does not belong to your organization" });
+        return res.status(403).json({ message: "Access denied: lesson does not belong to your organization" });
       }
       const body = z.object({
         title: z.string().min(1),
@@ -558,7 +558,7 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
       if (!admin) return res.status(401).json({ message: "Not found" });
       const existing = await getLessonWithQuestions(req.params.id);
       if (!existing || existing.org_id !== admin.orgId) {
-        return res.status(403).json({ message: "Access denied — lesson does not belong to your organization" });
+        return res.status(403).json({ message: "Access denied: lesson does not belong to your organization" });
       }
       const ok = await deleteLessonPlan(req.params.id);
       if (!ok) return res.status(500).json({ message: "Failed to delete lesson" });

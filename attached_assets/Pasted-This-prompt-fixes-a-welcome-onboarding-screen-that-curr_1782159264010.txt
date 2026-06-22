@@ -1,0 +1,37 @@
+This prompt fixes a welcome/onboarding screen that currently uses generic emoji-style clip art (a rocket, money bag, and star) that doesn't match the Finsight Lite brand identity, and checks whether this same issue exists elsewhere in the app.
+
+---
+
+STAGE 1 — Audit
+
+Find every screen, modal, or page that uses generic emoji-style icons, stock clip art, or any visual element that isn't built from the existing design system (Lucide icons, the brand color tokens, or the new logo). The welcome screen showing a rocket, money bag emoji, and star is one confirmed instance, find every other instance across the app: onboarding flows, empty states, achievement popups, loading screens, error pages, anywhere a "fun" decorative visual was used.
+
+Report every location found before making changes.
+
+---
+
+STAGE 2 — Fix the welcome screen specifically
+
+Redesign the welcome/onboarding screen with these changes:
+
+1. Remove the generic rocket, money bag, and star clip art entirely.
+2. Replace with either: the Finsight Lite icon mark (the three ascending bars from the new logo) animated with a subtle entrance (using the existing `animate-bounce-in` or `animate-pop-in` classes already defined in the CSS), or a small set of Lucide icons that are actually relevant to financial literacy (e.g. a wallet, a graph trending up, a piggy bank icon from Lucide, not emoji).
+3. Add real visual structure instead of floating disconnected elements: consider a `glass-card-heavy` panel containing the welcome message, with the icon or logo mark integrated into that card rather than floating above it on the bare gradient background.
+4. The headline "Welcome!" should use `font-display font-bold` at a larger size to anchor the screen, consistent with the type scale already defined (hero title scale: text-5xl lg:text-6xl).
+5. The subtext "Your Caribbean financial literacy adventure starts here" should use `font-sans text-white/80` per the established contrast rules for the Caribbean background.
+6. Keep the Finsight Lite logo at the top as already shown, but confirm it is the new logo asset, not a placeholder.
+
+The end result should feel premium and intentional, not like generic mobile app clip art. Reference the existing glassmorphism and animation patterns already documented in the design system rather than introducing new visual styles.
+
+---
+
+STAGE 3 — Fix any other instances found in Stage 1
+
+For every other location identified in the audit using generic clip art or emoji-style decoration, apply the same standard: replace with Lucide icons in brand colors, the Finsight Lite logo mark where appropriate, or existing glass-card patterns. Do not introduce new icon libraries, fonts, or colors outside what's already defined in the design system.
+
+---
+
+Constraints:
+- Do not change any underlying onboarding logic, routing, or functionality, this is a visual fix only.
+- Do not modify the design system tokens themselves (colors, fonts, radius), work within what already exists.
+- After completing all stages, print every file created or modified, and confirm no generic emoji or stock clip art remains anywhere in the app.

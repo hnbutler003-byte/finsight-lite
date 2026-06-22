@@ -21,12 +21,12 @@ export function OrgSidebar() {
   const content = (
     <div className="flex flex-col h-full bg-gradient-to-b from-blue-800 via-indigo-900 to-indigo-950 text-white p-4">
       <div className="flex items-center gap-3 mb-8 mt-2">
-        <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center shadow">
-          <Building2 className="w-6 h-6 text-white" />
+        <div className="bg-white rounded-xl px-2 py-1 shadow-lg">
+          <img src="/logo.png" className="h-7 w-auto object-contain" alt="Finsight Lite" />
         </div>
         <div>
-          <p className="font-display font-bold text-sm leading-tight">Org Admin</p>
-          <p className="text-xs text-blue-100 font-medium truncate max-w-[120px]">{admin?.orgName || "FinSight Lite"}</p>
+          <p className="font-display font-bold text-sm leading-tight text-white">Org Admin</p>
+          <p className="text-xs text-blue-100 font-medium truncate max-w-[120px]">{admin?.orgName || "Finsight Lite"}</p>
         </div>
       </div>
 

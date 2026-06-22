@@ -17,7 +17,7 @@ const QUICK_PROMPTS = [
   { label: "What are stocks?", icon: TrendingUp, color: "bg-blue-100 dark:bg-blue-800/60 text-blue-800 dark:text-blue-100 border-blue-200 dark:border-blue-600" },
   { label: "Help me set a savings goal", icon: Target, color: "bg-violet-100 dark:bg-violet-800/60 text-violet-800 dark:text-violet-100 border-violet-200 dark:border-violet-600" },
   { label: "What's compound interest?", icon: Lightbulb, color: "bg-amber-100 dark:bg-amber-800/60 text-amber-800 dark:text-amber-100 border-amber-200 dark:border-amber-600" },
-  { label: "Needs vs wants — explain!", icon: HelpCircle, color: "bg-pink-100 dark:bg-pink-800/60 text-pink-800 dark:text-pink-100 border-pink-200 dark:border-pink-600" },
+  { label: "Needs vs wants: explain!", icon: HelpCircle, color: "bg-pink-100 dark:bg-pink-800/60 text-pink-800 dark:text-pink-100 border-pink-200 dark:border-pink-600" },
   { label: "Give me a money challenge!", icon: Sparkles, color: "bg-orange-100 dark:bg-orange-800/60 text-orange-800 dark:text-orange-100 border-orange-200 dark:border-orange-600" },
 ];
 
@@ -181,7 +181,7 @@ export default function MoneyGuide() {
                   Hey {userName}! 👋
                 </h2>
                 <p className="text-foreground/80 max-w-md mx-auto font-medium">
-                  I'm your Money Guide — ask me anything about saving, budgeting, investing, or money in general. No question is too simple!
+                  I'm your Money Guide. Ask me anything about saving, budgeting, investing, or money in general. No question is too simple!
                 </p>
               </div>
 
@@ -266,7 +266,7 @@ export default function MoneyGuide() {
             </Button>
           </form>
           <p className="text-center text-xs text-muted-foreground mt-2 font-medium">
-            Money Guide gives educational info only — not real financial advice!
+            Money Guide gives educational info only, not real financial advice!
           </p>
         </div>
         </div>

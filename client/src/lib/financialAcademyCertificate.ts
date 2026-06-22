@@ -124,7 +124,7 @@ export async function buildFinancialAcademyCertificate(
   doc.setFont("times", "italic");
   doc.setFontSize(9);
   doc.setTextColor(140, 140, 140);
-  doc.text('The Financial Academy — "Smart Finances, Secure Future."', W / 2, H - 14, { align: "center" });
+  doc.text('The Financial Academy: "Smart Finances, Secure Future."', W / 2, H - 14, { align: "center" });
 
   return doc;
 }

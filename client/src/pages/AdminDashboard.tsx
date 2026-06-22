@@ -146,7 +146,7 @@ function AdminHelpChat() {
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 function fmtDate(d: any) {
-  if (!d) return "—";
+  if (!d) return "-";
   return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
 
@@ -297,15 +297,15 @@ function AuditLogPanel() {
                 <td className="px-4 py-2 text-slate-300 whitespace-nowrap">{new Date(r.createdAt).toLocaleString()}</td>
                 <td className="px-4 py-2 text-slate-300 whitespace-nowrap">
                   <span className="text-xs uppercase tracking-wide text-indigo-300">{r.actorType}</span>
-                  <div className="text-xs text-slate-400">{r.actorEmail || r.actorId || "—"}</div>
+                  <div className="text-xs text-slate-400">{r.actorEmail || r.actorId || "-"}</div>
                 </td>
                 <td className="px-4 py-2 text-white font-mono text-xs">{r.action}</td>
-                <td className="px-4 py-2 text-slate-300 text-xs">{r.targetType ? `${r.targetType}#${r.targetId}` : "—"}</td>
-                <td className="px-4 py-2 text-slate-300 text-xs">{r.orgId || "—"}</td>
+                <td className="px-4 py-2 text-slate-300 text-xs">{r.targetType ? `${r.targetType}#${r.targetId}` : "-"}</td>
+                <td className="px-4 py-2 text-slate-300 text-xs">{r.orgId || "-"}</td>
                 <td className="px-4 py-2 text-slate-400 text-xs max-w-[280px] truncate font-mono">
-                  {r.meta ? JSON.stringify(r.meta) : "—"}
+                  {r.meta ? JSON.stringify(r.meta) : "-"}
                 </td>
-                <td className="px-4 py-2 text-slate-400 text-xs">{r.ip || "—"}</td>
+                <td className="px-4 py-2 text-slate-400 text-xs">{r.ip || "-"}</td>
               </tr>
             ))}
           </tbody>
@@ -390,7 +390,7 @@ function DataTable({
               <tr key={i} className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
                 {columns.map(col => (
                   <td key={col.key} className="px-4 py-3 text-slate-300 whitespace-nowrap">
-                    {col.render ? col.render(row[col.key], row) : String(row[col.key] ?? "—")}
+                    {col.render ? col.render(row[col.key], row) : String(row[col.key] ?? "-")}
                   </td>
                 ))}
               </tr>
@@ -635,12 +635,12 @@ function OrgDialog({ existing, onClose }: { existing?: any; onClose: () => void 
             }))}>
             <SelectTrigger className="bg-slate-700 border-slate-600 text-white" data-testid="select-org-tier"><SelectValue /></SelectTrigger>
             <SelectContent className="bg-slate-800 border-slate-700">
-              <SelectItem value="starter" className="text-white hover:bg-slate-700">Starter — up to 50 students</SelectItem>
-              <SelectItem value="academy" className="text-white hover:bg-slate-700">Academy — up to 100 students</SelectItem>
-              <SelectItem value="institution" className="text-white hover:bg-slate-700">Institution — 250+ students (custom)</SelectItem>
+              <SelectItem value="starter" className="text-white hover:bg-slate-700">Starter (up to 50 students)</SelectItem>
+              <SelectItem value="academy" className="text-white hover:bg-slate-700">Academy (up to 100 students)</SelectItem>
+              <SelectItem value="institution" className="text-white hover:bg-slate-700">Institution, 250+ students (custom)</SelectItem>
               {existing?.subscription_tier && !["starter","academy","institution"].includes(existing.subscription_tier) && (
                 <SelectItem value={existing.subscription_tier} className="text-yellow-300 hover:bg-slate-700">
-                  {existing.subscription_tier} (legacy — please reassign)
+                  {existing.subscription_tier} (legacy, please reassign)
                 </SelectItem>
               )}
             </SelectContent>
@@ -720,7 +720,7 @@ function EnvCard({ env }: { env: any }) {
       {/* Join code banner */}
       {env.join_code && (
         <div className="mx-3 mb-3 rounded-lg bg-indigo-950 border border-indigo-700/60 px-3 py-2.5">
-          <p className="text-indigo-300 text-[10px] uppercase tracking-widest font-semibold mb-1.5">Student join code — share this with your class</p>
+          <p className="text-indigo-300 text-[10px] uppercase tracking-widest font-semibold mb-1.5">Student join code: share this with your class</p>
           <div className="flex items-center justify-between gap-3">
             <span
               className="text-white font-mono font-bold text-2xl tracking-[0.25em]"
@@ -885,7 +885,7 @@ function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => vo
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/admin/organizations", orgId, "lessons"] });
-      toast({ title: "Lesson created — remember to publish it!" });
+      toast({ title: "Lesson created. Remember to publish it!" });
       onClose();
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -968,7 +968,7 @@ function LessonPlanDialog({ orgId, onClose }: { orgId: string; onClose: () => vo
 
       {step === "content" && (
         <div className="space-y-4">
-          <p className="text-slate-300 text-xs">Add content sections — definitions, explanations, examples.</p>
+          <p className="text-slate-300 text-xs">Add content sections: definitions, explanations, examples.</p>
           {sections.map((sec, i) => (
             <div key={i} className="space-y-2 p-3 rounded-lg bg-slate-800 border border-slate-700">
               <div className="flex items-center justify-between">
@@ -1210,7 +1210,7 @@ function AdminEditLessonDialog({ orgId, lessonId, onClose }: { orgId: string; le
 
       {step === "content" && (
         <div className="space-y-4">
-          <p className="text-slate-300 text-xs">Edit content sections — all existing sections will be replaced on save.</p>
+          <p className="text-slate-300 text-xs">Edit content sections: all existing sections will be replaced on save.</p>
           {sections.map((sec, i) => (
             <div key={i} className="space-y-2 p-3 rounded-lg bg-slate-800 border border-slate-700">
               <div className="flex items-center justify-between">
@@ -1580,7 +1580,7 @@ function AiUsagePurgeCard() {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-slate-300 text-sm">
-          AI usage events accumulate over time — one row per AI call. Delete old records to keep the table fast.
+          AI usage events accumulate over time, one row per AI call. Delete old records to keep the table fast.
           Quota enforcement only needs the current month; trends only need a few months.
         </p>
         {statsLoading ? (
@@ -1589,11 +1589,11 @@ function AiUsagePurgeCard() {
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="bg-slate-900/60 rounded-lg p-3">
               <p className="text-slate-400 text-xs mb-1">Total rows</p>
-              <p className="text-slate-100 font-semibold text-lg" data-testid="text-ai-usage-total">{stats.total?.toLocaleString() ?? "—"}</p>
+              <p className="text-slate-100 font-semibold text-lg" data-testid="text-ai-usage-total">{stats.total?.toLocaleString() ?? "-"}</p>
             </div>
             <div className="bg-red-900/30 rounded-lg p-3 border border-red-800/40">
               <p className="text-red-300 text-xs mb-1">Older than {olderThanDays} days</p>
-              <p className="text-red-200 font-semibold text-lg" data-testid="text-ai-usage-purgeable">{stats.purgeable?.toLocaleString() ?? "—"}</p>
+              <p className="text-red-200 font-semibold text-lg" data-testid="text-ai-usage-purgeable">{stats.purgeable?.toLocaleString() ?? "-"}</p>
             </div>
           </div>
         ) : null}
@@ -1683,7 +1683,7 @@ function JobsPanel() {
       <AiUsagePurgeCard />
 
       <div>
-        <p className="text-slate-300 text-sm mb-3">Recent background work — paper extractions, CSV exports, and maintenance jobs.</p>
+        <p className="text-slate-300 text-sm mb-3">Recent background work: paper extractions, CSV exports, and maintenance jobs.</p>
         <Card className="bg-slate-800 border-slate-700">
           <CardContent className="p-0">
             {isLoading ? (
@@ -1713,8 +1713,8 @@ function JobsPanel() {
                         <td className="px-3 py-2">{statusBadge(j.status)}</td>
                         <td className="px-3 py-2">{j.attempts}/{j.maxAttempts}</td>
                         <td className="px-3 py-2 text-slate-300">{fmtDate(j.scheduledAt)}</td>
-                        <td className="px-3 py-2 text-slate-300">{j.completedAt ? fmtDate(j.completedAt) : "—"}</td>
-                        <td className="px-3 py-2 text-red-300 max-w-xs truncate" title={j.lastError || ""}>{j.lastError || "—"}</td>
+                        <td className="px-3 py-2 text-slate-300">{j.completedAt ? fmtDate(j.completedAt) : "-"}</td>
+                        <td className="px-3 py-2 text-red-300 max-w-xs truncate" title={j.lastError || ""}>{j.lastError || "-"}</td>
                         <td className="px-3 py-2">
                           {j.kind === "admin-csv-export" && j.status === "completed" && (
                             <a
@@ -1830,7 +1830,7 @@ function PerfAgentPanel() {
             Performance Intelligence Agent
           </h2>
           <p className="text-slate-400 text-sm mt-0.5">
-            Claude-powered scanner — analyses 6 core files for performance, reliability, and security issues.
+            Claude-powered scanner that analyses 6 core files for performance, reliability, and security issues.
             Runs automatically every hour and saves reports here.
           </p>
         </div>
@@ -1849,7 +1849,7 @@ function PerfAgentPanel() {
       {triggerMutation.isSuccess && (
         <div className="bg-yellow-900/30 border border-yellow-600 rounded-lg px-4 py-3 text-yellow-300 text-sm flex items-center gap-2" data-testid="banner-scan-queued">
           <Clock className="w-4 h-4 flex-shrink-0" />
-          Scan job queued! Claude is analysing 6 files — this takes ~20–40 seconds. The new report will appear in the list below.
+          Scan job queued! Claude is analysing 6 files, this takes ~20-40 seconds. The new report will appear in the list below.
         </div>
       )}
 
@@ -2111,14 +2111,14 @@ export default function AdminDashboard() {
             <h2 className="text-2xl font-bold">Platform Overview</h2>
             <ObservabilityCard />
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <MetricCard label="Total Students" value={overview?.totalStudents ?? "—"} icon={Users} color="bg-violet-600" />
-              <MetricCard label="Total Teachers" value={overview?.totalTeachers ?? "—"} icon={GraduationCap} color="bg-emerald-600" />
-              <MetricCard label="Total Classes" value={overview?.totalClasses ?? "—"} icon={BookOpen} color="bg-blue-600" />
-              <MetricCard label="Active Challenges" value={overview?.totalChallenges ?? "—"} icon={Trophy} color="bg-amber-600" />
-              <MetricCard label="Total Schools" value={overview?.totalSchools ?? "—"} icon={School} color="bg-pink-600" />
-              <MetricCard label="Total Sponsors" value={overview?.totalSponsors ?? "—"} icon={Coins} color="bg-teal-600" />
-              <MetricCard label="Enrollments" value={overview?.totalEnrollments ?? "—"} icon={Users} color="bg-indigo-600" />
-              <MetricCard label="Games Played" value={overview?.totalGames ?? "—"} icon={Trophy} color="bg-rose-600" />
+              <MetricCard label="Total Students" value={overview?.totalStudents ?? "-"} icon={Users} color="bg-violet-600" />
+              <MetricCard label="Total Teachers" value={overview?.totalTeachers ?? "-"} icon={GraduationCap} color="bg-emerald-600" />
+              <MetricCard label="Total Classes" value={overview?.totalClasses ?? "-"} icon={BookOpen} color="bg-blue-600" />
+              <MetricCard label="Active Challenges" value={overview?.totalChallenges ?? "-"} icon={Trophy} color="bg-amber-600" />
+              <MetricCard label="Total Schools" value={overview?.totalSchools ?? "-"} icon={School} color="bg-pink-600" />
+              <MetricCard label="Total Sponsors" value={overview?.totalSponsors ?? "-"} icon={Coins} color="bg-teal-600" />
+              <MetricCard label="Enrollments" value={overview?.totalEnrollments ?? "-"} icon={Users} color="bg-indigo-600" />
+              <MetricCard label="Games Played" value={overview?.totalGames ?? "-"} icon={Trophy} color="bg-rose-600" />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <Card className="bg-slate-800 border-slate-700 lg:col-span-1">
@@ -2181,7 +2181,7 @@ export default function AdminDashboard() {
                 <h2 className="text-2xl font-bold flex items-center gap-2">
                   <Globe className="w-6 h-6 text-indigo-400" /> Organizations
                 </h2>
-                <p className="text-slate-300 text-sm mt-0.5">Schools, credit unions and other partner organizations — powered by Supabase</p>
+                <p className="text-slate-300 text-sm mt-0.5">Schools, credit unions and other partner organizations (powered by Supabase)</p>
               </div>
               <div className="flex items-center gap-3">
                 {supabaseStatus && (
@@ -2275,8 +2275,8 @@ export default function AdminDashboard() {
               columns={[
                 { key: "name", label: "School Name" },
                 { key: "country", label: "Country" },
-                { key: "city", label: "City", render: v => v || "—" },
-                { key: "website", label: "Website", render: v => v ? <a href={v} target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">{v}</a> : "—" },
+                { key: "city", label: "City", render: v => v || "-" },
+                { key: "website", label: "Website", render: v => v ? <a href={v} target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">{v}</a> : "-" },
                 { key: "createdAt", label: "Date Added", render: v => fmtDate(v) },
                 { key: "id", label: "Actions", render: (v, row) => (
                   <div className="flex gap-2">
@@ -2338,7 +2338,7 @@ export default function AdminDashboard() {
                         <SelectItem value="none" className="text-slate-300 text-xs">Unlinked</SelectItem>
                         {allOrgEnvs.map((env: any) => (
                           <SelectItem key={env.id} value={env.id} className="text-xs">
-                            {env.org_name} — {env.display_name}
+                            {env.org_name}: {env.display_name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -2403,7 +2403,7 @@ export default function AdminDashboard() {
                 { key: "schoolName", label: "School" },
                 { key: "studentCount", label: "Students", render: v => <Badge className="bg-violet-900 text-violet-300">{v}</Badge> },
                 { key: "challengeCount", label: "Challenges" },
-                { key: "sponsorName", label: "Sponsor", render: v => v || "—" },
+                { key: "sponsorName", label: "Sponsor", render: v => v || "-" },
                 { key: "createdAt", label: "Created", render: v => fmtDate(v) },
                 {
                   key: "id",
@@ -2425,7 +2425,7 @@ export default function AdminDashboard() {
                         <SelectItem value="none" className="text-slate-300 text-xs">Unlinked</SelectItem>
                         {allOrgEnvs.map((env: any) => (
                           <SelectItem key={env.id} value={env.id} className="text-xs">
-                            {env.org_name} — {env.display_name}
+                            {env.org_name}: {env.display_name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -2466,10 +2466,10 @@ export default function AdminDashboard() {
               columns={[
                 { key: "name", label: "Sponsor Name" },
                 { key: "type", label: "Type", render: v => <Badge className="bg-teal-900 text-teal-300 capitalize">{String(v).replace("_", " ")}</Badge> },
-                { key: "contactName", label: "Contact", render: v => v || "—" },
-                { key: "contactEmail", label: "Email", render: v => v || "—" },
+                { key: "contactName", label: "Contact", render: v => v || "-" },
+                { key: "contactEmail", label: "Email", render: v => v || "-" },
                 { key: "country", label: "Country" },
-                { key: "website", label: "Website", render: v => v ? <a href={v} target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">{v}</a> : "—" },
+                { key: "website", label: "Website", render: v => v ? <a href={v} target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">{v}</a> : "-" },
                 { key: "createdAt", label: "Added", render: v => fmtDate(v) },
                 { key: "id", label: "Actions", render: (v, row) => (
                   <div className="flex gap-2">
@@ -2505,7 +2505,7 @@ export default function AdminDashboard() {
                 { key: "description", label: "Description", render: v => <span className="text-slate-300 text-xs">{String(v).slice(0, 60)}{String(v).length > 60 ? "..." : ""}</span> },
                 { key: "startDate", label: "Start", render: v => fmtDate(v) },
                 { key: "endDate", label: "End", render: v => fmtDate(v) },
-                { key: "targetValue", label: "Target", render: v => v ? `$${v}` : "—" },
+                { key: "targetValue", label: "Target", render: v => v ? `$${v}` : "-" },
                 { key: "createdAt", label: "Created", render: v => fmtDate(v) },
               ]}
             />
@@ -2581,7 +2581,7 @@ export default function AdminDashboard() {
                 </SelectContent>
               </Select>
             </div>
-            <p className="text-slate-300 text-sm">Viewing table: <span className="text-indigo-400 font-mono">{dbTable}</span> — {dbRows.length} rows (max 500)</p>
+            <p className="text-slate-300 text-sm">Viewing table: <span className="text-indigo-400 font-mono">{dbTable}</span> ({dbRows.length} rows, max 500)</p>
             {dbRows.length === 0 ? (
               <div className="rounded-lg border border-slate-700 bg-slate-800 p-8 text-center text-slate-300">No records in this table</div>
             ) : (

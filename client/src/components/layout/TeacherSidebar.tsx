@@ -19,12 +19,11 @@ export function TeacherSidebar() {
   const content = (
     <div className="flex flex-col h-full bg-gradient-to-b from-emerald-800 via-emerald-900 to-teal-950 text-white p-4">
       <div className="flex items-center gap-3 mb-8 mt-2">
-        <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center shadow">
-          <GraduationCap className="w-6 h-6 text-white" />
+        <div className="bg-white rounded-xl px-2 py-1 shadow-lg">
+          <img src="/logo.png" className="h-7 w-auto object-contain" alt="Finsight Lite" />
         </div>
         <div>
-          <p className="font-display font-bold text-sm leading-tight">Teacher Portal</p>
-          <p className="text-xs text-emerald-100 font-medium">FinSight Lite</p>
+          <p className="font-display font-bold text-sm leading-tight text-white">Teacher Portal</p>
         </div>
       </div>
 

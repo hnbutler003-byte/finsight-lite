@@ -623,9 +623,9 @@ registerJobHandler("org-weekly-email", async (job) => {
 </div>`;
       await sendEmail({
         to: admin.email,
-        subject: `Your Finsight Lite weekly update — ${org.name}`,
+        subject: `Your Finsight Lite weekly update: ${org.name}`,
         html,
-        text: `Finsight Lite weekly update — ${org.name}\n\nWeek of: ${weekStart}\nTotal students: ${studentIds.length}\nActive this week: ${activeCount}\nAvg XP: ${avgXp}\nLesson completion: ${lessonCompletionRate}%\n\nDashboard: ${baseUrl}/org/dashboard`,
+        text: `Finsight Lite weekly update: ${org.name}\n\nWeek of: ${weekStart}\nTotal students: ${studentIds.length}\nActive this week: ${activeCount}\nAvg XP: ${avgXp}\nLesson completion: ${lessonCompletionRate}%\n\nDashboard: ${baseUrl}/org/dashboard`,
         kind: "org_weekly_email",
         orgId: org.id,
       });

@@ -18,8 +18,8 @@ export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@finsightlite.com";
 export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 // SECURITY: warn loudly if admin credentials are using insecure defaults in production
 if (process.env.NODE_ENV === "production") {
-  if (!process.env.ADMIN_EMAIL) console.warn("[security] ADMIN_EMAIL env var not set — using insecure default");
-  if (!process.env.ADMIN_PASSWORD) console.warn("[security] ADMIN_PASSWORD env var not set — using insecure default 'admin123'");
+  if (!process.env.ADMIN_EMAIL) console.warn("[security] ADMIN_EMAIL env var not set, using insecure default");
+  if (!process.env.ADMIN_PASSWORD) console.warn("[security] ADMIN_PASSWORD env var not set, using insecure default 'admin123'");
 }
 
 export const isTeacher = (req: any, res: any, next: any) => {
