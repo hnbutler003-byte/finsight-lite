@@ -1,0 +1,1 @@
+- [Supabase lesson_plans schema drift](supabase-lesson-schema.md) — new columns in LessonPlan type must be manually ALTERed in live DB + NOTIFY pgrst to reload schema cache.

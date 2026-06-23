@@ -1,0 +1,50 @@
+This prompt addresses a set of predicted failure points across the app, prioritized by real-world likelihood and impact. Audit each before fixing, work through in order.
+
+---
+
+STAGE 1 — Confirm MoneyLab upload and Org Lessons upload got the same hardening as Teacher Lessons
+
+The recent upload hardening work (file type validation, size limits, magic-bytes integrity checks, YouTube URL validation) was applied to the teacher lesson upload path. Audit whether the following separate upload paths received the same protections, since they may be different code paths entirely:
+
+1. /moneylab/upload (student exam paper upload)
+2. /org/lessons (org-admin level lesson upload, noted in the prior audit as living in a separate orgs.ts route file)
+3. /org/branding (school logo upload)
+
+For any of these missing the same protections, apply equivalent hardening: file type restriction appropriate to that upload's purpose, sensible size limits shown upfront, and integrity verification before confirming success. For /org/branding specifically, add image dimension/aspect ratio validation so a poorly sized logo upload doesn't break layouts elsewhere in the app that render the org's branding.
+
+---
+
+STAGE 2 — Input validation on Budgets and Savings Goals
+
+Audit whether numeric inputs on /budgets and /savings currently allow negative numbers, non-numeric input, or unreasonably large numbers (e.g. a student typing 999999999) without validation. If unvalidated, add reasonable bounds checking: no negative amounts, a sensible maximum (e.g. consistent with realistic Bahamian dollar amounts already used elsewhere in dummy data), and clear inline error messages if a student enters something invalid. Confirm budget progress bars and charts cannot visually break (overflow, negative width, NaN display) regardless of input.
+
+---
+
+STAGE 3 — Investment Simulator graceful fallback for unbuilt territories
+
+Audit what a student sees on /invest if their territory does not yet have its own stock data built (per the recent Jamaica JSE work, Barbados, Trinidad and Tobago, and Eastern Caribbean may still be pending). If any territory currently shows a blank or broken simulator, replace this with a clear message such as "Investment data for your region is coming soon, explore using Bahamas market data in the meantime" with the option to view the Bahamas dataset rather than nothing at all.
+
+---
+
+STAGE 4 — Org duplicate registration check
+
+Audit /org/register for whether it currently checks if an organization with the same name or email domain already exists before allowing a new registration. If no check exists, add one: if a close match is found, show a message suggesting the user contact their existing org admin or reach out for help, rather than silently creating a duplicate, fragmented organization record.
+
+---
+
+STAGE 5 — Class selection clarity in teacher upload flow
+
+Audit the upload flow at /teacher/classes/:id for a teacher managing multiple classes. Confirm the currently selected class is clearly and unmistakably visible at the point of upload, so a teacher cannot accidentally publish content to the wrong class. If this isn't already clear, add a visible, prominent class name label directly in the upload/publish UI.
+
+---
+
+STAGE 6 — Founder admin security check
+
+Audit the authentication on /admin/login. Report what authentication currently protects this route (password only, or something stronger). Do not implement two-factor authentication in this stage, just report the current state clearly so a decision can be made on whether to prioritize strengthening it.
+
+---
+
+Constraints:
+- Do not change any unrelated functionality.
+- If any stage requires installing a new package, apply the known fix for the Replit package-lock.json proxy URL issue before committing: run `sed -i 's|http://package-firewall.replit.local/npm|https://registry.npmjs.org|g' package-lock.json`, verify with `grep -c "package-firewall.replit.local" package-lock.json` returning 0.
+- After completing all stages, print every file created or modified organized by stage, and confirm git push succeeded with the actual commit range shown (e.g. "abc123..def456 main -> main"), not just a claim that it succeeded.

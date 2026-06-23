@@ -1,0 +1,38 @@
+A real bug was just reported: attempting to edit information about The Financial Academy (FA242) organization produces an "Organization not found" error.
+
+---
+
+STAGE 1 — Reproduce and diagnose
+
+Before fixing anything, reproduce this error to understand its actual cause:
+
+1. Find The Financial Academy's organization record in the database directly (query the organizations table). Confirm the record exists, and note its exact id, name, and any other identifying fields.
+2. Identify which specific page or action triggers this error. Likely candidates: /org/dashboard, /org/branding, or a founder admin edit screen at /admin. Check each one where organization details can be edited and find which one throws "Organization not found."
+3. Once found, trace the actual code path: what query or lookup is failing to find the organization. Common causes to check for specifically:
+   - A mismatch between the org's id type (e.g. UUID vs integer) and what the lookup query expects
+   - The lookup using the wrong field (e.g. searching by a slug or display_label that doesn't match, instead of the actual id)
+   - A session or auth issue where the wrong org_id is being read from the logged-in user's token or session, rather than the actual organization being viewed
+   - The recent pricing tier / display_label changes (from earlier work introducing a custom display_label field) having altered the organization lookup logic in a way that broke existing records
+   - A stale or cached reference to an organization record that no longer matches what's in the database
+
+Report exactly which cause is responsible before writing a fix. Do not guess and patch blindly.
+
+---
+
+STAGE 2 — Fix the root cause
+
+Once the actual cause is identified, fix it directly. If the issue is related to the display_label or pricing tier changes from prior work, confirm the fix does not break that functionality for other organizations.
+
+If the issue turns out to be specific to The Financial Academy's record (for example, a malformed or duplicate record), fix that specific record's data rather than just patching around it, and report what was wrong with it.
+
+---
+
+STAGE 3 — Verify the fix and check for the same issue elsewhere
+
+After fixing, verify by actually attempting to edit The Financial Academy's information again and confirming it succeeds. Also check whether any other existing organization records could have the same underlying issue (for example, if the cause was a schema mismatch affecting all orgs created before a certain change), and report whether any others are at risk.
+
+---
+
+Constraints:
+- Do not delete or recreate The Financial Academy's organization record unless absolutely necessary, and if so, confirm first before doing it, since this is a real partner with real pilot data tied to it.
+- After completing, report the exact root cause found, the fix applied, and confirm editing FA242's information now works without error.
