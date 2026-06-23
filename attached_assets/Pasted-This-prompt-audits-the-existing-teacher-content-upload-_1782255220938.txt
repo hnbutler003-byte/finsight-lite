@@ -1,0 +1,56 @@
+This prompt audits the existing teacher content upload feature (uploading their own content and linking external YouTube videos for their class) and brings it up to the baseline standard expected of any serious EdTech platform: reliable on first try, validated before it breaks for a student, and clear when something goes wrong.
+
+---
+
+STAGE 1 — Audit current state
+
+Find the existing teacher content upload feature and report on each of the following before changing anything:
+
+1. What file types are currently accepted for upload (PDF, images, documents, video files directly, etc.)? Is there any validation on file type at all, or does it accept anything?
+2. Is there a file size limit? If so, what is it, and is it enforced before or after upload starts?
+3. How are YouTube links currently handled? Is the URL validated as an actual YouTube link before saving, or can any text be entered?
+4. What happens currently if a teacher uploads a file that's corrupted, an unsupported format, or a broken YouTube link? Does the student ever encounter a broken or blank lesson because of this, or is there a check in place?
+5. Is there any preview step for the teacher before publishing the content to their class, or does it go live immediately on upload with no confirmation?
+6. How are uploaded files named and stored? Are original file names preserved (risk of special characters or overly long names causing URL issues) or are they renamed to a safe internal format?
+7. Is uploaded content tested or rendered any differently on mobile vs desktop, given most students will access this primarily on mobile devices?
+
+Report all findings clearly before proceeding.
+
+---
+
+STAGE 2 — Fix file upload validation
+
+Implement the following, matching whatever upload mechanism already exists (don't rebuild the upload system from scratch, harden what's there):
+
+1. Restrict accepted file types to a defined safe list appropriate for lesson content: PDF, common image formats (JPG, PNG, WEBP), and common document formats (DOCX, PPTX) if not already restricted. Reject anything outside this list with a clear error message, not a silent failure.
+2. Enforce a reasonable file size limit (start with something like 25MB per file unless the existing infrastructure already has a different sensible limit) and show the limit to the teacher before they attempt the upload, not just after it fails.
+3. Rename uploaded files internally to a safe, generated filename (no special characters, no excessively long names) while preserving the teacher's original filename only as a display label, not as the actual stored file path.
+4. After a file uploads successfully, verify it before confirming success to the teacher. For PDFs and images, confirm the file is not corrupted and actually opens. Do not mark an upload as "successful" until this check passes.
+
+---
+
+STAGE 3 — Fix YouTube link validation
+
+1. Validate any YouTube URL a teacher enters against a real YouTube URL pattern before accepting it. Reject anything that isn't a valid YouTube link format, with a clear message like "This doesn't look like a valid YouTube link."
+2. Where feasible, check that the video actually exists and is embeddable (not private, not deleted, not age-restricted in a way that blocks embedding) before saving it to the lesson. If checking this programmatically isn't feasible in this environment, at minimum show the teacher a live preview of the embedded video immediately after they enter the link, so they can visually confirm it works before publishing.
+3. If a previously valid YouTube link later becomes broken (video deleted, set to private), this should not be silently invisible to the teacher, surface some way for them to notice broken links in their content list, even if it's only checked when they revisit that lesson in their dashboard, not necessarily in real time.
+
+---
+
+STAGE 4 — Add a teacher-side preview before publishing
+
+If no preview step currently exists, add one. Before content goes live to students, show the teacher exactly what students will see: the embedded video as it will render, the uploaded file as it will display, on a mobile-width preview if feasible, not just desktop. Require an explicit "Publish to class" action rather than having content go live the instant it's uploaded.
+
+---
+
+STAGE 5 — Student-side failure handling
+
+Audit what a student currently sees if they open a lesson with broken or missing content (a dead YouTube embed, a file that failed to load). If this currently shows a blank space or a generic error, replace it with a clear, friendly message such as "This content isn't available right now, let your teacher know" rather than a blank or broken-looking screen. This should use the existing design system (glass-card styling, consistent with other empty/error states already addressed in prior work).
+
+---
+
+Constraints:
+- Do not rebuild the upload system from scratch; harden and validate what already exists.
+- Do not change any unrelated lesson, quiz, or XP logic.
+- If this work requires installing any new packages (e.g. a file-type validation library, a YouTube URL parser), run a fresh npm install only if necessary, and if you do, apply the known fix for the Replit package-lock.json proxy URL issue: run `sed -i 's|http://package-firewall.replit.local/npm|https://registry.npmjs.org|g' package-lock.json`, then verify with `grep -c "package-firewall.replit.local" package-lock.json` returning 0, before committing.
+- After completing all stages, print every file created or modified organized by stage, and confirm: file type validation works, file size limits are enforced and shown upfront, YouTube link validation rejects invalid links, a teacher preview step exists before publishing, and students see a clear message instead of a blank screen for broken content.

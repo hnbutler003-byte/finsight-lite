@@ -1,8 +1,35 @@
 import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Link2, Upload, Library, X, PlayCircle, Loader2, Video, Check, AlertTriangle } from "lucide-react";
+import { Link2, Upload, Library, X, PlayCircle, Loader2, Video, Check, AlertTriangle, FileText, Image } from "lucide-react";
 import { useVideoEmbed } from "@/hooks/use-video-embed";
+
+const ACCEPTED_CONTENT_MIME_TYPES = new Set([
+  "video/mp4", "video/webm", "video/ogg", "video/quicktime",
+  "video/x-msvideo", "video/x-matroska",
+  "application/pdf",
+  "image/jpeg", "image/png", "image/webp",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+]);
+
+function isValidYouTubeUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    if (u.hostname === "youtu.be") return u.pathname.length > 1;
+    if (/^(www\.|m\.)?youtube\.com$/.test(u.hostname)) {
+      if ((u.searchParams.get("v") ?? "").length >= 11) return true;
+      if (/\/(?:shorts|live|embed)\/[A-Za-z0-9_-]{5,}/.test(u.pathname)) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+function looksLikeYouTube(url: string): boolean {
+  return /youtube|youtu\.be/i.test(url);
+}
 
 function extractYouTubeThumbUrl(url: string): string | null {
   try {
@@ -101,7 +128,7 @@ function VideoLibrarySheet({
     queryKey: [listEndpoint],
     queryFn: async () => {
       const r = await fetch(listEndpoint, { credentials: "include" });
-      if (!r.ok) throw new Error(`Failed to load video library (${r.status})`);
+      if (!r.ok) throw new Error(`Failed to load library (${r.status})`);
       return r.json();
     },
     retry: 1,
@@ -119,7 +146,7 @@ function VideoLibrarySheet({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Library className="w-5 h-5 text-blue-500" />
-            <span className="font-bold text-base">Video Library</span>
+            <span className="font-bold text-base">Content Library</span>
           </div>
           <button onClick={onClose} className={`p-1.5 rounded-lg hover:bg-black/10 ${mutedText}`}>
             <X className="w-4 h-4" />
@@ -133,14 +160,14 @@ function VideoLibrarySheet({
         ) : isError ? (
           <div className={`text-center py-8 space-y-2 ${mutedText}`}>
             <Video className="w-10 h-10 mx-auto opacity-40" />
-            <p className="text-sm font-medium">Could not load video library.</p>
+            <p className="text-sm font-medium">Could not load library.</p>
             <p className="text-xs">Check your connection or session and try again.</p>
           </div>
         ) : !videos?.length ? (
           <div className={`text-center py-8 space-y-2 ${mutedText}`}>
             <Video className="w-10 h-10 mx-auto opacity-40" />
-            <p className="text-sm">No videos uploaded yet.</p>
-            <p className="text-xs">Use the upload button to add videos to your library.</p>
+            <p className="text-sm">No files uploaded yet.</p>
+            <p className="text-xs">Use the upload button to add content to your library.</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
@@ -173,7 +200,7 @@ export function VideoField({
   value,
   onChange,
   darkMode,
-  label = "Lesson Video",
+  label = "Lesson Video / Content",
   uploadEndpoint = "/api/org-admin/videos/upload",
   listEndpoint = "/api/org-admin/videos",
 }: VideoFieldProps) {
@@ -181,6 +208,7 @@ export function VideoField({
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
+  const [youtubeUrlError, setYoutubeUrlError] = useState(false);
 
   const inputClass = darkMode
     ? "w-full rounded border border-slate-600 bg-slate-700 text-white px-3 py-2 text-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
@@ -198,7 +226,34 @@ export function VideoField({
   const { thumbnailUrl, isLoading: embedLoading, isError: embedError, isYouTube } = useVideoEmbed(value || null);
   const isDirect = value ? isDirectVideoUrl(value) : false;
 
+  const handleUrlChange = (url: string) => {
+    onChange(url);
+    if (looksLikeYouTube(url) && url.length > 15) {
+      setYoutubeUrlError(!isValidYouTubeUrl(url));
+    } else {
+      setYoutubeUrlError(false);
+    }
+  };
+
   const handleFileUpload = async (file: File) => {
+    if (!ACCEPTED_CONTENT_MIME_TYPES.has(file.type)) {
+      toast({
+        title: "Unsupported file type",
+        description: "Accepted: MP4, WebM, MOV, OGG, AVI · PDF · JPG, PNG, WEBP · DOCX, PPTX",
+        variant: "destructive",
+      });
+      return;
+    }
+    const isVideo = file.type.startsWith("video/");
+    const maxMB = isVideo ? 500 : 25;
+    if (file.size > maxMB * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: `Maximum size for this file type is ${maxMB} MB. Choose a smaller file.`,
+        variant: "destructive",
+      });
+      return;
+    }
     setUploading(true);
     try {
       const fd = new FormData();
@@ -214,7 +269,8 @@ export function VideoField({
       }
       const data = await res.json();
       onChange(data.url);
-      toast({ title: "Video uploaded", description: data.name });
+      setYoutubeUrlError(false);
+      toast({ title: "File uploaded", description: data.name });
     } catch (e: any) {
       toast({ title: "Upload failed", description: e.message, variant: "destructive" });
     } finally {
@@ -234,15 +290,15 @@ export function VideoField({
           <input
             type="url"
             value={value}
-            onChange={e => onChange(e.target.value)}
-            placeholder="YouTube URL or paste video link…"
+            onChange={e => handleUrlChange(e.target.value)}
+            placeholder="YouTube URL or paste video link..."
             className={`${inputClass} pl-9`}
             data-testid="input-lesson-video-url"
           />
           {value && (
             <button
               type="button"
-              onClick={() => onChange("")}
+              onClick={() => { onChange(""); setYoutubeUrlError(false); }}
               className={`absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-black/10 ${mutedText}`}
               data-testid="button-clear-video-url"
             >
@@ -254,7 +310,7 @@ export function VideoField({
         <input
           ref={fileRef}
           type="file"
-          accept="video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo,video/x-matroska"
+          accept="video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo,video/x-matroska,application/pdf,image/jpeg,image/png,image/webp,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation"
           className="hidden"
           onChange={e => {
             const file = e.target.files?.[0];
@@ -268,11 +324,11 @@ export function VideoField({
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
           className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 text-xs font-bold transition-all ${btnClass}`}
-          title="Upload video from device"
+          title="Upload file from device (video, PDF, image, DOCX, PPTX — max 25 MB for documents, 500 MB for video)"
           data-testid="button-upload-video"
         >
           {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-          <span className="hidden sm:inline">{uploading ? "Uploading…" : "Upload"}</span>
+          <span className="hidden sm:inline">{uploading ? "Uploading..." : "Upload"}</span>
         </button>
 
         <button
@@ -287,10 +343,25 @@ export function VideoField({
         </button>
       </div>
 
+      <p className={`text-[11px] ${mutedText} flex items-center gap-1`}>
+        <FileText className="w-3 h-3 shrink-0" />
+        Upload: MP4, WebM, MOV, OGG · PDF · JPG, PNG, WEBP · DOCX, PPTX
+        <span className="mx-1">·</span>
+        <Image className="w-3 h-3 shrink-0" />
+        Max 25 MB (documents/images) or 500 MB (video)
+      </p>
+
+      {youtubeUrlError && (
+        <p className="text-xs text-destructive flex items-center gap-1.5" data-testid="warning-youtube-url-invalid">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+          This doesn't look like a valid YouTube link. Try a full URL like https://youtube.com/watch?v=...
+        </p>
+      )}
+
       {isYouTube && embedLoading && (
         <div className={`flex items-center gap-2 text-xs ${mutedText}`}>
           <Loader2 className="w-3 h-3 animate-spin" />
-          Checking video…
+          Checking video...
         </div>
       )}
 
@@ -314,7 +385,7 @@ export function VideoField({
       {isYouTube && embedError && !embedLoading && (
         <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1.5" data-testid="warning-video-unresolvable">
           <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-          This YouTube URL could not be verified. Students may not see an embedded player.
+          This video could not be verified. It may be private, deleted, or age-restricted. Students will not see a working player.
         </p>
       )}
 
@@ -332,7 +403,7 @@ export function VideoField({
       {value && !isYouTube && !isDirect && (
         <p className={`text-xs ${mutedText} flex items-center gap-1`}>
           <Link2 className="w-3 h-3" />
-          External video URL saved. Preview not available for this URL type.
+          File saved. Preview not available in editor — students will see a download/open link.
         </p>
       )}
 

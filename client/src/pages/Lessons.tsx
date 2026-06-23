@@ -11,7 +11,7 @@ import {
   Target, ListChecks, BookMarked, KeyRound, PiggyBank,
   TrendingUp, Wallet, Lightbulb, ShoppingCart, BarChart3,
   Layers, ChevronDown, ChevronUp, Play, Lock, Download, Video,
-  Globe, Smartphone, Shield,
+  Globe, Smartphone, Shield, AlertTriangle,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { jsPDF } from "jspdf";
@@ -272,7 +272,7 @@ function generateCertificate(
 const HTML5_VIDEO_EXTS = [".mp4", ".webm", ".ogg"];
 
 function LessonVideoPlayer({ url }: { url: string | null | undefined }) {
-  const { embedUrl, isLoading, isYouTube } = useVideoEmbed(url ?? "");
+  const { embedUrl, isLoading, isError, isYouTube } = useVideoEmbed(url ?? "");
 
   if (!url) return null;
 
@@ -314,6 +314,23 @@ function LessonVideoPlayer({ url }: { url: string | null | undefined }) {
               className="w-full h-full"
             />
           </div>
+        </Card>
+      );
+    }
+    if (isError) {
+      return (
+        <Card className="glass-card rounded-glass border-0">
+          <CardContent className="p-5 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="w-5 h-5 text-amber-400" />
+            </div>
+            <div>
+              <p className="font-bold text-sm">Video not available</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                This video isn't available right now. Let your teacher know.
+              </p>
+            </div>
+          </CardContent>
         </Card>
       );
     }

@@ -44,14 +44,55 @@ const logoUpload = multer({
   },
 });
 
+const LESSON_UPLOAD_MAX_VIDEO = 500 * 1024 * 1024;
+const LESSON_UPLOAD_MAX_DOC   =  25 * 1024 * 1024;
+
+const LESSON_CONTENT_ALLOWED_MIMES = new Set([
+  "video/mp4", "video/webm", "video/ogg", "video/quicktime",
+  "video/x-msvideo", "video/x-matroska",
+  "application/pdf",
+  "image/jpeg", "image/png", "image/webp",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+]);
+
+const LESSON_CONTENT_MIME_TO_EXT: Record<string, string> = {
+  "video/mp4": "mp4", "video/webm": "webm", "video/ogg": "ogv",
+  "video/quicktime": "mov", "video/x-msvideo": "avi", "video/x-matroska": "mkv",
+  "application/pdf": "pdf",
+  "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
+};
+
+function checkLessonFileIntegrity(buf: Buffer, mime: string): boolean {
+  if (!buf || buf.length < 8) return false;
+  const m = mime.toLowerCase();
+  if (m === "application/pdf")
+    return buf.slice(0, 4).toString("ascii") === "%PDF";
+  if (m === "image/jpeg")
+    return buf[0] === 0xff && buf[1] === 0xd8;
+  if (m === "image/png")
+    return buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+  if (m === "image/webp")
+    return buf.length >= 12 &&
+      buf.slice(0, 4).toString("ascii") === "RIFF" &&
+      buf.slice(8, 12).toString("ascii") === "WEBP";
+  if (m.includes("wordprocessingml") || m.includes("presentationml"))
+    return buf[0] === 0x50 && buf[1] === 0x4b;
+  return true;
+}
+
 const videoUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 500 * 1024 * 1024 },
+  limits: { fileSize: LESSON_UPLOAD_MAX_VIDEO },
   fileFilter: (_req, file, cb) => {
-    if (/^video\/(mp4|webm|ogg|quicktime|x-msvideo|x-matroska)$/i.test(file.mimetype)) {
+    if (LESSON_CONTENT_ALLOWED_MIMES.has(file.mimetype.toLowerCase())) {
       cb(null, true);
     } else {
-      cb(new Error("Video must be MP4, WebM, OGG, MOV, AVI, or MKV"));
+      cb(new Error(
+        "Unsupported file type. Accepted: video (MP4, WebM, MOV, AVI, MKV, OGG), PDF, images (JPG, PNG, WEBP), DOCX, PPTX"
+      ));
     }
   },
 });
@@ -1441,18 +1482,22 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
         if (!admin) return res.status(401).json({ message: "Not found" });
         if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
-        const mimeToExt: Record<string, string> = {
-          "video/mp4": "mp4",
-          "video/webm": "webm",
-          "video/ogg": "ogv",
-          "video/quicktime": "mov",
-          "video/x-msvideo": "avi",
-          "video/x-matroska": "mkv",
-        };
-        const ext = mimeToExt[req.file.mimetype.toLowerCase()] || "mp4";
-        const safeName = (req.file.originalname || "video")
-          .replace(/[^a-zA-Z0-9._-]/g, "_")
-          .replace(/\.[^.]+$/, "");
+        const isVideoFile = req.file.mimetype.toLowerCase().startsWith("video/");
+        const maxSize = isVideoFile ? LESSON_UPLOAD_MAX_VIDEO : LESSON_UPLOAD_MAX_DOC;
+        if (req.file.size > maxSize) {
+          return res.status(413).json({
+            message: `File too large. Maximum size is ${isVideoFile ? "500 MB" : "25 MB"} for this file type.`,
+          });
+        }
+        if (!checkLessonFileIntegrity(req.file.buffer, req.file.mimetype)) {
+          return res.status(422).json({
+            message: "File appears corrupted or the content does not match its extension. Please check the file and try again.",
+          });
+        }
+
+        const ext = LESSON_CONTENT_MIME_TO_EXT[req.file.mimetype.toLowerCase()] || "bin";
+        const rawBase = (req.file.originalname || "upload").replace(/\.[^.]+$/, "");
+        const safeName = rawBase.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 40);
         const filename = `${safeName}-${Date.now()}-${crypto.randomBytes(4).toString("hex")}.${ext}`;
 
         const publicPaths = objectStorage.getPublicObjectSearchPaths();

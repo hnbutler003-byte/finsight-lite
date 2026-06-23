@@ -8,7 +8,7 @@ import {
   BookOpen, Plus, Loader2, Eye, EyeOff, ChevronDown, ChevronUp,
   GraduationCap, Clock, Tag, Target, Trash2, Pencil, Minus,
   PlayCircle, ArrowLeft, CheckCircle2, XCircle, ListChecks,
-  Video, X, Star
+  Video, X, Star, AlertTriangle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
@@ -708,7 +708,7 @@ function DeleteConfirmDialog({ lesson, onClose }: { lesson: LessonPlan; onClose:
 const HTML5_VIDEO_EXTS = [".mp4", ".webm", ".ogg"];
 
 function PreviewVideoPlayer({ url }: { url: string | null | undefined }) {
-  const { embedUrl, isLoading, isYouTube } = useVideoEmbed(url ?? "");
+  const { embedUrl, isLoading, isError, isYouTube } = useVideoEmbed(url ?? "");
 
   if (!url) return null;
   if (url === "coming_soon") {
@@ -748,6 +748,21 @@ function PreviewVideoPlayer({ url }: { url: string | null | undefined }) {
         </div>
       );
     }
+    if (isError) {
+      return (
+        <div className="flex items-center gap-3 rounded-2xl border bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 p-4">
+          <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div>
+            <p className="font-bold text-sm">Video not available</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              This video is private, deleted, or restricted. Update the link in the lesson editor.
+            </p>
+          </div>
+        </div>
+      );
+    }
   }
 
   const isHtml5 = HTML5_VIDEO_EXTS.some(ext => url.toLowerCase().endsWith(ext));
@@ -767,10 +782,22 @@ function PreviewVideoPlayer({ url }: { url: string | null | undefined }) {
         <Video className="w-5 h-5 text-teal-500" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-bold text-sm">Lesson Video</p>
+        <p className="font-bold text-sm">Lesson Content</p>
         <p className="text-xs text-muted-foreground mt-0.5 truncate">{url}</p>
       </div>
       <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-teal-600 hover:text-teal-700 shrink-0">Open →</a>
+    </div>
+  );
+}
+
+// ── Broken video warning (lesson card) ───────────────────────────────────────
+function BrokenVideoWarning({ url }: { url: string | null | undefined }) {
+  const { isYouTube, isLoading, isError } = useVideoEmbed(url ?? "");
+  if (!isYouTube || isLoading || !isError) return null;
+  return (
+    <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 mt-1" data-testid="warning-broken-video">
+      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+      Video link appears broken — update it before publishing to students
     </div>
   );
 }
@@ -1136,6 +1163,7 @@ function LessonCard({ lesson }: { lesson: LessonPlan }) {
                   <span className="flex items-center gap-1"><Target className="w-3 h-3" />{lesson.topic}</span>
                 )}
               </div>
+              <BrokenVideoWarning url={lesson.video_url} />
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Button
