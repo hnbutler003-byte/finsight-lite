@@ -27,7 +27,7 @@ export default function MoneyLabUpload() {
   });
 
   // Persist the active job id so a refresh / navigation away doesn't lose
-  // the live status surface — the user can come back and still see the
+  // the live status surface; the user can come back and still see the
   // current queued/processing/done/failed state.
   const JOB_KEY = "moneylab.activeJobId";
   const [activeJobId, setActiveJobIdState] = useState<number | null>(() => {

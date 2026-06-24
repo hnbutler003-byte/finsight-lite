@@ -62,7 +62,7 @@ export function useAuth() {
   useEffect(() => {
     try {
       if (user && user.id) {
-        // Use opaque user id only — no PII (no email/name) sent to Sentry.
+        // Use opaque user id only, no PII (no email/name) sent to Sentry.
         Sentry.setUser({ id: `user:${user.id}` });
       } else {
         Sentry.setUser(null);

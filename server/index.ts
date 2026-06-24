@@ -156,14 +156,14 @@ async function maybeRunAiUsagePurge() {
 function startAiUsagePurgeScheduler() {
   // First check 60 s after startup (give the DB time to settle).
   setTimeout(() => { void maybeRunAiUsagePurge(); }, 60_000);
-  // Then re-check every 6 hours — ensures we catch the month boundary
+  // Then re-check every 6 hours; ensures we catch the month boundary
   // even if the server restarts mid-month.
   setInterval(() => { void maybeRunAiUsagePurge(); }, 6 * 60 * 60 * 1000);
 }
 
 // ── Org weekly email scheduler ─────────────────────────────────────────────
 // Sends a weekly summary email to all org admins on Monday at 08:00 UTC.
-// Uses the jobs table for deduplication — checks for an existing job of
+// Uses the jobs table for deduplication; checks for an existing job of
 // kind "org-weekly-email" scheduled on or after this week's Monday trigger
 // before enqueuing a new one.
 async function maybeRunOrgWeeklyEmail() {

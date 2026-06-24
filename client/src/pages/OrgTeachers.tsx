@@ -64,7 +64,7 @@ export default function OrgTeachers() {
         title: "Password reset",
         description: data.emailSent
           ? "A temporary password has been emailed to the teacher."
-          : "Password reset — the teacher has no email address on file so no notification was sent.",
+          : "Password reset: the teacher has no email address on file so no notification was sent.",
       });
     },
     onError: (e: any) => {
@@ -235,7 +235,7 @@ export default function OrgTeachers() {
           <Card className="glass-card rounded-glass">
             <CardContent className="p-5">
               <p className="text-sm text-muted-foreground leading-relaxed">
-                <span className="font-semibold text-foreground">Removing a teacher</span> revokes their access to this organisation's classes and data but does not delete their account — they can be linked to other organisations.{" "}
+                <span className="font-semibold text-foreground">Removing a teacher</span> revokes their access to this organisation's classes and data but does not delete their account; they can be linked to other organisations.{" "}
                 <span className="font-semibold text-foreground">Password reset</span> generates a temporary password and emails it to the teacher's registered address.
               </p>
             </CardContent>

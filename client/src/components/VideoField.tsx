@@ -324,7 +324,7 @@ export function VideoField({
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
           className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 text-xs font-bold transition-all ${btnClass}`}
-          title="Upload file from device (video, PDF, image, DOCX, PPTX — max 25 MB for documents, 500 MB for video)"
+          title="Upload file from device (video, PDF, image, DOCX, PPTX; max 25 MB for documents, 500 MB for video)"
           data-testid="button-upload-video"
         >
           {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
@@ -403,7 +403,7 @@ export function VideoField({
       {value && !isYouTube && !isDirect && (
         <p className={`text-xs ${mutedText} flex items-center gap-1`}>
           <Link2 className="w-3 h-3" />
-          File saved. Preview not available in editor — students will see a download/open link.
+          File saved. Preview not available in editor; students will see a download/open link.
         </p>
       )}
 

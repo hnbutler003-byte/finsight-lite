@@ -1,5 +1,5 @@
 /* ============================================================
-   FINSIGHT LITE — Integrated Design System
+   FINSIGHT LITE: Integrated Design System
    ============================================================
 
    ── CONTRAST RULES (read before adding any text colour) ──────
@@ -7,19 +7,19 @@
    AND dark mode. Violations cause invisible text.
 
    1. caribbean-bg is ALWAYS dark (hardcoded deep purple/navy).
-      ✅ Use text-white, text-white/80 etc. on it — always correct.
+      ✅ Use text-white, text-white/80 etc. on it: always correct.
       ❌ Never use text-foreground or muted-foreground on it.
 
    2. glass-card / glass-card-heavy adapts:
         Light mode → white/translucent    Dark mode → dark purple
-      ✅ Use text-foreground (semantic token) — adapts automatically.
+      ✅ Use text-foreground (semantic token), adapts automatically.
       ❌ Never hardcode text-gray-800, text-gray-700, text-teal-900,
-         text-blue-900 etc. inside these cards — they vanish in dark mode.
+         text-blue-900 etc. inside these cards; they vanish in dark mode.
       ✅ If you need a tinted label, always pair it:
          e.g.  text-teal-800 dark:text-teal-200
 
    3. glass-card-coral / glass-card-teal follow the same pattern.
-      Both have .dark overrides defined below — don't remove them.
+      Both have .dark overrides defined below; don't remove them.
 
    4. For any coloured inline badge/pill on a coloured background,
       always add both light AND dark variants:
@@ -37,24 +37,24 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── 3. DESIGN TOKENS (:root — light mode) ───────────────── */
+/* ── 3. DESIGN TOKENS (:root, light mode) ───────────────── */
 :root {
   /* --- Fonts --- */
   --font-display: 'Baloo 2', cursive;
   --font-body:    'Nunito', sans-serif;
   --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
 
-  /* --- Brand — Primary (violet/purple) --- */
+  /* --- Brand: Primary (violet/purple) --- */
   --primary:            262 83% 58%;
   --primary-foreground: 0 0% 100%;
   --primary-border:     hsl(262 83% 48%);
 
-  /* --- Brand — Secondary (amber/gold) --- */
+  /* --- Brand: Secondary (amber/gold) --- */
   --secondary:            32 95% 60%;
   --secondary-foreground: 0 0% 100%;
   --secondary-border:     hsl(32 95% 50%);
 
-  /* --- Coral accent — gamification only (XP, streaks, badges) --- */
+  /* --- Coral accent: gamification only (XP, streaks, badges) --- */
   --coral:            15 90% 65%;
   --coral-foreground: 0 0% 100%;
   --coral-border:     hsl(15 90% 55%);
@@ -121,7 +121,7 @@
   --chart-4: 32  95% 60%;
   --chart-5: 142 70% 45%;
 
-  /* --- Sidebar (student portal — violet/purple) --- */
+  /* --- Sidebar (student portal, violet/purple) --- */
   --sidebar:                    262 60% 14%;
   --sidebar-foreground:         270 20% 92%;
   --sidebar-border:             262 40% 22%;

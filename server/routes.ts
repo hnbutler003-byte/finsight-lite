@@ -31,12 +31,12 @@ export async function registerRoutes(
     next();
   });
 
-  // Health check — used by Railway and uptime monitors
+  // Health check: used by Railway and uptime monitors
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", ts: Date.now() });
   });
 
-  // robots.txt — served dynamically so the Sitemap directive uses an absolute URL
+  // robots.txt: served dynamically so the Sitemap directive uses an absolute URL
   app.get("/robots.txt", (req, res) => {
     const proto = req.headers["x-forwarded-proto"] || req.protocol || "https";
     const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost";
@@ -90,7 +90,7 @@ ${urls.map(u => `  <url>
     }
   });
 
-  // Auth rate limiting — must be applied before auth routes are registered
+  // Auth rate limiting: must be applied before auth routes are registered
   app.use("/api/auth/register", authLimiter);
   app.use("/api/auth/google", authLimiter);
   app.use("/api/teacher/auth/register", authLimiter);
@@ -106,7 +106,7 @@ ${urls.map(u => `  <url>
   await setupAuth(app);
   registerAuthRoutes(app);
 
-  // Sentry request-scoped context — after setupAuth so session is populated
+  // Sentry request-scoped context: after setupAuth so session is populated
   const { sentryRequestContext } = await import("./sentry");
   app.use(sentryRequestContext);
 
@@ -145,7 +145,7 @@ ${urls.map(u => `  <url>
     .then(() => seedGameContent())
     .catch(e => console.error("[Supabase] Init error:", e));
 
-  // Domain routers — loaded in parallel to reduce cold-start time
+  // Domain routers: loaded in parallel to reduce cold-start time
   const [
     { registerAuthDomainRoutes },
     { registerStudentRoutes },

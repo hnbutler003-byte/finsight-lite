@@ -507,7 +507,7 @@ export default function InvestmentSimulator() {
                 </Card>
               </div>
 
-              {/* BISX live-price widget — BSD only */}
+              {/* BISX live-price widget (BSD only) */}
               {currency === "BSD" && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
@@ -518,7 +518,7 @@ export default function InvestmentSimulator() {
                 </div>
               )}
 
-              {/* JSE live-price widget — JMD only */}
+              {/* JSE live-price widget (JMD only) */}
               {currency === "JMD" && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">

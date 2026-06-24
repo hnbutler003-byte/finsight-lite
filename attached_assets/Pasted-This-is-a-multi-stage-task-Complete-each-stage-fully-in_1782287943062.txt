@@ -1,0 +1,61 @@
+This is a multi-stage task. Complete each stage fully, in order, before moving to the next. After each stage, briefly report what was done before continuing to the next stage. Do not skip ahead or merge stages together.
+
+---
+
+STAGE 1 — Audit
+
+Before building anything, check and report on the following:
+
+1. How the existing Investment Simulator's BISX stock chart is built for the Bahamas: where ticker data lives, how the chart component renders it, how territory selection routes a user to the correct stock set.
+2. Whether Jamaica, Barbados, Trinidad and Tobago, or Eastern Caribbean territories currently show any stock data in the Investment Simulator, or default to BISX regardless of territory.
+3. How the existing lesson/module system works: file structure, how modules are assigned to a territory, how XP and completion tracking work for existing modules. This is needed for Stage 3.
+
+Report findings for all three before proceeding to Stage 2.
+
+---
+
+STAGE 2 — Jamaica JSE parity
+
+Using the same chart structure and styling as the BISX implementation, add a Jamaica-specific stock set using real Jamaica Stock Exchange tickers:
+- NCBFG (NCB Financial Group)
+- GK (GraceKennedy)
+- Add 2-3 more well-known JSE Main Market tickers if identifiable from existing reference data, otherwise leave a clear comment marking where more should be added later.
+
+Reuse the existing chart component, only the underlying ticker data changes for Jamaica. Ensure territory selection correctly routes Jamaican users to JSE tickers instead of BISX tickers.
+
+Then report on Barbados, Trinidad and Tobago, and Eastern Caribbean: does each have its own stock data, or fall back to BISX? Do not build new ticker sets for these yet, just report the current state.
+
+Do not change the BISX implementation. Do not change unrelated lesson or game content. Use only real, accurate ticker symbols, never invented placeholders.
+
+---
+
+STAGE 3 — Sand Dollar education module
+
+Add one new module, territory-gated to Bahamas only, called "Understanding the Sand Dollar" (or similar, matching existing naming conventions). Cover across 2-4 lessons:
+
+1. What the Sand Dollar is: a digital version of the Bahamian dollar issued directly by the Central Bank of The Bahamas, not a cryptocurrency, with the same value and legal status as cash.
+2. Why it exists: to make digital payments accessible across all the islands, including remote ones where banks and ATMs are scarce.
+3. How it works in practice: mobile wallet use, paying with a QR code, the wallet tier system (Basic and Premium tiers with different limits).
+4. Why it matters personally: financial inclusion, faster and safer payments, the difference between a CBDC and cryptocurrency since these are commonly confused.
+
+Write at a reading level appropriate for ages 12-17, consistent with the tone of existing lessons, no overly technical monetary policy language.
+
+Integrate this module into the existing XP, completion tracking, and quiz structure so it behaves identically to existing modules. Follow the existing design system throughout: glass-card panels, Baloo 2 headings, Nunito body text, no new colors outside the existing token set.
+
+This module is Bahamas-only. Do not show it to Jamaica, Barbados, Trinidad and Tobago, or Eastern Caribbean territory users. Do not alter any existing lesson, module, or XP logic for other content.
+
+---
+
+STAGE 4 — Final em dash check
+
+Search the entire codebase one more time for any remaining em dash characters (—) in any page, component, copy string, or content file, including anything just added in Stage 2 or Stage 3. Replace any found with grammatically correct punctuation (comma, period and new sentence, colon, or parentheses), never just deleted. Report the result of this final search, confirm zero remain.
+
+---
+
+STAGE 5 — Push to git
+
+Once all prior stages are complete and verified, stage and commit all changes with a clear, descriptive commit message summarizing the work (Jamaica JSE parity, Sand Dollar module, em dash cleanup). Push to the "github" remote on the main branch. Confirm the push succeeded and report the commit hash.
+
+---
+
+After completing all five stages, print a final summary: every file created or modified, organized by stage, and confirm the git push completed successfully.

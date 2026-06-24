@@ -821,7 +821,7 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
 
         const sendRes = await sendEmail({
           to: teacher.email,
-          subject: "FinSight Lite — Your password has been reset",
+          subject: "FinSight Lite: Your password has been reset",
           html,
           kind: "teacher_password_reset",
           orgId: admin.orgId,
@@ -1158,7 +1158,7 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
     const studentIds: string[] = (orgStudents ?? []).map((s: any) => s.student_user_id);
     if (studentIds.length === 0) return res.json([]);
 
-    // TODO: table or column missing — game_name (text) column needed on game_sessions table.
+    // TODO: table or column missing. game_name (text) column needed on game_sessions table.
     // Currently game_sessions only tracks mode ("quiz"|"timed"|"challenge"), not the specific
     // game title. To wire this up, either:
     //   (a) add a game_name text column to game_sessions and populate it when sessions are created, or
@@ -1309,7 +1309,7 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
       return hasRecentXp || hasRecentLesson ? count + 1 : count;
     }, 0);
 
-    // Student table — up to 25 rows, sorted by XP desc
+    // Student table: up to 25 rows, sorted by XP desc
     const tableIds = studentIds.slice(0, 25);
     const tableRows: Array<{ name: string; totalXp: number; lessonsCompleted: number; lastActive: string }> = [];
     for (let i = 0; i < tableIds.length; i++) {
@@ -1416,7 +1416,7 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
     doc.end();
   });
 
-  // === ORG ADMIN: EMAIL TEST — TEMPORARY, remove after confirmation ===
+  // === ORG ADMIN: EMAIL TEST (TEMPORARY, remove after confirmation) ===
   app.get("/api/org/email-test", isOrgAdmin, async (req: any, res) => {
     const admin = await storage.getOrgAdminById(req.session.orgAdminId);
     if (!admin) return res.status(401).json({ message: "Unauthorized" });

@@ -203,7 +203,7 @@ Rules:
     return { paperId, questionCount: questions.length, subject: detectedSubject };
   }
 
-  // === Admin CSV export — writes to private object storage ===
+  // === Admin CSV export: writes to private object storage ===
   registerJobHandler("admin-csv-export", async (job) => {
     const { type } = job.payload;
     type AdminRow = Record<string, unknown>;

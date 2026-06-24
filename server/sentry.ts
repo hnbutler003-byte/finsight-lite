@@ -44,7 +44,7 @@ export function sentryRequestContext(req: Request, _res: Response, next: NextFun
   try {
     Sentry.withIsolationScope((scope) => {
       const sess = (req as any).session ?? {};
-      // Use OPAQUE non-PII identifiers only — never raw email.
+      // Use OPAQUE non-PII identifiers only, never raw email.
       let id: string | undefined;
       if (sess.isAdmin) id = "admin";
       else if (sess.orgAdminId) id = `org_admin:${sess.orgAdminId}`;
@@ -86,7 +86,7 @@ export function sentryRequestContext(req: Request, _res: Response, next: NextFun
 }
 
 // (legacy) globally-scoped helper kept for ad-hoc background contexts. Avoid
-// using inside per-request handlers — use sentryRequestContext middleware.
+// using inside per-request handlers; use sentryRequestContext middleware.
 export function setSentryUser(user: { id?: string | number; orgId?: string } | null) {
   if (!initialized) return;
   try {

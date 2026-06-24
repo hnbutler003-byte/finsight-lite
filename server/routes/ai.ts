@@ -170,7 +170,7 @@ export async function registerAiRoutes(app: Express): Promise<void> {
     }
   });
 
-  // SECURITY: admin-only — exposes all students' papers; must not be accessible to students.
+  // SECURITY: admin-only. Exposes all students' papers; must not be accessible to students.
   app.get("/api/moneylab/papers/all", isAdmin, async (req, res) => {
     try {
       const { examPapers } = await import("@shared/schema");
@@ -187,7 +187,7 @@ export async function registerAiRoutes(app: Express): Promise<void> {
     }
   });
 
-  // SECURITY: ownership enforced — students may only fetch their own paper.
+  // SECURITY: ownership enforced. Students may only fetch their own paper.
   app.get("/api/moneylab/papers/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
@@ -753,7 +753,7 @@ If the user asks about FinSight Lite features, you can mention:
     }
   });
 
-  // Admin Help Chat — powered by Anthropic Claude
+  // Admin Help Chat: powered by Anthropic Claude
   app.post("/api/admin/help-chat", isAdmin, async (req, res) => {
     try {
       const { messages } = req.body;

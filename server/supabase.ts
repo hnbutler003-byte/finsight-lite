@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS org_students (
   UNIQUE(env_id, student_user_id)
 );
 
--- Leaderboard snapshots (heavy data — lives in Supabase)
+-- Leaderboard snapshots (heavy data, lives in Supabase)
 CREATE TABLE IF NOT EXISTS leaderboard_snapshots (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id uuid REFERENCES organizations(id) ON DELETE CASCADE,
@@ -163,7 +163,7 @@ CREATE TABLE IF NOT EXISTS leaderboard_snapshots (
   UNIQUE(env_id, student_user_id, snapshot_date)
 );
 
--- Global analytics events (heavy data — lives in Supabase)
+-- Global analytics events (heavy data, lives in Supabase)
 CREATE TABLE IF NOT EXISTS analytics_events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id uuid REFERENCES organizations(id) ON DELETE SET NULL,
@@ -269,7 +269,7 @@ export async function initSupabaseTables(): Promise<void> {
       if (applied) {
         console.log("[Supabase] ✓ Applied organization schema columns.");
       } else {
-        console.warn("[Supabase] ⚠ Missing organization columns — run applyBrandingColumnsViaPg() or apply the ALTER TABLE statements in your Supabase SQL editor.");
+        console.warn("[Supabase] ⚠ Missing organization columns. Run applyBrandingColumnsViaPg() or apply the ALTER TABLE statements in your Supabase SQL editor.");
       }
     }
   } else if (
@@ -298,7 +298,7 @@ export async function getOrganization(id: string): Promise<Organization | null> 
   const hit = cacheGet<Organization>(key);
   if (hit) return hit;
   const { data, error } = await supabase.from("organizations").select("*").eq("id", id).single();
-  // Don't cache transient errors / missing rows — retry on next request instead of
+  // Don't cache transient errors / missing rows; retry on next request instead of
   // serving stale "not found" for the full TTL.
   if (error || !data) return null;
   cacheSet(key, data as Organization, 5 * 60_000);
@@ -334,7 +334,7 @@ export async function updateOrganization(id: string, updates: Partial<Organizati
   const payload = typeof updates.name === "string" ? { ...updates, name: updates.name.trim() } : updates;
   const { data, error } = await supabase.from("organizations").update(payload).eq("id", id).select().single();
   if (error) {
-    if (error.code === "PGRST116") return null; // no matching row — caller may treat as 404
+    if (error.code === "PGRST116") return null; // no matching row; caller may treat as 404
     const msg = `[Supabase] updateOrganization failed: ${error.message}`;
     console.error(msg);
     throw new Error(msg);
@@ -397,7 +397,7 @@ function randomCode(len = 6): string {
 
 export async function generateUniqueJoinCode(): Promise<string> {
   if (!supabase) return randomCode();
-  // Retry on collision — with 32^6 = ~1B possible codes, collision probability is negligible
+  // Retry on collision; with 32^6 = ~1B possible codes, collision probability is negligible
   for (let attempt = 0; attempt < 20; attempt++) {
     const code = randomCode();
     const { data } = await supabase.from("org_environments").select("id").eq("join_code", code).limit(1);
@@ -591,7 +591,7 @@ export async function toggleLessonPublish(lessonId: string, isPublished: boolean
   const { data, error } = await supabase
     .from("lesson_plans").update({ is_published: isPublished }).eq("id", lessonId).select().single();
   if (error) {
-    if (error.code === "PGRST116") return null; // lesson not found — caller treats as 404
+    if (error.code === "PGRST116") return null; // lesson not found; caller treats as 404
     const msg = `[Supabase] toggleLessonPublish failed: ${error.message}`;
     console.error(msg);
     throw new Error(msg);
@@ -604,7 +604,7 @@ export async function updateLessonPlan(lessonId: string, updates: Partial<Omit<L
   const { data, error } = await supabase
     .from("lesson_plans").update(updates).eq("id", lessonId).select().single();
   if (error) {
-    if (error.code === "PGRST116") return null; // lesson not found — caller treats as 500
+    if (error.code === "PGRST116") return null; // lesson not found; caller treats as 500
     const msg = `[Supabase] updateLessonPlan failed: ${error.message}`;
     console.error(msg);
     throw new Error(msg);
@@ -646,7 +646,7 @@ function normalizeLessonPlan(raw: any): LessonPlan {
   };
 }
 
-// ─── Seed: The Financial Academy — Needs & Wants lesson ───────────────────────
+// ─── Seed: The Financial Academy (Needs & Wants lesson) ───────────────────────
 
 export async function seedFinancialAcademyLesson(): Promise<void> {
   if (!supabase) return;

@@ -137,7 +137,7 @@ function getModuleVisual(moduleId: string): StaticModuleVisual {
   return MODULE_VISUAL_CONFIG[moduleId] ?? MODULE_VISUAL_CONFIG.budgeting;
 }
 
-// ─── OECD-Aligned Static Modules (legacy reference — unused, tree-shaken in prod) ──
+// ─── OECD-Aligned Static Modules (legacy reference, unused, tree-shaken in prod) ──
 
 type StaticLesson = {
   id: string;

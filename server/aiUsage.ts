@@ -188,7 +188,7 @@ export async function recordCachedUsage(args: {
   }
 }
 
-// Legacy wrappers — preserved in case other call sites import them, but the
+// Legacy wrappers: preserved in case other call sites import them, but the
 // recommended pattern is reserveQuota → finalizeUsage.
 export async function checkQuota(args: {
   userId?: string | null;

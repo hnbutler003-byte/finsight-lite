@@ -118,7 +118,7 @@ export default function DemoAccess() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-            {/* Teacher Card — visually primary */}
+            {/* Teacher Card (visually primary) */}
             <Card className="rounded-glass shadow-2xl border-2 border-emerald-400/60 bg-gradient-to-br from-emerald-700 via-emerald-800 to-teal-900 text-white">
               <CardContent className="p-6">
                 {/* Header badge */}
@@ -194,7 +194,7 @@ export default function DemoAccess() {
               </CardContent>
             </Card>
 
-            {/* Student Card — single featured student */}
+            {/* Student Card (single featured student) */}
             <Card className="glass-card-coral rounded-glass shadow-2xl">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-5">

@@ -17,7 +17,7 @@ task #30's "Done looks like" that do **not** apply to this codebase.
 
 ### org_admin
 - `org_admin.account.created` (password + Google sign-in flows; the
-  closest equivalent to "promote user to admin" — see note below)
+  closest equivalent to "promote user to admin"; see note below)
 - `org_admin.ai_quota.update`
 - `org_admin.branding.update`
 - `org_admin.student.remove`
@@ -47,7 +47,7 @@ via a join code, which **is** audited as `org_admin.account.created`.
 
 - Actor types: `admin` | `org_admin` | `teacher` (extend as needed).
 - Action names: `<actor>.<resource>.<verb>` (lowercase, dot-separated).
-- `meta` is JSONB — store only non-PII context useful for forensics
+- `meta` is JSONB; store only non-PII context useful for forensics
   (record ids, before/after diffs of non-sensitive fields, source
   flag like `via: "google+joinCode"`).
 - Failures should be best-effort: `audit()` swallows its own errors so

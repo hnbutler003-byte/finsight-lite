@@ -27,7 +27,7 @@ export function getSession() {
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
-    rolling: true, // reset the cookie expiry on every request — keeps active users logged in indefinitely
+    rolling: true, // reset the cookie expiry on every request; keeps active users logged in indefinitely
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

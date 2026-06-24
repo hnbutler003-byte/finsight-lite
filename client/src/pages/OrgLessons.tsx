@@ -797,7 +797,7 @@ function BrokenVideoWarning({ url }: { url: string | null | undefined }) {
   return (
     <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 mt-1" data-testid="warning-broken-video">
       <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-      Video link appears broken — update it before publishing to students
+      Video link appears broken. Update it before publishing to students.
     </div>
   );
 }
@@ -882,7 +882,7 @@ function LessonPreviewModal({ lesson, onClose }: { lesson: LessonPlan; onClose: 
         </button>
       </div>
 
-      {/* Scrollable content area — caribbean-bg to match student experience */}
+      {/* Scrollable content area: caribbean-bg to match student experience */}
       <div className="flex-1 overflow-y-auto caribbean-bg">
         <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
 
