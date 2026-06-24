@@ -670,10 +670,16 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
       }
 
       let actorName = "";
+      const FORBIDDEN = { message: "Actor does not belong to the demo organisation" };
 
       if (role === "student") {
         const student = await storage.getUser(String(actorId));
         if (!student) return res.status(404).json({ message: "Student not found" });
+        // Verify the student is enrolled in a class belonging to the demo org
+        const demoStudents = await storage.getStudentsByOrgId(demoOrgId);
+        if (!demoStudents.some((s: any) => s.id === student.id)) {
+          return res.status(403).json(FORBIDDEN);
+        }
         actorName = `${student.firstName ?? ""} ${(student as any).lastName ?? ""}`.trim()
           || (student as any).username
           || "Demo Student";
@@ -681,15 +687,19 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
       } else if (role === "teacher") {
         const teacher = await storage.getTeacherById(Number(actorId));
         if (!teacher) return res.status(404).json({ message: "Teacher not found" });
+        // Verify teacher is assigned to the demo org
+        if (teacher.orgId !== demoOrgId) return res.status(403).json(FORBIDDEN);
         actorName = `${teacher.firstName} ${teacher.lastName ?? ""}`.trim();
         req.session.teacherId = String(teacher.id);
       } else {
         // org-admin
         const admin = await storage.getOrgAdminById(Number(actorId));
         if (!admin) return res.status(404).json({ message: "Org admin not found" });
+        // Verify org admin belongs to the demo org
+        if (admin.orgId !== demoOrgId) return res.status(403).json(FORBIDDEN);
         actorName = `${admin.firstName} ${admin.lastName ?? ""}`.trim();
         req.session.orgAdminId = String(admin.id);
-        req.session.orgId = admin.orgId ?? demoOrgId;
+        req.session.orgId = admin.orgId;
       }
 
       req.session.previewMode = true;
