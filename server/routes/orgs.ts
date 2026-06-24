@@ -674,6 +674,18 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
     const org = await getOrganization(admin.orgId);
     if (!org) return res.status(404).json({ message: "Organization not found" });
 
+    // Pending/rejected orgs get only a minimal safe payload — no join codes, no metrics,
+    // no environment data. The full dashboard is only available after approval.
+    if (org.status === "pending" || org.status === "rejected") {
+      return res.json({
+        org: { id: org.id, name: org.name, type: org.type, country: org.country, status: org.status },
+        plan: null,
+        env: null,
+        stats: null,
+        environments: [],
+      });
+    }
+
     const envs = await getOrgEnvironments(admin.orgId);
     const currentEnv = envs.find(e => e.id === admin.envId);
 
