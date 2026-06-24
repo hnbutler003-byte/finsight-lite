@@ -24,6 +24,7 @@ import {
   getOrgEnvironmentByJoinCode,
   getOrgEnvironmentById,
   enrollStudentInOrg,
+  invalidateOrganizationCache,
   type Organization,
 } from "../supabase";
 import { streamPrivateObjectToResponse } from "../jobHandlers";
@@ -523,6 +524,61 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
     res.json(orgs);
   });
 
+  // List pending orgs — MUST come before the /:id param route
+  app.get("/api/admin/organizations/pending", isAdmin, async (_req, res) => {
+    try {
+      if (!supabase) return res.status(503).json({ message: "Supabase not configured" });
+      const { data, error } = await supabase
+        .from("organizations")
+        .select("*")
+        .eq("status", "pending")
+        .order("created_at", { ascending: true });
+      if (error) throw new Error(`[Supabase] ${error.message}`);
+      res.json(data ?? []);
+    } catch (e: any) {
+      captureError(e, { route: "/api/admin/organizations/pending" });
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  app.post("/api/admin/organizations/:id/approve", isAdmin, async (req, res) => {
+    try {
+      const { tier } = z.object({
+        tier: z.enum(["starter", "academy", "institution"]).default("starter"),
+      }).parse(req.body);
+      const org = await updateOrganization(req.params.id, {
+        status: "active",
+        is_active: true,
+        subscription_tier: tier,
+      });
+      if (!org) return res.status(404).json({ message: "Organization not found" });
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.organization.approve", targetType: "organization", targetId: req.params.id, orgId: req.params.id, meta: { tier }, req });
+      await invalidateOrganizationCache(req.params.id);
+      res.json(org);
+    } catch (e: any) {
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
+    }
+  });
+
+  app.post("/api/admin/organizations/:id/reject", isAdmin, async (req, res) => {
+    try {
+      const org = await updateOrganization(req.params.id, {
+        status: "rejected",
+        is_active: false,
+      });
+      if (!org) return res.status(404).json({ message: "Organization not found" });
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.organization.reject", targetType: "organization", targetId: req.params.id, orgId: req.params.id, meta: {}, req });
+      await invalidateOrganizationCache(req.params.id);
+      res.json(org);
+    } catch (e: any) {
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
+    }
+  });
+
   app.get("/api/admin/organizations/:id", isAdmin, async (req, res) => {
     const org = await getOrganization(req.params.id);
     if (!org) return res.status(404).json({ message: "Organization not found" });
@@ -644,7 +700,7 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
     }));
 
     res.json({
-      org: { id: org?.id, name: org?.name, type: org?.type, country: org?.country },
+      org: { id: org?.id, name: org?.name, type: org?.type, country: org?.country, status: org?.status ?? "active" },
       plan: {
         tier: org?.subscription_tier ?? "standard",
         displayLabel: org?.display_label ?? null,

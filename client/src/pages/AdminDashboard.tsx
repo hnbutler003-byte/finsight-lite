@@ -152,6 +152,7 @@ function fmtDate(d: any) {
 
 const TABS = [
   { id: "overview", label: "Dashboard", icon: LayoutDashboard },
+  { id: "pending", label: "Pending Orgs", icon: Clock },
   { id: "organizations", label: "Organizations", icon: Globe },
   { id: "schools", label: "Schools", icon: School },
   { id: "teachers", label: "Teachers", icon: GraduationCap },
@@ -1973,6 +1974,7 @@ export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const { admin, isLoading, logout } = useAdminAuth();
   const [activeTab, setActiveTab] = useState("overview");
+  const [pendingTiers, setPendingTiers] = useState<Record<string, string>>({});
   const [schoolDialog, setSchoolDialog] = useState<{ open: boolean; existing?: any }>({ open: false });
   const [sponsorDialog, setSponsorDialog] = useState<{ open: boolean; existing?: any }>({ open: false });
   const [orgDialog, setOrgDialog] = useState<{ open: boolean; existing?: any }>({ open: false });
@@ -2007,10 +2009,36 @@ export default function AdminDashboard() {
   const { data: lessonsChart = [] } = useQuery<any[]>({ queryKey: ["/api/admin/charts/lessons"], enabled: !!admin && activeTab === "overview" });
   const { data: schoolsChart = [] } = useQuery<any[]>({ queryKey: ["/api/admin/charts/schools"], enabled: !!admin && activeTab === "overview" });
   const { data: dbRows = [] } = useQuery<any[]>({ queryKey: ["/api/admin/db", dbTable], queryFn: () => apiRequest("GET", `/api/admin/db/${dbTable}`).then(r => r.json()), enabled: !!admin && activeTab === "dbviewer" });
+  const { data: pendingOrgs = [], isLoading: pendingOrgsLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/organizations/pending"],
+    queryFn: () => apiRequest("GET", "/api/admin/organizations/pending").then(r => r.json()),
+    enabled: !!admin && activeTab === "pending",
+  });
 
   const deleteSchool = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/admin/schools/${id}`).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/schools"] }); toast({ title: "School deleted" }); },
+  });
+
+  const approveOrg = useMutation({
+    mutationFn: ({ id, tier }: { id: string; tier: string }) =>
+      apiRequest("POST", `/api/admin/organizations/${id}/approve`, { tier }).then(r => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/organizations/pending"] });
+      qc.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
+      toast({ title: "Organization approved" });
+    },
+    onError: (e: any) => toast({ title: "Approval failed", description: e.message, variant: "destructive" }),
+  });
+
+  const rejectOrg = useMutation({
+    mutationFn: (id: string) =>
+      apiRequest("POST", `/api/admin/organizations/${id}/reject`).then(r => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/organizations/pending"] });
+      toast({ title: "Organization rejected" });
+    },
+    onError: (e: any) => toast({ title: "Rejection failed", description: e.message, variant: "destructive" }),
   });
   const deleteSponsor = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/admin/sponsors/${id}`).then(r => r.json()),
@@ -2606,6 +2634,79 @@ export default function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "pending" && (
+          <div className="space-y-6" data-testid="section-pending-orgs">
+            <div className="flex items-center gap-3">
+              <Clock className="w-6 h-6 text-amber-400" />
+              <h2 className="text-2xl font-bold text-slate-100">Pending Applications</h2>
+            </div>
+            {pendingOrgsLoading ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
+            ) : pendingOrgs.length === 0 ? (
+              <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-12 text-center text-slate-400">
+                <CheckCircle2 className="w-10 h-10 mx-auto mb-3 text-emerald-400" />
+                <p className="font-semibold">No pending applications</p>
+                <p className="text-sm mt-1">All organizations have been reviewed.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pendingOrgs.map((org: any) => (
+                  <div key={org.id} className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5 space-y-4" data-testid={`card-pending-org-${org.id}`}>
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                      <div>
+                        <h3 className="font-bold text-slate-100 text-lg" data-testid={`text-pending-org-name-${org.id}`}>{org.name}</h3>
+                        <div className="flex items-center gap-2 flex-wrap mt-1">
+                          <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 text-xs capitalize">{org.type?.replace(/_/g, " ")}</Badge>
+                          <span className="text-slate-400 text-sm">{org.country}{org.city ? `, ${org.city}` : ""}</span>
+                          <span className="text-slate-500 text-xs">Applied {org.created_at ? new Date(org.created_at).toLocaleDateString() : "—"}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {(org.contact_name || org.contact_email) && (
+                      <div className="text-sm text-slate-300 space-y-1">
+                        {org.contact_name && <div><span className="text-slate-500">Contact: </span>{org.contact_name}</div>}
+                        {org.contact_email && <div><span className="text-slate-500">Email: </span><a href={`mailto:${org.contact_email}`} className="text-indigo-400 hover:underline">{org.contact_email}</a></div>}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3 flex-wrap pt-1">
+                      <select
+                        className="rounded-lg border border-slate-600 bg-slate-800 text-slate-200 text-sm px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        value={pendingTiers[org.id] ?? "starter"}
+                        onChange={e => setPendingTiers(prev => ({ ...prev, [org.id]: e.target.value }))}
+                        data-testid={`select-tier-${org.id}`}
+                      >
+                        <option value="starter">Starter</option>
+                        <option value="academy">Academy</option>
+                        <option value="institution">Institution</option>
+                      </select>
+                      <Button
+                        size="sm"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        disabled={approveOrg.isPending}
+                        onClick={() => approveOrg.mutate({ id: org.id, tier: pendingTiers[org.id] ?? "starter" })}
+                        data-testid={`button-approve-${org.id}`}
+                      >
+                        {approveOrg.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-1" />}
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={rejectOrg.isPending}
+                        onClick={() => { if (confirm(`Reject application from ${org.name}?`)) rejectOrg.mutate(org.id); }}
+                        data-testid={`button-reject-${org.id}`}
+                      >
+                        {rejectOrg.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4 mr-1" />}
+                        Reject
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

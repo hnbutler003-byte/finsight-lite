@@ -10,8 +10,13 @@ import {
   getOrgEnvironments,
   getOrgEnvironmentByJoinCode,
   getOrgEnvironmentById,
+  getOrganizationByName,
+  createOrganization,
+  createOrgEnvironment,
+  generateUniqueJoinCode,
   enrollStudentInOrg,
 } from "../supabase";
+import { captureError } from "../sentry";
 import { isAuthenticated } from "../replit_integrations/auth";
 
 export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@finsightlite.com";
@@ -492,6 +497,89 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
     } catch (e: any) {
       console.error("[Google Auth] OrgAdmin register:", e.message);
       return res.status(400).json({ message: e.message || "Google registration failed." });
+    }
+  });
+
+  // === SELF-SERVICE ORG APPLICATION ===
+  // Creates a brand-new org in 'pending' state. Founder admin must approve
+  // before the org admin gains access to the real dashboard.
+  app.post("/api/org/apply", async (req, res) => {
+    try {
+      const body = z.object({
+        orgName:      z.string().min(2).max(120),
+        orgType:      z.enum(["school", "credit_union", "government", "ngo", "other"]).default("school"),
+        country:      z.string().min(1),
+        city:         z.string().optional(),
+        contactName:  z.string().min(1),
+        contactEmail: z.string().email(),
+        firstName:    z.string().min(1),
+        lastName:     z.string().min(1),
+        email:        z.string().email(),
+        password:     z.string().min(6),
+      }).parse(req.body);
+
+      const existingOrg = await getOrganizationByName(body.orgName);
+      if (existingOrg) return res.status(409).json({ message: "An organization with this name already exists." });
+
+      const existingAdmin = await storage.getOrgAdminByEmail(body.email.toLowerCase());
+      if (existingAdmin) return res.status(409).json({ message: "Email already in use." });
+
+      const org = await createOrganization({
+        name:              body.orgName,
+        type:              body.orgType,
+        country:           body.country,
+        city:              body.city,
+        contact_name:      body.contactName,
+        contact_email:     body.contactEmail,
+        is_active:         false,
+        status:            "pending",
+        subscription_tier: "starter",
+        max_students:      50,
+        logo_url:          null,
+      });
+      if (!org) return res.status(500).json({ message: "Failed to create organization." });
+
+      const slug = body.orgName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30) || "default";
+      const join_code = await generateUniqueJoinCode();
+      const env = await createOrgEnvironment({
+        org_id:           org.id,
+        slug,
+        display_name:     body.orgName,
+        theme_color:      "#7c3aed",
+        join_code,
+        features_enabled: ["money_games", "investment_sim", "money_guide", "moneylab"],
+      });
+      if (!env) return res.status(500).json({ message: "Failed to create organization environment." });
+
+      const passwordHash = await bcrypt.hash(body.password, 12);
+      const admin = await storage.createOrgAdmin({
+        firstName:    body.firstName,
+        lastName:     body.lastName,
+        email:        body.email.toLowerCase(),
+        passwordHash,
+        orgId:        org.id,
+        envId:        env.id,
+        role:         "admin",
+      });
+
+      (req as any).session.orgAdminId = admin.id;
+      (req as any).session.orgId      = admin.orgId;
+
+      await audit({
+        actorType: "org_admin", actorId: String(admin.id), actorEmail: admin.email,
+        action: "org.applied",
+        targetType: "organization", targetId: org.id,
+        orgId: org.id,
+        meta: { orgName: org.name, via: "self-service-apply" },
+        req,
+      });
+
+      const { passwordHash: _, ...safe } = admin;
+      return res.json({ ...safe, orgName: org.name, orgStatus: org.status });
+    } catch (e: any) {
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      return res.status(status).json({ message: e.message });
     }
   });
 

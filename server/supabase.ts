@@ -40,6 +40,7 @@ export type Organization = {
   signature_right_role?: string | null;
   allowed_email_domains?: string[] | null;
   is_active: boolean;
+  status?: string;
   subscription_tier: "starter" | "academy" | "institution" | string;
   max_students: number;
   display_label?: string | null;
@@ -222,6 +223,7 @@ ALTER TABLE organizations ADD COLUMN IF NOT EXISTS slug text UNIQUE;
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS plan text NOT NULL DEFAULT 'standard';
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS student_limit integer NOT NULL DEFAULT 500;
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS display_label text;
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active';
 `;
 
 async function applyBrandingColumnsViaPg(): Promise<boolean> {
@@ -246,6 +248,7 @@ async function applyBrandingColumnsViaPg(): Promise<boolean> {
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS plan text NOT NULL DEFAULT 'standard';
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS student_limit integer NOT NULL DEFAULT 500;
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS display_label text;
+        ALTER TABLE organizations ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active';
       `);
       return true;
     } finally {
@@ -270,6 +273,15 @@ export async function initSupabaseTables(): Promise<void> {
         console.log("[Supabase] ✓ Applied organization schema columns.");
       } else {
         console.warn("[Supabase] ⚠ Missing organization columns. Run applyBrandingColumnsViaPg() or apply the ALTER TABLE statements in your Supabase SQL editor.");
+      }
+    }
+    const statusProbe = await supabase.from("organizations").select("status").limit(1);
+    if (statusProbe.error && (statusProbe.error.code === "42703" || statusProbe.error.message?.includes("status"))) {
+      const applied = await applyBrandingColumnsViaPg();
+      if (applied) {
+        console.log("[Supabase] ✓ Applied org status column.");
+      } else {
+        console.warn("[Supabase] ⚠ Missing org status column — run ALTER TABLE organizations ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active'; in Supabase SQL editor.");
       }
     }
   } else if (

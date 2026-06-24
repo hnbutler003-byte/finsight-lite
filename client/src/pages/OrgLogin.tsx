@@ -195,6 +195,12 @@ export default function OrgLogin() {
             <span className="font-bold text-blue-600 hover:underline cursor-pointer">Create an account</span>
           </Link>
         </p>
+        <p className="text-center text-sm text-muted-foreground">
+          New organization?{" "}
+          <Link href="/org/apply">
+            <span className="font-bold text-violet-600 hover:underline cursor-pointer" data-testid="link-org-apply">Apply for access</span>
+          </Link>
+        </p>
         <p className="text-center text-xs text-muted-foreground">
           Are you a student?{" "}
           <Link href="/">

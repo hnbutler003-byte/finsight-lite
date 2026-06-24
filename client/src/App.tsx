@@ -31,6 +31,7 @@ import Lessons from "@/pages/Lessons";
 import Settings from "@/pages/Settings";
 import OrgLogin from "@/pages/OrgLogin";
 import OrgRegister from "@/pages/OrgRegister";
+import OrgApply from "@/pages/OrgApply";
 import OrgDashboard from "@/pages/OrgDashboard";
 import OrgStudents from "@/pages/OrgStudents";
 import OrgTeachers from "@/pages/OrgTeachers";
@@ -93,6 +94,7 @@ function Router() {
         <Route path="/teacher">{() => <Redirect to="/teacher/login" />}</Route>
         <Route path="/org/login" component={OrgLogin} />
         <Route path="/org/register" component={OrgRegister} />
+        <Route path="/org/apply" component={OrgApply} />
         <Route path="/org/dashboard" component={OrgDashboard} />
         <Route path="/org/students" component={OrgStudents} />
         <Route path="/org/teachers" component={OrgTeachers} />
@@ -120,6 +122,7 @@ function Router() {
       <Route path="/teacher">{() => <Redirect to="/teacher/dashboard" />}</Route>
       <Route path="/org/login" component={OrgLogin} />
       <Route path="/org/register" component={OrgRegister} />
+      <Route path="/org/apply" component={OrgApply} />
       <Route path="/org/dashboard" component={OrgDashboard} />
       <Route path="/org/students" component={OrgStudents} />
       <Route path="/org/teachers" component={OrgTeachers} />

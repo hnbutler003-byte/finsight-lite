@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { useOrgAuth } from "@/hooks/use-org-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Users, BookOpen, Globe, Copy, Check, Loader2, Building2, Layers, Sparkles, Settings2, Save, Mail, Send, Trophy, TrendingUp, Gamepad2, ChevronLeft, ChevronRight, FileDown, CheckCircle2, Circle, X, Info } from "lucide-react";
+import { Users, BookOpen, Globe, Copy, Check, Loader2, Building2, Layers, Sparkles, Settings2, Save, Mail, Send, Trophy, TrendingUp, Gamepad2, ChevronLeft, ChevronRight, FileDown, CheckCircle2, Circle, X, Info, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -137,6 +137,54 @@ export default function OrgDashboard() {
   if (!admin) {
     setLocation("/org/login");
     return null;
+  }
+
+  if (overview?.org?.status === "pending") {
+    return (
+      <div className="caribbean-bg min-h-screen flex items-center justify-center p-6">
+        <div className="glass-card rounded-2xl max-w-lg w-full text-center p-10 space-y-4">
+          <Clock className="w-14 h-14 text-amber-400 mx-auto" />
+          <h2 className="font-display font-bold text-2xl text-foreground">Application Under Review</h2>
+          <p className="text-muted-foreground leading-relaxed">
+            Your organization <strong className="text-foreground">{overview.org.name}</strong> is waiting for
+            approval from our team. You'll receive an email once it's activated — usually within 1–2 business days.
+          </p>
+          <Button
+            variant="outline"
+            className="mt-2"
+            onClick={() => setLocation("/org/login")}
+            data-testid="button-pending-signout"
+          >
+            Sign Out
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (overview?.org?.status === "rejected") {
+    return (
+      <div className="caribbean-bg min-h-screen flex items-center justify-center p-6">
+        <div className="glass-card rounded-2xl max-w-lg w-full text-center p-10 space-y-4">
+          <X className="w-14 h-14 text-red-400 mx-auto" />
+          <h2 className="font-display font-bold text-2xl text-foreground">Application Not Approved</h2>
+          <p className="text-muted-foreground leading-relaxed">
+            Unfortunately, the application for <strong className="text-foreground">{overview.org.name}</strong> was
+            not approved at this time. Please contact{" "}
+            <a href="mailto:support@finsight-ltd.com" className="text-teal-500 hover:underline">support@finsight-ltd.com</a>{" "}
+            if you believe this is an error.
+          </p>
+          <Button
+            variant="outline"
+            className="mt-2"
+            onClick={() => setLocation("/org/login")}
+            data-testid="button-rejected-signout"
+          >
+            Sign Out
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const copyJoinCode = () => {

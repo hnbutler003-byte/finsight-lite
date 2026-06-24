@@ -1,0 +1,35 @@
+Build both of the following. Confirm each is complete with real evidence (actual test results, not just code review) before moving to the next.
+
+---
+
+TASK 1 — YouTube URL validation on save (quick fix)
+
+The video_url field on lesson create/update routes currently accepts any string with no validation (z.string().optional()). Add server-side validation: when video_url is provided, it must match a real YouTube URL pattern (youtube.com/watch?v=, youtu.be/, youtube.com/shorts/, youtube.com/embed/). If it doesn't match, reject the request with a clear 400 error and message like "Please enter a valid YouTube link." Apply this to every route where video_url is accepted (lessons.ts and orgs.ts, per the existing upload hardening pattern). Test by attempting to save a lesson with a junk string in video_url and confirming it's rejected, then saving one with a real YouTube link and confirming it succeeds.
+
+---
+
+TASK 2 — Organization approval gate (the real priority)
+
+Currently, the Supabase organizations table has is_active boolean NOT NULL DEFAULT true, meaning every new org registration gets immediate, full platform access. This must change: a new organization must require explicit founder admin approval before it becomes active.
+
+1. Add a status column to the organizations table (e.g. text, values: 'pending', 'active', 'suspended'), defaulting new rows to 'pending'. Do NOT change is_active's default or behavior for any organization that already exists and is currently active, specifically The Financial Academy must remain active and unaffected. Only new organizations created from this point forward should default to pending.
+
+2. Find or build the organization self-registration flow (the report mentioned no /org/apply page exists; check if /org/register already serves this purpose). Whichever route handles new org signup, ensure it creates the organization with status = 'pending', not active, regardless of what is_active defaults to.
+
+3. Add a server-side check: any org admin whose organization has status = 'pending' should be blocked from accessing the real dashboard and any student/teacher data. Instead, show a simple holding page explaining "Thank you for signing up. Our team will review and reach out to finalize your plan." Do not show any dashboard data, invite code, or management features while pending.
+
+4. Add a "Pending Organizations" section to the founder admin dashboard at /admin, listing every org with status = 'pending': organization name, territory, contact info, signup date. Give the founder admin a clear approve or reject action. Approving should let the founder admin assign a tier (Starter/Academy/Institution) as part of approval, and should change the org's status to 'active'. Rejecting should change it to a rejected/suspended state and the org admin should see a clear message if they try to log in again.
+
+5. Test this end to end with a real test case: create a brand new test organization through the actual registration flow, confirm it lands in pending status with no real access, confirm it appears in the /admin Pending Organizations list, approve it, and confirm it then gains full active access. Show the actual database status value at each step as evidence, not just a description of what should happen.
+
+6. Confirm The Financial Academy's existing organization record is untouched and remains fully active throughout this work.
+
+---
+
+Constraints:
+- Do not change any data or access for The Financial Academy or any other currently active organization.
+- If any new package needs installing, apply the known fix for the Replit package-lock.json proxy URL issue first.
+- Check both light and dark mode for any new UI added (the holding page, the Pending Organizations admin section).
+- Ensure every database write function involved throws a clear error on failure rather than returning null/undefined silently, consistent with the existing standard.
+- After completing both tasks, commit and push, then verify with a live remote commit hash comparison (not just a claimed success) that the push actually landed on the correct GitHub remote.
+- Report final evidence for both tasks: the YouTube validation test results, and the full pending-to-active test walkthrough with actual database status values shown at each step.

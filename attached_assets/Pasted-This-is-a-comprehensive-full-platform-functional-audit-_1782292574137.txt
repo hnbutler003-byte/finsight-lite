@@ -1,0 +1,70 @@
+This is a comprehensive, full-platform functional audit. The goal is to click through and test every page, game, and interactive feature in the app, exactly as a real student, teacher, or admin would, and fix anything found broken, sluggish, or behaving incorrectly. Do not skip anything because it seems unlikely to have issues. Work through this in stages, report findings before fixing within each stage.
+
+Run this only after the prior priority fixes (git sync, upload hardening, org approval gate) are confirmed complete, since this audit assumes those are stable.
+
+---
+
+STAGE 1 — Student-facing pages and features
+
+For each of the following, actually load the page/feature as a test student and verify real functionality, not just that it renders:
+
+1. / (avatar login) — confirm avatar selection works, login succeeds, and a returning student lands correctly.
+2. /demo — confirm the demo picker (already fixed earlier) still works correctly post recent changes.
+3. /budgets — create a budget, add an expense, confirm the chart updates correctly, confirm input validation (no negative numbers, no absurd values) works as built earlier.
+4. /savings — create a savings goal, log progress, confirm the progress bar updates correctly and the completion celebration fires at 100%.
+5. /invest — test both BISX and JSE ticker views, confirm switching territory/currency shows the correct stock set, confirm any buy/sell simulation logic works and updates the portfolio correctly, confirm dark mode ticker visibility (recently fixed) holds.
+6. /games — play through each of the seven money games at least briefly. Confirm each game starts, can be played to completion or a meaningful stopping point, scores/feedback display correctly, and no game freezes or crashes, especially under a simulated slow connection if testable.
+7. /guide — ask the Money Guide chatbot a real, on-topic question and confirm it responds correctly and the "Thinking it through..." loading state fires correctly.
+8. /lessons — open at least one lesson per the three core modules, confirm content displays, confirm the Sand Dollar module (once territory-gated, per separate task) only appears for Bahamas accounts, confirm quiz submission and scoring works, confirm the AI Tutor auto-routing on low scores (built earlier) fires correctly.
+9. /moneylab, /moneylab/upload, /moneylab/play, /moneylab/tutor, /moneylab/leaderboard — confirm exam paper upload works within its file validation rules, confirm AI-generated quiz questions are coherent and usable, confirm the AI tutor/explanation mode responds correctly, confirm the leaderboard displays and updates correctly.
+10. /settings — confirm account settings display and save correctly, confirm the account deletion flow (built earlier) still works correctly with its confirmation step.
+
+---
+
+STAGE 2 — Teacher portal
+
+1. /teacher/login, /teacher/register — confirm both work, confirm the invite-code join flow (built earlier) correctly associates a new teacher with the right org.
+2. /teacher/dashboard — confirm class overview displays correctly with real data.
+3. /teacher/classes/:id — confirm content upload (video, PDF, image, document per the hardening work) functions correctly, confirm the teacher preview-before-publish flow works, confirm individual student feedback (built earlier) can be added and is visible to the right student only.
+
+---
+
+STAGE 3 — Org admin portal
+
+1. /org/login, /org/register — confirm login works, confirm new registrations correctly land in pending status (per the separate approval gate task) rather than gaining immediate access.
+2. /org/dashboard — confirm all metrics display correctly with real or realistic data: average XP, lesson completion rate, top games, engagement and learning health tracker (day 1/7/30 retention, abandonment points, quiz score trends), plan/student-limit badge.
+3. /org/students — confirm student management works, confirm CSV bulk upload works and correctly enforces the student limit, confirm the distinction between "remove from org" and full data purge remains clear and both function correctly.
+4. /org/lessons — confirm org-level lesson upload and publishing works with the same hardening as teacher-level uploads.
+5. /org/branding — confirm logo upload works with appropriate validation.
+6. /org/teachers — confirm the teacher list displays correctly, confirm remove-teacher and password-reset actions work.
+7. The invite code panel — confirm the copyable invite message (built earlier) generates correctly with the real registration URL.
+
+---
+
+STAGE 4 — Founder admin
+
+1. /admin/login — confirm proper authentication is enforced (per the earlier security verification).
+2. /admin — confirm global oversight data displays correctly, confirm the new Pending Organizations section (from the approval gate task) displays and the approve/reject actions function correctly.
+
+---
+
+STAGE 5 — Legal and public pages
+
+1. /privacy, /terms — confirm both display correctly with the correct logo (per the logo fix task) and consistent typography in both light and dark mode.
+
+---
+
+STAGE 6 — Cross-cutting checks
+
+1. Confirm every page checked in Stages 1-5 renders correctly in both light and dark mode, not just the default mode.
+2. Confirm every page is usable at a mobile viewport width (375px), per the mobile parity work done earlier, with specific attention to any new features added since that audit.
+3. Confirm no em dashes have crept back into any page or any newly written copy during this session's fixes.
+4. For anything found broken, sluggish, or behaving incorrectly, fix it directly rather than just reporting it, following the existing design system and code patterns already established. Any new backend write logic must throw a clear error on failure rather than returning null/undefined silently. If a new package install is needed, apply the known package-lock.json proxy URL fix first.
+
+---
+
+After completing all stages, report:
+- A clear pass/fail list for every single item checked across all six stages
+- Every bug found and the fix applied for each
+- Confirmation that all fixes are committed and pushed, verified with a live remote commit hash comparison
+- Any item that could not be fully tested or fixed in this session, with a clear explanation of what would be needed to complete it

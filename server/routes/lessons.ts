@@ -36,6 +36,12 @@ const objectStorage = new ObjectStorageService();
 const ADMIN_UPLOAD_MAX_VIDEO = 500 * 1024 * 1024;
 const ADMIN_UPLOAD_MAX_DOC   =  25 * 1024 * 1024;
 
+// YouTube URL validation — accept watch, shorts, embed, live, and youtu.be short links.
+const YOUTUBE_URL_RE = /^https?:\/\/(www\.)?(youtube\.com\/(watch\?|shorts\/|embed\/|live\/)|youtu\.be\/)/i;
+const ytUrl = z.string().refine(u => YOUTUBE_URL_RE.test(u), { message: "Please enter a valid YouTube link." });
+const ytUrlOpt  = ytUrl.optional();
+const ytUrlNull = ytUrl.nullish();
+
 const ADMIN_CONTENT_ALLOWED_MIMES = new Set([
   "video/mp4", "video/webm", "video/ogg", "video/quicktime",
   "video/x-msvideo", "video/x-matroska",
@@ -229,7 +235,7 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
         grade_level: z.string().optional(),
         topic: z.string().optional(),
         duration: z.string().optional(),
-        video_url: z.string().optional(),
+        video_url: ytUrlOpt,
         env_id: z.string().uuid().optional().nullable(),
         objectives: z.array(z.string()).default([]),
         content_sections: z.array(z.object({
@@ -299,7 +305,7 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
         grade_level: z.string().optional().nullable(),
         topic: z.string().optional().nullable(),
         duration: z.string().optional().nullable(),
-        video_url: z.string().optional().nullable(),
+        video_url: ytUrlNull,
         objectives: z.array(z.string()).default([]),
         content_sections: z.array(z.object({ heading: z.string(), body: z.string(), examples: z.array(z.string()).optional() })).default([]),
         questions: z.array(z.object({
@@ -470,7 +476,7 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
         gradeLevel: z.string().optional(),
         topic: z.string().optional(),
         duration: z.string().optional(),
-        videoUrl: z.string().optional(),
+        videoUrl: ytUrlOpt,
         objectives: z.array(z.string()).default([]),
         contentSections: z.array(z.object({ heading: z.string(), body: z.string(), examples: z.array(z.string()).optional() })).default([]),
       }).parse(req.body);
@@ -570,7 +576,7 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
         gradeLevel: z.string().optional().nullable(),
         topic: z.string().optional().nullable(),
         duration: z.string().optional().nullable(),
-        videoUrl: z.string().optional().nullable(),
+        videoUrl: ytUrlNull,
         objectives: z.array(z.string()).default([]),
         contentSections: z.array(z.object({ heading: z.string(), body: z.string(), examples: z.array(z.string()).optional() })).default([]),
         questions: z.array(z.object({
