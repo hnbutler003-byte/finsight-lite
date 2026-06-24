@@ -1983,8 +1983,11 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
           await rawDb.insert(enrollmentsTable).values({ classId: targetClass.id, studentId: s.id });
         }
 
-        // Enrol in org (Supabase)
-        await enrollStudentInOrg(s.id, demoOrgId, demoEnvId).catch(() => {});
+        // Enrol in org (Supabase) — correct arg order: (orgId, envId, studentUserId)
+        const orgEnroll = await enrollStudentInOrg(demoOrgId, demoEnvId, s.id);
+        if (!orgEnroll.success) {
+          throw new Error(`[Supabase] enrollStudentInOrg failed for student ${s.id}`);
+        }
 
         // XP
         const [alreadyXp] = await rawDb.select().from(userXp).where(deq(userXp.userId, s.id));
@@ -2082,7 +2085,15 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
         }
       }
 
-      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.demo_org.seeded", meta: { demoOrgId }, req });
+      // Post-seed integrity check: verify all students are enrolled in org_students on Supabase
+      const enrolledInOrg = await storage.getStudentsByOrgId(demoOrgId);
+      const enrolledIds = new Set(enrolledInOrg.map((s: any) => s.id));
+      const missingEnrollments = createdStudentIds.filter((id: string) => !enrolledIds.has(id));
+      if (missingEnrollments.length > 0) {
+        throw new Error(`[Supabase] Post-seed integrity check failed: ${missingEnrollments.length} student(s) not enrolled in org_students (${missingEnrollments.join(", ")})`);
+      }
+
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.demo_org.seeded", meta: { demoOrgId, studentCount: createdStudentIds.length }, req });
 
       res.json({
         ok: true,
@@ -2093,6 +2104,7 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
         teacherIds: createdTeachers.map((t: any) => t.id),
         classIds: createdClasses.map((c: any) => c.id),
         studentIds: createdStudentIds,
+        orgStudentCount: enrolledInOrg.length,
       });
     } catch (e: any) {
       captureError(e);
