@@ -424,18 +424,18 @@ export default function TeacherClassDetail() {
                 </Card>
               ) : (
                 <>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-2">
                     {[
                       { label: "Students", value: progress.students.length, icon: Users },
                       { label: "Avg XP", value: progress.avgXp, icon: Zap },
                       { label: "Total Games", value: progress.totalGames, icon: Gamepad2 },
                     ].map(s => (
                       <Card key={s.label} className="glass-card rounded-glass">
-                        <CardContent className="p-4 flex items-center gap-3">
+                        <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-3 text-center sm:text-left">
                           <s.icon className="w-5 h-5 text-emerald-500 shrink-0" />
                           <div>
-                            <p className="font-display font-bold text-lg">{s.value}</p>
-                            <p className="text-xs text-muted-foreground font-medium">{s.label}</p>
+                            <p className="font-display font-bold text-lg leading-tight">{s.value}</p>
+                            <p className="text-xs text-muted-foreground font-medium leading-tight">{s.label}</p>
                           </div>
                         </CardContent>
                       </Card>

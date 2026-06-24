@@ -421,7 +421,8 @@ export default function OrgDashboard() {
                         ) : (() => {
                           const maxTotal = Math.max(1, ...aiUsageMonthly.series.map((d: any) => d.total + (d.cached || 0)));
                           return (
-                            <div className="flex items-end gap-1 h-32" data-testid="bars-monthly">
+                            <div className="overflow-x-auto -mx-1 px-1">
+                            <div className="flex items-end gap-1 h-32 min-w-[360px]" data-testid="bars-monthly">
                               {aiUsageMonthly.series.map((d: any) => {
                                 const stackTotal = (d.guide_chat + d.tutor_explain + d.ai_insights);
                                 const cachedH = ((d.cached || 0) / maxTotal) * 100;
@@ -441,6 +442,7 @@ export default function OrgDashboard() {
                                   </div>
                                 );
                               })}
+                            </div>
                             </div>
                           );
                         })()}

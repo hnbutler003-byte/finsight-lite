@@ -452,8 +452,8 @@ function ImportStudentsDialog({
                   </div>
                 </div>
 
-                <div className="rounded-2xl border-2 max-h-72 overflow-y-auto">
-                  <table className="w-full text-sm">
+                <div className="rounded-2xl border-2 max-h-72 overflow-y-auto overflow-x-auto">
+                  <table className="w-full text-sm min-w-[520px]">
                     <thead className="bg-muted text-xs uppercase tracking-wide text-muted-foreground sticky top-0">
                       <tr>
                         <th className="text-left p-2 w-10">#</th>

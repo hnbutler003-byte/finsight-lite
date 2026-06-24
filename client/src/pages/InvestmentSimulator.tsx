@@ -312,7 +312,7 @@ export default function InvestmentSimulator() {
               </h1>
               <p className="text-white/85">Learn how investing works with virtual money, no real risk!</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2 bg-green-50 dark:bg-green-950/30 px-4 py-2 rounded-xl border border-green-200 dark:border-green-800">
                 <Wallet className="w-4 h-4 text-green-600" />
                 <span className="text-sm font-medium text-green-700 dark:text-green-400" data-testid="text-virtual-balance">
@@ -320,7 +320,7 @@ export default function InvestmentSimulator() {
                 </span>
               </div>
               <Select value={currency} onValueChange={(val) => { setCurrency(val); try { localStorage.setItem("finsight_currency", val); } catch {} }}>
-                <SelectTrigger className="w-[200px] bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl text-white font-medium shadow-lg focus:ring-2 focus:ring-white/40 data-[placeholder]:text-white/75" data-testid="select-currency">
+                <SelectTrigger className="w-full sm:w-[200px] bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl text-white font-medium shadow-lg focus:ring-2 focus:ring-white/40 data-[placeholder]:text-white/75" data-testid="select-currency">
                   <SelectValue placeholder="Filter by Currency" />
                 </SelectTrigger>
                 <SelectContent>
@@ -336,17 +336,17 @@ export default function InvestmentSimulator() {
 
           <Tabs defaultValue="learn" className="w-full">
             <TabsList className="grid w-full max-w-2xl grid-cols-3 mb-8">
-              <TabsTrigger value="learn" className="flex items-center gap-2" data-testid="tab-learn">
-                <BookOpen className="w-4 h-4" />
-                Learn
+              <TabsTrigger value="learn" className="flex items-center gap-1 sm:gap-2" data-testid="tab-learn">
+                <BookOpen className="w-4 h-4 shrink-0" />
+                <span>Learn</span>
               </TabsTrigger>
-              <TabsTrigger value="market" className="flex items-center gap-2" data-testid="tab-market">
-                <TrendingUp className="w-4 h-4" />
-                Market
+              <TabsTrigger value="market" className="flex items-center gap-1 sm:gap-2" data-testid="tab-market">
+                <TrendingUp className="w-4 h-4 shrink-0" />
+                <span>Market</span>
               </TabsTrigger>
-              <TabsTrigger value="portfolio" className="flex items-center gap-2" data-testid="tab-portfolio">
-                <Briefcase className="w-4 h-4" />
-                My Portfolio
+              <TabsTrigger value="portfolio" className="flex items-center gap-1 sm:gap-2" data-testid="tab-portfolio">
+                <Briefcase className="w-4 h-4 shrink-0" />
+                <span><span className="hidden sm:inline">My </span>Portfolio</span>
               </TabsTrigger>
             </TabsList>
 

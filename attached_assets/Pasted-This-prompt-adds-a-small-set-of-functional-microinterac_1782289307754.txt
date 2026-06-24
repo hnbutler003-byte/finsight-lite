@@ -1,0 +1,42 @@
+This prompt adds a small set of functional microinteractions, confirmed by current UX research to reduce friction and improve activation, without adding decorative complexity. Audit first in each stage.
+
+---
+
+STAGE 1 — Login/form error feedback
+
+Audit: do login forms (student avatar login, teacher login, org admin login, founder admin login) and other key forms (registration, savings goal creation if built, content upload) currently show validation errors as static text only, or is there any visual motion tied to the error?
+
+Build: for any login or form submission that fails validation (wrong password, missing required field, invalid format), add a brief shake animation on the specific input field that failed, paired with the existing error text, not replacing it. Use a short, subtle horizontal shake (100-200ms, 2-3 oscillations) consistent with the existing animation timing patterns already in the CSS. Do not apply this to every interaction, only to actual validation failures, so it remains meaningful rather than decorative.
+
+---
+
+STAGE 2 — Inline validation before submission, not just after
+
+Audit: for password fields (registration, password reset) and the invite code field (from recent onboarding work), do requirements show only after a failed submission, or as the user types?
+
+Build: where feasible without major rework, show validation feedback as the user types rather than only after submission. For a password field, show requirements (length, etc.) with a live checkmark/cross next to each as they're met, not just on submit. For the invite code field, show a clear visual state (neutral while typing, then valid/invalid) once enough characters are entered to check, rather than waiting for full form submission.
+
+---
+
+STAGE 3 — Confirm loading states are used consistently everywhere something loads
+
+Audit: the existing animate-shimmer skeleton-loading class is already defined in the CSS. Search the app for every place data loads asynchronously (dashboard stats fetching, AI Tutor or Money Guide generating a response, video embed loading, CSV processing, PDF export generating) and report whether each currently shows the shimmer/skeleton pattern, a generic spinner, or nothing at all (blank screen) while loading.
+
+Build: for any loading moment currently showing nothing or a generic unstyled spinner, apply the existing shimmer/skeleton pattern or a brand-consistent loading indicator instead, so waiting always feels intentional, not broken. For the AI Tutor and Money Guide chatbot specifically, since these can take a few seconds, consider a brief, on-brand loading message (e.g. "Thinking it through..." or similar, age-appropriate and not corny) rather than a bare spinner, consistent with the playful tone already established in the brand voice.
+
+---
+
+STAGE 4 — First-login onboarding checklist for students and teachers (not just org admins)
+
+Audit: does a first-login onboarding checklist with a progress indicator already exist for students or teachers, or only for org admins (per earlier work)?
+
+Build: if missing, add a simple, dismissible onboarding checklist for first-time students (e.g. "Set up your avatar," "Try your first lesson," "Play a money game") and first-time teachers (e.g. "View your class," "Try the content upload," "Check your students' progress") with a visible progress bar using the existing xp-bar-track/xp-bar-fill pattern. This should be dismissible and should not reappear after a user completes it or chooses to skip it.
+
+---
+
+Constraints:
+- Every microinteraction added must confirm or clarify something real (an error, a success, a loading state, progress), not be purely decorative.
+- Apply animations consistently: if one button gets visual feedback on click, similar buttons elsewhere should follow the same pattern, not a mix of styles.
+- Do not introduce new animation libraries; use the existing keyframes and classes already defined in the CSS (bounce-in, pop-in, shimmer, wiggle) or extend them minimally if a genuinely new pattern (like the input shake) is needed.
+- Do not change any underlying validation logic, only the visual feedback layer.
+- After completing all stages, print every file created or modified organized by stage, and confirm with specific examples that each new microinteraction is tied to a real state change, not just added for decoration.

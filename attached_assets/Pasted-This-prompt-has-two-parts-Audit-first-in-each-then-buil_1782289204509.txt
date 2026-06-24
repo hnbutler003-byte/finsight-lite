@@ -1,0 +1,45 @@
+This prompt has two parts. Audit first in each, then build.
+
+---
+
+PART 1 — Student-chosen savings goal with personal progress tracking
+
+Goal: give students agency by letting them set their own savings target, rather than only tracking generic lesson/XP progress. Research shows this kind of personal goal-setting increases motivation and learning outcomes more than activity tracking alone.
+
+STAGE 1 — Audit
+Check the existing /savings page and Savings Goals feature. Report:
+1. Does a savings goal feature already exist, and if so, can a student currently set their own custom target amount and label (e.g. "New phone, $200"), or is it generic/pre-set content only?
+2. How is progress currently tracked and displayed, if at all?
+
+STAGE 2 — Build or complete the feature
+Based on Stage 1 findings, ensure the following works:
+1. A student can create a personal savings goal with: a custom name (e.g. "New phone," "School trip," "Emergency fund"), a target dollar amount (using realistic Bahamian dollar formatting consistent with the rest of the app), and optionally a target date.
+2. A student can log progress toward that goal (e.g. "add $20 saved this week") and see a clear visual progress bar showing percentage toward their personal target, using the existing xp-bar-track/xp-bar-fill or lesson-bar-fill pattern already defined in the CSS, adapted with appropriate styling (consider using the secondary/amber token since this relates to money/goals per the existing color usage rules).
+3. A student can have more than one active goal at a time, displayed as a list of glass-card panels, each with its own progress bar.
+4. When a goal is reached (100% progress), trigger the existing animate-bounce-in celebration pattern already used elsewhere for achievements, with a congratulatory message.
+5. This should integrate with the existing design system throughout: glass-card panels, font-display for goal names and amounts, font-sans for supporting text, no new colors outside existing tokens.
+
+---
+
+PART 2 — Mobile parity audit
+
+Research on EdTech platforms consistently flags mobile and desktop parity as a major failure point, features that work on desktop but break, disappear, or behave inconsistently on mobile, which is especially damaging for a platform whose users are primarily mobile-native.
+
+STAGE 1 — Audit every major page on a mobile viewport
+Using browser dev tools or an equivalent method to simulate a mobile viewport (e.g. 375px width, common phone screen size), check each of the following pages for the same level of functionality as desktop:
+- /budgets, /savings, /invest, /games, /guide, /lessons, /moneylab and its sub-pages
+- /teacher/dashboard, /teacher/classes/:id
+- /org/dashboard, /org/students, /org/lessons, /org/teachers, /org/branding
+
+For each, report: does every interactive element (buttons, forms, charts, the new savings goal feature from Part 1, file upload, video embeds) render fully and remain usable at mobile width, or does anything overflow, get cut off, become unreachable, or visually break?
+
+STAGE 2 — Fix what's found
+For every page with a mobile-specific issue, fix it using standard responsive patterns already likely in use elsewhere in the app (flex/grid wrapping, appropriate breakpoints), without changing desktop layout or functionality.
+
+---
+
+Constraints:
+- Do not change any existing XP, streak, or lesson completion logic.
+- Do not introduce new colors, fonts, or component patterns outside what's already defined in the design system.
+- If any new package needs installing, apply the known fix for the Replit package-lock.json proxy URL issue before committing.
+- After completing both parts, print every file created or modified organized by part and stage, and confirm: the savings goal feature works end to end with a real progress bar, and provide a clear pass/fail list for every page checked in the mobile parity audit.
