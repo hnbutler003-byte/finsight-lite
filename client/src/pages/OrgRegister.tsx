@@ -136,7 +136,7 @@ export default function OrgRegister() {
                   {showPwHints && (
                     <div className="mt-2 flex items-center gap-2 text-xs px-1">
                       {pwLongEnough ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 shrink-0" />
                       ) : (
                         <Circle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                       )}
@@ -150,7 +150,7 @@ export default function OrgRegister() {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold flex items-center gap-1.5">
-                  <KeyRound className="w-3.5 h-3.5 text-blue-500" />
+                  <KeyRound className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
                   Organization Join Code
                 </label>
                 <div className="relative">
@@ -168,7 +168,7 @@ export default function OrgRegister() {
                   />
                   {codeReady && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <CheckCircle2 className="w-4 h-4 text-blue-500" />
+                      <CheckCircle2 className="w-4 h-4 text-blue-500 dark:text-blue-400" />
                     </div>
                   )}
                 </div>
@@ -205,7 +205,7 @@ export default function OrgRegister() {
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
           <Link href="/org/login">
-            <span className="font-bold text-blue-600 hover:underline cursor-pointer">Sign in</span>
+            <span className="font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">Sign in</span>
           </Link>
         </p>
       </div>

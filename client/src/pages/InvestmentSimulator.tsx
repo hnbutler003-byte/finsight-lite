@@ -54,7 +54,7 @@ function BISXWidget() {
               className={`p-4 transition-colors hover:bg-blue-50 dark:hover:bg-slate-800 ${!isRightEdge ? "border-r border-slate-100 dark:border-slate-700" : ""} ${idx >= 3 ? "border-t border-slate-100 dark:border-slate-700" : ""}`}
               data-testid={`bisx-ticker-${s.symbol}`}
             >
-              <p className="text-xl font-extrabold tabular-nums dark:text-white" style={{ color: "#0A1F44" }}>{s.symbol}</p>
+              <p className="text-xl font-extrabold tabular-nums text-[#0A1F44] dark:text-white">{s.symbol}</p>
               <p className="text-xs text-slate-400 mt-0.5 mb-3 truncate">{s.name}</p>
               <p className="text-2xl font-bold tabular-nums text-slate-800 dark:text-slate-100">
                 <span className="text-xs text-slate-400 font-normal mr-0.5">BSD</span>{s.price.toFixed(2)}
@@ -126,7 +126,7 @@ function JSEWidget() {
               className={`p-4 transition-colors hover:bg-green-50 dark:hover:bg-slate-800 ${col < 2 ? "border-r border-slate-100 dark:border-slate-700" : ""} ${row > 0 ? "border-t border-slate-100 dark:border-slate-700" : ""}`}
               data-testid={`jse-ticker-${s.symbol}`}
             >
-              <p className="text-xl font-extrabold tabular-nums dark:text-white" style={{ color: "#1B4332" }}>{s.symbol}</p>
+              <p className="text-xl font-extrabold tabular-nums text-[#1B4332] dark:text-white">{s.symbol}</p>
               <p className="text-xs text-slate-400 mt-0.5 mb-3 truncate">{s.name}</p>
               <p className="text-2xl font-bold tabular-nums text-slate-800 dark:text-slate-100">
                 <span className="text-xs text-slate-400 font-normal mr-0.5">J$</span>{s.price.toFixed(2)}

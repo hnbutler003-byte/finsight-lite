@@ -115,7 +115,7 @@ export default function TeacherRegister() {
                   {showPwHints && (
                     <div className="mt-2 flex items-center gap-2 text-xs px-1">
                       {pwLongEnough ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
                       ) : (
                         <Circle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                       )}
@@ -143,7 +143,7 @@ export default function TeacherRegister() {
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
           <Link href="/teacher/login">
-            <span className="font-bold text-emerald-600 hover:underline cursor-pointer">Sign in</span>
+            <span className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer">Sign in</span>
           </Link>
         </p>
       </div>

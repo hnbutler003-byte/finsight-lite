@@ -27,6 +27,29 @@
 
    5. Semantic tokens that always adapt correctly (prefer these):
         text-foreground, text-muted-foreground, text-card-foreground
+
+   ── DARK MODE REGRESSION CHECKLIST (for all future contributors) ──
+   Every new UI addition MUST be checked in both light AND dark mode
+   before it is considered complete. Common failure patterns:
+
+   a. Inline style={{ color: "#..." }} overrides dark: Tailwind classes.
+      Fix: use text-[#hex] dark:text-white instead of a style attribute.
+
+   b. Coloured icon/text inside glass-card without a dark: pair:
+        ❌ text-blue-600              ✅ text-blue-600 dark:text-blue-400
+        ❌ text-emerald-500           ✅ text-emerald-500 dark:text-emerald-400
+        ❌ text-amber-600             ✅ text-amber-600 dark:text-amber-400
+
+   c. Chart/data-viz colours hardcoded in JSX that look fine in light
+      mode but become invisible on the dark glass-card background.
+      Always add dark: variants or use CSS variables from this file.
+
+   d. Any new panel/card that is not glass-card (e.g. a custom div
+      with a hardcoded bg-white) will not flip in dark mode — use
+      glass-card or semantic bg-card / bg-background instead.
+
+   e. After adding a feature, toggle .dark on <html> in DevTools and
+      visually scan every element you changed before committing.
    ──────────────────────────────────────────────────────────── */
 
 /* ── 1. GOOGLE FONTS ─────────────────────────────────────── */
