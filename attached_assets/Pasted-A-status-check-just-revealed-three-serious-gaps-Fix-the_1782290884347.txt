@@ -1,0 +1,44 @@
+A status check just revealed three serious gaps. Fix them in this order, this session. Do not move to lower-priority items until these three are confirmed resolved with real evidence.
+
+---
+
+PRIORITY 1 — Git sync
+
+A status check found no origin/main tracking data, only a local commit matching "gitsafe-backup/main", not the real GitHub remote. This means recent work may not actually be on GitHub, and Railway may be deploying stale or missing code.
+
+1. Run `git remote -v` and report exactly what remotes are configured (names and URLs).
+2. Confirm which remote is the real GitHub repository the Railway deployment is connected to.
+3. Run `git fetch <correct-remote-name>` and then `git log <correct-remote-name>/main -1` to see what's actually on GitHub right now.
+4. Compare that to `git log -1` (local). If they differ, push the local commits to the correct remote's main branch.
+5. After pushing, re-run the comparison and confirm local and the real GitHub remote now show the same commit hash. Report this commit hash explicitly.
+6. Do not just claim success, paste the actual git output showing matching commit hashes.
+
+---
+
+PRIORITY 2 — Upload hardening regression
+
+A previous session reported building file type validation, size limits, magic-bytes integrity checks, and YouTube URL validation, with real HTTP test evidence (status codes shown). A fresh status check today found zero trace of multer, fileFilter, maxSize, or YouTube validation in server/routes.ts.
+
+1. Search the entire codebase, not just server/routes.ts, for this logic. Check server/routes/orgs.ts, server/routes/lessons.ts, and any other route files, since prior work specifically mentioned these files.
+2. If the logic genuinely doesn't exist anywhere, determine why: was it on a different branch that never merged, was it overwritten by later work, or did a git issue (related to Priority 1) cause it to not be saved at all.
+3. If found to be missing entirely, rebuild it: file type restrictions (video formats, PDF, JPG, PNG, WEBP, DOCX, PPTX), a size limit shown upfront, magic-bytes integrity verification after upload, and YouTube URL pattern validation with a clear inline error for invalid links.
+4. Test with real HTTP requests or direct testing, the same standard used previously: actual status codes and responses, not just code review.
+5. Once confirmed working, ensure this is committed and pushed (per Priority 1's fix) so it cannot be lost again.
+
+---
+
+PRIORITY 3 — Self-onboarding approval gate
+
+A status check found no "pending" status, no requireApproval or isApproved logic, and no teacher invite-code join flow in current code, despite this being built in a prior session specifically to prevent new organizations from getting active access without a payment/partnership agreement in place.
+
+1. Search the codebase thoroughly for any trace of this work (check shared/schema.ts for a status column on organizations, check server routes for invite code validation logic, check for any "pending" or "Pending Organizations" UI on /admin).
+2. If genuinely missing, determine why, same diagnostic approach as Priority 2.
+3. Rebuild if missing: an organization status field (pending/active/suspended) defaulting new signups to pending, a holding page shown to pending org admins with no real dashboard access, a "Pending Organizations" section on /admin where a founder admin must approve before an org goes active, and a working invite-code field on teacher registration that associates a teacher with an org without requiring founder admin involvement (since that org is already presumably active/approved).
+4. This is a hard security and business requirement: no new organization should reach active status without explicit founder admin approval. Confirm this is true after rebuilding, with a real test (create a test org, confirm it lands in pending, confirm no real access until manually approved from /admin).
+5. Commit and push, confirming per Priority 1 that this is actually saved to the real GitHub remote.
+
+---
+
+After completing all three priorities, report:
+- The exact root cause for why Priorities 2 and 3 were found missing despite being reported complete previously
+- Real evidence (git output, HTTP test results) that all three are now genuinely fixed and pushed to the correct GitHub remote

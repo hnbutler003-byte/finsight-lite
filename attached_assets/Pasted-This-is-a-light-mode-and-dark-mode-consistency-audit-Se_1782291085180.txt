@@ -1,0 +1,39 @@
+This is a light mode and dark mode consistency audit. Several features were added today (savings goals, microinteractions, Jamaica JSE widget, logo placement, onboarding checklist, shimmer loading states) and none have been explicitly verified in dark mode. Check every one of them in both modes.
+
+---
+
+STAGE 1 — Audit every recently added or modified feature in both modes
+
+For each item below, check it in both light mode and dark mode (toggle the .dark class or however dark mode is triggered in this app) and report pass/fail with specifics for any failure:
+
+1. The Finsight Lite logo: on the Sidebar, and anywhere else it renders, confirm it's visible and not blending into the background in both modes.
+2. Savings goals: the progress bar (amber/secondary token), goal cards, and any text labels, confirm contrast is correct and nothing is invisible or hard to read in dark mode.
+3. Microinteractions: the shake-on-error animation, the inline password validation checkmarks/circles, and the shimmer/skeleton loading rows, confirm all are visible and styled correctly in dark mode, not just light mode.
+4. The student onboarding checklist (added today): confirm its glass-card styling, text, and progress bar all have correct contrast in dark mode.
+5. The Jamaica JSEWidget and the existing BISX investment simulator charts: confirm chart colors, text labels, and any data visualization remain readable in dark mode, charts are a common place for hardcoded colors that break in dark mode.
+6. The Sand Dollar lesson module (if its territory gating fix from a separate priority task is also complete by the time this runs): confirm its icon/color treatment works in both modes.
+7. The Teachers view, plan/student-limit badge on the org dashboard, and CSV upload UI (added today): confirm all render correctly in both modes.
+8. The "Thinking it through..." Money Guide loading message and any other recently touched chatbot UI: confirm in both modes.
+
+---
+
+STAGE 2 — Fix every failure found
+
+For each failure found in Stage 1, fix it following the existing dark mode pattern already established in index.css (the .dark class overrides for background, foreground, card, border, glass-card variants, etc.). Do not hardcode a new color for the fix, use or extend the existing semantic token system (text-foreground, text-muted-foreground, etc.) so it continues to adapt automatically if the dark theme is adjusted later. Pay specific attention to:
+- Any hardcoded hex or named colors (e.g. text-gray-700, text-white) used without a corresponding dark: variant, per the existing contrast rules already documented at the top of index.css.
+- Chart/data visualization colors that may not have been designed with a dark background in mind.
+- Any new glass-card or custom panel styling added today that may have only been visually checked in one mode.
+
+---
+
+STAGE 3 — Establish a lightweight regression check for future work
+
+Add a short, clearly commented checklist near the top of index.css (as a code comment, not user-facing) restating the existing contrast rules already present, and explicitly noting that every new UI addition going forward must be checked in both light and dark mode before being considered complete. This is documentation only, not a functional change, intended to remind whoever (human or agent) works on this file next.
+
+---
+
+Constraints:
+- Do not change any functionality, only color/contrast/visibility fixes.
+- Do not introduce new colors outside the existing token system.
+- After completing, print every file modified, and confirm with a clear pass/fail list covering all 8 items from Stage 1, post-fix.
+- Ensure all changes are committed and pushed to the correct GitHub remote (verify per the git sync fix from the priority task, do not assume a previous fix is still in place, confirm again).
