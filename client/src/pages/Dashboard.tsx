@@ -166,7 +166,7 @@ export default function Dashboard() {
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {checklistAllDone
-                      ? "You've completed all the starter steps — keep going!"
+                      ? "You've completed all the starter steps - keep going!"
                       : `${checklistProgress} of ${checklistItems.length} steps done`}
                   </p>
                 </div>

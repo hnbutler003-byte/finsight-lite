@@ -230,7 +230,7 @@ export default function SavingsGoals() {
                     className={`glass-card rounded-glass p-6 flex flex-col gap-4 ${isComplete ? "ring-2 ring-secondary/50" : ""} ${justCompleted ? "animate-bounce-in" : ""}`}
                     data-testid={`card-goal-${goal.id}`}
                   >
-                    {/* Celebration banner — appears only when goal is freshly completed */}
+                    {/* Celebration banner - appears only when goal is freshly completed */}
                     {justCompleted && (
                       <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-secondary/15 border border-secondary/40 animate-pop-in">
                         <Trophy className="w-4 h-4 text-secondary shrink-0" />
@@ -281,7 +281,7 @@ export default function SavingsGoals() {
                       </span>
                     </div>
 
-                    {/* Savings progress bar — amber/secondary token */}
+                    {/* Savings progress bar - amber/secondary token */}
                     <div>
                       <div className="xp-bar-track">
                         <div

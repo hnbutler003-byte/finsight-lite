@@ -281,7 +281,7 @@ export async function initSupabaseTables(): Promise<void> {
       if (applied) {
         console.log("[Supabase] ✓ Applied org status column.");
       } else {
-        console.warn("[Supabase] ⚠ Missing org status column — run ALTER TABLE organizations ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active'; in Supabase SQL editor.");
+        console.warn("[Supabase] ⚠ Missing org status column - run ALTER TABLE organizations ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active'; in Supabase SQL editor.");
       }
     }
   } else if (
