@@ -3,6 +3,7 @@ import { storage } from "../storage";
 import { audit } from "../audit";
 import { isAuthenticated } from "../replit_integrations/auth";
 import { z } from "zod";
+import { captureError } from "../sentry";
 import multer from "multer";
 import crypto from "crypto";
 import {
@@ -257,7 +258,9 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
       const full = await getLessonWithQuestions(lesson.id);
       res.json(full);
     } catch (e: any) {
-      res.status(400).json({ message: e.message });
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
     }
   });
 
@@ -279,7 +282,9 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
       await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: is_published ? "admin.lesson.publish" : "admin.lesson.unpublish", targetType: "lesson", targetId: req.params.id, orgId: lesson.org_id, req });
       res.json(lesson);
     } catch (e: any) {
-      res.status(400).json({ message: e.message });
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
     }
   });
 
@@ -319,7 +324,9 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
       await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.lesson.update", targetType: "lesson", targetId: req.params.id, orgId: lesson.org_id, req });
       res.json(full);
     } catch (e: any) {
-      res.status(400).json({ message: e.message });
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
     }
   });
 
@@ -332,7 +339,9 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
       await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.lesson.delete", targetType: "lesson", targetId: req.params.id, orgId: existing.org_id, req });
       res.json({ success: true });
     } catch (e: any) {
-      res.status(400).json({ message: e.message });
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
     }
   });
 
@@ -483,7 +492,9 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
       if (!lesson) return res.status(500).json({ message: "Failed to create lesson" });
       res.json(lesson);
     } catch (e: any) {
-      res.status(400).json({ message: e.message });
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
     }
   });
 
@@ -501,7 +512,9 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
       await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: isPublished ? "org_admin.lesson.publish" : "org_admin.lesson.unpublish", targetType: "lesson", targetId: req.params.id, orgId: admin.orgId, req });
       res.json(lesson);
     } catch (e: any) {
-      res.status(400).json({ message: e.message });
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
     }
   });
 
@@ -536,7 +549,9 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
       if (!q) return res.status(500).json({ message: "Failed to create question" });
       res.json(q);
     } catch (e: any) {
-      res.status(400).json({ message: e.message });
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
     }
   });
 
@@ -594,7 +609,9 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
       await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org_admin.lesson.update", targetType: "lesson", targetId: req.params.id, orgId: admin.orgId, req });
       res.json(full);
     } catch (e: any) {
-      res.status(400).json({ message: e.message });
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
     }
   });
 
@@ -611,7 +628,9 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
       await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org_admin.lesson.delete", targetType: "lesson", targetId: req.params.id, orgId: admin.orgId, req });
       res.json({ success: true });
     } catch (e: any) {
-      res.status(400).json({ message: e.message });
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
     }
   });
 

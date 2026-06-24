@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { captureError } from "./sentry";
 
 const supabaseUrl = process.env.SUPABASE_URL!;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -262,17 +263,13 @@ export async function initSupabaseTables(): Promise<void> {
   if (!error) {
     console.log("[Supabase] ✓ Connected, tables verified.");
     // Verify Task #16 branding columns exist; auto-apply if a direct DB URL is configured
-    const probe = await supabase.from("organizations").select("signature_left_name").limit(1);
-    if (probe.error && (probe.error.code === "42703" || probe.error.message?.includes("signature_left_name"))) {
+    const probe = await supabase.from("organizations").select("display_label").limit(1);
+    if (probe.error && (probe.error.code === "42703" || probe.error.message?.includes("display_label"))) {
       const applied = await applyBrandingColumnsViaPg();
       if (applied) {
-        console.log("[Supabase] ✓ Applied certificate branding columns on organizations.");
+        console.log("[Supabase] ✓ Applied organization schema columns.");
       } else {
-        console.warn("[Supabase] ⚠ Missing certificate branding columns on organizations. Run:\n" +
-          "  ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_left_name text;\n" +
-          "  ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_left_role text;\n" +
-          "  ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_right_name text;\n" +
-          "  ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature_right_role text;");
+        console.warn("[Supabase] ⚠ Missing organization columns — run applyBrandingColumnsViaPg() or apply the ALTER TABLE statements in your Supabase SQL editor.");
       }
     }
   } else if (
@@ -324,7 +321,11 @@ export async function createOrganization(org: Omit<Organization, "id" | "created
   if (!supabase) return null;
   const payload = { ...org, name: org.name?.trim() ?? org.name };
   const { data, error } = await supabase.from("organizations").insert(payload).select().single();
-  if (error) { console.error("[Supabase] createOrganization:", error.message); return null; }
+  if (error) {
+    const msg = `[Supabase] createOrganization failed: ${error.message}`;
+    console.error(msg);
+    throw new Error(msg);
+  }
   return data;
 }
 
@@ -332,7 +333,12 @@ export async function updateOrganization(id: string, updates: Partial<Organizati
   if (!supabase) return null;
   const payload = typeof updates.name === "string" ? { ...updates, name: updates.name.trim() } : updates;
   const { data, error } = await supabase.from("organizations").update(payload).eq("id", id).select().single();
-  if (error) { console.error("[Supabase] updateOrganization:", error.message); return null; }
+  if (error) {
+    if (error.code === "PGRST116") return null; // no matching row — caller may treat as 404
+    const msg = `[Supabase] updateOrganization failed: ${error.message}`;
+    console.error(msg);
+    throw new Error(msg);
+  }
   return data;
 }
 
@@ -405,7 +411,11 @@ export async function createOrgEnvironment(env: Omit<OrgEnvironment, "id" | "cre
   if (!supabase) return null;
   const join_code = env.join_code ?? await generateUniqueJoinCode();
   const { data, error } = await supabase.from("org_environments").insert({ ...env, join_code }).select().single();
-  if (error) { console.error("[Supabase] createOrgEnvironment:", error.message); return null; }
+  if (error) {
+    const msg = `[Supabase] createOrgEnvironment failed: ${error.message}`;
+    console.error(msg);
+    throw new Error(msg);
+  }
   return data;
 }
 
@@ -474,7 +484,10 @@ export async function upsertLeaderboardSnapshot(entry: {
     { ...entry, snapshot_date: new Date().toISOString().split("T")[0] },
     { onConflict: "env_id,student_user_id,snapshot_date" }
   );
-  if (error) console.error("[Supabase] upsertLeaderboard:", error.message);
+  if (error) {
+    console.error("[Supabase] upsertLeaderboard:", error.message);
+    captureError(new Error(`[Supabase] upsertLeaderboard failed: ${error.message}`), { fn: "upsertLeaderboardSnapshot" });
+  }
 }
 
 export async function getLeaderboard(envId?: string, limit = 50): Promise<any[]> {
@@ -496,7 +509,10 @@ export async function trackEvent(event: {
 }): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.from("analytics_events").insert(event);
-  if (error) console.error("[Supabase] trackEvent:", error.message);
+  if (error) {
+    console.error("[Supabase] trackEvent:", error.message);
+    captureError(new Error(`[Supabase] trackEvent failed: ${error.message}`), { fn: "trackEvent" });
+  }
 }
 
 // ─── Lesson Plans ─────────────────────────────────────────────────────────────
@@ -551,14 +567,22 @@ export async function createLessonPlan(plan: Omit<LessonPlan, "id" | "created_at
     objectives: plan.objectives ?? [],
     content_sections: plan.content_sections ?? [],
   }).select().single();
-  if (error) { console.error("[Supabase] createLessonPlan:", error.message); return null; }
+  if (error) {
+    const msg = `[Supabase] createLessonPlan failed: ${error.message}`;
+    console.error(msg);
+    throw new Error(msg);
+  }
   return normalizeLessonPlan(data);
 }
 
 export async function createLessonQuizQuestion(q: Omit<LessonQuizQuestion, "id">): Promise<LessonQuizQuestion | null> {
   if (!supabase) return null;
   const { data, error } = await supabase.from("lesson_quiz_questions").insert(q).select().single();
-  if (error) { console.error("[Supabase] createLessonQuizQuestion:", error.message); return null; }
+  if (error) {
+    const msg = `[Supabase] createLessonQuizQuestion failed: ${error.message}`;
+    console.error(msg);
+    throw new Error(msg);
+  }
   return data;
 }
 
@@ -566,7 +590,12 @@ export async function toggleLessonPublish(lessonId: string, isPublished: boolean
   if (!supabase) return null;
   const { data, error } = await supabase
     .from("lesson_plans").update({ is_published: isPublished }).eq("id", lessonId).select().single();
-  if (error) { console.error("[Supabase] toggleLessonPublish:", error.message); return null; }
+  if (error) {
+    if (error.code === "PGRST116") return null; // lesson not found — caller treats as 404
+    const msg = `[Supabase] toggleLessonPublish failed: ${error.message}`;
+    console.error(msg);
+    throw new Error(msg);
+  }
   return normalizeLessonPlan(data);
 }
 
@@ -574,7 +603,12 @@ export async function updateLessonPlan(lessonId: string, updates: Partial<Omit<L
   if (!supabase) return null;
   const { data, error } = await supabase
     .from("lesson_plans").update(updates).eq("id", lessonId).select().single();
-  if (error) { console.error("[Supabase] updateLessonPlan:", error.message); return null; }
+  if (error) {
+    if (error.code === "PGRST116") return null; // lesson not found — caller treats as 500
+    const msg = `[Supabase] updateLessonPlan failed: ${error.message}`;
+    console.error(msg);
+    throw new Error(msg);
+  }
   return normalizeLessonPlan(data);
 }
 
@@ -588,7 +622,11 @@ export async function deleteLessonPlan(lessonId: string): Promise<boolean> {
   if (!supabase) return false;
   await supabase.from("lesson_quiz_questions").delete().eq("lesson_id", lessonId);
   const { error } = await supabase.from("lesson_plans").delete().eq("id", lessonId);
-  if (error) { console.error("[Supabase] deleteLessonPlan:", error.message); return false; }
+  if (error) {
+    const msg = `[Supabase] deleteLessonPlan failed: ${error.message}`;
+    console.error(msg);
+    throw new Error(msg);
+  }
   return true;
 }
 

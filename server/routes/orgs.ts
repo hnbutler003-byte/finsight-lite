@@ -2,6 +2,7 @@ import { Express } from "express";
 import { storage } from "../storage";
 import { audit, listAuditLog } from "../audit";
 import { z } from "zod";
+import { captureError } from "../sentry";
 import multer from "multer";
 import crypto from "crypto";
 import Papa from "papaparse";
@@ -547,17 +548,25 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
       await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.organization.create", targetType: "organization", targetId: org.id, orgId: org.id, meta: { name: body.name }, req });
       res.json(org);
     } catch (e: any) {
-      res.status(400).json({ message: e.message });
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
     }
   });
 
   app.patch("/api/admin/organizations/:id", isAdmin, async (req, res) => {
-    const org = await updateOrganization(req.params.id, req.body);
-    if (!org) return res.status(404).json({ message: "Organization not found" });
-    const { invalidateOrganizationCache } = await import("../supabase");
-    await invalidateOrganizationCache(req.params.id);
-    await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.organization.update", targetType: "organization", targetId: req.params.id, orgId: req.params.id, meta: req.body, req });
-    res.json(org);
+    try {
+      const org = await updateOrganization(req.params.id, req.body);
+      if (!org) return res.status(404).json({ message: "Organization not found" });
+      const { invalidateOrganizationCache } = await import("../supabase");
+      await invalidateOrganizationCache(req.params.id);
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.organization.update", targetType: "organization", targetId: req.params.id, orgId: req.params.id, meta: req.body, req });
+      res.json(org);
+    } catch (e: any) {
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
+    }
   });
 
   app.get("/api/admin/org-envs", isAdmin, async (_req, res) => {
@@ -589,7 +598,9 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
       if (!env) return res.status(500).json({ message: "Failed to create environment" });
       res.json(env);
     } catch (e: any) {
-      res.status(400).json({ message: e.message });
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
     }
   });
 
@@ -1402,7 +1413,9 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
         allowedEmailDomains: org.allowed_email_domains ?? [],
       });
     } catch (e: any) {
-      res.status(400).json({ message: e.message });
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
     }
   });
 

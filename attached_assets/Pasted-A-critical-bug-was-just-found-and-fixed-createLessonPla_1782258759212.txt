@@ -1,0 +1,41 @@
+A critical bug was just found and fixed: createLessonPlan() was silently returning null instead of throwing an error, because the video_url column existed in code comments but was never actually migrated to the live Supabase table. This means lesson creation with a video URL failed silently for an unknown period before today.
+
+This prompt audits for the same pattern elsewhere: a database write function that can fail silently (returning null/undefined instead of throwing or surfacing a clear error) anywhere in the app that matters.
+
+---
+
+STAGE 1 — Audit for silent failure patterns
+
+Search the codebase for every function that writes to the database (create, update, delete operations) for these critical paths specifically:
+1. Student account creation and enrollment
+2. Organization creation and updates (including the recent display_label and pricing tier fields)
+3. Teacher account creation
+4. Lesson creation and publishing (already found one bug here, check for others)
+5. Quiz/game score submission
+6. Student feedback notes (teacher to student)
+7. Account/data deletion (the purge functionality built earlier)
+8. Org admin report/PDF generation
+
+For each, check: does the function throw a clear error if the write fails, or could it return null/undefined/an empty result while the caller assumes success? Report every instance found where a failure could go unnoticed by both the user and any error tracking (Sentry).
+
+---
+
+STAGE 2 — Cross-check the live database schema against the code's expectations
+
+The root cause of the lesson_plans bug was a column that existed in code comments but not in the live table. Check for any other mismatches between what the code expects (column names, types, required fields across all Drizzle schema definitions) and what actually exists in the live Supabase database right now. Run a comparison and report any other columns, tables, or constraints that are defined in code but missing or different in the live database.
+
+---
+
+STAGE 3 — Fix what's found
+
+For every silent failure pattern found in Stage 1, update the function to throw a clear, catchable error instead of returning null/undefined silently. Ensure these errors are actually captured by Sentry (confirm Sentry is configured to catch backend/server errors, not just frontend crashes, report if it currently is not).
+
+For every schema mismatch found in Stage 2, apply the missing migration to the live database (matching the same approach used for the video_url fix: ALTER TABLE with IF NOT EXISTS, then reload the PostgREST schema cache) and update the corresponding code comments/documentation to reflect that the migration is now actually applied, not just intended.
+
+---
+
+Constraints:
+- Do not change any working functionality, this is about surfacing failures that currently go silent, not changing what succeeds.
+- Test each fix the same way the previous testing was done: real HTTP requests or direct database checks with actual evidence (status codes, query results), not just code review.
+- If any new package needs installing, apply the known fix for the Replit package-lock.json proxy URL issue first.
+- After completing, report every silent-failure pattern found and fixed, every schema mismatch found and corrected, and confirm Sentry is properly capturing backend errors going forward.
