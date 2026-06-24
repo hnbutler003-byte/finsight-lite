@@ -32,8 +32,24 @@ export const isTeacher = (req: any, res: any, next: any) => {
   next();
 };
 
-export const isOrgAdmin = (req: any, res: any, next: any) => {
+// Paths that pending/rejected orgs may still reach (to show the holding page)
+const ORG_PENDING_ALLOWED = ["/api/org/auth/me", "/api/org-admin/overview"];
+
+export const isOrgAdmin = async (req: any, res: any, next: any) => {
   if (!req.session?.orgAdminId) return res.status(401).json({ message: "Org admin not authenticated" });
+
+  // Server-side status gate: block pending/rejected orgs from all data endpoints
+  const reqPath: string = req.path ?? "";
+  if (!ORG_PENDING_ALLOWED.some(p => reqPath === p || reqPath.startsWith(p))) {
+    const orgId = req.session.orgId as string | undefined;
+    if (orgId) {
+      const org = await getOrganization(orgId).catch(() => null);
+      if (org && org.status && org.status !== "active") {
+        return res.status(403).json({ message: "Your organization is not yet active.", code: "ORG_PENDING" });
+      }
+    }
+  }
+
   next();
 };
 
