@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Building2, Eye, EyeOff, Loader2, KeyRound } from "lucide-react";
+import { Building2, Eye, EyeOff, Loader2, KeyRound, CheckCircle2, Circle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
@@ -15,6 +15,8 @@ export default function OrgRegister() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [pwFocused, setPwFocused] = useState(false);
+  const [shakePw, setShakePw] = useState(false);
 
   const handleGoogle = async (idToken: string) => {
     const code = form.joinCode.toUpperCase().trim();
@@ -47,6 +49,7 @@ export default function OrgRegister() {
     e.preventDefault();
     if (form.password.length < 6) {
       toast({ title: "Password too short", description: "Password must be at least 6 characters", variant: "destructive" });
+      setShakePw(true);
       return;
     }
     setLoading(true);
@@ -67,6 +70,10 @@ export default function OrgRegister() {
       setLoading(false);
     }
   };
+
+  const pwLongEnough = form.password.length >= 6;
+  const showPwHints = pwFocused || form.password.length > 0;
+  const codeReady = form.joinCode.trim().length >= 4;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 p-4">
@@ -106,14 +113,38 @@ export default function OrgRegister() {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold">Password</label>
-                <div className="relative">
-                  <input type={showPw ? "text" : "password"} required value={form.password} onChange={set("password")}
-                    placeholder="Min. 6 characters"
-                    className="w-full rounded-2xl border-2 border-input bg-background px-4 py-3 pr-12 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                    data-testid="input-org-password" />
-                  <button type="button" onClick={() => setShowPw(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1">
-                    {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                <div
+                  className={shakePw ? "animate-shake" : ""}
+                  onAnimationEnd={() => setShakePw(false)}
+                >
+                  <div className="relative">
+                    <input
+                      type={showPw ? "text" : "password"}
+                      required
+                      value={form.password}
+                      onChange={set("password")}
+                      onFocus={() => setPwFocused(true)}
+                      onBlur={() => setPwFocused(false)}
+                      placeholder="Min. 6 characters"
+                      className="w-full rounded-2xl border-2 border-input bg-background px-4 py-3 pr-12 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                      data-testid="input-org-password"
+                    />
+                    <button type="button" onClick={() => setShowPw(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1">
+                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {showPwHints && (
+                    <div className="mt-2 flex items-center gap-2 text-xs px-1">
+                      {pwLongEnough ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                      ) : (
+                        <Circle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      )}
+                      <span className={pwLongEnough ? "text-blue-600 dark:text-blue-400 font-medium" : "text-muted-foreground"}>
+                        At least 6 characters
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -122,10 +153,25 @@ export default function OrgRegister() {
                   <KeyRound className="w-3.5 h-3.5 text-blue-500" />
                   Organization Join Code
                 </label>
-                <input required value={form.joinCode} onChange={set("joinCode")}
-                  placeholder="e.g. 3KMXJD"
-                  className="w-full rounded-2xl border-2 border-input bg-background px-4 py-3 text-sm font-medium tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                  data-testid="input-org-join-code" />
+                <div className="relative">
+                  <input
+                    required
+                    value={form.joinCode}
+                    onChange={set("joinCode")}
+                    placeholder="e.g. 3KMXJD"
+                    className={`w-full rounded-2xl border-2 bg-background px-4 py-3 text-sm font-medium tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors ${
+                      codeReady
+                        ? "border-blue-400 focus:border-blue-500"
+                        : "border-input focus:border-blue-400"
+                    }`}
+                    data-testid="input-org-join-code"
+                  />
+                  {codeReady && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <CheckCircle2 className="w-4 h-4 text-blue-500" />
+                    </div>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">This code identifies your organization in FinSight Lite</p>
               </div>
 

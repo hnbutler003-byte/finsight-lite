@@ -222,7 +222,7 @@ export default function MoneyGuide() {
                     {msg.role === "assistant" && msg.content === "" && isStreaming ? (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="text-sm font-medium">Thinking...</span>
+                        <span className="text-sm font-medium">Thinking it through...</span>
                       </div>
                     ) : (
                       <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">{msg.content}</div>

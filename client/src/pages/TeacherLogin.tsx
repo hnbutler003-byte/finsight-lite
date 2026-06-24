@@ -15,6 +15,7 @@ export default function TeacherLogin() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [shakeForm, setShakeForm] = useState(false);
 
   const handleGoogle = async (idToken: string) => {
     setGoogleLoading(true);
@@ -31,6 +32,7 @@ export default function TeacherLogin() {
       setLocation("/teacher/dashboard");
     } catch (e: any) {
       toast({ title: "Google sign-in failed", description: e.message, variant: "destructive" });
+      setShakeForm(true);
     } finally {
       setGoogleLoading(false);
     }
@@ -52,6 +54,7 @@ export default function TeacherLogin() {
       setLocation("/teacher/dashboard");
     } catch (e: any) {
       toast({ title: "Login failed", description: e.message, variant: "destructive" });
+      setShakeForm(true);
     } finally {
       setLoading(false);
     }
@@ -72,7 +75,7 @@ export default function TeacherLogin() {
           <CardContent className="p-8 space-y-5">
             <GoogleSignInButton
               onSuccess={handleGoogle}
-              onError={(msg) => toast({ title: "Google sign-in failed", description: msg, variant: "destructive" })}
+              onError={(msg) => { toast({ title: "Google sign-in failed", description: msg, variant: "destructive" }); setShakeForm(true); }}
             />
             {googleLoading && <div className="flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-emerald-500" /></div>}
 
@@ -83,7 +86,11 @@ export default function TeacherLogin() {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form
+              onSubmit={handleSubmit}
+              className={`space-y-5 ${shakeForm ? "animate-shake" : ""}`}
+              onAnimationEnd={() => setShakeForm(false)}
+            >
               <div className="space-y-2">
                 <label className="text-sm font-bold">Email Address</label>
                 <input

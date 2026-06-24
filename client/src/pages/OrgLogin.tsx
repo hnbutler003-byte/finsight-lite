@@ -18,6 +18,7 @@ export default function OrgLogin() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [orgOptions, setOrgOptions] = useState<OrgOption[] | null>(null);
+  const [shakeForm, setShakeForm] = useState(false);
 
   const handleGoogle = async (idToken: string) => {
     setGoogleLoading(true);
@@ -42,6 +43,7 @@ export default function OrgLogin() {
       setLocation("/org/dashboard");
     } catch (e: any) {
       toast({ title: "Google sign-in failed", description: e.message, variant: "destructive" });
+      setShakeForm(true);
     } finally {
       setGoogleLoading(false);
     }
@@ -66,6 +68,7 @@ export default function OrgLogin() {
       setLocation("/org/dashboard");
     } catch (e: any) {
       toast({ title: "Login failed", description: e.message, variant: "destructive" });
+      setShakeForm(true);
     } finally {
       setLoading(false);
     }
@@ -76,7 +79,6 @@ export default function OrgLogin() {
     doLogin();
   };
 
-  // ── Org picker (founder admin with multiple orgs) ──────────────────────────
   if (orgOptions) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 p-4">
@@ -114,7 +116,6 @@ export default function OrgLogin() {
     );
   }
 
-  // ── Normal login form ──────────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 p-4">
       <div className="w-full max-w-md space-y-6">
@@ -130,7 +131,7 @@ export default function OrgLogin() {
           <CardContent className="p-8 space-y-5">
             <GoogleSignInButton
               onSuccess={handleGoogle}
-              onError={(msg) => toast({ title: "Google sign-in failed", description: msg, variant: "destructive" })}
+              onError={(msg) => { toast({ title: "Google sign-in failed", description: msg, variant: "destructive" }); setShakeForm(true); }}
             />
             {googleLoading && <div className="flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-blue-500" /></div>}
             <div className="relative">
@@ -139,7 +140,11 @@ export default function OrgLogin() {
                 <span className="bg-background px-2 text-muted-foreground">or use email</span>
               </div>
             </div>
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form
+              onSubmit={handleSubmit}
+              className={`space-y-5 ${shakeForm ? "animate-shake" : ""}`}
+              onAnimationEnd={() => setShakeForm(false)}
+            >
               <div className="space-y-2">
                 <label className="text-sm font-bold">Email Address</label>
                 <input

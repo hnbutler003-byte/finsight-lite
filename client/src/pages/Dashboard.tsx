@@ -8,7 +8,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import {
   Wallet, TrendingUp, TrendingDown, Plus, Loader2, Sparkles,
   Lightbulb, Target, Trash2, Edit2, ChevronDown, ChevronUp, MessageSquare,
-  ArrowUpCircle, ArrowDownCircle,
+  ArrowUpCircle, ArrowDownCircle, CheckCircle2, Circle, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,6 +73,14 @@ export default function Dashboard() {
     queryKey: ["/api/student/feedback"],
   });
 
+  const { data: savingsGoals } = useQuery<any[]>({
+    queryKey: ["/api/savings-goals"],
+  });
+
+  const [checklistDismissed, setChecklistDismissed] = useState(
+    () => localStorage.getItem("student_checklist_dismissed") === "true"
+  );
+
   const selectedCurrency = CURRENCIES.find(c => c.code === currency) || CURRENCIES[1];
 
   if (authLoading || statsLoading) {
@@ -92,6 +100,19 @@ export default function Dashboard() {
   const visibleTransactions = showAllTransactions
     ? transactions
     : transactions?.slice(0, 8);
+
+  const tourDone = localStorage.getItem("finsight_tour_done") === "true";
+  const hasTransactions = (transactions?.length ?? 0) > 0;
+  const hasSavingsGoal = Array.isArray(savingsGoals) && savingsGoals.length > 0;
+  const hasXp = ((user as any)?.xp ?? 0) > 0;
+  const checklistItems = [
+    { label: "Complete the welcome tour", done: tourDone },
+    { label: "Log your first transaction", done: hasTransactions },
+    { label: "Create a savings goal", done: hasSavingsGoal },
+    { label: "Try a money game or lesson", done: hasXp },
+  ];
+  const checklistProgress = checklistItems.filter(i => i.done).length;
+  const checklistAllDone = checklistProgress === checklistItems.length;
 
   return (
     <div className="flex min-h-screen caribbean-bg">
@@ -135,6 +156,54 @@ export default function Dashboard() {
               </TransactionForm>
             </div>
           </div>
+
+          {!checklistDismissed && (
+            <div className="glass-card rounded-glass p-5 animate-bounce-in" data-testid="section-student-checklist">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <h3 className="font-display text-lg font-bold text-foreground">
+                    {checklistAllDone ? "🎉 You're all set!" : "Getting Started"}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {checklistAllDone
+                      ? "You've completed all the starter steps — keep going!"
+                      : `${checklistProgress} of ${checklistItems.length} steps done`}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    localStorage.setItem("student_checklist_dismissed", "true");
+                    setChecklistDismissed(true);
+                  }}
+                  className="text-muted-foreground hover:text-foreground transition-colors shrink-0 mt-0.5 p-0.5 rounded"
+                  aria-label="Dismiss checklist"
+                  data-testid="button-dismiss-checklist"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="xp-bar-track mb-4">
+                <div
+                  className="xp-bar-fill"
+                  style={{ width: `${(checklistProgress / checklistItems.length) * 100}%` }}
+                />
+              </div>
+              <div className="space-y-2.5">
+                {checklistItems.map((item, i) => (
+                  <div key={i} className="flex items-center gap-3" data-testid={`checklist-item-${i}`}>
+                    {item.done ? (
+                      <CheckCircle2 className="w-4.5 h-4.5 text-primary shrink-0" />
+                    ) : (
+                      <Circle className="w-4.5 h-4.5 text-muted-foreground/40 shrink-0" />
+                    )}
+                    <span className={`text-sm ${item.done ? "text-foreground line-through decoration-muted-foreground/40" : "text-muted-foreground"}`}>
+                      {item.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <StatCard
@@ -212,8 +281,17 @@ export default function Dashboard() {
               </div>
               <div className="space-y-2 flex-1 overflow-y-auto pr-1 custom-scrollbar">
                 {txLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  <div className="space-y-2">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="flex items-center gap-3 p-3 rounded-2xl">
+                        <div className="w-9 h-9 rounded-xl bg-muted animate-shimmer shrink-0" />
+                        <div className="flex-1 space-y-1.5">
+                          <div className="h-3 rounded-full bg-muted animate-shimmer" style={{ width: `${55 + (i * 13) % 35}%` }} />
+                          <div className="h-2.5 rounded-full bg-muted animate-shimmer w-1/3" />
+                        </div>
+                        <div className="h-3 rounded-full bg-muted animate-shimmer w-14" />
+                      </div>
+                    ))}
                   </div>
                 ) : visibleTransactions && visibleTransactions.length > 0 ? (
                   visibleTransactions.map((tx) => (

@@ -66,6 +66,7 @@ export default function AuthPage() {
   const [, setLocation] = useLocation();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [googleAvailable, setGoogleAvailable] = useState(true);
+  const [shakeEl, setShakeEl] = useState<string | null>(null);
 
   const clearError = () => setError("");
 
@@ -91,23 +92,23 @@ export default function AuthPage() {
 
   const handleValidateCode = async () => {
     const code = classCode.trim().toUpperCase();
-    if (code.length < 3) { setError("Enter a valid code."); return; }
+    if (code.length < 3) { setError("Enter a valid code."); setShakeEl("code"); return; }
     setIsValidatingCode(true);
     setError("");
     try {
       const res = await fetch(`/api/classes/check-code/${encodeURIComponent(code)}`);
       const data = await res.json();
-      if (!res.ok) { setError(data.message || "Code not found."); return; }
+      if (!res.ok) { setError(data.message || "Code not found."); setShakeEl("code"); return; }
       setCodeType(data.type);
       setClassCode(code);
       setClassName(data.type === "org" ? `${data.name}: ${data.envName}` : data.name);
       setStep("student-name");
-    } catch { setError("Could not check the code. Try again."); }
+    } catch { setError("Could not check the code. Try again."); setShakeEl("code"); }
     finally { setIsValidatingCode(false); }
   };
 
   const handleResume = async () => {
-    if (!resumeUsername.trim()) { setError("Please enter your username."); return; }
+    if (!resumeUsername.trim()) { setError("Please enter your username."); setShakeEl("username"); return; }
     setIsResuming(true);
     setError("");
     try {
@@ -118,16 +119,16 @@ export default function AuthPage() {
         credentials: "include",
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.message || "Username not found."); return; }
+      if (!res.ok) { setError(data.message || "Username not found."); setShakeEl("username"); return; }
       window.location.href = "/";
-    } catch { setError("Could not resume. Try again."); }
+    } catch { setError("Could not resume. Try again."); setShakeEl("username"); }
     finally { setIsResuming(false); }
   };
 
   const handleNameNext = async () => {
-    if (!name.trim()) { setError("Please enter your name!"); return; }
-    if (name.trim().length > 50) { setError("First name must be 50 characters or less."); return; }
-    if (lastName.trim().length > 50) { setError("Last name must be 50 characters or less."); return; }
+    if (!name.trim()) { setError("Please enter your name!"); setShakeEl("name"); return; }
+    if (name.trim().length > 50) { setError("First name must be 50 characters or less."); setShakeEl("name"); return; }
+    if (lastName.trim().length > 50) { setError("Last name must be 50 characters or less."); setShakeEl("name"); return; }
     setError("");
     const av = randomAvatar();
     setAssignedAvatar(av);
@@ -152,7 +153,7 @@ export default function AuthPage() {
         finally { setIsJoiningClass(false); }
       }
       setStep("welcome");
-    } catch (err: any) { setError(err.message || "Something went wrong."); }
+    } catch (err: any) { setError(err.message || "Something went wrong."); setShakeEl("name"); }
   };
 
   return (
@@ -374,7 +375,8 @@ export default function AuthPage() {
                 onChange={(e) => { setClassCode(e.target.value.toUpperCase()); clearError(); }}
                 onKeyDown={(e) => e.key === "Enter" && handleValidateCode()}
                 placeholder="e.g. ABC123"
-                className="h-14 text-2xl text-center font-mono tracking-[0.3em] uppercase rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-violet-400 focus:bg-white/12"
+                className={`h-14 text-2xl text-center font-mono tracking-[0.3em] uppercase rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-violet-400 focus:bg-white/12${shakeEl === "code" ? " animate-shake" : ""}`}
+                onAnimationEnd={() => shakeEl === "code" && setShakeEl(null)}
                 maxLength={8}
                 autoFocus
                 data-testid="input-class-code"
@@ -437,7 +439,8 @@ export default function AuthPage() {
                 onChange={(e) => { setResumeUsername(e.target.value); clearError(); }}
                 onKeyDown={(e) => e.key === "Enter" && handleResume()}
                 placeholder="e.g. Alex_4291"
-                className="h-12 text-lg font-mono rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-emerald-400"
+                className={`h-12 text-lg font-mono rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-emerald-400${shakeEl === "username" ? " animate-shake" : ""}`}
+                onAnimationEnd={() => shakeEl === "username" && setShakeEl(null)}
                 autoFocus
                 data-testid="input-resume-username"
               />
@@ -481,7 +484,8 @@ export default function AuthPage() {
                 onChange={(e) => { setName(e.target.value); clearError(); }}
                 onKeyDown={(e) => e.key === "Enter" && handleNameNext()}
                 placeholder="First name (e.g. Alex, Keisha, Jamal…)"
-                className="h-12 text-lg rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-violet-400"
+                className={`h-12 text-lg rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-violet-400${shakeEl === "name" ? " animate-shake" : ""}`}
+                onAnimationEnd={() => shakeEl === "name" && setShakeEl(null)}
                 autoFocus
                 data-testid="input-name"
               />

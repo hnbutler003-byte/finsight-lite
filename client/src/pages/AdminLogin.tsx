@@ -14,6 +14,7 @@ export default function AdminLogin() {
   const [, setLocation] = useLocation();
   const { login } = useAdminAuth();
   const { toast } = useToast();
+  const [shakeForm, setShakeForm] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +23,7 @@ export default function AdminLogin() {
       setLocation("/admin");
     } catch {
       toast({ title: "Login failed", description: "Invalid credentials. Please try again.", variant: "destructive" });
+      setShakeForm(true);
     }
   };
 
@@ -41,7 +43,11 @@ export default function AdminLogin() {
             <CardDescription className="text-slate-400">Enter your admin credentials to continue</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form
+              onSubmit={handleSubmit}
+              className={`space-y-4 ${shakeForm ? "animate-shake" : ""}`}
+              onAnimationEnd={() => setShakeForm(false)}
+            >
               <div>
                 <Label htmlFor="email" className="text-slate-300">Email</Label>
                 <Input
@@ -77,7 +83,6 @@ export default function AdminLogin() {
                 {login.isPending ? "Signing in..." : "Sign In"}
               </Button>
             </form>
-
           </CardContent>
         </Card>
       </div>

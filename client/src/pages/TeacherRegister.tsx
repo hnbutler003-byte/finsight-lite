@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, Eye, EyeOff, Loader2 } from "lucide-react";
+import { GraduationCap, Eye, EyeOff, Loader2, CheckCircle2, Circle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -13,13 +13,19 @@ export default function TeacherRegister() {
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "", schoolName: "" });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pwFocused, setPwFocused] = useState(false);
+  const [shakePw, setShakePw] = useState(false);
 
   const set = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [key]: e.target.value }));
+
+  const pwLongEnough = form.password.length >= 6;
+  const showPwHints = pwFocused || form.password.length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password.length < 6) {
       toast({ title: "Password too short", description: "Password must be at least 6 characters", variant: "destructive" });
+      setShakePw(true);
       return;
     }
     setLoading(true);
@@ -86,14 +92,38 @@ export default function TeacherRegister() {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold">Password</label>
-                <div className="relative">
-                  <input type={showPw ? "text" : "password"} required value={form.password} onChange={set("password")}
-                    placeholder="Min. 6 characters"
-                    className="w-full rounded-2xl border-2 border-input bg-background px-4 py-3 pr-12 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400"
-                    data-testid="input-teacher-password" />
-                  <button type="button" onClick={() => setShowPw(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1">
-                    {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                <div
+                  className={shakePw ? "animate-shake" : ""}
+                  onAnimationEnd={() => setShakePw(false)}
+                >
+                  <div className="relative">
+                    <input
+                      type={showPw ? "text" : "password"}
+                      required
+                      value={form.password}
+                      onChange={set("password")}
+                      onFocus={() => setPwFocused(true)}
+                      onBlur={() => setPwFocused(false)}
+                      placeholder="Min. 6 characters"
+                      className="w-full rounded-2xl border-2 border-input bg-background px-4 py-3 pr-12 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400"
+                      data-testid="input-teacher-password"
+                    />
+                    <button type="button" onClick={() => setShowPw(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1">
+                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {showPwHints && (
+                    <div className="mt-2 flex items-center gap-2 text-xs px-1">
+                      {pwLongEnough ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      ) : (
+                        <Circle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      )}
+                      <span className={pwLongEnough ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground"}>
+                        At least 6 characters
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
