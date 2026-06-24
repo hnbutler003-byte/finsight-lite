@@ -164,6 +164,8 @@ export interface IStorage extends IAuthStorage {
   getStudentsByOrgId(orgId: string): Promise<User[]>;
   getTeachersByOrgId(orgId: string): Promise<Teacher[]>;
   getOrgAdminsByOrgId(orgId: string): Promise<OrgAdmin[]>;
+  getClassesByOrgId(orgId: string): Promise<(Class & { enrollmentCount: number; teacherName: string })[]>;
+  reassignClassTeacher(classId: number, newTeacherId: number): Promise<Class>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -857,6 +859,41 @@ export class DatabaseStorage implements IStorage {
   async updateClassEnvLink(classId: number, envId: string | null): Promise<Class> {
     const [updated] = await db.update(classes).set({ envId }).where(eq(classes.id, classId)).returning();
     if (!updated) throw new Error("Class not found");
+    return updated;
+  }
+
+  async getClassesByOrgId(orgId: string): Promise<(Class & { enrollmentCount: number; teacherName: string })[]> {
+    const orgTeachers = await db.select().from(teachers).where(eq(teachers.orgId, orgId));
+    if (orgTeachers.length === 0) return [];
+    const teacherIds = orgTeachers.map(t => t.id);
+    const classList = await db
+      .select({ class: classes, teacher: teachers })
+      .from(classes)
+      .innerJoin(teachers, eq(classes.teacherId, teachers.id))
+      .where(inArray(classes.teacherId, teacherIds))
+      .orderBy(desc(classes.createdAt));
+    if (classList.length === 0) return [];
+    const classIds = classList.map(r => r.class.id);
+    const counts = await db
+      .select({ classId: classEnrollments.classId, count: sql<number>`count(*)` })
+      .from(classEnrollments)
+      .where(inArray(classEnrollments.classId, classIds))
+      .groupBy(classEnrollments.classId);
+    const countMap = new Map(counts.map(c => [c.classId, Number(c.count)]));
+    return classList.map(r => ({
+      ...r.class,
+      enrollmentCount: countMap.get(r.class.id) ?? 0,
+      teacherName: `${r.teacher.firstName} ${r.teacher.lastName ?? ""}`.trim(),
+    }));
+  }
+
+  async reassignClassTeacher(classId: number, newTeacherId: number): Promise<Class> {
+    const [updated] = await db
+      .update(classes)
+      .set({ teacherId: newTeacherId })
+      .where(eq(classes.id, classId))
+      .returning();
+    if (!updated) throw new Error("Class not found or reassignment failed");
     return updated;
   }
 

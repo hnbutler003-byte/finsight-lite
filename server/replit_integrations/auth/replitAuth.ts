@@ -10,6 +10,9 @@ declare module "express-session" {
     orgAdminId: string;
     orgId: string;
     isAdmin: boolean;
+    previewMode: boolean;
+    previewRole: string;
+    previewActorName: string;
   }
 }
 

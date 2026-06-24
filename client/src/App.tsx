@@ -1,11 +1,11 @@
 import { Switch, Route, Redirect, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeProvider } from "@/lib/theme";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, X } from "lucide-react";
 import NotFound from "@/pages/not-found";
 
 import Dashboard from "@/pages/Dashboard";
@@ -39,6 +39,77 @@ import OrgLessons from "@/pages/OrgLessons";
 import OrgBranding from "@/pages/OrgBranding";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
+
+// Persistent banner shown during founder admin preview mode.
+// Queries /api/admin/preview/status every 10 s; only visible when previewMode is true.
+// Stays mounted across all routes so the admin always knows they are in preview.
+function PreviewBanner() {
+  const [, setLocation] = useLocation();
+  const qc = useQueryClient();
+
+  const { data: status } = useQuery<{
+    previewMode: boolean;
+    previewRole: string | null;
+    previewActorName: string | null;
+  }>({
+    queryKey: ["/api/admin/preview/status"],
+    queryFn: () =>
+      fetch("/api/admin/preview/status", { credentials: "include" }).then(r =>
+        r.ok ? r.json() : { previewMode: false, previewRole: null, previewActorName: null }
+      ),
+    refetchInterval: 10_000,
+    staleTime: 5_000,
+    retry: false,
+  });
+
+  const exitPreview = useMutation({
+    mutationFn: () =>
+      fetch("/api/admin/preview/exit", { method: "POST", credentials: "include" }).then(r =>
+        r.json()
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/preview/status"] });
+      setLocation("/admin");
+    },
+  });
+
+  if (!status?.previewMode) return null;
+
+  const roleLabel =
+    status.previewRole === "student"
+      ? "Student"
+      : status.previewRole === "teacher"
+      ? "Teacher"
+      : "Org Admin";
+
+  return (
+    <div
+      className="fixed top-0 inset-x-0 z-50 bg-amber-400 text-amber-950 flex items-center justify-between gap-3 px-4 py-2 text-sm font-semibold shadow-lg"
+      data-testid="banner-preview-mode"
+    >
+      <div className="flex items-center gap-2 min-w-0">
+        <Eye className="w-4 h-4 shrink-0" />
+        <span className="truncate">
+          Previewing as <strong>{status.previewActorName}</strong> ({roleLabel}) in FinSight Demo
+          School [TEST]
+        </span>
+      </div>
+      <button
+        onClick={() => exitPreview.mutate()}
+        disabled={exitPreview.isPending}
+        className="shrink-0 flex items-center gap-1.5 bg-amber-950/15 hover:bg-amber-950/30 rounded-lg px-3 py-1 transition-colors"
+        data-testid="button-exit-preview"
+      >
+        {exitPreview.isPending ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <X className="w-3.5 h-3.5" />
+        )}
+        Exit Preview
+      </button>
+    </div>
+  );
+}
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
@@ -156,6 +227,7 @@ function App() {
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
+          <PreviewBanner />
           <Router />
           <Toaster />
         </TooltipProvider>

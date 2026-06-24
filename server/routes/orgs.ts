@@ -1760,4 +1760,391 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
       res.status(500).json({ message: e.message || "Failed to list videos" });
     }
   });
+
+  // ─── Org Admin: Class management ─────────────────────────────────────────────
+
+  // GET /api/org-admin/classes - list all classes in this org with teacher info
+  app.get("/api/org-admin/classes", isOrgAdmin, async (req: any, res) => {
+    try {
+      const orgId = req.session.orgId as string;
+      const classList = await storage.getClassesByOrgId(orgId);
+      res.json(classList);
+    } catch (e: any) {
+      captureError(e);
+      res.status(500).json({ message: e.message || "Failed to load classes" });
+    }
+  });
+
+  // PATCH /api/org-admin/classes/:id/teacher - reassign a class to a different teacher
+  // Only the teacher_id field changes; all class data (students, lessons, etc.) stays intact.
+  app.patch("/api/org-admin/classes/:id/teacher", isOrgAdmin, async (req: any, res) => {
+    try {
+      const classId = parseInt(req.params.id, 10);
+      if (isNaN(classId)) return res.status(400).json({ message: "Invalid class ID" });
+
+      const { newTeacherId } = z.object({ newTeacherId: z.number().int().positive() }).parse(req.body);
+
+      const orgId = req.session.orgId as string;
+      const orgAdminId = req.session.orgAdminId as string;
+
+      // Verify the class belongs to this org
+      const orgClasses = await storage.getClassesByOrgId(orgId);
+      const targetClass = orgClasses.find(c => c.id === classId);
+      if (!targetClass) return res.status(404).json({ message: "Class not found in your organisation" });
+
+      // Verify the destination teacher belongs to this org
+      const orgTeachers = await storage.getTeachersByOrgId(orgId);
+      const newTeacher = orgTeachers.find(t => t.id === newTeacherId);
+      if (!newTeacher) return res.status(400).json({ message: "Teacher not found in your organisation" });
+
+      if (targetClass.teacherId === newTeacherId) {
+        return res.status(400).json({ message: "This teacher is already assigned to the class" });
+      }
+
+      await storage.reassignClassTeacher(classId, newTeacherId);
+
+      const newTeacherName = `${newTeacher.firstName} ${newTeacher.lastName ?? ""}`.trim();
+
+      await audit({
+        actorType: "org_admin",
+        actorId: orgAdminId,
+        action: "org_admin.class.teacher_reassigned",
+        targetType: "class",
+        targetId: classId,
+        orgId,
+        meta: {
+          className: targetClass.name,
+          previousTeacherId: targetClass.teacherId,
+          previousTeacherName: targetClass.teacherName,
+          newTeacherId,
+          newTeacherName,
+        },
+        req,
+      });
+
+      res.json({ ok: true, newTeacherName });
+    } catch (e: any) {
+      captureError(e);
+      if (e instanceof z.ZodError) return res.status(400).json({ message: "Invalid request body" });
+      res.status(500).json({ message: e.message || "Failed to reassign class teacher" });
+    }
+  });
+
+  // ─── Admin: Seed the demo/test organisation ───────────────────────────────────
+  // Creates or activates the demo org and preloads it with realistic Caribbean data.
+  // Guarded to founder admin only. Idempotent - safe to run multiple times.
+  app.post("/api/admin/seed-demo-org", isAdmin, async (req: any, res) => {
+    try {
+      const DEMO_ORG_DISPLAY_LABEL = "demo-test-org";
+      const DEMO_ORG_NAME = "FinSight Demo School [TEST]";
+      const bcrypt = await import("bcryptjs");
+
+      // 1. Find or create the demo org
+      const allOrgs = await getOrganizations();
+      let demoOrg = allOrgs.find(o => o.display_label === DEMO_ORG_DISPLAY_LABEL)
+        ?? allOrgs.find(o => o.name?.includes("XYZ99") || o.name?.includes("Demo School"));
+
+      if (demoOrg) {
+        demoOrg = await updateOrganization(demoOrg.id, {
+          name: DEMO_ORG_NAME,
+          status: "active",
+          is_active: true,
+          display_label: DEMO_ORG_DISPLAY_LABEL,
+        }) ?? demoOrg;
+      } else {
+        const created = await createOrganization({
+          name: DEMO_ORG_NAME,
+          status: "active",
+          is_active: true,
+          display_label: DEMO_ORG_DISPLAY_LABEL,
+          type: "school",
+          country: "Caribbean",
+          subscription_tier: "academy",
+          max_students: 200,
+          contact_email: "demo@finsightlite.com",
+          contact_name: "Demo Admin",
+          website: "",
+        });
+        if (created) demoOrg = created;
+      }
+      if (!demoOrg) throw new Error("[Supabase] Could not create or find demo organisation");
+
+      const demoOrgId = demoOrg.id;
+
+      // 2. Get or create the org environment
+      let envs = await getOrgEnvironments(demoOrgId);
+      let demoEnv: typeof envs[0] | null = envs[0] ?? null;
+      if (!demoEnv) {
+        demoEnv = await createOrgEnvironment({
+          org_id: demoOrgId,
+          slug: "demo-env",
+          display_name: "Demo Environment",
+          features_enabled: ["all"],
+          join_code: "DEMO-ENV",
+        });
+      }
+      if (!demoEnv) throw new Error("[Supabase] Could not create demo environment");
+
+      const demoEnvId = demoEnv.id;
+      const demoJoinCode = demoEnv.join_code ?? "DEMO";
+
+      // 3. Create 2 test teachers (idempotent by email)
+      const teacherDefs = [
+        { firstName: "Diana", lastName: "Clarke", email: "diana.clarke@demo.finsightlite.com", school: "FinSight Demo School" },
+        { firstName: "Marcus", lastName: "Reid",   email: "marcus.reid@demo.finsightlite.com",  school: "FinSight Demo School" },
+      ];
+      const hash = await bcrypt.hash("DemoPass2025!", 10);
+      const { db: rawDb } = await import("../db");
+      const { teachers: teachersTable, classes: classesTable, classEnrollments: enrollmentsTable,
+        users: usersTable, userXp, userLearningProgress, gameSessions, transactions, budgets,
+        savingsGoals, categories, portfolioHoldings, portfolioTransactions, simulatedStocks,
+      } = await import("@shared/schema");
+      const { eq: deq, and: dand, inArray: dinArray, isNull: disNull } = await import("drizzle-orm");
+
+      const createdTeachers: any[] = [];
+      for (const td of teacherDefs) {
+        const [existing] = await rawDb.select().from(teachersTable).where(deq(teachersTable.email, td.email));
+        if (existing) {
+          await rawDb.update(teachersTable).set({ orgId: demoOrgId, envId: demoEnvId }).where(deq(teachersTable.id, existing.id));
+          createdTeachers.push(existing);
+        } else {
+          const [t] = await rawDb.insert(teachersTable).values({
+            firstName: td.firstName, lastName: td.lastName, email: td.email,
+            passwordHash: hash, schoolName: td.school, orgId: demoOrgId, envId: demoEnvId,
+          }).returning();
+          createdTeachers.push(t);
+        }
+      }
+      const [teacherA, teacherB] = createdTeachers;
+
+      // 4. Create 3 test classes (idempotent by code)
+      const classDefs = [
+        { code: "DEMO-CLS-A", name: "Financial Literacy 101", teacherId: teacherA.id },
+        { code: "DEMO-CLS-B", name: "Savings & Budgeting",    teacherId: teacherA.id },
+        { code: "DEMO-CLS-C", name: "Investing Fundamentals", teacherId: teacherB.id },
+      ];
+      const createdClasses: any[] = [];
+      for (const cd of classDefs) {
+        const [existing] = await rawDb.select().from(classesTable).where(deq(classesTable.code, cd.code));
+        if (existing) {
+          await rawDb.update(classesTable).set({ teacherId: cd.teacherId, envId: demoEnvId }).where(deq(classesTable.id, existing.id));
+          createdClasses.push(existing);
+        } else {
+          const [cls] = await rawDb.insert(classesTable).values({
+            teacherId: cd.teacherId, name: cd.name, subject: "Financial Literacy",
+            code: cd.code, envId: demoEnvId,
+          }).returning();
+          createdClasses.push(cls);
+        }
+      }
+
+      // 5. Create 8 test students with Caribbean names
+      const studentDefs = [
+        { id: "demo-test-s001", firstName: "Kadian",  username: "Kadian_Demo",  avatar: "star",    classIdx: 0 },
+        { id: "demo-test-s002", firstName: "Shanique", username: "Shanique_Demo", avatar: "dolphin", classIdx: 0 },
+        { id: "demo-test-s003", firstName: "Deshawn", username: "Deshawn_Demo", avatar: "rocket",  classIdx: 0 },
+        { id: "demo-test-s004", firstName: "Aaliyah", username: "Aaliyah_Demo", avatar: "lion",    classIdx: 1 },
+        { id: "demo-test-s005", firstName: "Kemar",   username: "Kemar_Demo",   avatar: "owl",     classIdx: 1 },
+        { id: "demo-test-s006", firstName: "Tamara",  username: "Tamara_Demo",  avatar: "turtle",  classIdx: 1 },
+        { id: "demo-test-s007", firstName: "Zara",    username: "Zara_Demo",    avatar: "parrot",  classIdx: 2 },
+        { id: "demo-test-s008", firstName: "Malik",   username: "Malik_Demo",   avatar: "crab",    classIdx: 2 },
+      ];
+      const xpProfiles = [
+        { xp: 520, level: 5, streak: 9,  lessons: [1,2,3,4,5,6], correct: 9, total: 10 },
+        { xp: 380, level: 4, streak: 5,  lessons: [1,2,3,4,5],   correct: 8, total: 10 },
+        { xp: 210, level: 3, streak: 2,  lessons: [1,2,3],       correct: 6, total: 10 },
+        { xp: 460, level: 4, streak: 7,  lessons: [1,2,3,4,5],   correct: 8, total: 10 },
+        { xp: 140, level: 2, streak: 1,  lessons: [1,2],         correct: 5, total: 10 },
+        { xp: 310, level: 3, streak: 4,  lessons: [1,2,3,4],     correct: 7, total: 10 },
+        { xp: 590, level: 5, streak: 12, lessons: [1,2,3,4,5,6], correct: 9, total: 10 },
+        { xp: 270, level: 3, streak: 3,  lessons: [1,2,3,4],     correct: 6, total: 10 },
+      ];
+
+      const catRows = await rawDb.select().from(categories).where(disNull(categories.userId));
+      const catByName: Record<string, number> = Object.fromEntries(catRows.map((c: any) => [c.name, c.id]));
+
+      const createdStudentIds: string[] = [];
+      for (let i = 0; i < studentDefs.length; i++) {
+        const s = studentDefs[i];
+        const prog = xpProfiles[i];
+        const targetClass = createdClasses[s.classIdx];
+
+        // Upsert user
+        const [existingUser] = await rawDb.select().from(usersTable).where(deq(usersTable.id, s.id));
+        if (!existingUser) {
+          await rawDb.insert(usersTable).values({ id: s.id, firstName: s.firstName, username: s.username, avatar: s.avatar } as any);
+        }
+        createdStudentIds.push(s.id);
+
+        // Enrol in class
+        const [alreadyEnrolled] = await rawDb.select().from(enrollmentsTable)
+          .where(dand(deq(enrollmentsTable.classId, targetClass.id), deq(enrollmentsTable.studentId, s.id)));
+        if (!alreadyEnrolled) {
+          await rawDb.insert(enrollmentsTable).values({ classId: targetClass.id, studentId: s.id });
+        }
+
+        // Enrol in org (Supabase)
+        await enrollStudentInOrg(s.id, demoOrgId, demoEnvId).catch(() => {});
+
+        // XP
+        const [alreadyXp] = await rawDb.select().from(userXp).where(deq(userXp.userId, s.id));
+        if (!alreadyXp) {
+          await rawDb.insert(userXp).values({ userId: s.id, totalXp: prog.xp, level: prog.level, currentStreak: prog.streak, longestStreak: prog.streak });
+        }
+
+        // Learning progress
+        for (const moduleId of prog.lessons) {
+          const [alreadyLesson] = await rawDb.select().from(userLearningProgress)
+            .where(dand(deq(userLearningProgress.userId, s.id), deq(userLearningProgress.moduleId, moduleId)));
+          if (!alreadyLesson) {
+            await rawDb.insert(userLearningProgress).values({ userId: s.id, moduleId, completed: true });
+          }
+        }
+
+        // Game session
+        const [alreadySession] = await rawDb.select().from(gameSessions).where(deq(gameSessions.userId, s.id));
+        if (!alreadySession) {
+          await rawDb.insert(gameSessions).values({ userId: s.id, mode: "quiz", score: prog.xp, correctAnswers: prog.correct, totalQuestions: prog.total });
+        }
+      }
+
+      // 6. Seed financial data for primary demo students (first 3)
+      const primaryStudents = studentDefs.slice(0, 3);
+      const now = new Date();
+      const d = (daysAgo: number) => { const dt = new Date(now); dt.setDate(dt.getDate() - daysAgo); return dt; };
+
+      const txData: Record<string, any[]> = {
+        "demo-test-s001": [
+          { amount: "40.00",  type: "income",  catName: "Allowance",       date: d(14), desc: "Weekly allowance" },
+          { amount: "3.00",   type: "expense", catName: "Transportation",   date: d(13), desc: "Bus fare to school" },
+          { amount: "14.50",  type: "expense", catName: "Food & Dining",    date: d(12), desc: "Lunch at Johnny Canoe's" },
+          { amount: "20.00",  type: "expense", catName: "Education",        date: d(11), desc: "School supplies" },
+          { amount: "40.00",  type: "income",  catName: "Allowance",       date: d(7),  desc: "Weekly allowance" },
+          { amount: "9.00",   type: "expense", catName: "Food & Dining",    date: d(6),  desc: "Lunch at Bahamian Cookin'" },
+          { amount: "15.00",  type: "expense", catName: "Bills & Utilities", date: d(5),  desc: "BTC mobile top-up" },
+          { amount: "40.00",  type: "income",  catName: "Allowance",       date: d(0),  desc: "Weekly allowance" },
+          { amount: "22.00",  type: "expense", catName: "Personal Care",    date: d(1),  desc: "Haircut at local barber" },
+        ],
+        "demo-test-s002": [
+          { amount: "30.00",  type: "income",  catName: "Allowance",       date: d(10), desc: "Pocket money" },
+          { amount: "8.00",   type: "expense", catName: "Food & Dining",    date: d(9),  desc: "Snacks and drinks" },
+          { amount: "5.00",   type: "expense", catName: "Transportation",   date: d(8),  desc: "Bus fare" },
+          { amount: "30.00",  type: "income",  catName: "Allowance",       date: d(3),  desc: "Pocket money" },
+          { amount: "12.00",  type: "expense", catName: "Entertainment",    date: d(2),  desc: "Movie night" },
+        ],
+        "demo-test-s003": [
+          { amount: "25.00",  type: "income",  catName: "Allowance",       date: d(8),  desc: "Weekly allowance" },
+          { amount: "6.00",   type: "expense", catName: "Food & Dining",    date: d(7),  desc: "School lunch" },
+          { amount: "25.00",  type: "income",  catName: "Allowance",       date: d(1),  desc: "Weekly allowance" },
+          { amount: "4.50",   type: "expense", catName: "Transportation",   date: d(0),  desc: "Bus fare" },
+        ],
+      };
+
+      for (const s of primaryStudents) {
+        const txList = txData[s.id];
+        if (!txList) continue;
+        const [alreadyTx] = await rawDb.select().from(transactions).where(deq(transactions.userId, s.id));
+        if (!alreadyTx) {
+          await rawDb.insert(transactions).values(
+            txList.map(t => ({
+              userId: s.id, amount: t.amount, type: t.type, currency: "BSD",
+              categoryId: catByName[t.catName] ?? null, date: t.date, description: t.desc,
+            }))
+          );
+        }
+
+        // Budgets
+        const [alreadyBudget] = await rawDb.select().from(budgets).where(deq(budgets.userId, s.id));
+        if (!alreadyBudget && catByName["Food & Dining"]) {
+          await rawDb.insert(budgets).values([
+            { userId: s.id, categoryId: catByName["Food & Dining"], amount: "60.00", period: "monthly" },
+            { userId: s.id, categoryId: catByName["Transportation"] ?? catByName["Food & Dining"], amount: "25.00", period: "monthly" },
+          ]);
+        }
+
+        // Savings goals
+        const [alreadyGoal] = await rawDb.select().from(savingsGoals).where(deq(savingsGoals.userId, s.id));
+        if (!alreadyGoal) {
+          await rawDb.insert(savingsGoals).values([
+            { userId: s.id, name: "School Trip to Nassau", targetAmount: "150.00", currentAmount: "60.00", currency: "BSD", deadline: new Date(Date.now() + 60 * 86400000), icon: "✈️", color: "#8B5CF6" },
+            { userId: s.id, name: "New Calculator",        targetAmount: "35.00",  currentAmount: "15.00", currency: "BSD", deadline: new Date(Date.now() + 30 * 86400000), icon: "🧮", color: "#F59E0B" },
+          ]);
+        }
+      }
+
+      // Seed portfolio holdings for first student
+      const [alreadyHoldings] = await rawDb.select().from(portfolioHoldings).where(deq(portfolioHoldings.userId, "demo-test-s001"));
+      if (!alreadyHoldings) {
+        const [cblStock] = await rawDb.select().from(simulatedStocks).where(deq(simulatedStocks.ticker, "CBL-BS"));
+        if (cblStock) {
+          await rawDb.insert(portfolioHoldings).values({ userId: "demo-test-s001", stockId: cblStock.id, quantity: 8, avgPurchasePrice: "7.90" });
+          await rawDb.insert(portfolioTransactions).values({ userId: "demo-test-s001", stockId: cblStock.id, type: "buy", quantity: 8, pricePerUnit: "7.90", currency: "BSD" });
+        }
+      }
+
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.demo_org.seeded", meta: { demoOrgId }, req });
+
+      res.json({
+        ok: true,
+        demoOrgId,
+        demoOrgName: DEMO_ORG_NAME,
+        demoEnvId,
+        joinCode: demoJoinCode,
+        teacherIds: createdTeachers.map((t: any) => t.id),
+        classIds: createdClasses.map((c: any) => c.id),
+        studentIds: createdStudentIds,
+      });
+    } catch (e: any) {
+      captureError(e);
+      if (e.message?.startsWith("[Supabase]")) return res.status(500).json({ message: e.message });
+      res.status(500).json({ message: e.message || "Seed failed" });
+    }
+  });
+
+  // ─── Admin: Founder preview / impersonation ───────────────────────────────────
+  // Allows the founder admin to preview the app as a demo-org student, teacher, or org admin.
+  // Restricted to the designated demo/test org only (identified by display_label = "demo-test-org").
+
+  app.get("/api/admin/preview/status", isAdmin, (req: any, res) => {
+    res.json({
+      previewMode: req.session.previewMode ?? false,
+      previewRole: req.session.previewRole ?? null,
+      previewActorName: req.session.previewActorName ?? null,
+    });
+  });
+
+  app.post("/api/admin/preview/exit", isAdmin, (req: any, res) => {
+    req.session.previewMode = false;
+    req.session.previewRole = undefined as any;
+    req.session.previewActorName = undefined as any;
+    // Clear role-specific session keys so the admin isn't left with a dangling student/teacher session
+    req.session.userId = undefined as any;
+    req.session.teacherId = undefined as any;
+    req.session.orgAdminId = undefined as any;
+    req.session.orgId = undefined as any;
+    res.json({ ok: true });
+  });
+
+  // GET /api/admin/demo-org - returns the current demo org info for the preview panel
+  app.get("/api/admin/demo-org", isAdmin, async (_req, res) => {
+    try {
+      const allOrgs = await getOrganizations();
+      const demoOrg = allOrgs.find((o: any) => o.display_label === "demo-test-org");
+      if (!demoOrg) return res.json(null);
+      const [teachers, orgAdmins, students] = await Promise.all([
+        storage.getTeachersByOrgId(demoOrg.id),
+        storage.getOrgAdminsByOrgId(demoOrg.id),
+        storage.getStudentsByOrgId(demoOrg.id),
+      ]);
+      res.json({
+        org: demoOrg,
+        teachers: teachers.map(t => ({ id: t.id, name: `${t.firstName} ${t.lastName ?? ""}`.trim(), email: t.email })),
+        orgAdmins: orgAdmins.map(a => ({ id: a.id, name: `${a.firstName} ${a.lastName ?? ""}`.trim(), email: a.email })),
+        students: students.slice(0, 8).map((s: any) => ({ id: s.id, name: s.firstName ?? s.username ?? s.id })),
+      });
+    } catch (e: any) {
+      captureError(e);
+      res.status(500).json({ message: e.message || "Failed to load demo org" });
+    }
+  });
 }

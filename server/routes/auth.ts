@@ -647,4 +647,70 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
       res.status(500).json({ message: e.message });
     }
   });
+
+  // ─── Admin: Preview/impersonation start ──────────────────────────────────────
+  // Allows the founder admin to preview the experience as a demo-org actor.
+  // Only works for the designated test organisation (display_label = "demo-test-org").
+  // The isAdmin check is enforced before any state change.
+  app.post("/api/admin/preview/start", isAdmin, async (req: any, res) => {
+    try {
+      const { role, actorId, demoOrgId } = z.object({
+        role: z.enum(["student", "teacher", "org-admin"]),
+        actorId: z.union([z.string(), z.number()]),
+        demoOrgId: z.string(),
+      }).parse(req.body);
+
+      // Hard guard: target org must be the designated demo org
+      const { getOrganization: getOrg } = await import("../supabase");
+      const org = await getOrg(demoOrgId);
+      if (!org || org.display_label !== "demo-test-org") {
+        return res.status(403).json({
+          message: "Preview is only available for the designated demo/test organisation",
+        });
+      }
+
+      let actorName = "";
+
+      if (role === "student") {
+        const student = await storage.getUser(String(actorId));
+        if (!student) return res.status(404).json({ message: "Student not found" });
+        actorName = `${student.firstName ?? ""} ${(student as any).lastName ?? ""}`.trim()
+          || (student as any).username
+          || "Demo Student";
+        req.session.userId = student.id;
+      } else if (role === "teacher") {
+        const teacher = await storage.getTeacherById(Number(actorId));
+        if (!teacher) return res.status(404).json({ message: "Teacher not found" });
+        actorName = `${teacher.firstName} ${teacher.lastName ?? ""}`.trim();
+        req.session.teacherId = String(teacher.id);
+      } else {
+        // org-admin
+        const admin = await storage.getOrgAdminById(Number(actorId));
+        if (!admin) return res.status(404).json({ message: "Org admin not found" });
+        actorName = `${admin.firstName} ${admin.lastName ?? ""}`.trim();
+        req.session.orgAdminId = String(admin.id);
+        req.session.orgId = admin.orgId ?? demoOrgId;
+      }
+
+      req.session.previewMode = true;
+      req.session.previewRole = role;
+      req.session.previewActorName = actorName;
+      req.session.isAdmin = true; // keep admin session active so the exit route is reachable
+
+      await audit({
+        actorType: "admin",
+        actorEmail: ADMIN_EMAIL,
+        action: "admin.preview.start",
+        orgId: demoOrgId,
+        meta: { role, actorId: String(actorId), actorName },
+        req,
+      });
+
+      res.json({ ok: true, role, actorName });
+    } catch (e: any) {
+      captureError(e);
+      if (e instanceof z.ZodError) return res.status(400).json({ message: "Invalid request" });
+      res.status(500).json({ message: e.message || "Failed to start preview" });
+    }
+  });
 }

@@ -1,0 +1,65 @@
+This prompt covers three separate tasks. Complete and verify each before moving to the next.
+
+TASK 1 — Org admin temporary class teacher reassignment
+
+This adds the ability for an org admin to temporarily reassign a class to a different teacher (for substitute coverage, a teacher on leave, etc.), without building full multi-teacher/co-teaching support. This is intentionally a simpler solution than the previously-assessed class_teachers junction table approach, since classes currently have a single teacher_id field.
+
+---
+
+STAGE 1 — Audit
+
+Confirm the current class data model: classes have a single teacher_id foreign key. Confirm where class management currently exists in the org admin UI (likely within /org/students, /org/lessons, or a dedicated class management view, check what exists).
+
+---
+
+STAGE 2 — Build the reassignment feature
+
+1. On whichever org admin page shows the organization's classes, add a "Reassign Teacher" action per class. This should open a simple selector showing the other teachers already in the organization (from the existing /org/teachers list), and let the org admin pick a new teacher for that class.
+2. On reassignment, update the class's teacher_id to the newly selected teacher. The class's existing students, lesson history, content, and data must remain completely intact, only the teacher_id changes.
+3. The previous teacher should immediately lose access to that specific class (since access is enforced via teacher_id matching), and the newly assigned teacher should immediately gain full access (view roster, upload content, give feedback, etc.) as if they had always been that class's teacher.
+4. Log this reassignment with a timestamp and which org admin performed it (a simple audit trail, consistent with the existing deletion_log pattern already used elsewhere in the app), so there's a record of who changed a class's teacher and when.
+5. Show the org admin a brief confirmation after reassignment (e.g. "Class reassigned to [Teacher Name]"), and optionally show the current teacher's name clearly on each class row so it's always obvious who's currently responsible for it.
+6. This is NOT permanent co-teaching, only one teacher is ever assigned to a class at a time. Make this single-teacher-at-a-time behavior clear in the UI so it isn't confused with simultaneous shared access.
+
+---
+
+Constraints:
+- Do not build a class_teachers junction table or any multi-teacher-at-once architecture, this is intentionally a simpler single-teacher-reassignment feature.
+- Do not change any existing class, student, or lesson data during a reassignment, only the teacher_id field changes.
+- The reassignment action must be restricted to org admins only, a teacher should not be able to reassign their own or another teacher's class.
+- Ensure the underlying write function throws a clear error on failure rather than returning null/undefined silently.
+- Check the feature renders correctly in both light and dark mode.
+- No em dashes in any new copy or comments.
+- If a new package install is needed, apply the known fix for the Replit package-lock.json proxy URL issue first.
+- After completing, commit and push, then verify with a live remote commit hash comparison that the push actually landed on the correct GitHub remote.
+- Report a real test: reassign a test class from one teacher to another, confirm the old teacher loses access, confirm the new teacher gains full access with the class's existing data intact, and confirm the audit log entry was created correctly.
+
+---
+
+TASK 2 — Fix test/demo org status and preload realistic data
+
+There is a "test school" organization currently stuck in pending status, which correctly triggers the "application under review" message, that gate is working as intended for real new orgs. However, founder-level testing needs a reliable, always-approved test environment.
+
+1. Find the existing test school organization (or create one if it doesn't reliably exist) and set its status to 'active' permanently, so it never requires approval. Clearly label it as a test/demo org (e.g. in its name or a flag) so it's never confused with a real partner.
+2. Preload this test organization with realistic data across every view: a few test teachers, a few test classes with realistic Caribbean student names, lesson progress, XP, quiz scores, at least one savings goal in progress, at least one budget with transactions, and any other data needed so that clicking through org admin, teacher, and student views for this org shows a fully populated, realistic experience rather than empty states.
+3. Confirm The Financial Academy's organization remains completely unaffected by this work, status, data, and access must stay exactly as they are.
+4. Confirm no other currently-pending real organization gets accidentally activated by this fix, only the designated test org should be affected.
+
+---
+
+TASK 3 — Founder-only role preview access
+
+The founder admin currently has to log in separately to each portal (student, teacher, org admin) to see those experiences, which is slow and error-prone for testing.
+
+1. On the founder admin dashboard at /admin, add a "Preview as" feature scoped to the test organization from Task 2 only (not real organizations, for data privacy and safety). This should let the founder admin, while logged in as founder admin, jump directly into a read-and-interact view of: the test org's admin dashboard, a test teacher's dashboard and class view, and a test student's full experience, without needing to log out and log back in with different credentials each time.
+2. This can be implemented as a session-level "impersonation" or "preview mode" that's clearly visually indicated (e.g. a persistent banner saying "Previewing as [Test Teacher Name] · Exit Preview" with a one-click way to return to the founder admin view).
+3. This preview capability must be restricted to the test organization only. Do not allow founder-level preview access into The Financial Academy or any other real organization's accounts through this feature, real partner data privacy must be preserved. If broader real-org preview access is wanted later, that is a separate, more carefully scoped decision, not part of this task.
+4. Ensure this preview/impersonation mechanism is itself properly secured, only an authenticated founder admin session can trigger it, and it must not be reachable or guessable by any other user role.
+
+Constraints for Tasks 2 and 3:
+- Do not change The Financial Academy's data, status, or access in any way.
+- Do not activate, expose, or grant preview access into any real organization other than the designated test org.
+- No em dashes in any new copy or comments.
+- Check both light and dark mode for any new UI (the preview banner, the test org's populated views).
+- After completing, commit and push, then verify with a live remote commit hash comparison that the push actually landed on the correct GitHub remote.
+- Report a real test: confirm the test org never shows "application under review," confirm it's populated with realistic data across all its views, confirm the founder admin can use "Preview as" to move between test org admin, test teacher, and test student views without separate logins, and confirm this preview access does not work for The Financial Academy or any other real org.

@@ -165,6 +165,7 @@ const TABS = [
   { id: "perf", label: "Perf Agent", icon: Zap },
   { id: "audit", label: "Audit Log", icon: FileText },
   { id: "dbviewer", label: "DB Viewer", icon: Building2 },
+  { id: "demoorg", label: "Demo Org", icon: Eye },
 ];
 
 function ObservabilityCard() {
@@ -2015,6 +2016,32 @@ export default function AdminDashboard() {
     enabled: !!admin && activeTab === "pending",
   });
 
+  const { data: demoOrgData, isLoading: demoOrgLoading, refetch: refetchDemoOrg } = useQuery<any>({
+    queryKey: ["/api/admin/demo-org"],
+    queryFn: () => apiRequest("GET", "/api/admin/demo-org").then(r => r.json()),
+    enabled: !!admin && activeTab === "demoorg",
+  });
+
+  const seedDemoOrg = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/admin/seed-demo-org").then(r => r.json()),
+    onSuccess: () => {
+      refetchDemoOrg();
+      toast({ title: "Demo org seeded", description: "Test organisation is active and populated with realistic data." });
+    },
+    onError: (e: any) => toast({ title: "Seed failed", description: e.message, variant: "destructive" }),
+  });
+
+  const startPreview = useMutation({
+    mutationFn: ({ role, actorId }: { role: string; actorId: string | number }) =>
+      apiRequest("POST", "/api/admin/preview/start", { role, actorId, demoOrgId: demoOrgData?.org?.id }).then(r => r.json()),
+    onSuccess: (data: any) => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/preview/status"] });
+      const dest = data.role === "student" ? "/" : data.role === "teacher" ? "/teacher/dashboard" : "/org/dashboard";
+      setLocation(dest);
+    },
+    onError: (e: any) => toast({ title: "Preview failed", description: e.message, variant: "destructive" }),
+  });
+
   const deleteSchool = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/admin/schools/${id}`).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/schools"] }); toast({ title: "School deleted" }); },
@@ -2057,8 +2084,12 @@ export default function AdminDashboard() {
     onError: (e: any) => toast({ title: "Link failed", description: e.message, variant: "destructive" }),
   });
 
+  useEffect(() => {
+    if (!isLoading && !admin) setLocation("/admin/login");
+  }, [isLoading, admin]);
+
   if (isLoading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center"><p className="text-slate-300">Loading...</p></div>;
-  if (!admin) { setLocation("/admin/login"); return null; }
+  if (!admin) return null;
 
   const downloadCSV = async (type: string) => {
     try {
@@ -2708,6 +2739,153 @@ export default function AdminDashboard() {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "demoorg" && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <Eye className="w-6 h-6 text-amber-400" />
+                Demo Organisation
+              </h2>
+              <p className="text-slate-300 text-sm mt-1">
+                A permanently active test organisation for previewing all portals without logging out.
+                Preview access is restricted to this org only - real partner data is never exposed.
+              </p>
+            </div>
+
+            {/* Seed / status card */}
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-slate-200 text-base flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-amber-400" />
+                  {demoOrgData ? "FinSight Demo School [TEST]" : "Demo Org Not Seeded"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {demoOrgLoading ? (
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">Loading...</span>
+                  </div>
+                ) : demoOrgData ? (
+                  <div className="space-y-2 text-sm text-slate-300">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-emerald-600 text-white">Active</Badge>
+                      <span>ID: <span className="font-mono text-xs text-slate-400">{demoOrgData.org?.id}</span></span>
+                    </div>
+                    <div className="flex flex-wrap gap-4">
+                      <span>{demoOrgData.teachers?.length ?? 0} teacher{demoOrgData.teachers?.length !== 1 ? "s" : ""}</span>
+                      <span>{demoOrgData.orgAdmins?.length ?? 0} org admin{demoOrgData.orgAdmins?.length !== 1 ? "s" : ""}</span>
+                      <span>{demoOrgData.students?.length ?? 0} student{demoOrgData.students?.length !== 1 ? "s" : ""}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400">No demo organisation found. Click below to create and seed it.</p>
+                )}
+                <Button
+                  size="sm"
+                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                  disabled={seedDemoOrg.isPending}
+                  onClick={() => seedDemoOrg.mutate()}
+                  data-testid="button-seed-demo-org"
+                >
+                  {seedDemoOrg.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                  {demoOrgData ? "Re-seed Demo Org" : "Seed Demo Org"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Preview as panel */}
+            {demoOrgData && (
+              <Card className="bg-slate-800 border-slate-700">
+                <CardHeader>
+                  <CardTitle className="text-slate-200 text-base">Preview As</CardTitle>
+                  <p className="text-slate-400 text-sm">
+                    Jump directly into a demo-org view. A yellow banner will appear on every page so it is always clear you are in preview mode. Click Exit Preview to return here.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+
+                  {/* Org admin preview */}
+                  {demoOrgData.orgAdmins?.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-slate-500 mb-2">Org Admin</p>
+                      <div className="flex flex-wrap gap-2">
+                        {demoOrgData.orgAdmins.map((a: any) => (
+                          <Button
+                            key={a.id}
+                            size="sm"
+                            variant="outline"
+                            className="border-indigo-500/50 text-indigo-300 hover:bg-indigo-950/40"
+                            disabled={startPreview.isPending}
+                            onClick={() => startPreview.mutate({ role: "org-admin", actorId: a.id })}
+                            data-testid={`button-preview-org-admin-${a.id}`}
+                          >
+                            <Eye className="w-3.5 h-3.5 mr-1.5" />
+                            {a.name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Teacher preview */}
+                  {demoOrgData.teachers?.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-slate-500 mb-2">Teacher</p>
+                      <div className="flex flex-wrap gap-2">
+                        {demoOrgData.teachers.map((t: any) => (
+                          <Button
+                            key={t.id}
+                            size="sm"
+                            variant="outline"
+                            className="border-teal-500/50 text-teal-300 hover:bg-teal-950/40"
+                            disabled={startPreview.isPending}
+                            onClick={() => startPreview.mutate({ role: "teacher", actorId: t.id })}
+                            data-testid={`button-preview-teacher-${t.id}`}
+                          >
+                            <Eye className="w-3.5 h-3.5 mr-1.5" />
+                            {t.name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Student preview */}
+                  {demoOrgData.students?.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-slate-500 mb-2">Student</p>
+                      <div className="flex flex-wrap gap-2">
+                        {demoOrgData.students.map((s: any) => (
+                          <Button
+                            key={s.id}
+                            size="sm"
+                            variant="outline"
+                            className="border-violet-500/50 text-violet-300 hover:bg-violet-950/40"
+                            disabled={startPreview.isPending}
+                            onClick={() => startPreview.mutate({ role: "student", actorId: s.id })}
+                            data-testid={`button-preview-student-${s.id}`}
+                          >
+                            <Eye className="w-3.5 h-3.5 mr-1.5" />
+                            {s.name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {startPreview.isPending && (
+                    <div className="flex items-center gap-2 text-slate-400 text-sm">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Starting preview...
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             )}
           </div>
         )}
