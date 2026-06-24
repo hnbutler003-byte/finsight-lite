@@ -1,0 +1,20 @@
+This is a status-check only. Do not fix or change anything in this session, just investigate and report honestly on the current state of each item below.
+
+For each item, check the actual codebase/database/live behavior and report one of: CONFIRMED WORKING (with brief evidence), PARTIALLY DONE (explain what's missing), or NOT DONE.
+
+1. Logo consistency: does the current Finsight Lite logo asset render correctly on /privacy, /terms, and at least 3 other pages checked at random across the app?
+2. Em dash sweep: search the entire codebase for the em dash character (—) right now and report the exact count and which files, if any, still contain one.
+3. Typography consistency: spot-check 3 random pages for font-display on headings and font-sans on body text.
+4. Upload hardening: confirm file type restrictions, size limits, and YouTube URL validation are present in the current code for both teacher lesson upload and any other upload paths (MoneyLab, org branding).
+5. Silent-failure fixes: confirm the 8 previously-fixed Supabase write functions (createOrganization, updateOrganization, createOrgEnvironment, createLessonPlan, createLessonQuizQuestion, toggleLessonPublish, updateLessonPlan, deleteLessonPlan) still throw errors rather than returning null/false.
+6. Sentry: confirm SENTRY_DSN is set in the environment and Sentry is actively configured to capture backend errors.
+7. Self-onboarding: confirm a teacher can join an org via invite code, and confirm new org signups land in a "pending" status requiring founder admin approval, not immediate active access.
+8. Org admin lifecycle: confirm the Teachers view exists at /org/teachers, plan/student-limit visibility shows on the org dashboard, and CSV upload enforces the student limit.
+9. Jamaica JSE stock data: confirm whether Jamaica-specific stock tickers exist in the Investment Simulator, or whether it still falls back to BISX data.
+10. Sand Dollar module: confirm whether a "Understanding the Sand Dollar" module exists and is territory-gated to Bahamas only.
+11. Savings goals: confirm whether students can set a custom personal savings goal with a progress bar, or whether this is still generic/pre-set only.
+12. Mobile parity: not feasible to fully re-test here, just report whether any known mobile-specific fixes were applied based on commit history or code comments.
+13. Microinteractions: confirm whether shake-on-error, inline validation, and the shimmer/loading pattern were applied, or whether forms still show static error text only.
+14. Git status: run git log -1 and git log origin/main -1 and report whether local and remote are in sync, confirming all recent work is actually pushed to GitHub.
+
+Report all 14 clearly, one by one, with evidence. Do not skip any. Do not fix anything found to be missing or broken, just report.
