@@ -36,7 +36,7 @@ const objectStorage = new ObjectStorageService();
 const ADMIN_UPLOAD_MAX_VIDEO = 500 * 1024 * 1024;
 const ADMIN_UPLOAD_MAX_DOC   =  25 * 1024 * 1024;
 
-// YouTube URL validation — accept watch, shorts, embed, live, and youtu.be short links.
+// YouTube URL validation - accept watch, shorts, embed, live, and youtu.be short links.
 const YOUTUBE_URL_RE = /^https?:\/\/(www\.)?(youtube\.com\/(watch\?|shorts\/|embed\/|live\/)|youtu\.be\/)/i;
 const ytUrl = z.string().refine(u => YOUTUBE_URL_RE.test(u), { message: "Please enter a valid YouTube link." });
 const ytUrlOpt  = ytUrl.optional();

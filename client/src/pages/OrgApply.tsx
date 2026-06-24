@@ -59,7 +59,7 @@ export default function OrgApply() {
           <h2 className="font-display font-bold text-2xl text-foreground">Application Submitted!</h2>
           <p className="text-muted-foreground leading-relaxed">
             Thank you! Your organization <strong className="text-foreground">{form.orgName}</strong> is now under
-            review. Our team will activate your account — usually within 1–2 business days.
+            review. Our team will activate your account, usually within 1-2 business days.
           </p>
           <Button
             onClick={() => setLocation("/org/dashboard")}

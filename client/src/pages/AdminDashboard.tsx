@@ -2663,7 +2663,7 @@ export default function AdminDashboard() {
                         <div className="flex items-center gap-2 flex-wrap mt-1">
                           <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 text-xs capitalize">{org.type?.replace(/_/g, " ")}</Badge>
                           <span className="text-slate-400 text-sm">{org.country}{org.city ? `, ${org.city}` : ""}</span>
-                          <span className="text-slate-500 text-xs">Applied {org.created_at ? new Date(org.created_at).toLocaleDateString() : "—"}</span>
+                          <span className="text-slate-500 text-xs">Applied {org.created_at ? new Date(org.created_at).toLocaleDateString() : "N/A"}</span>
                         </div>
                       </div>
                     </div>

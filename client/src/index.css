@@ -45,7 +45,7 @@
       Always add dark: variants or use CSS variables from this file.
 
    d. Any new panel/card that is not glass-card (e.g. a custom div
-      with a hardcoded bg-white) will not flip in dark mode — use
+      with a hardcoded bg-white) will not flip in dark mode; use
       glass-card or semantic bg-card / bg-background instead.
 
    e. After adding a feature, toggle .dark on <html> in DevTools and

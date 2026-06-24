@@ -524,7 +524,7 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
     res.json(orgs);
   });
 
-  // List pending orgs — MUST come before the /:id param route
+  // List pending orgs - MUST come before the /:id param route
   app.get("/api/admin/organizations/pending", isAdmin, async (_req, res) => {
     try {
       if (!supabase) return res.status(503).json({ message: "Supabase not configured" });

@@ -147,7 +147,7 @@ export default function OrgDashboard() {
           <h2 className="font-display font-bold text-2xl text-foreground">Application Under Review</h2>
           <p className="text-muted-foreground leading-relaxed">
             Your organization <strong className="text-foreground">{overview.org.name}</strong> is waiting for
-            approval from our team. You'll receive an email once it's activated — usually within 1–2 business days.
+            approval from our team. You'll receive an email once it's activated, usually within 1-2 business days.
           </p>
           <Button
             variant="outline"
