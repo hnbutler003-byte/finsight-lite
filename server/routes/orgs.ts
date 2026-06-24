@@ -645,6 +645,11 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
 
     res.json({
       org: { id: org?.id, name: org?.name, type: org?.type, country: org?.country },
+      plan: {
+        tier: org?.subscription_tier ?? "standard",
+        displayLabel: org?.display_label ?? null,
+        studentLimit: org?.max_students ?? 500,
+      },
       env: { id: currentEnv?.id, slug: currentEnv?.slug, displayName: currentEnv?.display_name, joinCode: currentEnv?.join_code, featuresEnabled: currentEnv?.features_enabled },
       stats: {
         studentCount: envStudentCount,
@@ -727,6 +732,114 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
     res.json({ ok: true });
   });
 
+  // === ORG ADMIN: TEACHERS ===
+
+  app.get("/api/org-admin/teachers", isOrgAdmin, async (req: any, res) => {
+    try {
+      const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+      if (!admin) return res.status(401).json({ message: "Not found" });
+
+      const orgTeachers = await storage.getTeachersByOrgId(admin.orgId);
+      const enriched = await Promise.all(orgTeachers.map(async (t) => {
+        const teacherClasses = await storage.getClassesByTeacher(t.id);
+        return {
+          id: t.id,
+          firstName: t.firstName,
+          lastName: t.lastName,
+          email: t.email,
+          schoolName: t.schoolName,
+          isVerified: t.isVerified,
+          classCount: teacherClasses.length,
+          createdAt: t.createdAt,
+        };
+      }));
+      res.json(enriched);
+    } catch (e: any) {
+      captureError(e, { route: req.path });
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  app.delete("/api/org-admin/teachers/:teacherId", isOrgAdmin, async (req: any, res) => {
+    try {
+      const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+      if (!admin) return res.status(401).json({ message: "Not found" });
+
+      const teacherId = parseInt(req.params.teacherId, 10);
+      if (isNaN(teacherId)) return res.status(400).json({ message: "Invalid teacher ID" });
+
+      const teacher = await storage.getTeacherById(teacherId);
+      if (!teacher) return res.status(404).json({ message: "Teacher not found" });
+      if (teacher.orgId !== admin.orgId) return res.status(403).json({ message: "Teacher not in your organisation" });
+
+      await storage.updateTeacherOrgLink(teacherId, null, null);
+      await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org_admin.teacher.remove", targetType: "teacher", targetId: teacherId, orgId: admin.orgId, req });
+      res.json({ ok: true });
+    } catch (e: any) {
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
+    }
+  });
+
+  app.post("/api/org-admin/teachers/:teacherId/password-reset", isOrgAdmin, async (req: any, res) => {
+    try {
+      const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+      if (!admin) return res.status(401).json({ message: "Not found" });
+
+      const teacherId = parseInt(req.params.teacherId, 10);
+      if (isNaN(teacherId)) return res.status(400).json({ message: "Invalid teacher ID" });
+
+      const teacher = await storage.getTeacherById(teacherId);
+      if (!teacher) return res.status(404).json({ message: "Teacher not found" });
+      if (teacher.orgId !== admin.orgId) return res.status(403).json({ message: "Teacher not in your organisation" });
+
+      const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+      const tempBytes = crypto.randomBytes(12);
+      const tempPassword = Array.from(tempBytes).map(b => chars[b % chars.length]).join("");
+
+      const bcrypt = await import("bcryptjs");
+      const hash = await bcrypt.hash(tempPassword, 10);
+      await storage.resetTeacherPassword(teacherId, hash);
+
+      let emailSent = false;
+      if (teacher.email) {
+        const org = await getOrganization(admin.orgId);
+        const loginUrl = `${appBaseUrl()}/teacher/login`;
+        const html = `<!doctype html><html><body style="font-family:system-ui,Arial;background:#f6f7fb;padding:24px">
+          <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;padding:24px;border:1px solid #e5e7eb">
+            <h1 style="font-size:20px;margin:0 0 12px">Your FinSight Lite password has been reset</h1>
+            <p>Hi ${escapeHtml(teacher.firstName)}, your organisation admin at <strong>${escapeHtml(org?.name ?? admin.orgId)}</strong> has reset your password.</p>
+            <p style="margin:16px 0;padding:12px;background:#f3f4f6;border-radius:8px">
+              <strong>Your temporary password:</strong><br>
+              <code style="font-size:18px;background:#fff;padding:4px 10px;border-radius:4px;border:1px solid #e5e7eb;display:inline-block;margin-top:6px">${escapeHtml(tempPassword)}</code>
+            </p>
+            <p>Please sign in and change your password as soon as possible.</p>
+            <p><a href="${escapeHtml(loginUrl)}" style="background:#2563eb;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block">Sign in to FinSight Lite</a></p>
+            <p style="font-size:12px;color:#6b7280">If you did not expect this, contact your organisation admin immediately.</p>
+          </div></body></html>`;
+
+        const sendRes = await sendEmail({
+          to: teacher.email,
+          subject: "FinSight Lite — Your password has been reset",
+          html,
+          kind: "teacher_password_reset",
+          orgId: admin.orgId,
+          userKind: "teacher",
+          userId: String(teacher.id),
+        }).catch((err: unknown) => ({ ok: false, error: (err as Error)?.message }));
+        emailSent = sendRes.ok === true;
+      }
+
+      await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org_admin.teacher.password_reset", targetType: "teacher", targetId: teacherId, orgId: admin.orgId, meta: { emailSent }, req });
+      res.json({ ok: true, emailSent });
+    } catch (e: any) {
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
+    }
+  });
+
   // === BULK STUDENT IMPORT ===
   app.post(
     "/api/org-admin/students/import/preview",
@@ -742,7 +855,20 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
 
         const csvText = req.file.buffer.toString("utf8");
         const result = await parseAndValidateImport(csvText, admin.orgId, admin.envId);
-        res.json(result);
+
+        let limitWarning: string | null = null;
+        const org = await getOrganization(admin.orgId);
+        if (org && supabase) {
+          const { data: currentStudents } = await supabase.from("org_students").select("id").eq("org_id", admin.orgId);
+          const currentCount = currentStudents?.length ?? 0;
+          const validCount = result.rows.filter((r: any) => r.status === "ok").length;
+          const limit = org.max_students ?? 500;
+          if (currentCount + validCount > limit) {
+            limitWarning = `This upload would add ${validCount} student${validCount !== 1 ? "s" : ""} but you only have ${Math.max(0, limit - currentCount)} slot${limit - currentCount !== 1 ? "s" : ""} remaining (${currentCount} of ${limit} used). Remove ${currentCount + validCount - limit} row${currentCount + validCount - limit !== 1 ? "s" : ""} and try again.`;
+          }
+        }
+
+        res.json({ ...result, limitWarning });
       } catch (e: any) {
         res.status(400).json({ message: e.message });
       }
@@ -767,6 +893,18 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
 
         const csvText = req.file.buffer.toString("utf8");
         const { rows } = await parseAndValidateImport(csvText, admin.orgId, admin.envId);
+
+        if (supabase) {
+          const { data: currentStudents } = await supabase.from("org_students").select("id").eq("org_id", admin.orgId);
+          const currentCount = currentStudents?.length ?? 0;
+          const validNewCount = rows.filter((r: any) => r.status === "ok").length;
+          const limit = org.max_students ?? 500;
+          if (currentCount + validNewCount > limit) {
+            return res.status(400).json({
+              message: `This upload would exceed your plan's student limit of ${limit}. You currently have ${currentCount} student${currentCount !== 1 ? "s" : ""} and are adding ${validNewCount} more. Remove ${currentCount + validNewCount - limit} row${currentCount + validNewCount - limit !== 1 ? "s" : ""} and try again.`,
+            });
+          }
+        }
 
         const created: { rowNum: number; userId: string; username: string; firstName: string; emailSent: boolean; enrolled: boolean }[] = [];
         const skipped: { rowNum: number; reason: string }[] = [];

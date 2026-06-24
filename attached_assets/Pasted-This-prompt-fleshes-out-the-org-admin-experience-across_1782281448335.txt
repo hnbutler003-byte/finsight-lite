@@ -1,0 +1,54 @@
+This prompt fleshes out the org admin experience across five areas. Audit each before building. Work through stages in order.
+
+---
+
+STAGE 1 — Audit
+
+Before building anything, check and report on each of these:
+
+1. Can an org admin currently see a list of teachers in their organization anywhere in the UI? Is there any way to remove a teacher or reset their access?
+2. Is the organization's current plan/tier and student count (e.g. "Academy, 87/100 students") visible anywhere in the org admin's own view, or only in the founder admin's internal view?
+3. Does a CSV upload feature exist anywhere for bulk-creating students, or is student creation currently one at a time only?
+4. Confirm the distinction between the existing "remove from org" action (unenrolls a student, keeps their account/data) and the "purge" action (built earlier, permanently deletes all data) is still clear and these are two distinctly labeled, separate actions in the org admin UI, not confused with each other.
+5. Can a class currently have more than one teacher associated with it, or is each class locked to a single teacher with no way to add a co-teacher or transfer it?
+
+Report findings for all five before proceeding.
+
+---
+
+STAGE 2 — Teacher management for org admins
+
+Add a "Teachers" view to the org admin dashboard (if it doesn't exist) showing every teacher in the organization: name, email, number of classes, last login. Allow the org admin to:
+1. Remove a teacher from the organization (this should not delete the teacher's account entirely if they could belong elsewhere, but should revoke their access to this org's classes and data; check Stage 1 findings on the existing student remove-vs-purge pattern and apply similar logic here if applicable).
+2. Trigger a password reset email for a teacher who's locked out, reusing whatever password reset mechanism already exists elsewhere in the app rather than building a new one.
+
+---
+
+STAGE 3 — Plan and student limit visibility for org admins
+
+Add a small, clearly visible element on the org admin dashboard (e.g. near the top, consistent with where other key org info is shown) displaying: the organization's current plan name (using the custom display_label if one is set for that org, falling back to the standard tier name otherwise, per the existing display_label logic already built), and student usage as a simple ratio or progress indicator (e.g. "87 of 100 students"). Do not show any dollar amount or price anywhere in this view, this is a hard constraint carried over from prior work. If the org is approaching its student limit (e.g. above 90% capacity), show a subtle visual indicator, but do not show alarming or aggressive upsell language, just a clear, calm statement of where they stand.
+
+---
+
+STAGE 4 — CSV bulk student upload
+
+Add a CSV upload option for org admins to bulk-create student accounts, consistent with the "Progress tracking and CSV export" feature already promised at the Academy tier and above. Specifically:
+1. Provide a downloadable CSV template with the correct column headers (e.g. first name, last name, email or username format, grade/class assignment if applicable) so the org admin knows the expected format before uploading.
+2. On upload, validate each row: check for missing required fields, malformed email addresses if email is used, and duplicate entries within the file or against existing students in the org. Reject the whole upload with a clear, row-by-row error report if there are problems, rather than partially creating accounts and leaving the org admin unsure what succeeded.
+3. On a successful, fully valid upload, create all student accounts at once and show a clear success summary (e.g. "42 students added").
+4. Apply the same file upload hardening patterns already used elsewhere in the app (file type restriction to CSV only, reasonable file size limit, clear error messaging) rather than building entirely new upload logic from scratch.
+5. This feature should respect the organization's student limit from Stage 3, if a bulk upload would push the org over its plan's student cap, reject the upload with a clear message rather than silently allowing it.
+
+---
+
+STAGE 5 — Multi-teacher class support (only if not already supported, per Stage 1 findings)
+
+If Stage 1 found that a class can only ever have one teacher, assess whether adding multi-teacher support is straightforward given the existing data model, and report your assessment before building. If it's a reasonably contained change, add the ability for an org admin to add a second teacher to an existing class (for co-teaching or substitute coverage) without losing the class's existing history, students, or data. If it would require a significant restructuring of the existing class/teacher relationship, do not attempt it in this session, report what would be involved instead so it can be planned separately.
+
+---
+
+Constraints:
+- Do not change any existing student, teacher, or class data for currently existing organizations, including The Financial Academy.
+- Do not show pricing or dollar amounts anywhere in the org admin's view, per existing hard constraint.
+- If any new package needs installing (e.g. for CSV parsing), apply the known fix for the Replit package-lock.json proxy URL issue before committing.
+- After completing all stages, print every file created or modified organized by stage, and confirm: the Teachers view works, plan/limit visibility shows correctly with no pricing, CSV bulk upload validates and creates students correctly while respecting the student limit, and report the Stage 5 assessment outcome clearly.

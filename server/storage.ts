@@ -135,6 +135,7 @@ export interface IStorage extends IAuthStorage {
   getClassByCode(code: string): Promise<Class | undefined>;
   updateClass(id: number, teacherId: number, data: Partial<Pick<Class, 'name' | 'subject' | 'sponsorName'>>): Promise<Class>;
   updateTeacherOrgLink(teacherId: number, orgId: string | null, envId: string | null): Promise<Teacher>;
+  resetTeacherPassword(teacherId: number, passwordHash: string): Promise<Teacher>;
   updateClassEnvLink(classId: number, envId: string | null): Promise<Class>;
   deleteClass(id: number, teacherId: number): Promise<void>;
   getEnrollmentsByClass(classId: number): Promise<(ClassEnrollment & { student: User })[]>;
@@ -843,6 +844,12 @@ export class DatabaseStorage implements IStorage {
 
   async updateTeacherOrgLink(teacherId: number, orgId: string | null, envId: string | null): Promise<Teacher> {
     const [updated] = await db.update(teachers).set({ orgId, envId }).where(eq(teachers.id, teacherId)).returning();
+    if (!updated) throw new Error("Teacher not found");
+    return updated;
+  }
+
+  async resetTeacherPassword(teacherId: number, passwordHash: string): Promise<Teacher> {
+    const [updated] = await db.update(teachers).set({ passwordHash }).where(eq(teachers.id, teacherId)).returning();
     if (!updated) throw new Error("Teacher not found");
     return updated;
   }

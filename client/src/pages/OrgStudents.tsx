@@ -22,7 +22,7 @@ type ImportRow = {
   issues: string[];
 };
 
-type PreviewResponse = { rows: ImportRow[]; summary: { total: number; ok: number; errors: number } };
+type PreviewResponse = { rows: ImportRow[]; summary: { total: number; ok: number; errors: number }; limitWarning?: string | null };
 type CommitResponse = {
   summary: { total: number; created: number; skipped: number; emailed: number };
   created: { rowNum: number; userId: string; username: string; firstName: string; emailSent: boolean; enrolled: boolean }[];
@@ -489,6 +489,13 @@ function ImportStudentsDialog({
                   </table>
                 </div>
 
+                {preview.limitWarning && (
+                  <div className="flex items-start gap-2 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-3 text-sm text-amber-700 dark:text-amber-300" data-testid="alert-student-limit-warning">
+                    <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>{preview.limitWarning}</span>
+                  </div>
+                )}
+
                 {preview.summary.errors > 0 && (
                   <div className="text-xs text-muted-foreground">
                     Hover the “Error” badge to see what to fix. Only OK rows will be imported.
@@ -567,7 +574,7 @@ function ImportStudentsDialog({
           {!commitResult && (
             <Button
               onClick={() => file && commitMutation.mutate(file)}
-              disabled={!file || !preview || preview.summary.ok === 0 || commitMutation.isPending}
+              disabled={!file || !preview || preview.summary.ok === 0 || commitMutation.isPending || !!preview.limitWarning}
               className="rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 gap-2"
               data-testid="button-confirm-import"
             >

@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useOrgAuth } from "@/hooks/use-org-auth";
 import {
-  LayoutDashboard, Users, BookOpen, LogOut, Building2, Menu, X, ChevronRight, Award
+  LayoutDashboard, Users, BookOpen, LogOut, Building2, Menu, X, ChevronRight, Award, GraduationCap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -9,6 +9,7 @@ import { useState } from "react";
 const navItems = [
   { href: "/org/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/org/students", label: "Students", icon: Users },
+  { href: "/org/teachers", label: "Teachers", icon: GraduationCap },
   { href: "/org/lessons", label: "Lessons", icon: BookOpen },
   { href: "/org/branding", label: "Certificate Branding", icon: Award },
 ];

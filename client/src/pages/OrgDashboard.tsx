@@ -1,5 +1,6 @@
 import { OrgSidebar } from "@/components/layout/OrgSidebar";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useOrgAuth } from "@/hooks/use-org-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -159,6 +160,22 @@ export default function OrgDashboard() {
                 Welcome, {admin.firstName}!
               </h1>
               <p className="text-muted-foreground mt-1">{admin.orgName}: {admin.envName}</p>
+              {overview?.plan && (
+                <div className="flex items-center gap-3 flex-wrap mt-2">
+                  <Badge variant="secondary" className="font-semibold text-xs" data-testid="badge-plan-name">
+                    {overview.plan.displayLabel ?? (overview.plan.tier.charAt(0).toUpperCase() + overview.plan.tier.slice(1))} Plan
+                  </Badge>
+                  <span className="text-sm text-muted-foreground flex items-center gap-1.5" data-testid="text-student-usage">
+                    <Users className="w-3.5 h-3.5" />
+                    <span>
+                      <span className="font-semibold text-foreground">{overview.stats?.orgStudentCount ?? 0}</span>
+                      {" of "}
+                      <span className="font-semibold text-foreground">{overview.plan.studentLimit}</span>
+                      {" students"}
+                    </span>
+                  </span>
+                </div>
+              )}
             </div>
             <a
               href="/api/org/report/pdf"
