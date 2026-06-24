@@ -1,3 +1,4 @@
 - [Supabase lesson_plans schema drift](supabase-lesson-schema.md) — new columns in LessonPlan type must be manually ALTERed in live DB + NOTIFY pgrst to reload schema cache.
 - [Supabase write-function error handling](supabase-write-error-pattern.md) — throw `[Supabase] ...` on DB error; route catch blocks use that prefix to return 500 vs 400 + captureError.
 - [Supabase org schema migrations](supabase-org-schema-migrations.md) — 6 columns were missing from live organizations table; startup probe uses `display_label` as sentinel for all org migrations.
+- [deleteUserAllData transaction](delete-user-transaction.md) — must be wrapped in db.transaction(); conversations table has no userId so AI chat history is NOT deleted on purge (known gap).

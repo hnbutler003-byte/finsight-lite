@@ -1018,25 +1018,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUserAllData(userId: string): Promise<void> {
-    await db.delete(studentFeedback).where(eq(studentFeedback.studentId, userId));
-    await db.delete(classEnrollments).where(eq(classEnrollments.studentId, userId));
-    await db.delete(examPapers).where(eq(examPapers.userId, userId));
-    await db.delete(gameSessions).where(eq(gameSessions.userId, userId));
-    await db.delete(userXp).where(eq(userXp.userId, userId));
-    await db.delete(userBadges).where(eq(userBadges.userId, userId));
-    await db.delete(userLearningProgress).where(eq(userLearningProgress.userId, userId));
-    await db.delete(portfolioTransactions).where(eq(portfolioTransactions.userId, userId));
-    await db.delete(portfolioHoldings).where(eq(portfolioHoldings.userId, userId));
-    await db.delete(userVirtualBalance).where(eq(userVirtualBalance.userId, userId));
-    await db.delete(transactions).where(eq(transactions.userId, userId));
-    await db.delete(budgets).where(eq(budgets.userId, userId));
-    await db.delete(savingsGoals).where(eq(savingsGoals.userId, userId));
-    await db.delete(billReminders).where(eq(billReminders.userId, userId));
-    await db.delete(linkedCards).where(eq(linkedCards.userId, userId));
-    await db.delete(documentUploads).where(eq(documentUploads.userId, userId));
-    await db.delete(categories).where(eq(categories.userId, userId));
-    await db.delete(emailContacts).where(eq(emailContacts.userId, userId));
-    await db.delete(users).where(eq(users.id, userId));
+    await db.transaction(async (tx) => {
+      await tx.delete(studentFeedback).where(eq(studentFeedback.studentId, userId));
+      await tx.delete(classEnrollments).where(eq(classEnrollments.studentId, userId));
+      await tx.delete(examPapers).where(eq(examPapers.userId, userId));
+      await tx.delete(gameSessions).where(eq(gameSessions.userId, userId));
+      await tx.delete(userXp).where(eq(userXp.userId, userId));
+      await tx.delete(userBadges).where(eq(userBadges.userId, userId));
+      await tx.delete(userLearningProgress).where(eq(userLearningProgress.userId, userId));
+      await tx.delete(portfolioTransactions).where(eq(portfolioTransactions.userId, userId));
+      await tx.delete(portfolioHoldings).where(eq(portfolioHoldings.userId, userId));
+      await tx.delete(userVirtualBalance).where(eq(userVirtualBalance.userId, userId));
+      await tx.delete(transactions).where(eq(transactions.userId, userId));
+      await tx.delete(budgets).where(eq(budgets.userId, userId));
+      await tx.delete(savingsGoals).where(eq(savingsGoals.userId, userId));
+      await tx.delete(billReminders).where(eq(billReminders.userId, userId));
+      await tx.delete(linkedCards).where(eq(linkedCards.userId, userId));
+      await tx.delete(documentUploads).where(eq(documentUploads.userId, userId));
+      await tx.delete(categories).where(eq(categories.userId, userId));
+      await tx.delete(emailContacts).where(eq(emailContacts.userId, userId));
+      await tx.delete(users).where(eq(users.id, userId));
+    });
   }
 
   async logDeletion(data: InsertDeletionLog): Promise<void> {
