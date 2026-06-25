@@ -22,8 +22,8 @@ export function OrgSidebar() {
   const content = (
     <div className="flex flex-col h-full bg-gradient-to-b from-blue-800 via-indigo-900 to-indigo-950 text-white p-4">
       <div className="flex items-center gap-3 mb-8 mt-2">
-        <div className="bg-white rounded-xl px-2 py-1 shadow-lg">
-          <img src="/logo.png" className="h-7 w-auto object-contain" alt="Finsight Lite" />
+        <div className="bg-white rounded-xl px-3 py-1.5 shadow-lg shrink-0">
+          <img src="/logo.png" className="h-9 w-auto object-contain" alt="Finsight Lite" />
         </div>
         <div>
           <p className="font-display font-bold text-sm leading-tight text-white">Org Admin</p>

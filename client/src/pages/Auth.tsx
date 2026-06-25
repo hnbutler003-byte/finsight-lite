@@ -161,8 +161,8 @@ export default function AuthPage() {
 
       {/* Persistent micro-brand header */}
       <div className="flex items-center gap-2 mb-10 opacity-90">
-        <div className="bg-white rounded-xl px-3 py-1.5 shadow-lg">
-          <img src="/logo.png" className="h-7 w-auto object-contain" alt="Finsight Lite" />
+        <div className="bg-white rounded-2xl px-4 py-2 shadow-lg">
+          <img src="/logo.png" className="h-10 w-auto object-contain" alt="Finsight Lite" />
         </div>
       </div>
 

@@ -76,8 +76,8 @@ export default function DemoAccess() {
     <div className="min-h-screen caribbean-bg">
       {/* Header */}
       <header className="px-6 py-5 flex items-center justify-between max-w-6xl mx-auto">
-        <div className="bg-white rounded-2xl px-4 py-2 shadow-lg">
-          <img src="/logo.png" className="h-8 w-auto object-contain" alt="Finsight Lite" />
+        <div className="bg-white rounded-2xl px-5 py-2.5 shadow-lg">
+          <img src="/logo.png" className="h-10 w-auto object-contain" alt="Finsight Lite" />
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" onClick={() => setLocation("/")}

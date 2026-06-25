@@ -1,0 +1,99 @@
+This prompt has four parts. Part 1 is the most important, a systemic fix, not another spot patch, since card contrast and logo legibility issues have recurred multiple times this session despite individual fixes. Read Part 1 carefully before touching any code.
+
+---
+
+PART 1 — Systemic fix for card contrast across all money games (root cause, not patches)
+
+The recurring problem: individual game cards have been built with hardcoded colors at some point (an inline style or a hardcoded hex/Tailwind color with no dark: variant), causing text or backgrounds to become illegible depending on whether the user is in light or dark mode. This has already happened with the BISX/JSE ticker symbols earlier this session and is now showing up across multiple money games. Patching individual instances has not solved the underlying pattern, since new instances keep appearing.
+
+STAGE 1 — Audit every game for the root cause
+
+For each of the 7 money games, search the actual component code for:
+1. Any inline style={{ color: ... }} or style={{ backgroundColor: ... }} usage.
+2. Any hardcoded Tailwind color class (e.g. text-gray-800, bg-white, text-black) used WITHOUT a corresponding dark: variant.
+3. Any card, panel, or score/points display that does not use the existing glass-card, glass-card-coral, glass-card-teal, or other semantic component classes already defined in index.css.
+
+Report every instance found, file and line, organized by game, before fixing anything.
+
+STAGE 2 — Fix every instance found, using only semantic tokens
+
+For every instance found in Stage 1:
+1. Replace inline hardcoded color styles with the existing semantic Tailwind classes already defined (text-foreground, text-card-foreground, text-muted-foreground, bg-card, etc.) or the existing glass-card component classes, so colors automatically adapt to light and dark mode rather than being fixed values.
+2. Any score, points, stock holdings, or currency amount displayed inside a game card must use text-foreground or text-card-foreground (or the existing amber/secondary token for money-related figures, consistent with established color usage rules), never a hardcoded color.
+3. Any card background must use bg-card, glass-card, or another existing semantic surface class, never a hardcoded white or dark hex value.
+
+STAGE 3 — Add a lasting safeguard against this recurring
+
+Add a short, clearly commented section near the top of index.css (as a code comment, extending the existing Dark Mode Regression Checklist already added earlier this session) specifically calling out: "Game card components are a recurring source of hardcoded-color bugs. Before adding or modifying any game card, confirm it uses semantic tokens only, test in both light and dark mode, and check this checklist." This is documentation only, intended to reduce recurrence in future work, human or agent.
+
+STAGE 4 — Verify across all 7 games in both modes
+
+After fixing, check all 7 money games in both light and dark mode specifically for: card backgrounds, all text including scores/points, stock/portfolio values, timers, and buttons. Provide a clear pass/fail list per game per mode, not a general claim that "all games pass."
+
+---
+
+PART 2 — Logo legibility, everywhere
+
+The Finsight Lite logo is currently too small, too spaced out, or otherwise hard to read in the sidebar (main app navigation) and on the login/signup pages. This needs a real fix, not a minor tweak.
+
+STAGE 1 — Audit
+Find every place the logo currently renders (sidebar, login pages for every role, signup pages, anywhere else). For each, report the current size (height/width in the rendered CSS), spacing/padding around it, and whether it uses the icon-only mark, the full logo with wordmark, or text-only.
+
+STAGE 2 — Fix
+1. In the sidebar, increase the logo's rendered size to a clearly legible size (test increments, but err toward bigger rather than marginally bigger, this has been reported as illegible multiple times) and reduce excess surrounding whitespace/letter-spacing so it reads as one cohesive mark, not scattered elements.
+2. On login and signup pages for every role (student, teacher, org admin, founder admin), ensure the logo renders at a size and clarity consistent with looking like a deliberate, confident brand mark, not an afterthought. Use the full logo with wordmark where horizontal space allows, the icon-only mark only where space is genuinely constrained.
+3. Check both light and dark mode for every instance, the logo and its surrounding container must remain legible and properly contrasted in both.
+4. Apply this consistently everywhere the logo appears, do not fix only the sidebar and miss the login pages, or vice versa.
+
+---
+
+PART 3 — Budget Grocery Challenge game improvement
+
+Current design: a single fixed budget, the player adds items and tries to stay within or hit that budget. This is functional but limited.
+
+Redesign to: a revolving carousel of grocery items the player chooses from (rather than a static list), within the existing budget constraint. As the player browses the carousel, they decide whether to add each item to their cart, with the budget tracker updating live. Consider whether different difficulty modes (e.g. a stricter budget, a surprise price-increase event mid-game, a "double points" bonus round) would add replay value, but only build this if it's a reasonably contained addition, report your assessment of feasibility before building if it looks like a larger restructuring.
+
+Keep the existing scoring, feedback, and completion logic intact, this is a presentation and interaction redesign of how items are chosen, not a rebuild of the underlying budget logic. Apply Part 1's color/contrast standards to any new UI built for this redesign.
+
+---
+
+PART 4 — Speed Investor game improvements
+
+Two specific fixes:
+1. Increase the decision time per round from 5 seconds to 10 seconds.
+2. Improve the instructional copy shown to the player before or during the game from an EdTech clarity standpoint: short, plain-language sentences, clear statement of what the player needs to do and how scoring works, consistent with the reading level used elsewhere in the app (ages 12-17, no jargon). Rewrite the existing instructions rather than just trimming them.
+3. Apply Part 1's color/contrast standards specifically to this game's score display, stock holdings display, and timer, since these were specifically reported as illegible.
+
+---
+
+PART 5 — Audit and improve all 7 money games for genuine engagement, not just mechanics
+
+Research on financial literacy games for teens shows that the most effective and beloved examples (Visa's Financial Football, road-trip budgeting simulations, the SIFMA Stock Market Game used by 600,000+ students a year) succeed because they wrap the financial lesson inside a theme or stakes the player already finds compelling on its own terms, sports, a road trip, real competition, not just "answer a question, get points." Game-based learning of this kind can increase knowledge retention by up to 40% compared to passive instruction, but only when the mechanics themselves are genuinely engaging, not just decorated quizzes.
+
+STAGE 1 — Audit each of the 7 existing money games
+
+For each game, report: what is the current core mechanic, what financial concept does it teach, and honestly assess whether the mechanic itself is engaging on its own terms or whether it's a quiz/form wrapped in a game skin. Identify the single biggest opportunity to add genuine tension, stakes, story, or surprise to each one without losing the underlying financial lesson.
+
+STAGE 2 — Propose and build improvements for each game
+
+For each game, apply this lens and either implement the improvement (if reasonably contained) or report a clear assessment if it would require significant rework:
+
+1. Beat the Budget / Budget Grocery Challenge (already being redesigned in Part 3 with the carousel mechanic): ensure the redesign also includes a real stakes element, e.g. a surprise event mid-shop (a price spike on one item, a coupon that appears briefly, a friend asking to split a treat), since real budgeting involves the unexpected, not just static math.
+
+2. Speed Investor (already getting the timer and instruction fix in Part 4): consider adding a brief "market news" flash before certain rounds (a one-line fictional headline like "Tech stocks rally" or "Storm warning issued") that hints at which way a price might move, rewarding players who read the wider context rather than guessing randomly. This connects the game mechanically to a real investing skill, reading information, not just reaction speed.
+
+3. For the remaining 5 games: audit what each currently does, and propose at least one specific, theme-driven or stakes-driven improvement per game, grounded in the same pattern (genuine tension or story, not just more points). Examples of the kind of thinking to apply, adapt or invent your own based on what each game actually is: a savings-goal game could introduce a competing short-term temptation the player must resist or strategically indulge; a quiz-style game could introduce a "double or nothing" risk mechanic where a player can wager accumulated points on a harder bonus question; a scenario-based game could introduce branching consequences where an early choice changes what challenges appear later, rather than a flat, linear sequence.
+
+4. For every game touched in this stage, apply Part 1's color/contrast standards to any new UI elements introduced.
+
+STAGE 3 — Prioritize and report
+
+After auditing and proposing improvements for all 7, clearly flag which improvements were implemented in this session versus which are recommended but would need a dedicated future session due to scope (e.g. anything requiring new game state architecture, new data models, or significant rework). Do not force a large rebuild into this session, a clear, honest assessment is more valuable than a rushed implementation.
+
+---
+- Do not change any existing scoring or completion logic except where explicitly described above (Speed Investor timer change).
+- No em dashes in any new copy or comments.
+- If a new package install is needed, apply the known fix for the Replit package-lock.json proxy URL issue first.
+- Ensure any new backend write logic throws a clear error on failure rather than returning null/undefined silently.
+- After completing all parts, commit and push, then verify with a live remote commit hash comparison (full SHA, not truncated) that the push actually landed on the correct GitHub remote.
+- Report a clear pass/fail list for Part 1's per-game-per-mode verification, confirm the logo fix across every location checked, confirm the Budget Grocery Challenge and Speed Investor changes work as described with a real test, and provide the full Part 5 audit and improvement report for all 7 games, clearly separating what was built this session from what is recommended for a future session.

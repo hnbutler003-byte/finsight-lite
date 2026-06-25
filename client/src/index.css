@@ -28,6 +28,16 @@
    5. Semantic tokens that always adapt correctly (prefer these):
         text-foreground, text-muted-foreground, text-card-foreground
 
+   6. GAME STATUS PILLS (round / score / balance / timer / item count)
+      sit DIRECTLY on caribbean-bg, so they need light-on-dark styling
+      even in light mode. In MoneyGames.tsx use the shared darkPill /
+      darkPillSuccess / darkPillWarning / darkPillDanger constants.
+      ❌ Never give a pill on caribbean-bg Badge variant="outline" alone
+         (resolves to text-foreground = dark text that vanishes here),
+         text-{color}-600, or text-muted-foreground.
+      ✅ A status row wrapped inside a Card / glass-card is the exception:
+         there the surface adapts, so use semantic tokens instead.
+
    ── DARK MODE REGRESSION CHECKLIST (for all future contributors) ──
    Every new UI addition MUST be checked in both light AND dark mode
    before it is considered complete. Common failure patterns:

@@ -281,8 +281,8 @@ export function Sidebar() {
     <div className="flex flex-col h-full caribbean-bg text-white">
       <div className="p-5 pb-4 border-b border-white/10 flex items-start justify-between gap-2">
         <div>
-          <div className="bg-white rounded-xl px-3 py-1.5 shadow-lg mb-1">
-            <img src="/logo.png" className="h-8 w-auto object-contain" alt="Finsight Lite" />
+          <div className="bg-white rounded-xl px-3.5 py-2 shadow-lg mb-1 inline-block">
+            <img src="/logo.png" className="h-10 w-auto object-contain" alt="Finsight Lite" />
           </div>
           <p className="text-[10px] text-white/75 uppercase font-bold tracking-widest mt-1 flex items-center gap-1">
             <Sparkles className="w-3 h-3 text-amber-400" />

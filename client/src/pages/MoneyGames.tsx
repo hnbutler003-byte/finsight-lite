@@ -9,7 +9,8 @@ import {
   ArrowLeft, ShoppingCart, Zap, Target, Plus, Minus, CheckCircle2,
   XCircle, TrendingUp, TrendingDown, Minus as FlatIcon,
   Trophy, Star, Sparkles, RotateCcw, ShoppingBag, PiggyBank,
-  Gamepad2, ArrowRight, Wallet, BarChart3, Clock, Timer, Hourglass, Loader2
+  Gamepad2, ArrowRight, Wallet, BarChart3, Clock, Timer, Hourglass, Loader2,
+  ChevronLeft, ChevronRight
 } from "lucide-react";
 
 const CURRENCIES = [
@@ -24,6 +25,16 @@ const CURRENCIES = [
 function getSymbol(code: string) {
   return CURRENCIES.find(c => c.code === code)?.symbol || "$";
 }
+
+// Status pills (round / score / balance / timer / item count) sit directly on the
+// caribbean-bg gradient, which is ALWAYS dark in both light and dark mode. They must
+// use light-on-dark classes. Do NOT use Badge variant="outline" alone (it resolves to
+// text-foreground, which is a dark colour in light mode and disappears here) or
+// text-{color}-600. See the contrast checklist at the top of client/src/index.css.
+const darkPill = "rounded-2xl px-4 py-2 text-sm font-bold border bg-white/15 border-white/30 text-white backdrop-blur-sm";
+const darkPillSuccess = "rounded-2xl px-4 py-2 text-sm font-bold border bg-emerald-400/20 border-emerald-300/45 text-emerald-50 backdrop-blur-sm";
+const darkPillWarning = "rounded-2xl px-4 py-2 text-sm font-bold border bg-amber-400/20 border-amber-300/45 text-amber-50 backdrop-blur-sm";
+const darkPillDanger = "rounded-2xl px-4 py-2 text-sm font-bold border bg-red-500/25 border-red-300/50 text-red-50 backdrop-blur-sm";
 
 const GAMES = [
   {
@@ -107,24 +118,66 @@ function GroceryGame({ currency }: { currency: string }) {
   const [budget, setBudget] = useState(0);
   const [cart, setCart] = useState<Record<number, number>>({});
   const [checkedOut, setCheckedOut] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [stakesEvent, setStakesEvent] = useState<
+    | null
+    | { type: "coupon" | "spike"; itemIndex: number; multiplier: number; label: string }
+  >(null);
 
   const randomizeBudget = useCallback(() => {
     setBudget(Math.floor(Math.random() * 101) + 50);
     setCart({});
     setCheckedOut(false);
+    setActiveIndex(0);
+    setStakesEvent(null);
   }, []);
 
   useEffect(() => { randomizeBudget(); }, [randomizeBudget]);
+
+  const itemCount = GROCERY_ITEMS.length;
+  const cartCount = Object.values(cart).reduce((a, b) => a + b, 0);
+
+  // A surprise market event fires once, after the cart reaches 3 items, to add a
+  // little stakes: either a flash-sale coupon (half price) or a sudden price
+  // spike on one item. cartCount is the dependency, so cart is always fresh here.
+  useEffect(() => {
+    if (stakesEvent || checkedOut || itemCount === 0 || cartCount < 3) return;
+    const isCoupon = Math.random() > 0.5;
+    const cartIdxs = Object.keys(cart).map(Number);
+    let targetIdx: number;
+    if (isCoupon) {
+      const notInCart = GROCERY_ITEMS.map((_, i) => i).filter(i => !cart[i]);
+      targetIdx = notInCart.length > 0
+        ? notInCart[Math.floor(Math.random() * notInCart.length)]
+        : Math.floor(Math.random() * itemCount);
+    } else {
+      targetIdx = cartIdxs.length > 0
+        ? cartIdxs[Math.floor(Math.random() * cartIdxs.length)]
+        : Math.floor(Math.random() * itemCount);
+    }
+    const target = GROCERY_ITEMS[targetIdx];
+    setStakesEvent(
+      isCoupon
+        ? { type: "coupon", itemIndex: targetIdx, multiplier: 0.5, label: `Flash sale! ${target.emoji} ${target.name} is half price. Grab it while it lasts.` }
+        : { type: "spike", itemIndex: targetIdx, multiplier: 1.6, label: `Price spike! ${target.emoji} ${target.name} just got more expensive. Plan around it.` }
+    );
+    setActiveIndex(targetIdx);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartCount, stakesEvent, checkedOut, itemCount]);
 
   if (groceryLoading) {
     return <div className="flex justify-center items-center py-16"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
-  const cartTotal = Object.entries(cart).reduce((sum, [idx, qty]) => {
-    return sum + GROCERY_ITEMS[Number(idx)].price * qty;
-  }, 0);
+  const getItemPrice = (idx: number) => {
+    const base = GROCERY_ITEMS[idx].price;
+    if (stakesEvent && stakesEvent.itemIndex === idx) return base * stakesEvent.multiplier;
+    return base;
+  };
 
-  const cartCount = Object.values(cart).reduce((a, b) => a + b, 0);
+  const cartTotal = Object.entries(cart).reduce((sum, [idx, qty]) => {
+    return sum + getItemPrice(Number(idx)) * qty;
+  }, 0);
 
   const addItem = (idx: number) => {
     setCart(prev => ({ ...prev, [idx]: (prev[idx] || 0) + 1 }));
@@ -142,11 +195,18 @@ function GroceryGame({ currency }: { currency: string }) {
   const isOverBudget = cartTotal > budget;
 
   const getRating = () => {
-    if (usagePercent >= 90 && usagePercent <= 100) return { label: "Smart Shopper!", emoji: "🌟", color: "text-yellow-500" };
-    if (usagePercent >= 70) return { label: "Good Job!", emoji: "👍", color: "text-green-500" };
-    if (usagePercent >= 50) return { label: "Not bad. Stretch that budget more!", emoji: "💪", color: "text-blue-500" };
-    return { label: "Try to use more of your budget wisely!", emoji: "🤔", color: "text-orange-500" };
+    if (usagePercent >= 90 && usagePercent <= 100) return { label: "Smart Shopper!", emoji: "🌟", color: "text-amber-600 dark:text-amber-300" };
+    if (usagePercent >= 70) return { label: "Good Job!", emoji: "👍", color: "text-emerald-600 dark:text-emerald-300" };
+    if (usagePercent >= 50) return { label: "Not bad. Stretch that budget more!", emoji: "💪", color: "text-sky-600 dark:text-sky-300" };
+    return { label: "Try to use more of your budget wisely!", emoji: "🤔", color: "text-orange-600 dark:text-orange-300" };
   };
+
+  const goPrev = () => setActiveIndex(i => (i - 1 + itemCount) % itemCount);
+  const goNext = () => setActiveIndex(i => (i + 1) % itemCount);
+
+  const activeItem = GROCERY_ITEMS[activeIndex];
+  const activeQty = activeItem ? (cart[activeIndex] || 0) : 0;
+  const activeHasDeal = stakesEvent?.itemIndex === activeIndex;
 
   return (
     <div className="space-y-6">
@@ -159,15 +219,15 @@ function GroceryGame({ currency }: { currency: string }) {
             <h3 className="font-display text-xl font-bold text-white" data-testid="text-grocery-budget">
               Your Budget: {sym}{budget.toFixed(2)}
             </h3>
-            <p className="text-sm text-white/70">Fill your cart without going over!</p>
+            <p className="text-sm text-white/70">Spin through the aisle and fill your cart without going over!</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="outline" className={`text-lg px-4 py-2 rounded-2xl font-bold ${isOverBudget ? "border-red-400 text-red-500 bg-red-50 dark:bg-red-950/30" : "border-green-400 text-green-600 bg-green-50 dark:bg-green-950/30"}`} data-testid="text-cart-total">
+          <Badge variant="outline" className={`${isOverBudget ? darkPillDanger : darkPillSuccess} text-lg`} data-testid="text-cart-total">
             <ShoppingBag className="w-4 h-4 mr-2" />
             {sym}{cartTotal.toFixed(2)} / {sym}{budget.toFixed(2)}
           </Badge>
-          <Badge variant="outline" className="rounded-2xl px-3 py-2">
+          <Badge variant="outline" className={darkPill} data-testid="text-cart-count">
             {cartCount} items
           </Badge>
         </div>
@@ -201,48 +261,116 @@ function GroceryGame({ currency }: { currency: string }) {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {GROCERY_ITEMS.map((item, idx) => {
-              const qty = cart[idx] || 0;
-              return (
-                <Card key={idx} className="rounded-2xl border-2 hover:border-violet-300 dark:hover:border-violet-700 transition-all" data-testid={`card-grocery-item-${idx}`}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-2xl">{item.emoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">{item.name}</p>
-                        <p className="text-sm font-bold text-primary">{sym}{item.price.toFixed(2)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {qty > 0 ? (
-                        <>
-                          <Button size="icon" variant="outline" className="rounded-xl" onClick={() => removeItem(idx)} data-testid={`button-remove-${idx}`}>
-                            <Minus className="w-3 h-3" />
-                          </Button>
-                          <span className="font-bold text-sm w-6 text-center">{qty}</span>
-                          <Button size="icon" variant="outline" className="rounded-xl" onClick={() => addItem(idx)} data-testid={`button-add-more-${idx}`}>
-                            <Plus className="w-3 h-3" />
-                          </Button>
-                          <span className="ml-auto text-xs text-muted-foreground font-semibold">
-                            {sym}{(item.price * qty).toFixed(2)}
-                          </span>
-                        </>
-                      ) : (
-                        <Button size="sm" className="rounded-xl w-full gap-1" onClick={() => addItem(idx)} data-testid={`button-add-${idx}`}>
-                          <Plus className="w-3 h-3" /> Add
-                        </Button>
+          {/* Surprise market event */}
+          {stakesEvent && (
+            <div
+              className={`rounded-2xl p-4 border-2 border-dashed flex items-center gap-3 animate-bounce-in ${stakesEvent.type === "coupon" ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700" : "bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700"}`}
+              data-testid="banner-stakes-event"
+            >
+              {stakesEvent.type === "coupon"
+                ? <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-300 shrink-0" />
+                : <TrendingUp className="w-5 h-5 text-amber-600 dark:text-amber-300 shrink-0" />}
+              <p className={`text-sm font-bold ${stakesEvent.type === "coupon" ? "text-emerald-700 dark:text-emerald-200" : "text-amber-700 dark:text-amber-200"}`}>
+                {stakesEvent.label}
+              </p>
+            </div>
+          )}
+
+          {/* Revolving aisle: one item at a time, wraps around */}
+          {activeItem && (
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Button
+                size="icon"
+                variant="outline"
+                className="rounded-2xl h-12 w-12 shrink-0 bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white"
+                onClick={goPrev}
+                data-testid="button-grocery-prev"
+                aria-label="Previous item"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </Button>
+
+              <Card className="rounded-3xl border-2 flex-1" data-testid={`card-grocery-item-${activeIndex}`}>
+                <CardContent className="p-6 text-center space-y-4">
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-6xl" data-testid="text-active-emoji">{activeItem.emoji}</span>
+                    {activeHasDeal && (
+                      <Badge className={stakesEvent!.type === "coupon" ? "bg-emerald-500 text-white" : "bg-amber-500 text-white"}>
+                        {stakesEvent!.type === "coupon" ? "Half price" : "Price up"}
+                      </Badge>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-display text-xl font-bold" data-testid="text-active-name">{activeItem.name}</p>
+                    <div className="flex items-center justify-center gap-2 mt-1">
+                      {activeHasDeal && (
+                        <span className="text-sm line-through text-muted-foreground">{sym}{activeItem.price.toFixed(2)}</span>
                       )}
+                      <span className="text-2xl font-bold text-primary" data-testid="text-active-price">{sym}{getItemPrice(activeIndex).toFixed(2)}</span>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                  </div>
+
+                  {activeQty > 0 ? (
+                    <div className="flex items-center justify-center gap-3">
+                      <Button size="icon" variant="outline" className="rounded-xl" onClick={() => removeItem(activeIndex)} data-testid={`button-remove-${activeIndex}`}>
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                      <span className="font-bold text-lg w-10 text-center" data-testid="text-active-qty">{activeQty}</span>
+                      <Button size="icon" variant="outline" className="rounded-xl" onClick={() => addItem(activeIndex)} data-testid={`button-add-more-${activeIndex}`}>
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                      <span className="ml-2 text-sm text-muted-foreground font-semibold">
+                        {sym}{(getItemPrice(activeIndex) * activeQty).toFixed(2)} in cart
+                      </span>
+                    </div>
+                  ) : (
+                    <Button className="rounded-xl gap-1 px-6" onClick={() => addItem(activeIndex)} data-testid={`button-add-${activeIndex}`}>
+                      <Plus className="w-4 h-4" /> Add to cart
+                    </Button>
+                  )}
+
+                  <p className="text-xs text-muted-foreground font-semibold pt-1" data-testid="text-grocery-position">
+                    Item {activeIndex + 1} of {itemCount}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Button
+                size="icon"
+                variant="outline"
+                className="rounded-2xl h-12 w-12 shrink-0 bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white"
+                onClick={goNext}
+                data-testid="button-grocery-next"
+                aria-label="Next item"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </Button>
+            </div>
+          )}
+
+          {/* Cart summary chips: see and jump to what you've added */}
+          {cartCount > 0 && (
+            <div className="flex flex-wrap gap-2 justify-center">
+              {Object.entries(cart).map(([idx, qty]) => {
+                const i = Number(idx);
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveIndex(i)}
+                    className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold border backdrop-blur-sm transition-colors ${i === activeIndex ? "bg-white/25 border-white/50 text-white" : "bg-white/10 border-white/25 text-white/90 hover:bg-white/20 hover:text-white"}`}
+                    data-testid={`chip-cart-${i}`}
+                  >
+                    <span>{GROCERY_ITEMS[i].emoji}</span>
+                    <span>x{qty}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {isOverBudget && (
             <div className="bg-red-50 dark:bg-red-950/30 border-2 border-dashed border-red-300 dark:border-red-700 rounded-2xl p-4 text-center">
-              <p className="font-bold text-red-600 flex items-center justify-center gap-2">
+              <p className="font-bold text-red-600 dark:text-red-300 flex items-center justify-center gap-2">
                 <XCircle className="w-5 h-5" />
                 Oops! You're {sym}{(cartTotal - budget).toFixed(2)} over budget! Remove some items.
               </p>
@@ -362,10 +490,10 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
   };
 
   const getFinalRating = () => {
-    if (score >= 800) return { label: "Wall Street Whiz!", emoji: "🏆", color: "text-yellow-500" };
-    if (score >= 500) return { label: "Rising Investor!", emoji: "📈", color: "text-green-500" };
-    if (score >= 200) return { label: "Getting There!", emoji: "💡", color: "text-blue-500" };
-    return { label: "Keep Practicing!", emoji: "📚", color: "text-orange-500" };
+    if (score >= 800) return { label: "Wall Street Whiz!", emoji: "🏆", color: "text-amber-600 dark:text-amber-300" };
+    if (score >= 500) return { label: "Rising Investor!", emoji: "📈", color: "text-emerald-600 dark:text-emerald-300" };
+    if (score >= 200) return { label: "Getting There!", emoji: "💡", color: "text-sky-600 dark:text-sky-300" };
+    return { label: "Keep Practicing!", emoji: "📚", color: "text-orange-600 dark:text-orange-300" };
   };
 
   const currentRound = rounds[round];
@@ -428,7 +556,7 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
                 Scoring
               </h4>
               <div className="ml-9 text-sm text-muted-foreground space-y-1">
-                <p>Correct call (Buy when price goes up, Sell when it goes down): <strong className="text-green-600">+100 pts</strong></p>
+                <p>Correct call (Buy when price goes up, Sell when it goes down): <strong className="text-green-600 dark:text-green-400">+100 pts</strong></p>
                 <p>Wrong call: <strong className="text-red-500">-50 pts</strong></p>
                 <p>Hold (safe play): <strong>0 pts</strong></p>
               </div>
@@ -460,7 +588,7 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
               <div className="text-8xl font-display font-bold text-orange-500 animate-bounce" key={countdownNum}>
                 {countdownNum}
               </div>
-              <p className="text-muted-foreground font-semibold text-lg">Get ready...</p>
+              <p className="text-white/80 font-semibold text-lg">Get ready...</p>
             </>
           ) : (
             <>
@@ -514,18 +642,18 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
     <div className="space-y-6">
       <div className="flex flex-wrap gap-4 items-center justify-between">
         <div className="flex items-center gap-4">
-          <Badge variant="outline" className="rounded-2xl px-4 py-2 text-sm font-bold">
+          <Badge variant="outline" className={darkPill}>
             Round {round + 1} / 10
           </Badge>
-          <Badge variant="outline" className="rounded-2xl px-4 py-2 text-sm font-bold">
-            <Star className="w-3 h-3 mr-1" /> {score} pts
+          <Badge variant="outline" className={darkPill}>
+            <Star className="w-3 h-3 mr-1 text-amber-300" /> {score} pts
           </Badge>
-          <Badge variant="outline" className="rounded-2xl px-4 py-2 text-sm font-bold">
+          <Badge variant="outline" className={darkPill}>
             {sym}{balance.toFixed(2)}
           </Badge>
         </div>
         {gameState === "playing" && (
-          <Badge variant="outline" className={`rounded-2xl px-4 py-2 text-sm font-bold ${roundTimer <= 3 ? "border-red-400 text-red-500 animate-pulse" : "border-orange-400 text-orange-600"}`} data-testid="text-round-timer">
+          <Badge variant="outline" className={roundTimer <= 3 ? `${darkPillDanger} animate-pulse` : darkPillWarning} data-testid="text-round-timer">
             <Clock className="w-3 h-3 mr-1" /> {roundTimer}s
           </Badge>
         )}
@@ -572,7 +700,7 @@ function SpeedInvestorGame({ currency }: { currency: string }) {
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">
                     You chose <strong>{currentChoice?.toUpperCase()}</strong>:{" "}
-                    {currentRound.correct ? <span className="text-green-600 font-bold">Nice call! +100 pts</span> : currentChoice === "hold" ? <span className="text-gray-500">Safe play, 0 pts</span> : <span className="text-red-500 font-bold">Wrong call! -50 pts</span>}
+                    {currentRound.correct ? <span className="text-green-600 dark:text-green-400 font-bold">Nice call! +100 pts</span> : currentChoice === "hold" ? <span className="text-muted-foreground">Safe play, 0 pts</span> : <span className="text-red-500 dark:text-red-400 font-bold">Wrong call! -50 pts</span>}
                   </p>
                 </div>
                 <div className="flex justify-center">
@@ -717,7 +845,7 @@ function SavingsGoalGame({ currency }: { currency: string }) {
                 placeholder="What are you saving for?"
                 value={customName}
                 onChange={e => setCustomName(e.target.value)}
-                className="flex-1 rounded-xl border border-white/50 bg-white/50 backdrop-blur-sm px-4 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                className="flex-1 rounded-xl border border-input bg-background px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-400"
                 data-testid="input-custom-goal-name"
               />
               <input
@@ -725,7 +853,7 @@ function SavingsGoalGame({ currency }: { currency: string }) {
                 placeholder="Amount"
                 value={customAmount}
                 onChange={e => setCustomAmount(e.target.value)}
-                className="w-32 rounded-xl border border-white/50 bg-white/50 backdrop-blur-sm px-4 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                className="w-32 rounded-xl border border-input bg-background px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-400"
                 data-testid="input-custom-goal-amount"
               />
               <Button
@@ -775,11 +903,11 @@ function SavingsGoalGame({ currency }: { currency: string }) {
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div className="bg-violet-50 dark:bg-violet-900/20 rounded-2xl p-4 text-center">
                 <p className="text-xs text-muted-foreground font-bold uppercase">Save per Week</p>
-                <p className="text-xl font-bold text-violet-600" data-testid="text-weekly-savings">{sym}{weeklyNeeded.toFixed(2)}</p>
+                <p className="text-xl font-bold text-violet-600 dark:text-violet-300" data-testid="text-weekly-savings">{sym}{weeklyNeeded.toFixed(2)}</p>
               </div>
               <div className="bg-pink-50 dark:bg-pink-900/20 rounded-2xl p-4 text-center">
                 <p className="text-xs text-muted-foreground font-bold uppercase">Save per Month</p>
-                <p className="text-xl font-bold text-pink-600" data-testid="text-monthly-savings">{sym}{monthlyNeeded.toFixed(2)}</p>
+                <p className="text-xl font-bold text-pink-600 dark:text-pink-300" data-testid="text-monthly-savings">{sym}{monthlyNeeded.toFixed(2)}</p>
               </div>
             </div>
 
@@ -800,14 +928,16 @@ function SavingsGoalGame({ currency }: { currency: string }) {
 
   if (step === "quiz") {
     const scenario = scenarios[quizIndex];
+    const soFarMonthly = acceptedSavings.reduce((a, b) => a + b, 0) * 4.33;
+    const affordPct = monthlyNeeded > 0 ? Math.min(Math.round((soFarMonthly / monthlyNeeded) * 100), 100) : 0;
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <Badge variant="outline" className="rounded-2xl px-4 py-2 font-bold">
+          <Badge variant="outline" className={darkPill}>
             Question {quizIndex + 1} / {scenarios.length}
           </Badge>
-          <Badge variant="outline" className="rounded-2xl px-4 py-2 font-bold text-green-600">
-            Saving: {sym}{(acceptedSavings.reduce((a, b) => a + b, 0) * 4.33).toFixed(2)}/mo so far
+          <Badge variant="outline" className={darkPillSuccess}>
+            Saving: {sym}{soFarMonthly.toFixed(2)}/mo so far
           </Badge>
         </div>
 
@@ -816,6 +946,19 @@ function SavingsGoalGame({ currency }: { currency: string }) {
             className="h-full bg-violet-500 rounded-full transition-all duration-500"
             style={{ width: `${((quizIndex + 1) / scenarios.length) * 100}%` }}
           />
+        </div>
+
+        <div className="space-y-1">
+          <div className="flex justify-between text-sm text-white/80">
+            <span>On track to afford {goalName}</span>
+            <span className="font-bold text-white" data-testid="text-afford-pct">{affordPct}%</span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${affordPct >= 100 ? "bg-green-500" : "bg-emerald-400"}`}
+              style={{ width: `${affordPct}%` }}
+            />
+          </div>
         </div>
 
         <Card className="rounded-3xl border-2 border-violet-200 dark:border-violet-700">
@@ -863,7 +1006,7 @@ function SavingsGoalGame({ currency }: { currency: string }) {
         <div className="bg-muted/30 rounded-2xl p-6 space-y-4">
           <div className="flex justify-between items-center">
             <span className="text-sm font-semibold">Your potential monthly savings</span>
-            <span className="text-xl font-bold text-green-600">{sym}{totalMonthlySaving.toFixed(2)}</span>
+            <span className="text-xl font-bold text-green-600 dark:text-green-400">{sym}{totalMonthlySaving.toFixed(2)}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm font-semibold">Monthly amount needed</span>
@@ -871,7 +1014,7 @@ function SavingsGoalGame({ currency }: { currency: string }) {
           </div>
           <div className="border-t-2 border-dashed pt-4 flex justify-between items-center">
             <span className="text-sm font-semibold">Estimated time to reach goal</span>
-            <span className={`text-xl font-bold ${achievableMonths <= months ? "text-green-600" : "text-orange-500"}`} data-testid="text-achievable-months">
+            <span className={`text-xl font-bold ${achievableMonths <= months ? "text-green-600 dark:text-green-400" : "text-orange-500"}`} data-testid="text-achievable-months">
               {achievableMonths === Infinity ? "♾️ (no savings!)" : `${achievableMonths} month${achievableMonths > 1 ? "s" : ""}`}
             </span>
           </div>
@@ -1127,7 +1270,7 @@ function BeatTheBudgetGame({ currency }: { currency: string }) {
             <p className="text-sm text-white/70">Choose what to spend on, but watch out for surprises!</p>
           </div>
         </div>
-        <Badge variant="outline" className={`text-lg px-4 py-2 rounded-2xl font-bold ${balance < 20 ? "border-red-400 text-red-500" : "border-green-400 text-green-600"}`} data-testid="text-beat-balance">
+        <Badge variant="outline" className={`${balance < 20 ? darkPillDanger : darkPillSuccess} text-lg`} data-testid="text-beat-balance">
           {sym}{balance.toFixed(2)} left
         </Badge>
       </div>
@@ -1137,6 +1280,15 @@ function BeatTheBudgetGame({ currency }: { currency: string }) {
           className={`h-full rounded-full transition-all duration-500 ${balance < 20 ? "bg-red-500" : balance < 50 ? "bg-amber-500" : "bg-green-500"}`}
           style={{ width: `${balance}%` }}
         />
+      </div>
+
+      <div className="flex flex-wrap gap-3 justify-center">
+        <Badge variant="outline" className={needsCovered === totalNeeds ? darkPillSuccess : darkPill} data-testid="text-needs-covered">
+          ✅ Needs covered: {needsCovered} / {totalNeeds}
+        </Badge>
+        <Badge variant="outline" className={wantsBought > needsCovered && needsCovered < totalNeeds ? darkPillWarning : darkPill} data-testid="text-wants-bought">
+          🛍️ Wants: {wantsBought}
+        </Badge>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1207,6 +1359,21 @@ function CompoundItGame({ currency }: { currency: string }) {
 
   const totalEarned = runningBalance - totalContributed;
   const maxBar = runningBalance || 1;
+
+  // The cost of waiting: same weekly amount, but starting 5 years later means
+  // 5 fewer years of growth. Only shown when the plan is longer than 5 years.
+  const waitYears = 5;
+  const startsLaterApplies = years > waitYears;
+  let waitBalance = 0;
+  if (startsLaterApplies) {
+    for (let y = 1; y <= years - waitYears; y++) {
+      for (let w = 0; w < weeksPerYear; w++) {
+        waitBalance += weeklySavings;
+        waitBalance *= (1 + annualRate / weeksPerYear);
+      }
+    }
+  }
+  const waitCost = runningBalance - waitBalance;
 
   return (
     <div className="space-y-6">
@@ -1313,6 +1480,20 @@ function CompoundItGame({ currency }: { currency: string }) {
           </p>
         </CardContent>
       </Card>
+
+      {startsLaterApplies && (
+        <Card className="rounded-2xl border-2 border-dashed border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20">
+          <CardContent className="p-4 text-center space-y-1">
+            <p className="font-bold text-amber-700 dark:text-amber-300 flex items-center justify-center gap-2" data-testid="text-wait-cost">
+              <Clock className="w-4 h-4" />
+              Waiting 5 years to start would cost you {sym}{Math.round(waitCost).toLocaleString()}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Same {sym}{weeklySavings}/week, just 5 fewer years to grow. That is the price of waiting!
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
@@ -1348,6 +1529,8 @@ function NeedsVsWantsGame() {
   const [timeLeft, setTimeLeft] = useState(3);
   const [answers, setAnswers] = useState<Array<{ item: typeof NEEDS_WANTS_ITEMS[0]; chosen: string; correct: boolean }>>([]);
   const [showFeedback, setShowFeedback] = useState<"correct" | "wrong" | null>(null);
+  const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
 
   const startGame = () => {
     const shuffled = [...NEEDS_WANTS_ITEMS].sort(() => Math.random() - 0.5);
@@ -1357,6 +1540,8 @@ function NeedsVsWantsGame() {
     setTimeLeft(3);
     setAnswers([]);
     setShowFeedback(null);
+    setStreak(0);
+    setBestStreak(0);
     setGameState("playing");
   };
 
@@ -1375,7 +1560,16 @@ function NeedsVsWantsGame() {
     const item = items[currentIdx];
     if (!item) return;
     const correct = choice === item.answer;
-    if (correct) setScore(s => s + 1);
+    if (correct) {
+      setScore(s => s + 1);
+      setStreak(s => {
+        const next = s + 1;
+        setBestStreak(b => Math.max(b, next));
+        return next;
+      });
+    } else {
+      setStreak(0);
+    }
 
     setAnswers(a => [...a, { item, chosen: choice, correct }]);
     setShowFeedback(correct ? "correct" : "wrong");
@@ -1405,11 +1599,11 @@ function NeedsVsWantsGame() {
           </p>
           <div className="flex justify-center gap-4 text-sm">
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-3 text-center">
-              <p className="font-bold text-blue-600">Need</p>
+              <p className="font-bold text-blue-600 dark:text-blue-300">Need</p>
               <p className="text-xs text-muted-foreground">Essential for life</p>
             </div>
             <div className="bg-pink-50 dark:bg-pink-900/20 rounded-2xl p-3 text-center">
-              <p className="font-bold text-pink-600">Want</p>
+              <p className="font-bold text-pink-600 dark:text-pink-300">Want</p>
               <p className="text-xs text-muted-foreground">Nice but optional</p>
             </div>
           </div>
@@ -1431,6 +1625,11 @@ function NeedsVsWantsGame() {
               {accuracy >= 80 ? "Amazing!" : accuracy >= 60 ? "Good job!" : "Keep learning!"}
             </h3>
             <p className="text-lg">{score} / {items.length} correct: <strong>{accuracy}% accuracy</strong></p>
+            {bestStreak >= 2 && (
+              <p className="text-sm font-semibold text-amber-600 dark:text-amber-300" data-testid="text-nw-beststreak">
+                🔥 Best streak: {bestStreak} in a row
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 max-w-lg mx-auto">
@@ -1467,16 +1666,20 @@ function NeedsVsWantsGame() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-4 items-center justify-between">
-        <Badge variant="outline" className="rounded-2xl px-4 py-2 text-sm font-bold">
+        <Badge variant="outline" className={darkPill}>
           {currentIdx + 1} / {items.length}
         </Badge>
-        <Badge variant="outline" className="rounded-2xl px-4 py-2 text-sm font-bold">
-          <Star className="w-3 h-3 mr-1" /> {score} correct
+        <Badge variant="outline" className={darkPill}>
+          <Star className="w-3 h-3 mr-1 text-amber-300" /> {score} correct
         </Badge>
-        <div className="flex items-center gap-2">
-          <Clock className={`w-5 h-5 ${timeLeft <= 1 ? "text-red-500 animate-pulse" : "text-muted-foreground"}`} />
-          <span className={`font-bold text-lg ${timeLeft <= 1 ? "text-red-500" : ""}`}>{timeLeft}s</span>
-        </div>
+        {streak >= 2 && (
+          <Badge variant="outline" className={`${darkPillWarning} animate-pulse`} data-testid="text-nw-streak">
+            🔥 {streak} streak
+          </Badge>
+        )}
+        <Badge variant="outline" className={timeLeft <= 1 ? `${darkPillDanger} animate-pulse` : darkPill} data-testid="text-nw-timer">
+          <Clock className="w-3 h-3 mr-1" /> {timeLeft}s
+        </Badge>
       </div>
 
       <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
@@ -1488,7 +1691,7 @@ function NeedsVsWantsGame() {
           <div className="text-7xl">{currentItem?.emoji}</div>
           <h3 className="font-display text-2xl font-bold">{currentItem?.name}</h3>
           {showFeedback ? (
-            <div className={`text-xl font-bold ${showFeedback === "correct" ? "text-green-600" : "text-red-500"}`}>
+            <div className={`text-xl font-bold ${showFeedback === "correct" ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
               {showFeedback === "correct" ? "Correct! ✓" : `Nope! It's a ${currentItem?.answer} ✗`}
             </div>
           ) : (
@@ -1580,14 +1783,14 @@ function FutureMeGame({ currency }: { currency: string }) {
             <Card className="rounded-2xl border-2 bg-orange-50 dark:bg-orange-900/20">
               <CardContent className="p-4 text-center">
                 <p className="text-xs text-muted-foreground font-bold uppercase">Money Now</p>
-                <p className="text-xl font-bold text-orange-600">{sym}{totalNow}</p>
+                <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{sym}{totalNow}</p>
                 <p className="text-xs text-muted-foreground">(instant)</p>
               </CardContent>
             </Card>
             <Card className="rounded-2xl border-2 bg-indigo-50 dark:bg-indigo-900/20">
               <CardContent className="p-4 text-center">
                 <p className="text-xs text-muted-foreground font-bold uppercase">Money Later</p>
-                <p className="text-xl font-bold text-indigo-600">{sym}{totalLater}</p>
+                <p className="text-xl font-bold text-indigo-600 dark:text-indigo-300">{sym}{totalLater}</p>
                 <p className="text-xs text-muted-foreground">(with patience)</p>
               </CardContent>
             </Card>
@@ -1651,11 +1854,18 @@ function FutureMeGame({ currency }: { currency: string }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-4 items-center justify-between">
-        <Badge variant="outline" className="rounded-2xl px-4 py-2 text-sm font-bold">
+        <Badge variant="outline" className={darkPill}>
           Round {currentRound + 1} / {FUTURE_ME_ROUNDS.length}
         </Badge>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Hourglass className="w-4 h-4" /> Take your time to decide
+        <div className="flex items-center gap-3">
+          {choices.length > 0 && (
+            <Badge variant="outline" className={darkPillSuccess} data-testid="text-futureme-running">
+              <Wallet className="w-3 h-3 mr-1" /> {sym}{playerTotal} so far
+            </Badge>
+          )}
+          <div className="flex items-center gap-2 text-sm text-white/80">
+            <Hourglass className="w-4 h-4" /> Take your time
+          </div>
         </div>
       </div>
 
@@ -1690,7 +1900,7 @@ function FutureMeGame({ currency }: { currency: string }) {
               >
                 <CardContent className="p-6 text-center space-y-3">
                   <div className="text-4xl">💵</div>
-                  <p className="text-3xl font-bold text-orange-600">{sym}{round.nowAmount}</p>
+                  <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{sym}{round.nowAmount}</p>
                   <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300 border-0 rounded-lg">
                     Right now
                   </Badge>
@@ -1703,7 +1913,7 @@ function FutureMeGame({ currency }: { currency: string }) {
               >
                 <CardContent className="p-6 text-center space-y-3">
                   <div className="text-4xl">🌱</div>
-                  <p className="text-3xl font-bold text-indigo-600">{sym}{round.laterAmount}</p>
+                  <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-300">{sym}{round.laterAmount}</p>
                   <Badge className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 border-0 rounded-lg">
                     In {round.laterTime}
                   </Badge>
