@@ -136,8 +136,8 @@ export default function BillReminders() {
         <div className="max-w-6xl mx-auto p-6 lg:p-10 space-y-8">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <h1 className="font-display text-3xl font-bold" data-testid="text-page-title">Bill Reminders</h1>
-              <p className="text-muted-foreground mt-1">Track upcoming bills and never miss a payment</p>
+              <h1 className="font-display text-3xl font-bold text-white" data-testid="text-page-title">Bill Reminders</h1>
+              <p className="text-white/85 mt-1">Track upcoming bills and never miss a payment</p>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => detectMutation.mutate()} disabled={detectMutation.isPending} data-testid="button-auto-detect">

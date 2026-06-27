@@ -179,49 +179,49 @@ export default function AuthPage() {
           <div className="space-y-8 animate-bounce-in">
             <div className="text-center space-y-3">
               <div className="flex items-center justify-center gap-3 mb-4 select-none">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/30 backdrop-blur-sm border border-emerald-400/30 flex items-center justify-center" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.4s' }}>
+                <div className="w-12 h-12 rounded-icon bg-emerald-500/20 backdrop-blur-sm border border-emerald-400/30 flex items-center justify-center" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.4s' }}>
                   <Coins className="w-6 h-6 text-emerald-300" />
                 </div>
-                <div className="w-16 h-16 rounded-3xl bg-violet-500/40 backdrop-blur-sm border border-violet-400/30 flex items-center justify-center animate-float shadow-lg">
+                <div className="w-16 h-16 rounded-icon bg-primary/30 backdrop-blur-sm border border-primary/40 flex items-center justify-center animate-float shadow-lg">
                   <TrendingUp className="w-8 h-8 text-white" />
                 </div>
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/30 backdrop-blur-sm border border-amber-400/30 flex items-center justify-center" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.8s' }}>
+                <div className="w-12 h-12 rounded-icon bg-amber-500/20 backdrop-blur-sm border border-amber-400/30 flex items-center justify-center" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.8s' }}>
                   <Sparkles className="w-6 h-6 text-amber-300" />
                 </div>
               </div>
-              <h1 className="text-4xl font-bold text-white tracking-tight">Welcome!</h1>
+              <h1 className="text-4xl font-display font-bold text-white tracking-tight">Welcome!</h1>
               <p className="text-white/50 text-base">Your Caribbean financial literacy adventure starts here.</p>
             </div>
 
             <div className="space-y-3">
               <button
                 onClick={() => { clearError(); setFlow("guest"); setStep("guest-name"); }}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left bg-white/20 backdrop-blur-lg border border-white/30 hover:bg-white/30 hover:border-white/50 shadow-lg"
+                className="glass-card-heavy rounded-glass card-hover w-full flex items-center gap-4 p-4 text-left group"
                 data-testid="button-start-exploring"
               >
-                <div className="w-10 h-10 rounded-xl bg-amber-500/30 flex items-center justify-center shrink-0">
-                  <Zap className="w-5 h-5 text-amber-300" />
+                <div className="w-10 h-10 rounded-icon bg-amber-500/15 flex items-center justify-center shrink-0">
+                  <Zap className="w-5 h-5 text-amber-600 dark:text-amber-300" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-semibold">Start exploring, no account needed</p>
-                  <p className="text-white/70 text-sm">Jump in instantly as a guest</p>
+                  <p className="text-foreground font-display font-semibold">Start exploring, no account needed</p>
+                  <p className="text-muted-foreground text-sm">Jump in instantly as a guest</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-white/70 group-hover:text-white transition-colors" />
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-amber-500 dark:group-hover:text-amber-300 transition-colors" />
               </button>
 
               <button
                 onClick={() => { clearError(); setStep("entry"); }}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left bg-white/10 backdrop-blur-lg border border-white/20 hover:bg-white/[0.16] hover:border-violet-400/50 shadow-lg"
+                className="glass-card-heavy rounded-glass card-hover w-full flex items-center gap-4 p-4 text-left group"
                 data-testid="button-sign-in"
               >
-                <div className="w-10 h-10 rounded-xl bg-violet-500/30 flex items-center justify-center shrink-0">
-                  <KeyRound className="w-5 h-5 text-violet-300" />
+                <div className="w-10 h-10 rounded-icon bg-primary/15 flex items-center justify-center shrink-0">
+                  <KeyRound className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-semibold">Sign in or create account</p>
-                  <p className="text-white/60 text-sm">Student, teacher, or organisation</p>
+                  <p className="text-foreground font-display font-semibold">Sign in or create account</p>
+                  <p className="text-muted-foreground text-sm">Student, teacher, or organisation</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-white/50 group-hover:text-violet-300 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </button>
             </div>
           </div>
@@ -232,64 +232,64 @@ export default function AuthPage() {
           <div className="space-y-8 animate-bounce-in">
             <div className="text-center space-y-3">
               <div className="flex items-center justify-center gap-3 mb-4 select-none">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/30 backdrop-blur-sm border border-emerald-400/30 flex items-center justify-center" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.4s' }}>
+                <div className="w-12 h-12 rounded-icon bg-emerald-500/20 backdrop-blur-sm border border-emerald-400/30 flex items-center justify-center" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.4s' }}>
                   <Coins className="w-6 h-6 text-emerald-300" />
                 </div>
-                <div className="w-16 h-16 rounded-3xl bg-violet-500/40 backdrop-blur-sm border border-violet-400/30 flex items-center justify-center animate-float shadow-lg">
+                <div className="w-16 h-16 rounded-icon bg-primary/30 backdrop-blur-sm border border-primary/40 flex items-center justify-center animate-float shadow-lg">
                   <TrendingUp className="w-8 h-8 text-white" />
                 </div>
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/30 backdrop-blur-sm border border-amber-400/30 flex items-center justify-center" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.8s' }}>
+                <div className="w-12 h-12 rounded-icon bg-amber-500/20 backdrop-blur-sm border border-amber-400/30 flex items-center justify-center" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.8s' }}>
                   <Sparkles className="w-6 h-6 text-amber-300" />
                 </div>
               </div>
-              <h1 className="text-4xl font-bold text-white tracking-tight">Welcome!</h1>
+              <h1 className="text-4xl font-display font-bold text-white tracking-tight">Welcome!</h1>
               <p className="text-white/50 text-base">Who are you today?</p>
             </div>
 
             <div className="space-y-3">
               <button
                 onClick={() => { clearError(); setFlow("student"); setStep("student-access"); }}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left bg-white/10 backdrop-blur-lg border border-white/20 hover:bg-white/[0.16] hover:border-violet-400/50 shadow-lg"
+                className="glass-card-heavy rounded-glass card-hover w-full flex items-center gap-4 p-4 text-left group"
                 data-testid="button-student"
               >
-                <div className="w-10 h-10 rounded-xl bg-violet-500/30 flex items-center justify-center shrink-0">
-                  <GraduationCap className="w-5 h-5 text-violet-300" />
+                <div className="w-10 h-10 rounded-icon bg-primary/15 flex items-center justify-center shrink-0">
+                  <GraduationCap className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-semibold">I'm a Student</p>
-                  <p className="text-white/60 text-sm">Join a class or organisation</p>
+                  <p className="text-foreground font-display font-semibold">I'm a Student</p>
+                  <p className="text-muted-foreground text-sm">Join a class or organisation</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-white/50 group-hover:text-violet-300 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </button>
 
               <button
                 onClick={() => setLocation("/teacher/login")}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left bg-white/10 backdrop-blur-lg border border-white/20 hover:bg-white/[0.16] hover:border-blue-400/50 shadow-lg"
+                className="glass-card-heavy rounded-glass card-hover w-full flex items-center gap-4 p-4 text-left group"
                 data-testid="button-teacher"
               >
-                <div className="w-10 h-10 rounded-xl bg-blue-500/30 flex items-center justify-center shrink-0">
-                  <Users className="w-5 h-5 text-blue-300" />
+                <div className="w-10 h-10 rounded-icon bg-blue-500/15 flex items-center justify-center shrink-0">
+                  <Users className="w-5 h-5 text-blue-600 dark:text-blue-300" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-semibold">I'm a Teacher</p>
-                  <p className="text-white/60 text-sm">Manage classes and students</p>
+                  <p className="text-foreground font-display font-semibold">I'm a Teacher</p>
+                  <p className="text-muted-foreground text-sm">Manage classes and students</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-white/50 group-hover:text-blue-300 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-blue-500 dark:group-hover:text-blue-300 transition-colors" />
               </button>
 
               <button
                 onClick={() => { clearError(); setFlow("guest"); setStep("guest-name"); }}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 transition-all group text-left bg-white/10 backdrop-blur-lg border border-white/20 hover:bg-white/[0.16] hover:border-amber-400/50 shadow-lg"
+                className="glass-card-heavy rounded-glass card-hover w-full flex items-center gap-4 p-4 text-left group"
                 data-testid="button-guest"
               >
-                <div className="w-10 h-10 rounded-xl bg-amber-500/30 flex items-center justify-center shrink-0">
-                  <Zap className="w-5 h-5 text-amber-300" />
+                <div className="w-10 h-10 rounded-icon bg-amber-500/15 flex items-center justify-center shrink-0">
+                  <Zap className="w-5 h-5 text-amber-600 dark:text-amber-300" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-semibold">Continue as Guest</p>
-                  <p className="text-white/60 text-sm">Jump in with no sign-up</p>
+                  <p className="text-foreground font-display font-semibold">Continue as Guest</p>
+                  <p className="text-muted-foreground text-sm">Jump in with no sign-up</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-white/50 group-hover:text-amber-300 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-amber-500 dark:group-hover:text-amber-300 transition-colors" />
               </button>
             </div>
           </div>
@@ -374,25 +374,25 @@ export default function AuthPage() {
               <p className="text-white/50 text-sm">Your teacher or school gave you this</p>
             </div>
 
-            <div className="space-y-3">
+            <div className="glass-card-heavy rounded-glass p-6 space-y-3">
               <Input
                 value={classCode}
                 onChange={(e) => { setClassCode(e.target.value.toUpperCase()); clearError(); }}
                 onKeyDown={(e) => e.key === "Enter" && handleValidateCode()}
                 placeholder="e.g. ABC123"
-                className={`h-14 text-2xl text-center font-mono tracking-[0.3em] uppercase rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-violet-400 focus:bg-white/12${shakeEl === "code" ? " animate-shake" : ""}`}
+                className={`h-14 text-2xl text-center font-mono tracking-[0.3em] uppercase rounded-2xl${shakeEl === "code" ? " animate-shake" : ""}`}
                 onAnimationEnd={() => shakeEl === "code" && setShakeEl(null)}
                 maxLength={8}
                 autoFocus
                 data-testid="input-class-code"
               />
 
-              {error && <p className="text-red-400 text-sm text-center" data-testid="text-auth-error">{error}</p>}
+              {error && <p className="text-destructive text-sm text-center" data-testid="text-auth-error">{error}</p>}
 
               <Button
                 onClick={handleValidateCode}
                 disabled={isValidatingCode || !classCode.trim()}
-                className="w-full h-12 font-bold rounded-2xl bg-violet-600 hover:bg-violet-500 text-white transition-all"
+                className="w-full h-12 font-bold rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground transition-all"
                 data-testid="button-validate-code"
               >
                 {isValidatingCode ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Continue <ArrowRight className="ml-2 w-4 h-4" /></>}
@@ -401,11 +401,11 @@ export default function AuthPage() {
               {googleAvailable && (
                 <>
                   <div className="flex items-center gap-3">
-                    <div className="flex-1 border-t border-white/20" />
-                    <span className="text-xs uppercase text-white/40">or sign in instantly</span>
-                    <div className="flex-1 border-t border-white/20" />
+                    <div className="flex-1 border-t border-border" />
+                    <span className="text-xs uppercase text-muted-foreground">or sign in instantly</span>
+                    <div className="flex-1 border-t border-border" />
                   </div>
-                  <div className="rounded-2xl bg-white/8 border border-white/20 p-3">
+                  <div className="rounded-2xl bg-muted/40 border border-border p-3">
                     <GoogleSignInButton
                       onSuccess={async (idToken) => {
                         const code = classCode.trim().toUpperCase();
@@ -416,7 +416,7 @@ export default function AuthPage() {
                       onUnavailable={() => setGoogleAvailable(false)}
                       text="continue_with"
                     />
-                    {isGoogleLoading && <div className="flex justify-center mt-2"><Loader2 className="w-5 h-5 animate-spin text-white/60" /></div>}
+                    {isGoogleLoading && <div className="flex justify-center mt-2"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>}
                   </div>
                 </>
               )}
@@ -437,22 +437,22 @@ export default function AuthPage() {
               <p className="text-white/50 text-sm">Enter your username to continue</p>
             </div>
 
-            <div className="space-y-3">
+            <div className="glass-card-heavy rounded-glass p-6 space-y-3">
               <Input
                 value={resumeUsername}
                 onChange={(e) => { setResumeUsername(e.target.value); clearError(); }}
                 onKeyDown={(e) => e.key === "Enter" && handleResume()}
                 placeholder="e.g. Alex_4291"
-                className={`h-12 text-lg font-mono rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-emerald-400${shakeEl === "username" ? " animate-shake" : ""}`}
+                className={`h-12 text-lg font-mono rounded-2xl${shakeEl === "username" ? " animate-shake" : ""}`}
                 onAnimationEnd={() => shakeEl === "username" && setShakeEl(null)}
                 autoFocus
                 data-testid="input-resume-username"
               />
-              <p className="text-white/30 text-xs text-center">
+              <p className="text-muted-foreground text-xs text-center">
                 Looks like <span className="font-mono">Name_1234</span>, shown when you first signed up
               </p>
 
-              {error && <p className="text-red-400 text-sm text-center" data-testid="text-auth-error">{error}</p>}
+              {error && <p className="text-destructive text-sm text-center" data-testid="text-auth-error">{error}</p>}
 
               <Button
                 onClick={handleResume}
@@ -481,14 +481,14 @@ export default function AuthPage() {
               </p>
             </div>
 
-            <div className="space-y-3">
-              <p className="text-white/60 text-sm font-medium text-center">What's your name?</p>
+            <div className="glass-card-heavy rounded-glass p-6 space-y-3">
+              <p className="text-muted-foreground text-sm font-medium text-center">What's your name?</p>
               <Input
                 value={name}
                 onChange={(e) => { setName(e.target.value); clearError(); }}
                 onKeyDown={(e) => e.key === "Enter" && handleNameNext()}
                 placeholder="First name (e.g. Alex, Keisha, Jamal…)"
-                className={`h-12 text-lg rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-violet-400${shakeEl === "name" ? " animate-shake" : ""}`}
+                className={`h-12 text-lg rounded-2xl${shakeEl === "name" ? " animate-shake" : ""}`}
                 onAnimationEnd={() => shakeEl === "name" && setShakeEl(null)}
                 autoFocus
                 data-testid="input-name"
@@ -498,19 +498,19 @@ export default function AuthPage() {
                 onChange={(e) => { setLastName(e.target.value); clearError(); }}
                 onKeyDown={(e) => e.key === "Enter" && handleNameNext()}
                 placeholder="Last name (optional)"
-                className="h-12 text-lg rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-violet-400"
+                className="h-12 text-lg rounded-2xl"
                 data-testid="input-last-name"
               />
-              <p className="text-white/30 text-xs text-center">
+              <p className="text-muted-foreground text-xs text-center">
                 Adding your last name helps your certificate look official.
               </p>
 
-              {error && <p className="text-red-400 text-sm text-center" data-testid="text-auth-error">{error}</p>}
+              {error && <p className="text-destructive text-sm text-center" data-testid="text-auth-error">{error}</p>}
 
               <Button
                 onClick={handleNameNext}
                 disabled={isRegistering || isJoiningClass || !name.trim()}
-                className="w-full h-12 font-bold rounded-2xl bg-violet-600 hover:bg-violet-500 text-white transition-all disabled:opacity-50"
+                className="w-full h-12 font-bold rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground transition-all disabled:opacity-50"
                 data-testid="button-next"
               >
                 {isRegistering || isJoiningClass ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Let's go! <ArrowRight className="w-4 h-4 ml-1 inline" /></>}
@@ -527,20 +527,20 @@ export default function AuthPage() {
         {step === "guest-name" && (
           <div className="space-y-8 animate-bounce-in">
             <div className="text-center space-y-3">
-              <div className="w-14 h-14 rounded-2xl bg-amber-500/30 backdrop-blur-sm border border-amber-400/30 flex items-center justify-center mx-auto mb-2">
+              <div className="w-14 h-14 rounded-icon bg-amber-500/20 backdrop-blur-sm border border-amber-400/30 flex items-center justify-center mx-auto mb-2">
                 <Zap className="w-7 h-7 text-amber-300" />
               </div>
-              <h1 className="text-3xl font-bold text-white">What's your name?</h1>
+              <h1 className="text-3xl font-display font-bold text-white">What's your name?</h1>
               <p className="text-white/50 text-sm">Just to get you started</p>
             </div>
 
-            <div className="space-y-3">
+            <div className="glass-card-heavy rounded-glass p-6 space-y-3">
               <Input
                 value={name}
                 onChange={(e) => { setName(e.target.value); clearError(); }}
                 onKeyDown={(e) => e.key === "Enter" && handleNameNext()}
                 placeholder="First name (e.g. Alex, Keisha, Jamal…)"
-                className="h-12 text-lg rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-amber-400"
+                className="h-12 text-lg rounded-2xl"
                 autoFocus
                 data-testid="input-name"
               />
@@ -549,11 +549,11 @@ export default function AuthPage() {
                 onChange={(e) => { setLastName(e.target.value); clearError(); }}
                 onKeyDown={(e) => e.key === "Enter" && handleNameNext()}
                 placeholder="Last name (optional)"
-                className="h-12 text-lg rounded-2xl bg-white/8 border border-white/30 text-white placeholder:text-white/40 focus:border-amber-400"
+                className="h-12 text-lg rounded-2xl"
                 data-testid="input-last-name"
               />
 
-              {error && <p className="text-red-400 text-sm text-center" data-testid="text-auth-error">{error}</p>}
+              {error && <p className="text-destructive text-sm text-center" data-testid="text-auth-error">{error}</p>}
 
               <Button
                 onClick={handleNameNext}

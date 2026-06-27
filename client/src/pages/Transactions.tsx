@@ -129,8 +129,8 @@ export default function Transactions() {
                    <TooltipTrigger asChild>
                      <div>
                        <Select onValueChange={(val) => setCategoryFilter(val === 'all' ? undefined : val)}>
-                        <SelectTrigger className="w-[180px] bg-white">
-                          <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
+                        <SelectTrigger className="w-[180px] bg-white/20 backdrop-blur-sm border border-white/30 text-white data-[placeholder]:text-white/75">
+                          <Filter className="w-4 h-4 mr-2 text-white/75" />
                           <SelectValue placeholder="Filter Category" />
                         </SelectTrigger>
                         <SelectContent>
