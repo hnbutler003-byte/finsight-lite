@@ -167,11 +167,11 @@ export default function MoneyLabTutor() {
             <div className="space-y-4">
               <Card className="glass-card rounded-glass">
                 <CardContent className="p-6">
-                  <h3 className="font-bold text-lg text-foreground">{selectedQuestion.questionText}</h3>
+                  <h3 className="font-bold text-lg text-foreground break-words">{selectedQuestion.questionText}</h3>
                   {selectedQuestion.options && (
                     <div className="space-y-1.5 mt-3">
                       {selectedQuestion.options.map((opt: string, i: number) => (
-                        <div key={i} className={`flex items-center gap-2 text-sm ${opt === selectedQuestion.correctAnswer ? "font-bold text-green-600" : "text-muted-foreground"}`}>
+                        <div key={i} className={`flex items-start gap-2 text-sm break-words ${opt === selectedQuestion.correctAnswer ? "font-bold text-green-600" : "text-muted-foreground"}`}>
                           <span className="font-mono text-xs">{String.fromCharCode(65 + i)}.</span>
                           {opt}
                           {opt === selectedQuestion.correctAnswer && " ✓"}
@@ -199,7 +199,7 @@ export default function MoneyLabTutor() {
                       <span className="text-sm font-medium">Thinking...</span>
                     </div>
                   ) : (
-                    <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">{explanation}</div>
+                    <div className="text-sm leading-relaxed whitespace-pre-wrap break-words text-foreground">{explanation}</div>
                   )}
                 </CardContent>
               </Card>
@@ -243,14 +243,14 @@ export default function MoneyLabTutor() {
                     data-testid={`tutor-paper-${paper.id}`}
                   >
                     <CardContent className="p-4 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
                         <BookOpen className="w-5 h-5 text-violet-500" />
                       </div>
-                      <div className="flex-1">
-                        <p className="font-bold text-sm">{paper.title}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm break-words">{paper.title}</p>
                         <p className="text-xs text-muted-foreground">{paper.subject} · {paper.questionCount} questions</p>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                     </CardContent>
                   </Card>
                 ))
@@ -279,9 +279,9 @@ export default function MoneyLabTutor() {
                         <span className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-xs font-bold text-violet-600 shrink-0 mt-0.5">
                           {i + 1}
                         </span>
-                        <div>
-                          <p className="font-medium text-sm">{q.questionText}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm break-words">{q.questionText}</p>
+                          <p className="text-xs text-muted-foreground mt-1 break-words">
                             {q.options.join(" · ")}
                           </p>
                         </div>
@@ -304,10 +304,10 @@ export default function MoneyLabTutor() {
 
               <Card className="glass-card rounded-glass">
                 <CardContent className="p-6">
-                  <h3 className="font-bold text-lg mb-2">{selectedQuestion.questionText}</h3>
+                  <h3 className="font-bold text-lg mb-2 break-words">{selectedQuestion.questionText}</h3>
                   <div className="space-y-1.5 mb-3">
                     {selectedQuestion.options.map((opt: string, i: number) => (
-                      <div key={i} className={`flex items-center gap-2 text-sm ${opt === selectedQuestion.correctAnswer ? "font-bold text-green-600" : "text-muted-foreground"}`}>
+                      <div key={i} className={`flex items-start gap-2 text-sm break-words ${opt === selectedQuestion.correctAnswer ? "font-bold text-green-600" : "text-muted-foreground"}`}>
                         <span className="font-mono text-xs">{String.fromCharCode(65 + i)}.</span>
                         {opt}
                         {opt === selectedQuestion.correctAnswer && " ✓"}
@@ -334,7 +334,7 @@ export default function MoneyLabTutor() {
                       <span className="text-sm font-medium">Thinking...</span>
                     </div>
                   ) : (
-                    <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">{explanation}</div>
+                    <div className="text-sm leading-relaxed whitespace-pre-wrap break-words text-foreground">{explanation}</div>
                   )}
                 </CardContent>
               </Card>

@@ -190,14 +190,14 @@ export default function MoneyLabPlay() {
                       data-testid={`paper-select-${paper.id}`}
                     >
                       <CardContent className="p-4 flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white font-bold shadow-md text-lg">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white font-bold shadow-md text-lg shrink-0">
                           {paper.questionCount}
                         </div>
-                        <div className="flex-1">
-                          <p className="font-bold">{paper.title}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold break-words">{paper.title}</p>
                           <p className="text-sm text-muted-foreground">{paper.subject} · {paper.questionCount} questions</p>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                        <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
                       </CardContent>
                     </Card>
                   ))}
@@ -244,19 +244,19 @@ export default function MoneyLabPlay() {
 
           {gameState === "playing" && currentQuestion && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-muted-foreground">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <span className="text-sm font-bold text-muted-foreground whitespace-nowrap">
                     Q{currentIndex + 1}/{questions.length}
                   </span>
-                  <div className="h-2 w-32 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <div className="h-2 w-20 sm:w-32 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-teal-400 to-cyan-500 rounded-full transition-all"
                       style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
                     />
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 sm:gap-4">
                   {mode !== "quiz" && (
                     <div className={`flex items-center gap-1.5 font-bold ${timer <= 5 ? "text-red-500 animate-pulse" : "text-blue-500"}`}>
                       <Timer className="w-4 h-4" />
@@ -328,7 +328,7 @@ export default function MoneyLabPlay() {
                         {showResult && isCorrect ? <CheckCircle2 className="w-4 h-4" /> :
                          showResult && isSelected ? <XCircle className="w-4 h-4" /> : letter}
                       </span>
-                      <span className="font-medium text-sm">{opt}</span>
+                      <span className="font-medium text-sm min-w-0 break-words">{opt}</span>
                     </button>
                   );
                 })}
