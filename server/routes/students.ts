@@ -15,6 +15,7 @@ import { db as emailDb } from "../db";
 import { emailContacts } from "@shared/schema";
 import { eq as eqEmail, and as andEmail } from "drizzle-orm";
 import { escapeHtml, appBaseUrl } from "../email";
+import { captureError } from "../sentry";
 import {
   getOrgEnvironmentByJoinCode,
   getOrgEnvironmentById,
@@ -1355,7 +1356,8 @@ Rules:
       const result = await storage.setupDemoData();
       res.json({ ok: true, message: "Demo data ready", ...result });
     } catch (e: any) {
-      res.status(500).json({ message: e.message });
+      captureError(e, { route: "/api/demo/setup" });
+      res.status(500).json({ message: "Could not set up the demo environment. Please try again in a moment." });
     }
   });
 
@@ -1368,7 +1370,8 @@ Rules:
       }
       res.json(creds);
     } catch (e: any) {
-      res.status(500).json({ message: e.message });
+      captureError(e, { route: "/api/demo/credentials" });
+      res.status(500).json({ message: "Could not load the demo accounts. Please try again in a moment." });
     }
   });
 

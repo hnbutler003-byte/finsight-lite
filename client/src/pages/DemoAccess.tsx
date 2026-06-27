@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   GraduationCap, Users, BookOpen, Trophy,
-  School, ArrowRight, Sparkles, CheckCircle, Star, Zap, ShieldCheck, Flame
+  School, ArrowRight, Sparkles, CheckCircle, Star, Zap, ShieldCheck, Flame, X
 } from "lucide-react";
+import { FinsightLiteLogo } from "@/components/FinsightLiteLogo";
 
 const AVATAR_EMOJI: Record<string, string> = {
   lion: "🦁", dolphin: "🐬", parrot: "🦜", turtle: "🐢",
@@ -32,8 +33,15 @@ export default function DemoAccess() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [showWelcome, setShowWelcome] = useState(() => {
+    try { return localStorage.getItem("finsight_demo_welcome_dismissed") !== "1"; } catch { return true; }
+  });
+  const dismissWelcome = () => {
+    setShowWelcome(false);
+    try { localStorage.setItem("finsight_demo_welcome_dismissed", "1"); } catch {}
+  };
 
-  const { data: creds, isLoading, refetch } = useQuery<any>({
+  const { data: creds, isLoading, isFetching, refetch } = useQuery<any>({
     queryKey: ["/api/demo/credentials"],
     retry: false,
   });
@@ -41,14 +49,16 @@ export default function DemoAccess() {
   const setupMut = useMutation({
     mutationFn: () => apiRequest("POST", "/api/demo/setup").then(r => r.json()),
     onSuccess: () => { refetch(); },
-    onError: () => toast({ title: "Setup failed", description: "Please try again.", variant: "destructive" }),
+    onError: () => toast({ title: "Setup failed", description: "We could not load the demo. Please retry.", variant: "destructive" }),
   });
 
+  // The credentials endpoint self-seeds, so a query error is rare. If it does fail,
+  // fall back to an explicit setup call. setupMut.isIdle keeps this from looping.
   useEffect(() => {
-    if (!isLoading && !creds) {
+    if (!isLoading && !creds && setupMut.isIdle) {
       setupMut.mutate();
     }
-  }, [isLoading, creds]);
+  }, [isLoading, creds, setupMut.isIdle]);
 
   const loginTeacher = useMutation({
     mutationFn: () => apiRequest("POST", "/api/demo/login/teacher").then(r => r.json()),
@@ -67,7 +77,12 @@ export default function DemoAccess() {
     loginStudent.mutate(studentId);
   };
 
-  const isSettingUp = isLoading || setupMut.isPending || !creds;
+  // Three explicit states so a failed setup never leaves an endless spinner:
+  // creds present -> cards; setup failed -> retry; otherwise -> spinner.
+  // demoFailed covers both an errored setup and a setup that finished while the
+  // credentials read still returns nothing (so the spinner can never hang).
+  const demoFailed = !creds && !isFetching && (setupMut.isError || setupMut.isSuccess);
+  const isSettingUp = !creds && !demoFailed;
 
   const featuredStudent = creds?.students?.[0];
   const secondaryStudent = creds?.students?.[1];
@@ -76,9 +91,7 @@ export default function DemoAccess() {
     <div className="min-h-screen caribbean-bg">
       {/* Header */}
       <header className="px-6 py-5 flex items-center justify-between max-w-6xl mx-auto">
-        <div className="bg-white rounded-2xl px-5 py-2.5 shadow-lg">
-          <img src="/logo.png" className="h-10 w-auto object-contain" alt="Finsight Lite" />
-        </div>
+        <FinsightLiteLogo size={34} className="text-white" data-testid="img-logo-demo" />
         <div className="flex items-center gap-2">
           <Button variant="ghost" onClick={() => setLocation("/")}
             className="text-violet-300 hover:text-white hover:bg-white/10 text-sm">
@@ -105,10 +118,50 @@ export default function DemoAccess() {
         </p>
       </section>
 
+      {/* First-load welcome banner */}
+      {showWelcome && (
+        <section className="max-w-6xl mx-auto px-6 pb-3">
+          <div className="relative glass-card-heavy rounded-glass p-5 pr-12 border border-white/15" data-testid="banner-demo-welcome">
+            <button
+              onClick={dismissWelcome}
+              aria-label="Dismiss welcome message"
+              data-testid="button-dismiss-welcome"
+              className="absolute top-3 right-3 text-foreground/50 hover:text-foreground transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-400/20 flex items-center justify-center shrink-0">
+                <Sparkles className="w-5 h-5 text-amber-400" />
+              </div>
+              <div className="text-sm">
+                <p className="font-bold text-foreground mb-1">Welcome to the Finsight Lite demo</p>
+                <p className="text-foreground/70 leading-relaxed">
+                  This demo has two sides. Choose <span className="font-semibold text-foreground">Enter as Teacher</span> below to explore the classroom dashboard with students, challenges, and a leaderboard. Or pick a <span className="font-semibold text-foreground">Student</span> to see the learner experience with money tools, lessons, and rewards. New here? Start with the Teacher view.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Demo Login Cards */}
       <section className="max-w-6xl mx-auto px-6 pb-12">
         <div className="glass-card-heavy rounded-glass p-6 shadow-2xl">
-        {isSettingUp ? (
+        {demoFailed ? (
+          <div className="text-center py-12" data-testid="state-demo-error">
+            <p className="text-foreground font-semibold mb-1">We could not load the demo environment.</p>
+            <p className="text-foreground/60 text-sm mb-5">This is usually temporary. Please try again.</p>
+            <Button
+              onClick={() => setupMut.mutate()}
+              disabled={setupMut.isPending}
+              className="bg-amber-400 hover:bg-amber-300 text-emerald-900 font-bold"
+              data-testid="button-demo-retry"
+            >
+              {setupMut.isPending ? "Retrying..." : "Try again"}
+            </Button>
+          </div>
+        ) : isSettingUp ? (
           <div className="text-center py-12">
             <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-6 py-3 text-foreground">
               <div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />

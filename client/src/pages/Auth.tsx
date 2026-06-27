@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { FinsightLiteLogo } from "@/components/FinsightLiteLogo";
 
 const AVATARS = [
   { id: "lion",      emoji: "🦁", label: "Lion" },
@@ -161,9 +162,7 @@ export default function AuthPage() {
 
       {/* Persistent micro-brand header + public nav */}
       <div className="w-full max-w-sm flex items-center justify-between gap-3 mb-10">
-        <div className="bg-white rounded-2xl px-4 py-2 shadow-lg">
-          <img src="/logo.png" className="h-10 w-auto object-contain" alt="Finsight Lite" />
-        </div>
+        <FinsightLiteLogo size={34} className="text-white" data-testid="img-logo-auth" />
         <Link
           href="/our-story"
           className="text-white/90 hover:text-white text-sm font-semibold px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 transition-colors"

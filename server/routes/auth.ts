@@ -29,6 +29,14 @@ if (process.env.NODE_ENV === "production") {
 
 export const isTeacher = (req: any, res: any, next: any) => {
   if (!req.session?.teacherId) return res.status(401).json({ message: "Teacher not authenticated" });
+  // Teacher IDs are serial positive integers, but logins store them as strings.
+  // Normalise to a number so ownership checks (cls.teacherId === req.session.teacherId)
+  // and number-typed storage calls work. This also repairs legacy string sessions.
+  const teacherId = Number(req.session.teacherId);
+  if (!Number.isInteger(teacherId) || teacherId <= 0) {
+    return res.status(401).json({ message: "Teacher not authenticated" });
+  }
+  if (req.session.teacherId !== teacherId) req.session.teacherId = teacherId;
   next();
 };
 
@@ -609,7 +617,8 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
       req.session.teacherId = String(teacher.id);
       res.json({ ok: true, redirect: "/teacher/dashboard" });
     } catch (e: any) {
-      res.status(500).json({ message: e.message });
+      captureError(e, { route: "/api/demo/login/teacher" });
+      res.status(500).json({ message: "Could not start the demo teacher session. Please try again in a moment." });
     }
   });
 
@@ -644,7 +653,8 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
       req.session.userId = student.id;
       res.json({ ok: true, redirect: "/" });
     } catch (e: any) {
-      res.status(500).json({ message: e.message });
+      captureError(e, { route: "/api/demo/login/student" });
+      res.status(500).json({ message: "Could not start the demo student session. Please try again in a moment." });
     }
   });
 

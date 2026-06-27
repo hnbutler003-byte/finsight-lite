@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "wouter";
+import { FinsightLiteLogo } from "@/components/FinsightLiteLogo";
 import { ArrowRight, BookOpen, Gamepad2, TrendingUp, Handshake, BadgeCheck, MapPin } from "lucide-react";
 
 const TICKERS = ["CBL", "FCL", "CAB", "DHS", "JSJ", "CHB"];
@@ -110,35 +111,6 @@ function Eyebrow({ children, onCard = false }: { children: ReactNode; onCard?: b
   );
 }
 
-// Stacked bar wordmark, rebuilt with brand colours rather than the source CSS.
-function BrandLogo({ compact = false }: { compact?: boolean }) {
-  const barW = compact ? "w-2" : "w-3.5";
-  const bar1 = compact ? "h-3" : "h-[22px]";
-  const bar2 = compact ? "h-5" : "h-[36px]";
-  const bar3 = compact ? "h-7" : "h-[54px]";
-  const dot = compact ? "w-2.5 h-2.5 -top-2.5" : "w-4 h-4 -top-4";
-
-  return (
-    <span className="inline-flex items-end gap-2.5">
-      <span className={`flex items-end ${compact ? "gap-1" : "gap-1.5"}`}>
-        <span className={`${barW} ${bar1} rounded-full bg-violet-500`} />
-        <span className={`${barW} ${bar2} rounded-full bg-teal-400`} />
-        <span className={`relative ${barW} ${bar3} rounded-full bg-gradient-to-b from-[#EF7C5C] to-violet-500`}>
-          <span className={`absolute left-1/2 -translate-x-1/2 ${dot} rounded-full bg-amber-400`} />
-        </span>
-      </span>
-      <span className="text-left leading-none">
-        <span className={`block font-display font-extrabold text-white ${compact ? "text-lg" : "text-2xl"}`}>
-          Finsight
-        </span>
-        <span className={`block font-display font-extrabold text-amber-400 ${compact ? "text-sm" : "text-xl"}`}>
-          Lite
-        </span>
-      </span>
-    </span>
-  );
-}
-
 export default function OurStory() {
   useEffect(() => {
     const previous = document.title;
@@ -155,7 +127,7 @@ export default function OurStory() {
         <header>
           <nav className="max-w-6xl mx-auto flex items-center justify-between gap-4 px-6 py-5">
             <Link href="/" className="shrink-0" data-testid="link-home-logo">
-              <BrandLogo compact />
+              <FinsightLiteLogo size={28} className="text-white" data-testid="img-logo-ourstory-nav" />
             </Link>
             <Link
               href="/"
@@ -171,7 +143,7 @@ export default function OurStory() {
         {/* HERO */}
         <section className="max-w-4xl mx-auto px-6 pt-10 pb-16 sm:pt-14 text-center">
           <div className="animate-pop-in inline-block mb-9">
-            <BrandLogo />
+            <FinsightLiteLogo size={60} className="text-white" data-testid="img-logo-ourstory-hero" />
           </div>
           <h1
             className="animate-pop-in font-display font-bold text-white text-3xl sm:text-5xl md:text-[3.4rem] leading-[1.12] max-w-3xl mx-auto mb-5"

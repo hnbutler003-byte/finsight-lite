@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useTeacherAuth } from "@/hooks/use-teacher-auth";
+import { FinsightLiteLogo } from "@/components/FinsightLiteLogo";
 import {
   LayoutDashboard, BookOpen, LogOut, GraduationCap, Menu, X, ChevronRight
 } from "lucide-react";
@@ -19,9 +20,7 @@ export function TeacherSidebar() {
   const content = (
     <div className="flex flex-col h-full bg-gradient-to-b from-emerald-800 via-emerald-900 to-teal-950 text-white p-4">
       <div className="flex items-center gap-3 mb-8 mt-2">
-        <div className="bg-white rounded-xl px-3 py-1.5 shadow-lg shrink-0">
-          <img src="/logo.png" className="h-9 w-auto object-contain" alt="Finsight Lite" />
-        </div>
+        <FinsightLiteLogo size={28} className="text-white shrink-0" data-testid="img-logo-teacher" />
         <div>
           <p className="font-display font-bold text-sm leading-tight text-white">Teacher Portal</p>
         </div>

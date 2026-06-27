@@ -1,0 +1,28 @@
+Multiple tasks, please work through them in order:
+
+PRIORITY 1 — Fix demo access bug
+A partner reported they "can't access the class" when using the public demo at /demo (no sign-up flow, meant to drop visitors straight into both teacher and student views).
+
+1. Reproduce the issue by walking through the /demo flow as a fresh visitor would, both teacher view and student view paths.
+2. Check whether demo accounts have a class/cohort properly seeded, since "can't access the class" suggests either a missing class record, a broken redirect after selecting a class, or a permissions check failing for demo/guest accounts.
+3. Check Sentry for any errors logged against /demo routes in the last few days.
+4. Fix the root cause, not just a symptom. If it's a seeding issue, make sure the fix is durable.
+5. Confirm by walking through the full demo flow again end to end.
+
+This is blocking an active partnership conversation, so prioritize this first.
+
+PRIORITY 2 — Harden the demo experience
+1. Review the first-time experience at /demo for a visitor with zero context. Is it clear whether they're looking at teacher view or student view, and how to switch? Add a short, dismissible welcome tooltip or banner on first load suggesting where to click first (e.g. "Try the Investment Simulator" or "Check out a sample lesson").
+2. Make sure all demo data (classes, students, lesson progress) uses realistic Caribbean names and realistic numbers, not placeholder values like "Test Student" or "$100", since this demo is actively used to evaluate the platform for partnerships.
+3. Audit all database reads and class/cohort lookups specifically in the /demo route (teacher view, student view, guest/demo account logic) to ensure failures throw a clear, catchable, user-facing error instead of silently failing or showing a blank/stuck state. Confirm these failures get logged to Sentry.
+
+PRIORITY 3 — Logo component swap
+The attached finsight-lite-logo-component.html contains a React component reference (Version 1, near the top of the file) for a reusable FinsightLiteLogo component, transparent background, scalable SVG, using our existing --foreground and --secondary CSS variables so it auto-adapts to light/dark mode.
+
+1. Build this as a real component (e.g. src/components/FinsightLiteLogo.tsx) using the reference code in the attached file.
+2. Replace every place in the app currently using a static logo image (jpg/png) with this component instead, including nav bar, footer, and the new /our-story page hero.
+3. Verify it renders correctly in both light mode and dark mode in every location it appears.
+
+GENERAL REQUIREMENTS FOR ALL OF THE ABOVE
+- No em dashes anywhere in any new copy, comments, or code.
+- Verify the git push with a full 40-character SHA comparison between local HEAD and the live GitHub remote, don't accept a claimed success without that verification.
