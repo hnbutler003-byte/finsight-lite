@@ -958,9 +958,9 @@ export class DatabaseStorage implements IStorage {
     const studentIds = enrollments.map(e => e.studentId);
     if (studentIds.length === 0) return { students: [], avgXp: 0, avgLessons: 0, totalGames: 0, totalStudents };
 
-    // Batch all per-student data into 4 queries (instead of 4 * N).
+    // Batch all per-student data into 5 queries (instead of 5 * N).
     // avgScore mirrors the prior mean-of-session-percentages semantics via SQL avg().
-    const [allXp, allProgress, sessionAggs, badgeCounts] = await Promise.all([
+    const [allXp, allProgress, sessionAggs, badgeCounts, allGoals] = await Promise.all([
       db.select().from(userXp).where(inArray(userXp.userId, studentIds)),
       db.select().from(userLearningProgress).where(inArray(userLearningProgress.userId, studentIds)),
       db.select({
@@ -972,6 +972,12 @@ export class DatabaseStorage implements IStorage {
         userId: userBadges.userId,
         count: sql<number>`count(*)`,
       }).from(userBadges).where(inArray(userBadges.userId, studentIds)).groupBy(userBadges.userId),
+      db.select({
+        userId: savingsGoals.userId,
+        name: savingsGoals.name,
+        targetAmount: savingsGoals.targetAmount,
+        currentAmount: savingsGoals.currentAmount,
+      }).from(savingsGoals).where(inArray(savingsGoals.userId, studentIds)),
     ]);
 
     const xpByUser = new Map(allXp.map(x => [x.userId, x]));
@@ -982,12 +988,33 @@ export class DatabaseStorage implements IStorage {
     const sessionsByUser = new Map(sessionAggs.map(s => [s.userId, s]));
     const badgesByUser = new Map(badgeCounts.map(b => [b.userId, Number(b.count)]));
 
+    // A goal counts as complete when its current amount has reached its target.
+    // The "top" goal is the most-progressed goal that is not yet complete.
+    const goalsByUser = new Map<string, { count: number; complete: number; topName: string | null; topPct: number }>();
+    for (const g of allGoals) {
+      const target = Number(g.targetAmount) || 0;
+      const current = Number(g.currentAmount) || 0;
+      const isComplete = target > 0 && current >= target;
+      const pct = target > 0 ? Math.max(0, Math.min(100, Math.round((current / target) * 100))) : 0;
+      const entry = goalsByUser.get(g.userId) || { count: 0, complete: 0, topName: null, topPct: -1 };
+      entry.count += 1;
+      if (isComplete) {
+        entry.complete += 1;
+      } else if (pct > entry.topPct) {
+        entry.topPct = pct;
+        entry.topName = g.name;
+      }
+      goalsByUser.set(g.userId, entry);
+    }
+
     const studentData = studentIds.map(sid => {
       const xp = xpByUser.get(sid);
       const sess = sessionsByUser.get(sid);
       const student = enrollments.find(e => e.studentId === sid)?.student;
       const gamesPlayed = Number(sess?.gamesPlayed || 0);
       const avgScore = sess?.avgScorePct != null ? Math.round(Number(sess.avgScorePct)) : 0;
+      const goals = goalsByUser.get(sid);
+      const hasActiveGoal = goals != null && goals.topPct >= 0;
       return {
         id: sid,
         name: student?.firstName || student?.username || sid,
@@ -1001,6 +1028,10 @@ export class DatabaseStorage implements IStorage {
         gamesPlayed,
         avgScore,
         badges: badgesByUser.get(sid) || 0,
+        savingsGoalCount: goals?.count || 0,
+        savingsGoalsComplete: goals?.complete || 0,
+        savingsTopGoalName: hasActiveGoal ? goals!.topName : null,
+        savingsTopGoalPct: hasActiveGoal ? goals!.topPct : null,
       };
     });
 

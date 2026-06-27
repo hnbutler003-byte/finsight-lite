@@ -11,7 +11,7 @@ import {
   ArrowLeft, Users, Trophy, Bell, BarChart3, Loader2, Copy, Check,
   Download, Trash2, Plus, Medal, Star, BookOpen, Gamepad2, Zap, Target,
   Send, Crown, TrendingUp, AlertCircle, Sparkles, BookMarked, GraduationCap, Clock,
-  MessageSquarePlus
+  MessageSquarePlus, PiggyBank
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -27,6 +27,8 @@ type StudentData = {
   xp: number; level: number; streak: number;
   lessonsCompleted: number; totalLessons: number;
   gamesPlayed: number; avgScore: number; badges: number;
+  savingsGoalCount: number; savingsGoalsComplete: number;
+  savingsTopGoalName: string | null; savingsTopGoalPct: number | null;
 };
 
 type Challenge = {
@@ -70,6 +72,26 @@ function StudentRow({ s, onSelect }: { s: StudentData; onSelect: (s: StudentData
           <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">{s.lessonsCompleted}/{s.totalLessons} lessons</p>
+        {s.savingsGoalCount > 0 && (
+          <div className="mt-1.5 flex items-center gap-2 flex-wrap" data-testid={`savings-summary-${s.id}`}>
+            <span className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+              <PiggyBank className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              {s.savingsGoalCount} {s.savingsGoalCount === 1 ? "goal" : "goals"}
+              {` \u00b7 ${s.savingsGoalsComplete} complete`}
+            </span>
+            {s.savingsTopGoalPct !== null && (
+              <span
+                className="flex items-center gap-1.5"
+                title={s.savingsTopGoalName ? `${s.savingsTopGoalName}: ${s.savingsTopGoalPct}%` : undefined}
+              >
+                <span className="h-1.5 rounded-full bg-muted overflow-hidden w-16 inline-block">
+                  <span className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full block" style={{ width: `${s.savingsTopGoalPct}%` }} />
+                </span>
+                <span className="text-[10px] text-muted-foreground tabular-nums">{s.savingsTopGoalPct}%</span>
+              </span>
+            )}
+          </div>
+        )}
       </div>
       <div className="hidden sm:flex items-center gap-4 text-xs text-muted-foreground shrink-0">
         <div className="text-center">
