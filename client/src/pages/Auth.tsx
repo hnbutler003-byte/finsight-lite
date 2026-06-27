@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, ArrowRight, ArrowLeft, KeyRound, RotateCcw, PartyPopper, Zap, Sparkles, GraduationCap, TrendingUp, Coins, Users } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 const AVATARS = [
@@ -159,11 +159,18 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center caribbean-bg px-4 py-12">
 
-      {/* Persistent micro-brand header */}
-      <div className="flex items-center gap-2 mb-10 opacity-90">
+      {/* Persistent micro-brand header + public nav */}
+      <div className="w-full max-w-sm flex items-center justify-between gap-3 mb-10">
         <div className="bg-white rounded-2xl px-4 py-2 shadow-lg">
           <img src="/logo.png" className="h-10 w-auto object-contain" alt="Finsight Lite" />
         </div>
+        <Link
+          href="/our-story"
+          className="text-white/90 hover:text-white text-sm font-semibold px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 transition-colors"
+          data-testid="link-our-story"
+        >
+          Our Story
+        </Link>
       </div>
 
       <div className="w-full max-w-sm">

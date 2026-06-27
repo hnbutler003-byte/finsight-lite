@@ -39,6 +39,7 @@ import OrgLessons from "@/pages/OrgLessons";
 import OrgBranding from "@/pages/OrgBranding";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
+import OurStory from "@/pages/OurStory";
 
 // Persistent banner shown during founder admin preview mode.
 // Queries /api/admin/preview/status every 10 s; only visible when previewMode is true.
@@ -174,6 +175,7 @@ function Router() {
         <Route path="/org">{() => <Redirect to="/org/login" />}</Route>
         <Route path="/privacy" component={PrivacyPolicy} />
         <Route path="/terms" component={TermsOfService} />
+        <Route path="/our-story" component={OurStory} />
         <Route path="/" component={AuthPage} />
         <Route component={AuthPage} />
       </Switch>
@@ -217,6 +219,7 @@ function Router() {
       <Route path="/reports">{() => <Redirect to="/" />}</Route>
       <Route path="/privacy" component={PrivacyPolicy} />
       <Route path="/terms" component={TermsOfService} />
+      <Route path="/our-story" component={OurStory} />
       <Route component={NotFound} />
     </Switch>
   );
