@@ -1,0 +1,39 @@
+TASK 1 — Redesign the "How are you joining?" screen
+
+This screen (entry/auth selection) currently doesn't match our established design system. Please rebuild it using our actual brand kit (see index.css and finsight-lite-design-guide.md for full reference):
+
+1. Replace the plain bordered boxes with proper .glass-card or .glass-card-heavy styling (var(--radius-glass), correct backdrop blur, border treatment).
+2. Headline "How are you joining?" should use font-display (Baloo 2), not a generic system font.
+3. The icon chips (key icon, refresh icon) should use var(--radius-icon) consistently, with our actual primary/teal token colors, not arbitrary purple/teal.
+4. Center the Google sign-in button's content (icon + "Continue with Google" text) horizontally within the button. Right now the content is left-aligned inside a wide button, which looks unbalanced.
+5. Add subtle hover states (.hover-elevate or .card-hover) to each option for consistency with the rest of the app.
+6. Verify this screen in both light mode and dark mode against the .dark overrides in index.css.
+
+TASK 2 — Consistency rule for the Google sign-in widget specifically
+
+The Google sign-in button likely appears in more than one place (this entry screen, and again somewhere in account settings for linking/login). Please:
+
+1. Find every place the Google sign-in/continue button appears across the app.
+2. Extract it into a single shared component (e.g. GoogleAuthButton.tsx) if it isn't already, so styling only needs to be maintained in one place.
+3. Apply the same centered, consistent styling everywhere it's used, including settings.
+4. Going forward, any new use of this button must use the shared component, not a copy-pasted version.
+
+TASK 3 — Full design consistency audit across all pages
+
+Go through every page and route in the app and check each one against the Consistency Checklist in finsight-lite-design-guide.md (Section 10), specifically:
+
+- Body text uses Nunito (font-sans), headings use Baloo 2 (font-display)
+- Coral is only used for XP, streaks, badges, and game scores, not general UI
+- All cards on the Caribbean background use .glass-card or .glass-card-* (not plain bg-white or unstyled divs)
+- Interactive cards have .card-hover or .hover-elevate
+- Glass card border radius matches var(--radius-glass) (28px), not a generic rounded-xl
+- Achievement/reward popups use animate-bounce-in
+- Chart data uses the correct chart palette (violet, teal, coral, amber, emerald in that order)
+- Dark mode has been checked on every custom-colored element
+- No hardcoded hex values outside the CSS variables
+
+Produce a written report listing every page/route checked and any violations found, before making any changes. Once I review the report, we'll decide together which fixes to prioritize, don't fix everything automatically in one pass since some of this may need design judgment calls.
+
+GENERAL REQUIREMENTS
+- No em dashes anywhere in any new copy, comments, or code.
+- Verify any git push with a full 40-character SHA comparison between local HEAD and the live GitHub remote.

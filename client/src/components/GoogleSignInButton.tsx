@@ -87,7 +87,7 @@ export function GoogleSignInButton({
           size: "large",
           text,
           width: btnRef.current.offsetWidth || 320,
-          logo_alignment: "left",
+          logo_alignment: "center",
         });
         setLoaded(true);
       }

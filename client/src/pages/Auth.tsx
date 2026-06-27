@@ -299,68 +299,67 @@ export default function AuthPage() {
         {step === "student-access" && (
           <div className="space-y-8 animate-bounce-in">
             <div className="text-center space-y-3">
-              <div className="w-14 h-14 rounded-2xl bg-violet-500/30 backdrop-blur-sm border border-violet-400/30 flex items-center justify-center mx-auto mb-2">
-                <GraduationCap className="w-7 h-7 text-violet-300" />
+              <div className="w-14 h-14 rounded-icon bg-primary/25 backdrop-blur-sm border border-primary/40 flex items-center justify-center mx-auto mb-2">
+                <GraduationCap className="w-7 h-7 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-white">How are you joining?</h1>
+              <h1 className="text-3xl font-display font-bold text-white">How are you joining?</h1>
             </div>
 
             <div className="space-y-3">
               <button
                 onClick={() => { clearError(); setStep("student-code"); }}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-white/8 border border-white/20 hover:bg-white/14 hover:border-violet-400/60 transition-all group text-left"
+                className="glass-card-heavy rounded-glass card-hover w-full flex items-center gap-4 p-4 text-left group"
                 data-testid="button-enter-code"
               >
-                <div className="w-10 h-10 rounded-xl bg-violet-500/30 flex items-center justify-center shrink-0">
-                  <KeyRound className="w-5 h-5 text-violet-300" />
+                <div className="w-10 h-10 rounded-icon bg-primary/15 flex items-center justify-center shrink-0">
+                  <KeyRound className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-semibold">Enter a Code</p>
-                  <p className="text-white/55 text-sm">Class or organisation code</p>
+                  <p className="text-foreground font-display font-semibold">Enter a Code</p>
+                  <p className="text-muted-foreground text-sm">Class or organisation code</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-violet-400 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </button>
 
               <button
                 onClick={() => { clearError(); setStep("student-resume"); }}
-                className="w-full flex items-center gap-4 rounded-2xl p-4 bg-white/8 border border-white/20 hover:bg-white/14 hover:border-emerald-400/60 transition-all group text-left"
+                className="glass-card-heavy rounded-glass card-hover w-full flex items-center gap-4 p-4 text-left group"
                 data-testid="button-resume"
               >
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/30 flex items-center justify-center shrink-0">
-                  <RotateCcw className="w-5 h-5 text-emerald-300" />
+                <div className="w-10 h-10 rounded-icon bg-teal-500/15 flex items-center justify-center shrink-0">
+                  <RotateCcw className="w-5 h-5 text-teal-600 dark:text-teal-300" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-semibold">Already have a username</p>
-                  <p className="text-white/55 text-sm">Log back into your account</p>
+                  <p className="text-foreground font-display font-semibold">Already have a username</p>
+                  <p className="text-muted-foreground text-sm">Log back into your account</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-emerald-400 transition-colors" />
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-teal-500 dark:group-hover:text-teal-300 transition-colors" />
               </button>
 
               {googleAvailable && (
                 <>
                   <div className="flex items-center gap-3">
                     <div className="flex-1 border-t border-white/20" />
-                    <span className="text-xs uppercase text-white/40">or</span>
+                    <span className="text-xs uppercase text-white/50">or</span>
                     <div className="flex-1 border-t border-white/20" />
                   </div>
 
-                  <div className="rounded-2xl bg-white/8 border border-white/20 p-3">
+                  <div className="px-1">
                     <GoogleSignInButton
                       onSuccess={handleGoogleSignIn}
                       onError={(msg) => setError(msg || "Google sign-in failed.")}
                       onUnavailable={() => setGoogleAvailable(false)}
                       text="continue_with"
-                      theme="filled_black"
                     />
-                    {isGoogleLoading && <div className="flex justify-center mt-2"><Loader2 className="w-5 h-5 animate-spin text-white/60" /></div>}
+                    {isGoogleLoading && <div className="flex justify-center mt-2"><Loader2 className="w-5 h-5 animate-spin text-white/70" /></div>}
                   </div>
                 </>
               )}
 
-              {error && <p className="text-red-400 text-sm text-center" data-testid="text-auth-error">{error}</p>}
+              {error && <p className="text-red-300 text-sm text-center" data-testid="text-auth-error">{error}</p>}
             </div>
 
-            <button onClick={() => setStep("entry")} className="flex items-center gap-1 text-sm text-white/50 hover:text-white/80 transition-colors mx-auto" data-testid="button-back-entry">
+            <button onClick={() => setStep("entry")} className="flex items-center gap-1 text-sm text-white/60 hover:text-white transition-colors mx-auto" data-testid="button-back-entry">
               <ArrowLeft className="w-3.5 h-3.5" /> Back
             </button>
           </div>
@@ -416,7 +415,6 @@ export default function AuthPage() {
                       onError={(msg) => setError(msg || "Google sign-in failed.")}
                       onUnavailable={() => setGoogleAvailable(false)}
                       text="continue_with"
-                      theme="filled_black"
                     />
                     {isGoogleLoading && <div className="flex justify-center mt-2"><Loader2 className="w-5 h-5 animate-spin text-white/60" /></div>}
                   </div>
