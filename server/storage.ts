@@ -898,7 +898,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteClass(id: number, teacherId: number): Promise<void> {
-    await db.delete(classes).where(and(eq(classes.id, id), eq(classes.teacherId, teacherId)));
+    const deleted = await db.delete(classes)
+      .where(and(eq(classes.id, id), eq(classes.teacherId, teacherId)))
+      .returning();
+    if (deleted.length === 0) {
+      throw new Error("Class not found or you do not have permission to delete it.");
+    }
   }
 
   async getEnrollmentsByClass(classId: number): Promise<(ClassEnrollment & { student: User })[]> {
@@ -926,7 +931,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async removeEnrollment(classId: number, studentId: string): Promise<void> {
-    await db.delete(classEnrollments).where(and(eq(classEnrollments.classId, classId), eq(classEnrollments.studentId, studentId)));
+    const deleted = await db.delete(classEnrollments)
+      .where(and(eq(classEnrollments.classId, classId), eq(classEnrollments.studentId, studentId)))
+      .returning();
+    if (deleted.length === 0) {
+      throw new Error("Student is not enrolled in this class.");
+    }
   }
 
   async getClassProgressSummary(classId: number, opts?: { limit?: number; offset?: number }): Promise<any> {

@@ -1330,9 +1330,12 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
 
     try {
       const AnthropicSDK = (await import("@anthropic-ai/sdk")).default;
-      const anthropic = new AnthropicSDK();
+      const anthropic = new AnthropicSDK({
+        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+      });
       const message = await anthropic.messages.create({
-        model: "claude-3-5-haiku-20241022",
+        model: "claude-sonnet-4-6",
         max_tokens: 256,
         system: "You are a helpful assistant for Finsight Lite, a Caribbean financial literacy platform for youth ages 12-17. Write a 2-3 sentence plain-English summary of this organisation's student engagement this month. Be specific with the numbers. Keep the tone warm and encouraging. Do not use em dashes.",
         messages: [{ role: "user", content: statsText }],

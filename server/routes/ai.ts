@@ -825,7 +825,7 @@ KEY ADMIN FEATURES YOU CAN HELP WITH:
 Always answer based on these features. If an admin asks about something outside your knowledge, say so honestly and suggest they check the developer documentation or contact the platform team.`;
 
       const response = await anthropic.messages.create({
-        model: "claude-3-5-haiku-20241022",
+        model: "claude-sonnet-4-6",
         max_tokens: 1024,
         system: systemPrompt,
         messages: sanitized,

@@ -1114,9 +1114,13 @@ Rules:
 
   app.delete("/api/teacher/classes/:id", isTeacher, async (req: any, res) => {
     const id = parseInt(req.params.id);
-    await storage.deleteClass(id, req.session.teacherId);
-    await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "teacher.class.delete", targetType: "class", targetId: id, req });
-    res.json({ ok: true });
+    try {
+      await storage.deleteClass(id, req.session.teacherId);
+      await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "teacher.class.delete", targetType: "class", targetId: id, req });
+      res.json({ ok: true });
+    } catch (e: any) {
+      res.status(404).json({ message: e.message });
+    }
   });
 
   app.get("/api/teacher/classes/:id/students", isTeacher, async (req: any, res) => {
@@ -1135,9 +1139,13 @@ Rules:
     const classId = parseInt(req.params.classId);
     const cls = await storage.getClassById(classId);
     if (!cls || cls.teacherId !== req.session.teacherId) return res.status(403).json({ message: "Forbidden" });
-    await storage.removeEnrollment(classId, req.params.studentId);
-    await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "teacher.class.student.remove", targetType: "user", targetId: req.params.studentId, meta: { classId }, req });
-    res.json({ ok: true });
+    try {
+      await storage.removeEnrollment(classId, req.params.studentId);
+      await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "teacher.class.student.remove", targetType: "user", targetId: req.params.studentId, meta: { classId }, req });
+      res.json({ ok: true });
+    } catch (e: any) {
+      res.status(404).json({ message: e.message });
+    }
   });
 
   app.get("/api/teacher/classes/:id/leaderboard", isTeacher, async (req: any, res) => {
@@ -1338,16 +1346,26 @@ Rules:
   });
 
   app.get("/api/teacher/feedback/:studentId", isTeacher, async (req: any, res) => {
-    const data = await storage.getStudentFeedbackByTeacherAndStudent(
-      req.session.teacherId as number,
-      req.params.studentId,
-    );
-    res.json(data);
+    try {
+      const data = await storage.getStudentFeedbackByTeacherAndStudent(
+        req.session.teacherId as number,
+        req.params.studentId,
+      );
+      res.json(data);
+    } catch (e: any) {
+      captureError(e, { route: req.path });
+      res.status(500).json({ message: "Could not load feedback. Please try again." });
+    }
   });
 
   app.get("/api/student/feedback", isAuthenticated, async (req: any, res) => {
-    const data = await storage.getStudentFeedbackByStudent(req.session.userId);
-    res.json(data);
+    try {
+      const data = await storage.getStudentFeedbackByStudent(req.session.userId);
+      res.json(data);
+    } catch (e: any) {
+      captureError(e, { route: req.path });
+      res.status(500).json({ message: "Could not load feedback. Please try again." });
+    }
   });
 
   // === DEMO ACCESS ===
@@ -1410,9 +1428,10 @@ Rules:
       if (cls.envId) {
         const env = await getOrgEnvironmentById(cls.envId);
         if (env) {
-          enrollStudentInOrg(env.org_id, env.id, studentId).catch(err =>
-            console.warn("[join-class] org auto-enroll failed (non-blocking):", err?.message)
-          );
+          enrollStudentInOrg(env.org_id, env.id, studentId).catch(err => {
+            console.warn("[join-class] org auto-enroll failed (non-blocking):", err?.message);
+            captureError(err, { route: "/api/student/join-class", context: "org auto-enroll" });
+          });
         }
       }
 
