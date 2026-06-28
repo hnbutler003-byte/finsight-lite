@@ -119,6 +119,88 @@ also production.
 
 ## Cleanup
 
-All QA test data was removed and verified: 0 QA students, 0 `QALOAD` class, 0 second
-teacher, demo teacher org link reverted to null, 0 leftover feedback rows. Typecheck is
-clean. The architect review of the fixes returned "safe to ship".
+All QA test data from the first pass was removed and verified: 0 QA students, 0 `QALOAD`
+class, 0 second teacher, demo teacher org link reverted to null, 0 leftover feedback rows.
+Typecheck is clean. The architect review of the fixes returned "safe to ship".
+
+---
+
+## Addendum: Second QA pass, June 28 2026
+
+A second pass was run immediately after the first to re-verify all flows end-to-end
+with fresh seed data and to confirm the six fixes held.
+
+### What was re-verified
+
+A dedicated test teacher (`qa-teacher@test.finsightlite.com`) and a class of exactly 30
+students (`QALAB1` - QA Load Test) were seeded using a local Node script
+(`scripts/qa-seed.cjs`). Students had XP values ranging from 50 to 485, savings goals
+at varied completion percentages (0 to 100), and lesson progress spread across two
+modules. All API flows and UI screens were exercised against this fresh dataset.
+
+**QA seed data for future runs:** teacher `qa-teacher@test.finsightlite.com` (teacher
+id = 5), class `QALAB1` (id = 6), 30 students `qa-student-001` through
+`qa-student-030` remain in the development database for reuse. The seed script is
+idempotent and can be re-run at any time.
+
+### API tests (second pass results)
+
+| Endpoint / flow | Result |
+| --- | --- |
+| Teacher login (`POST /api/teacher/auth/login`) | PASS |
+| Teacher classes list | PASS |
+| Class roster with 30 students | PASS (avg XP 268, savings goals present) |
+| Class analytics | PASS (totalStudents: 30) |
+| CSV export | PASS (31 lines: header + 30 student rows) |
+| YouTube lesson create, valid `youtube.com` URL | PASS |
+| YouTube lesson create, valid `youtu.be` short URL | PASS |
+| YouTube lesson create, invalid (Vimeo) URL | PASS - HTTP 400 with clean message (see Fix 6) |
+| Video upload, unsupported MIME type | PASS - HTTP 400 "Unsupported file type..." |
+| Video upload, no file attached | PASS - HTTP 400 "No file uploaded" |
+| Logo upload (`POST /api/org-admin/branding/logo`) bad MIME | PASS - HTTP 400 |
+| Delete class owned by different teacher | PASS - HTTP 404 with clear message |
+| Auth guard (unauthenticated teacher access) | PASS - HTTP 401 |
+| Org admin login (founder credentials) | PASS - org "The Financial Academy" found |
+| Org admin overview | PASS |
+| Org admin student-table pagination | PASS |
+
+### UI tests (second pass results)
+
+**Light mode (screenshot evidence from Playwright):** class QALAB1 loaded with 30 student
+cards, XP values 50 through 485 visible, savings goal progress bars at correct percentages
+(0%, 4%, 7%, 10%...), no layout breaks, no truncation. PASS.
+
+**Dark mode (Playwright, localStorage key `finsight-theme` = `dark`):** class roster,
+teacher dashboard, and classes list all rendered with dark backgrounds and readable
+contrast. Student names, XP values, and savings goal data visible. No invisible text or
+broken layout. PASS.
+
+Note: the dark mode toggle button exists only on the student-facing Settings page, not in
+the teacher portal. The underlying CSS dark-mode variables work correctly and are applied
+via the ThemeProvider when `finsight-theme` is set to `dark` in localStorage.
+
+### Bug found and fixed in the second pass
+
+6. **Lesson route validation errors returned raw Zod JSON instead of a readable message.**
+   When a request body failed Zod schema validation (for example, submitting a Vimeo URL
+   to the YouTube-only lesson create endpoint), the catch block returned `e.message` from
+   the `ZodError`, which is a JSON-formatted array string rather than a human-readable
+   sentence. A user or API consumer would see something like
+   `[{"code":"custom","message":"Please enter a valid YouTube link.","path":["videoUrl"]}]`
+   as the `message` field instead of `"Please enter a valid YouTube link."`.
+
+   Fixed by adding an `instanceof z.ZodError` check at the top of each lesson route catch
+   block that can receive Zod errors. The check extracts `e.errors[0].message` and returns
+   it directly. Applied to 10 catch blocks across `server/routes/lessons.ts`. Typecheck
+   clean after the fix.
+
+   Verified: `POST /api/org-admin/lessons` with a Vimeo URL now returns
+   `{"message":"Please enter a valid YouTube link."}`. Missing a required field returns
+   `{"message":"Required"}`.
+
+### Items still held from the first pass
+
+Both held items from the first pass remain unchanged and are still non-blockers:
+- Org-admin browser screenshots were not captured in either pass (security concern with
+  founder credentials in test subagent).
+- Teacher sidebar nested-link navigation nit (low severity, no data impact).
