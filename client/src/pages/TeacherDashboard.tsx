@@ -141,9 +141,11 @@ function ClassCard({ cls }: { cls: ClassItem }) {
 
 export default function TeacherDashboard() {
   const { teacher, isLoading: authLoading } = useTeacherAuth();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [showCreate, setShowCreate] = useState(false);
   const [checklistDismissed, setChecklistDismissed] = useState(false);
+
+  const isClassesView = location === "/teacher/classes";
 
   useEffect(() => {
     setChecklistDismissed(localStorage.getItem("teacher_checklist_dismissed") === "true");
@@ -174,6 +176,8 @@ export default function TeacherDashboard() {
   }
 
   const totalStudents = classes?.reduce((s, c) => s + c.enrollmentCount, 0) ?? 0;
+  const displayedClasses = isClassesView ? (classes ?? []) : (classes?.slice(0, 2) ?? []);
+  const hasMoreClasses = !isClassesView && (classes?.length ?? 0) > 2;
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -182,10 +186,23 @@ export default function TeacherDashboard() {
 
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto space-y-8">
+
+          {/* PAGE HEADER: different title for Dashboard vs My Classes */}
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <h1 className="font-display font-bold text-3xl">Welcome back, {teacher.firstName}!</h1>
-              <p className="text-muted-foreground mt-1">{teacher.schoolName}</p>
+              {isClassesView ? (
+                <>
+                  <h1 className="font-display font-bold text-3xl">My Classes</h1>
+                  <p className="text-muted-foreground mt-1">
+                    {classes?.length ?? 0} class{classes?.length !== 1 ? "es" : ""}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1 className="font-display font-bold text-3xl">Welcome back, {teacher.firstName}!</h1>
+                  <p className="text-muted-foreground mt-1">{teacher.schoolName}</p>
+                </>
+              )}
             </div>
             <Button
               onClick={() => setShowCreate(true)}
@@ -197,7 +214,8 @@ export default function TeacherDashboard() {
             </Button>
           </div>
 
-          {!checklistDismissed && (
+          {/* DASHBOARD ONLY: getting started checklist */}
+          {!isClassesView && !checklistDismissed && (
             <Card className="glass-card rounded-glass border border-emerald-200 dark:border-emerald-800/50" data-testid="card-teacher-onboarding-checklist">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-3">
@@ -232,31 +250,44 @@ export default function TeacherDashboard() {
             </Card>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { label: "Total Classes", value: classes?.length ?? 0, icon: BookOpen, color: "emerald" },
-              { label: "Total Students", value: totalStudents, icon: Users, color: "blue" },
-              { label: "Active Challenges", value: "0", icon: Trophy, color: "amber" },
-            ].map(stat => (
-              <Card key={stat.label} className="glass-card rounded-glass">
-                <CardContent className="p-6 flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl bg-${stat.color}-100 dark:bg-${stat.color}-900/30 flex items-center justify-center shrink-0`}>
-                    <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-display font-bold">{stat.value}</p>
-                    <p className="text-sm text-muted-foreground font-medium">{stat.label}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display font-bold text-xl">Your Classes</h2>
-              <span className="text-sm text-muted-foreground font-medium">{classes?.length ?? 0} class{classes?.length !== 1 ? "es" : ""}</span>
+          {/* DASHBOARD ONLY: stats overview */}
+          {!isClassesView && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { label: "Total Classes", value: classes?.length ?? 0, icon: BookOpen, color: "emerald" },
+                { label: "Total Students", value: totalStudents, icon: Users, color: "blue" },
+                { label: "Active Challenges", value: "0", icon: Trophy, color: "amber" },
+              ].map(stat => (
+                <Card key={stat.label} className="glass-card rounded-glass">
+                  <CardContent className="p-6 flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-2xl bg-${stat.color}-100 dark:bg-${stat.color}-900/30 flex items-center justify-center shrink-0`}>
+                      <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-display font-bold">{stat.value}</p>
+                      <p className="text-sm text-muted-foreground font-medium">{stat.label}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
+          )}
+
+          {/* CLASSES: dashboard shows first 2 with "See all" link; My Classes shows all */}
+          <div className="space-y-4">
+            {!isClassesView && (
+              <div className="flex items-center justify-between">
+                <h2 className="font-display font-bold text-xl">Your Classes</h2>
+                <Link
+                  href="/teacher/classes"
+                  className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold hover:underline flex items-center gap-1"
+                  data-testid="link-see-all-classes"
+                >
+                  {hasMoreClasses ? `See all ${classes?.length} classes` : "Manage classes"}
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            )}
 
             {isLoading ? (
               <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>
@@ -277,10 +308,11 @@ export default function TeacherDashboard() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {classes.map(cls => <ClassCard key={cls.id} cls={cls} />)}
+                {displayedClasses.map(cls => <ClassCard key={cls.id} cls={cls} />)}
               </div>
             )}
           </div>
+
         </div>
       </main>
     </div>

@@ -674,7 +674,7 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
     const org = await getOrganization(admin.orgId);
     if (!org) return res.status(404).json({ message: "Organization not found" });
 
-    // Pending/rejected orgs get only a minimal safe payload — no join codes, no metrics,
+    // Pending/rejected orgs get only a minimal safe payload: no join codes, no metrics,
     // no environment data. The full dashboard is only available after approval.
     if (org.status === "pending" || org.status === "rejected") {
       return res.json({
@@ -1998,7 +1998,7 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
           await rawDb.insert(enrollmentsTable).values({ classId: targetClass.id, studentId: s.id });
         }
 
-        // Enrol in org (Supabase) — correct arg order: (orgId, envId, studentUserId)
+        // Enrol in org (Supabase); correct arg order: (orgId, envId, studentUserId)
         const orgEnroll = await enrollStudentInOrg(demoOrgId, demoEnvId, s.id);
         if (!orgEnroll.success) {
           throw new Error(`[Supabase] enrollStudentInOrg failed for student ${s.id}`);

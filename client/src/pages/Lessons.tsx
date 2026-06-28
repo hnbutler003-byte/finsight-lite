@@ -241,7 +241,7 @@ function generateCertificate(
   doc.setFontSize(9);
   doc.setTextColor(100, 116, 139);
   doc.text(`Date of Completion: ${completionDate}`, W / 2, 158, { align: "center" });
-  doc.text("FinSight Lite: Financial Literacy for Caribbean Youth", W / 2, 166, { align: "center" });
+  doc.text("Finsight Lite: Financial Literacy for Caribbean Youth", W / 2, 166, { align: "center" });
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(24);

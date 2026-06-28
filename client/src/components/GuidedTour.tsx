@@ -8,7 +8,7 @@ import {
 const TOUR_STEPS = [
   {
     icon: Sparkles,
-    title: "Welcome to FinSight Lite!",
+    title: "Welcome to Finsight Lite!",
     description: "Let's take a quick tour so you know where everything is. This will only take a minute!",
     color: "from-violet-500 to-pink-500",
   },

@@ -1,0 +1,15 @@
+Four issues to investigate and fix, with evidence attached as screenshots:
+
+1. TEACHER PORTAL NAV: "Dashboard" and "My Classes" in the sidebar nav appear to render the exact same view (see attached screenshots). Investigate why. If "My Classes" is meant to be a distinct view (e.g. a list/grid of all classes with management actions), fix the routing or component so it actually renders that, rather than falling back to the Dashboard view. If the duplication is masked by the demo seed only having one class, test with multiple classes seeded to confirm both views are genuinely different once there's more than one class to show. Don't just confirm it "looks right" with one class, the bug may be invisible at that scale.
+
+2. OUR STORY "FOR TEACHERS" CARD STILL SHOWS THE OLD MUDDY GRADIENT: This was previously reported fixed and verified with screenshots (light mode fading white to violet, dark mode using a dark-violet gradient), but the attached screenshot from the live site shows the exact same gray-blue muddy corner as the original bug. Do not assume the prior fix is correct just because it was marked complete. Investigate:
+   - Confirm the actual deployed commit on Railway/production matches the commit where this fix was made (check the live site's deployed git SHA against the commit that contains the fix).
+   - Check whether there are multiple instances of this card or component in the codebase, and only one was updated.
+   - Check for caching issues (CDN cache, browser cache, stale build) that could be serving an old version.
+   - Once you find the actual root cause, fix it and take a fresh screenshot of the live, deployed page (not local dev) in both light and dark mode to confirm.
+
+3. LOGO/BRAND CONSISTENCY MISSING ON LEGAL PAGES: Privacy Policy (and likely Terms of Service and any other static/legal pages) still show a plain text wordmark ("FinSight Lite", with inconsistent capitalization, not "Finsight Lite") instead of the FinsightLiteLogo component used elsewhere in the app. Replace this with the FinsightLiteLogo component for full brand consistency, and correct the capitalization to match our actual brand name "Finsight Lite" everywhere it appears as plain text too.
+
+4. EM DASH SWEEP, INCLUDING SEEDED/DEMO CONTENT: An em dash was found in a demo welcome message ("Hi everyone — welcome to this demo class..."), which means the no-em-dash rule has been missed in seeded database content, not just source code copy. Run a full sweep across the entire codebase AND any database seed scripts/demo data generation logic for em dashes, and replace every instance. This needs to cover seed data, not just .tsx/.ts source files, since the rule applies everywhere text reaches a user, including generated demo records.
+
+For all four: verify fixes in both light and dark mode where visually relevant, verify against the actual live/deployed environment where applicable (not just local dev), and confirm with fresh screenshots, not just a description of the change. No em dashes anywhere in any new copy, comments, or code. Verify any git push with a full 40-character SHA comparison between local HEAD and the live GitHub remote.

@@ -172,7 +172,7 @@ export default function OrgRegister() {
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground">This code identifies your organization in FinSight Lite</p>
+                <p className="text-xs text-muted-foreground">This code identifies your organization in Finsight Lite</p>
               </div>
 
               <Button

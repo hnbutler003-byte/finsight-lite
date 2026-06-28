@@ -89,7 +89,7 @@ function AdminHelpChat() {
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-[200px]">
             {messages.length === 0 && (
               <div className="text-slate-400 text-sm text-center mt-8 space-y-2">
-                <p>👋 Hi! I can help you navigate FinSight Lite.</p>
+                <p>👋 Hi! I can help you navigate Finsight Lite.</p>
                 <p className="text-xs text-slate-500">Try: "How do I add a teacher?" or "Where is the audit log?"</p>
               </div>
             )}

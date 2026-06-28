@@ -11,14 +11,14 @@ after three consecutive failures (with a 30-minute cooldown).
 
 Required environment variables:
 
-- `ALERT_EMAIL` — recipient for alert emails
-- `RESEND_API_KEY` — Resend API key
-- `RESEND_FROM` — verified Resend sender (defaults to the Resend
+- `ALERT_EMAIL`: recipient for alert emails
+- `RESEND_API_KEY`: Resend API key
+- `RESEND_FROM`: verified Resend sender (defaults to the Resend
   onboarding sender)
-- `HEALTHCHECK_URL` — full URL to ping; defaults to
+- `HEALTHCHECK_URL`: full URL to ping; defaults to
   `http://127.0.0.1:$PORT/healthz` for in-container checks
-- `HEALTHCHECK_INTERVAL_MS` — override the 60-second interval
-- `DISABLE_UPTIME_WORKER=1` — disable the in-process worker (use
+- `HEALTHCHECK_INTERVAL_MS`: override the 60-second interval
+- `DISABLE_UPTIME_WORKER=1`: disable the in-process worker (use
   this in production if you rely solely on an external scheduler)
 
 The worker is auto-respawned 30 seconds after any exit so a transient
@@ -47,6 +47,6 @@ cron-style runners (e.g. **Replit Scheduled Deployments**).
 ### Generic cron / external monitor
 
 Any external uptime monitor (UptimeRobot, BetterStack, k8s liveness
-probes, GitHub Actions cron) can hit `/healthz` directly — it
+probes, GitHub Actions cron) can hit `/healthz` directly: it
 returns `200 {"ok":true,"ts":...}` on healthy and a non-2xx response
 when the database is unreachable.

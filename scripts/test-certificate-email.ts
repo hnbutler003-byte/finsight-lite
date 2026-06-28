@@ -101,7 +101,7 @@ async function registerStudent(name: string): Promise<{ userId: string; cookie: 
 // ── Case A ────────────────────────────────────────────────────────────────────
 
 async function caseA_verifiedContact() {
-  console.log("\nCase A — verified email contact, large PDF payload (HTTP integration)");
+  console.log("\nCase A: verified email contact, large PDF payload (HTTP integration)");
 
   const { userId, cookie } = await registerStudent("CertTestVerified");
   let contactId: number | null = null;
@@ -139,7 +139,7 @@ async function caseA_verifiedContact() {
     );
     await assert(
       body.recipients === 1,
-      `body.recipients is 1 — route found the verified contact (got ${body.recipients})`,
+      `body.recipients is 1: route found the verified contact (got ${body.recipients})`,
     );
 
     // Verify the emailEvents row was written with correct details
@@ -193,7 +193,7 @@ async function caseA_verifiedContact() {
 // ── Case B ────────────────────────────────────────────────────────────────────
 
 async function caseB_noVerifiedContact() {
-  console.log("\nCase B — no verified email contact → expect 400 (HTTP integration)");
+  console.log("\nCase B: no verified email contact → expect 400 (HTTP integration)");
 
   const { userId, cookie } = await registerStudent("CertTestUnverified");
   try {
@@ -221,10 +221,10 @@ async function caseB_noVerifiedContact() {
 
 // ── Case C ────────────────────────────────────────────────────────────────────
 // Spin up a local mock of the Resend API and confirm a large base64 attachment
-// is forwarded intact — verifying filename and decoded content size.
+// is forwarded intact: verifying filename and decoded content size.
 
 async function caseCResendForwarding() {
-  console.log("\nCase C — Resend SDK forwards large attachment to API (in-process mock)");
+  console.log("\nCase C: Resend SDK forwards large attachment to API (in-process mock)");
 
   return new Promise<void>((resolve) => {
     let capturedBody = "";
@@ -283,7 +283,7 @@ async function caseCResendForwarding() {
           const originalBytes = Buffer.from(pdfBase64, "base64").length;
           await assert(
             forwardedBytes === originalBytes,
-            `attachment size preserved — ${forwardedBytes} bytes (original ${originalBytes} bytes)`,
+            `attachment size preserved: ${forwardedBytes} bytes (original ${originalBytes} bytes)`,
           );
           await assert(
             forwardedBytes > 200 * 1024,

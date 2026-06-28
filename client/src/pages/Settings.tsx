@@ -159,7 +159,7 @@ export default function Settings() {
                 </div>
                 <div>
                   <h2 className="font-display font-bold text-lg text-foreground">Appearance</h2>
-                  <p className="text-sm text-muted-foreground">Choose how FinSight Lite looks for you.</p>
+                  <p className="text-sm text-muted-foreground">Choose how Finsight Lite looks for you.</p>
                 </div>
               </div>
               <div className="flex items-center justify-between">

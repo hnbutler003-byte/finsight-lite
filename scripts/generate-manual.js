@@ -295,7 +295,7 @@ toc.forEach(([num, title, pg]) => {
 });
 
 // ════════════════════════════════════════════════════════════════════
-// SECTION 1 — ABOUT
+// SECTION 1 - ABOUT
 // ════════════════════════════════════════════════════════════════════
 sectionCover("Section 1", "About FinSight Lite", C.navy);
 
@@ -305,7 +305,7 @@ h1("About FinSight Lite");
 para(
   "FinSight Lite is a financial literacy web application purpose-built for young learners aged 12–17 across the Caribbean. " +
   "Adapted from its parent platform FinSight 360, the Lite version strips away complexity and wraps core financial concepts " +
-  "in a playful, gamified experience — think glassmorphism visuals, Caribbean-themed gradients, XP points, badges, and leaderboards."
+  "in a playful, gamified experience - think glassmorphism visuals, Caribbean-themed gradients, XP points, badges, and leaderboards."
 );
 
 para(
@@ -318,7 +318,7 @@ table(
     ["Student", "Learn, track money, play financial games, and climb leaderboards"],
     ["Teacher", "Manage classes, set challenges, upload exam content, and monitor progress"],
     ["Org Admin", "Oversee multiple schools, manage AI quotas, and view organisation analytics"],
-    ["Super Admin", "Run the entire platform — users, schools, sponsors, and system health"],
+    ["Super Admin", "Run the entire platform - users, schools, sponsors, and system health"],
   ]
 );
 
@@ -338,10 +338,10 @@ bullet([
   "Minimum recommended screen width: 375 px",
 ]);
 
-infoBox("FinSight Lite is a web application — no app store download is required. Simply open a browser and navigate to your school's FinSight Lite URL.");
+infoBox("FinSight Lite is a web application - no app store download is required. Simply open a browser and navigate to your school's FinSight Lite URL.");
 
 // ════════════════════════════════════════════════════════════════════
-// SECTION 2 — GETTING STARTED
+// SECTION 2 - GETTING STARTED
 // ════════════════════════════════════════════════════════════════════
 sectionCover("Section 2", "Getting Started", C.teal);
 
@@ -388,7 +388,7 @@ para("Click the Log Out button at the bottom of the sidebar. For shared devices,
 
 h2("Navigation Sidebar");
 para(
-  "The left sidebar is your primary navigation. On a desktop it can be expanded (full labels) or collapsed to a slim icon rail — " +
+  "The left sidebar is your primary navigation. On a desktop it can be expanded (full labels) or collapsed to a slim icon rail - " +
   "click the chevron arrow at the top of the sidebar to toggle. On mobile, tap the hamburger icon (☰) in the top-left corner."
 );
 para("Navigation items are grouped into three sections:");
@@ -400,7 +400,7 @@ table(
     ["Explore", "Money Games · Money Guide"],
   ]
 );
-para("Settings appears below all groups. The icon rail (collapsed state) shows icons only — hover over any icon to see its label.");
+para("Settings appears below all groups. The icon rail (collapsed state) shows icons only - hover over any icon to see its label.");
 
 h2("Appearance (Light & Dark Mode)");
 para(
@@ -409,7 +409,7 @@ para(
 );
 
 // ════════════════════════════════════════════════════════════════════
-// SECTION 3 — STUDENT GUIDE
+// SECTION 3 - STUDENT GUIDE
 // ════════════════════════════════════════════════════════════════════
 sectionCover("Section 3", "Student Guide", "#0369a1");
 
@@ -423,16 +423,16 @@ para(
 
 h2("Dashboard Overview");
 bullet([
-  "Balance Summary — your current virtual wallet balance and real-world tracked balance side-by-side",
-  "XP & Level — your current experience points, level badge, and progress to the next level",
-  "Active Goals — savings goals you have created and their completion percentage",
-  "Recent Activity — the last five transactions or quiz results",
-  "Class Leaderboard — where you rank among your classmates this week",
+  "Balance Summary - your current virtual wallet balance and real-world tracked balance side-by-side",
+  "XP & Level - your current experience points, level badge, and progress to the next level",
+  "Active Goals - savings goals you have created and their completion percentage",
+  "Recent Activity - the last five transactions or quiz results",
+  "Class Leaderboard - where you rank among your classmates this week",
 ]);
 
 infoBox(
   "Navigation tip: Use the sidebar on the left to move between sections. " +
-  "The sidebar is split into three groups — My Finances, Investing & Learning, and Explore. " +
+  "The sidebar is split into three groups - My Finances, Investing & Learning, and Explore. " +
   "Click the arrow at the top to collapse it to a compact icon rail if you need more screen space."
 );
 
@@ -446,7 +446,7 @@ numberedList([
   "Select Income as the type.",
   "Enter the amount and choose your currency (BSD, JMD, TTD, etc.).",
   "Add a description (e.g., 'Weekly allowance') and the date.",
-  "Click Save — the transaction appears in your ledger and updates your balance.",
+  "Click Save - the transaction appears in your ledger and updates your balance.",
 ]);
 
 h3("Tracking Expenses");
@@ -522,7 +522,7 @@ checkPageSpace(100);
 h2("MoneyLab (Exam Games & AI Tutor)");
 
 para(
-  "MoneyLab is your exam preparation hub — found under Investing & Learning in the sidebar. " +
+  "MoneyLab is your exam preparation hub - found under Investing & Learning in the sidebar. " +
   "It has four areas: Upload Past Paper, Play Exam Game, AI Tutor, and Leaderboards."
 );
 
@@ -531,7 +531,7 @@ numberedList([
   "Navigate to MoneyLab from the Investing & Learning section in the sidebar.",
   "Click Play Exam Game and select an available paper.",
   "Choose a game mode: Quiz (relaxed), Timed Exam (30 s per question), or Challenge Mode (speed bonus).",
-  "Answer each multiple-choice question — correct answers earn XP.",
+  "Answer each multiple-choice question - correct answers earn XP.",
   "Your score, accuracy, and XP earned are shown on the results screen.",
 ]);
 
@@ -577,10 +577,10 @@ h2("Leaderboards");
 para("Compete with classmates and students across your school or country. The MoneyLab Leaderboard is inside MoneyLab → Leaderboards.");
 
 bullet([
-  "Class Leaderboard — ranked by total XP this week among your classmates",
-  "School Leaderboard — your rank among all students at your school",
-  "National Leaderboard — top performers from all participating schools",
-  "MoneyLab Leaderboard — ranked by total quiz score (inside MoneyLab > Leaderboards)",
+  "Class Leaderboard - ranked by total XP this week among your classmates",
+  "School Leaderboard - your rank among all students at your school",
+  "National Leaderboard - top performers from all participating schools",
+  "MoneyLab Leaderboard - ranked by total quiz score (inside MoneyLab > Leaderboards)",
 ]);
 
 h2("Badges & Achievements");
@@ -599,7 +599,7 @@ table(
 );
 
 // ════════════════════════════════════════════════════════════════════
-// SECTION 4 — TEACHER GUIDE
+// SECTION 4 - TEACHER GUIDE
 // ════════════════════════════════════════════════════════════════════
 sectionCover("Section 4", "Teacher Guide", C.teal);
 
@@ -608,16 +608,16 @@ h1("Teacher Guide");
 
 para(
   "Teachers are the facilitators on FinSight Lite. You create the learning environment, guide students through the curriculum, " +
-  "set challenges, and monitor progress — all from your dedicated Teacher Dashboard."
+  "set challenges, and monitor progress - all from your dedicated Teacher Dashboard."
 );
 
 h2("Teacher Dashboard Overview");
 bullet([
-  "My Classes — all classes you manage with enrolment counts and recent activity",
-  "Average Class Score — mean quiz score across all your classes this week",
-  "Lesson Completion Rate — percentage of students who have engaged with each lesson",
-  "Upcoming Challenges — financial challenges you have scheduled",
-  "Recent Student Activity — live feed of notable student actions (new goals, quiz completions, trades)",
+  "My Classes - all classes you manage with enrolment counts and recent activity",
+  "Average Class Score - mean quiz score across all your classes this week",
+  "Lesson Completion Rate - percentage of students who have engaged with each lesson",
+  "Upcoming Challenges - financial challenges you have scheduled",
+  "Recent Student Activity - live feed of notable student actions (new goals, quiz completions, trades)",
 ]);
 
 checkPageSpace(160);
@@ -637,7 +637,7 @@ para("Distribute the class code to your students. They enter it when signing up 
 h3("Resetting a Class Code");
 bullet([
   "Open the class settings and click Reset Code.",
-  "The old code is immediately invalidated — students who have not yet enrolled must use the new code.",
+  "The old code is immediately invalidated - students who have not yet enrolled must use the new code.",
   "Students already enrolled are unaffected.",
 ]);
 
@@ -652,7 +652,7 @@ checkPageSpace(160);
 h2("Financial Challenges");
 
 para(
-  "Challenges are time-limited goals you set for your class — for example, 'Save at least $200 in the simulator by Friday'. " +
+  "Challenges are time-limited goals you set for your class - for example, 'Save at least $200 in the simulator by Friday'. " +
   "They have a dedicated leaderboard to encourage friendly competition."
 );
 
@@ -673,7 +673,7 @@ bullet([
 ]);
 
 checkPageSpace(120);
-h2("MoneyLab — Uploading Past Papers");
+h2("MoneyLab - Uploading Past Papers");
 
 para(
   "Teachers can upload past exam papers directly from the MoneyLab section (Investing & Learning > MoneyLab > Upload Past Paper). " +
@@ -683,9 +683,9 @@ para(
 numberedList([
   "Navigate to MoneyLab from the Investing & Learning section in the sidebar.",
   "Click Upload Past Paper.",
-  "Drag-and-drop or browse for a PDF or image file (PDF, JPG, or PNG — max 10 MB).",
+  "Drag-and-drop or browse for a PDF or image file (PDF, JPG, or PNG - max 10 MB).",
   "Give the paper an optional title and select the subject.",
-  "Click the upload zone. The AI extracts questions and creates a quiz — this usually takes 30–120 seconds.",
+  "Click the upload zone. The AI extracts questions and creates a quiz - this usually takes 30–120 seconds.",
   "The paper appears in Your Uploaded Papers once processing is complete.",
   "Students can then select it in Play Exam Game.",
 ]);
@@ -717,8 +717,8 @@ bullet([
 
 h3("Downloading Reports");
 bullet([
-  "Class summary: CSV or PDF — click Download Report on the class dashboard",
-  "Individual report: PDF — click Download on the student's profile page",
+  "Class summary: CSV or PDF - click Download Report on the class dashboard",
+  "Individual report: PDF - click Download on the student's profile page",
 ]);
 
 checkPageSpace(80);
@@ -742,7 +742,7 @@ numberedList([
 ]);
 
 // ════════════════════════════════════════════════════════════════════
-// SECTION 5 — ORG ADMIN GUIDE
+// SECTION 5 - ORG ADMIN GUIDE
 // ════════════════════════════════════════════════════════════════════
 sectionCover("Section 5", "Organisation Admin Guide", C.amber);
 
@@ -756,17 +756,17 @@ para(
 
 h2("Org Admin Dashboard Overview");
 bullet([
-  "Environment Summary — total students, teachers, and active classes across all managed schools",
-  "AI Usage Widget — current vs. allowed daily AI calls organisation-wide",
-  "Email Deliverability — open and delivery rates for weekly digest emails",
-  "Recent Enrolment Activity — new students and teacher registrations in the past 7 days",
-  "Published Lessons — count of lessons published across all environments",
+  "Environment Summary - total students, teachers, and active classes across all managed schools",
+  "AI Usage Widget - current vs. allowed daily AI calls organisation-wide",
+  "Email Deliverability - open and delivery rates for weekly digest emails",
+  "Recent Enrolment Activity - new students and teacher registrations in the past 7 days",
+  "Published Lessons - count of lessons published across all environments",
 ]);
 
 checkPageSpace(160);
 h2("Managing Environments");
 
-para("An Environment in FinSight Lite corresponds to a school or branch. Each environment is isolated — students and teachers in one environment cannot see data from another.");
+para("An Environment in FinSight Lite corresponds to a school or branch. Each environment is isolated - students and teachers in one environment cannot see data from another.");
 
 h3("Viewing Environments");
 bullet([
@@ -873,7 +873,7 @@ numberedList([
 ]);
 
 // ════════════════════════════════════════════════════════════════════
-// SECTION 6 — SUPER ADMIN GUIDE
+// SECTION 6 - SUPER ADMIN GUIDE
 // ════════════════════════════════════════════════════════════════════
 sectionCover("Section 6", "Super Admin Guide", C.navy);
 
@@ -888,12 +888,12 @@ para(
 h2("Global Dashboard");
 
 bullet([
-  "Total Organisations — number of active organisations on the platform",
-  "Total Schools — aggregate school count across all organisations",
-  "Total Teachers — platform-wide teacher count",
-  "Total Students — platform-wide enrolled student count",
-  "Total Sponsors — number of active sponsorship entities",
-  "System Health — uptime indicator and latest healthcheck timestamp",
+  "Total Organisations - number of active organisations on the platform",
+  "Total Schools - aggregate school count across all organisations",
+  "Total Teachers - platform-wide teacher count",
+  "Total Students - platform-wide enrolled student count",
+  "Total Sponsors - number of active sponsorship entities",
+  "System Health - uptime indicator and latest healthcheck timestamp",
 ]);
 
 checkPageSpace(160);
@@ -918,7 +918,7 @@ bullet([
 h3("Suspending / Deleting an Organisation");
 bullet([
   "Suspending disables all logins for all users in the organisation (reversible).",
-  "Deleting permanently removes all data — this action cannot be undone. A double-confirmation prompt is shown.",
+  "Deleting permanently removes all data - this action cannot be undone. A double-confirmation prompt is shown.",
   "Best practice: always suspend first and wait 30 days before deleting.",
 ]);
 
@@ -953,7 +953,7 @@ checkPageSpace(160);
 h2("Audit Log");
 
 para(
-  "Every significant action on the platform — user creation, quota changes, data deletions, certificate issuance — " +
+  "Every significant action on the platform - user creation, quota changes, data deletions, certificate issuance - " +
   "is recorded in the Audit Log. This log is immutable and retained for 12 months."
 );
 
@@ -1004,7 +1004,7 @@ table(
     ["Queued", "Job is waiting to be picked up by a worker"],
     ["Running", "Job is actively being processed"],
     ["Completed", "Job finished successfully"],
-    ["Failed", "Job encountered an error — see the error message for details"],
+    ["Failed", "Job encountered an error - see the error message for details"],
   ]
 );
 
@@ -1019,10 +1019,10 @@ h2("Global Search");
 
 para("The Global Search bar (keyboard shortcut: Cmd/Ctrl + K) lets you find any record on the platform instantly:");
 bullet([
-  "Students — search by name, email, or student ID",
-  "Teachers — search by name or email",
-  "Schools — search by name or location",
-  "Organisations — search by name or billing email",
+  "Students - search by name, email, or student ID",
+  "Teachers - search by name or email",
+  "Schools - search by name or location",
+  "Organisations - search by name or billing email",
   "Click any result to jump directly to that record's detail page",
 ]);
 
@@ -1037,7 +1037,7 @@ bullet([
 ]);
 
 // ════════════════════════════════════════════════════════════════════
-// SECTION 7 — GLOSSARY
+// SECTION 7 - GLOSSARY
 // ════════════════════════════════════════════════════════════════════
 sectionCover("Section 7", "Glossary", C.slate);
 
@@ -1045,20 +1045,20 @@ addPage();
 h1("Glossary");
 
 const glossary = [
-  ["Asset", "Anything of value that can earn a return — in Money Lab this includes simulated stocks and bonds."],
+  ["Asset", "Anything of value that can earn a return - in Money Lab this includes simulated stocks and bonds."],
   ["Badge", "A digital award earned for completing a specific action or reaching a milestone on the platform."],
   ["Bond", "A simulated fixed-income investment in Money Lab. Bonds typically have lower risk and lower return than stocks."],
-  ["BSD", "Bahamian Dollar — the currency of the Bahamas."],
+  ["BSD", "Bahamian Dollar - the currency of the Bahamas."],
   ["Challenge", "A time-limited competition set by a teacher with a specific metric (savings, quiz score, portfolio value)."],
   ["Class Code", "A unique alphanumeric code generated for each class. Students enter it to join the class."],
   ["Daily AI Quota", "The maximum number of Money Guide AI conversations allowed per day, set by the Org Admin."],
   ["DB Viewer", "A read-only database browsing tool available to Super Admins."],
   ["Environment", "A sandboxed instance of FinSight Lite corresponding to a school or branch within an organisation."],
   ["Expense", "A transaction representing money spent."],
-  ["GYD", "Guyanese Dollar — the currency of Guyana."],
+  ["GYD", "Guyanese Dollar - the currency of Guyana."],
   ["Healthcheck", "An automated ping to /healthz that verifies the server is running correctly."],
   ["Income", "A transaction representing money received (allowance, gift, earnings)."],
-  ["JMD", "Jamaican Dollar — the currency of Jamaica."],
+  ["JMD", "Jamaican Dollar - the currency of Jamaica."],
   ["Leaderboard", "A ranked list of students or schools based on XP, quiz scores, or portfolio value."],
   ["Level", "A progression tier that increases as students accumulate XP (Level 1 → Level 10+)."],
   ["Money Guide", "The AI-powered financial mentor chatbot available to students."],
@@ -1072,9 +1072,9 @@ const glossary = [
   ["Sponsor", "A corporate or non-profit partner whose branding may appear on leaderboards and certificates."],
   ["Stock", "A simulated equity investment in Money Lab. Stocks carry higher risk and potential return than bonds."],
   ["Super Admin", "The platform operator role with full unrestricted access to all platform data and settings."],
-  ["TTD", "Trinidad and Tobago Dollar — the currency of Trinidad and Tobago."],
-  ["Virtual Balance", "The simulated money a student uses in Money Lab — not real currency."],
-  ["XCD", "Eastern Caribbean Dollar — used across Antigua, Grenada, St. Lucia, and other OECS nations."],
+  ["TTD", "Trinidad and Tobago Dollar - the currency of Trinidad and Tobago."],
+  ["Virtual Balance", "The simulated money a student uses in Money Lab - not real currency."],
+  ["XCD", "Eastern Caribbean Dollar - used across Antigua, Grenada, St. Lucia, and other OECS nations."],
   ["XP (Experience Points)", "Points earned by students for completing activities. XP drives level progression."],
 ];
 

@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { FinsightLiteLogo } from "@/components/FinsightLiteLogo";
 
 export default function TermsOfService() {
   return (
@@ -6,8 +7,8 @@ export default function TermsOfService() {
       {/* Simple header */}
       <header className="border-b border-gray-100 dark:border-gray-800 px-6 py-4">
         <div className="max-w-3xl mx-auto">
-          <Link href="/" className="font-display font-bold text-xl text-violet-700 dark:text-violet-400 hover:opacity-80 transition-opacity">
-            FinSight Lite
+          <Link href="/" className="inline-block hover:opacity-80 transition-opacity" aria-label="Finsight Lite home">
+            <FinsightLiteLogo size={28} className="text-violet-700 dark:text-violet-400" />
           </Link>
         </div>
       </header>

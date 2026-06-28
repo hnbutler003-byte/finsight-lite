@@ -81,7 +81,7 @@ export default function OrgApply() {
             <div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center">
               <Building2 className="w-6 h-6 text-white" />
             </div>
-            <span className="font-display font-bold text-2xl text-white">FinSight Lite</span>
+            <span className="font-display font-bold text-2xl text-white">Finsight Lite</span>
           </div>
           <h1 className="font-display font-bold text-3xl text-white">Apply for Access</h1>
           <p className="text-white/70">Tell us about your organization and create your admin account.</p>

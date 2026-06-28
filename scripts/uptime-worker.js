@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// External uptime worker — runs as an independent child process so a hard
+// External uptime worker: runs as an independent child process so a hard
 // crash of the main server does not also kill the monitor. Pings /healthz
 // every minute. After 3 consecutive failures, sends an email alert (gated
 // by ALERT_EMAIL + RESEND_API_KEY). This script is also safe to run from
@@ -33,7 +33,7 @@ async function sendAlert(reason) {
       body: JSON.stringify({
         from: FROM,
         to: [ALERT_EMAIL],
-        subject: `[FinSight] Healthz failing — ${reason}`,
+        subject: `[FinSight] Healthz failing: ${reason}`,
         html: `<p>FinSight Lite /healthz check failed: <strong>${reason}</strong>.</p><p>URL: ${URL}</p>`,
       }),
     });

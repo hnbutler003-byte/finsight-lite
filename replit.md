@@ -13,11 +13,11 @@ FinSight Lite is a financial literacy learning simulator that teaches school-age
 
 **Required Environment Variables:**
 *   `SESSION_SECRET` (for Express sessions)
-*   `SUPABASE_DATABASE_URL` (primary PostgreSQL connection string — points to Supabase). `DATABASE_URL` is accepted as a fallback but should not be relied upon; Replit may point it at an internal host.
+*   `SUPABASE_DATABASE_URL` (primary PostgreSQL connection string: points to Supabase). `DATABASE_URL` is accepted as a fallback but should not be relied upon; Replit may point it at an internal host.
 *   `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (for Supabase integration)
 *   `ADMIN_EMAIL`, `ADMIN_PASSWORD` (for Founder Admin Dashboard)
-*   `AI_PURGE_OLDER_THAN_DAYS` (optional, default 180) — how far back the monthly auto-purge of `ai_usage_events` retains records
-*   `RESEND_FROM_EMAIL` (required in production) — the verified custom-domain FROM address for all outgoing emails, e.g. `FinSight Lite <noreply@finsight-ltd.com>`. Without this, emails send from the shared Resend sandbox address which school spam filters may block. Must be a domain verified in your Resend account with SPF/DKIM/DMARC DNS records.
+*   `AI_PURGE_OLDER_THAN_DAYS` (optional, default 180): how far back the monthly auto-purge of `ai_usage_events` retains records
+*   `RESEND_FROM_EMAIL` (required in production): the verified custom-domain FROM address for all outgoing emails, e.g. `FinSight Lite <noreply@finsight-ltd.com>`. Without this, emails send from the shared Resend sandbox address which school spam filters may block. Must be a domain verified in your Resend account with SPF/DKIM/DMARC DNS records.
 
 ## Stack
 
@@ -26,7 +26,7 @@ FinSight Lite is a financial literacy learning simulator that teaches school-age
 *   **Database:** PostgreSQL, Drizzle ORM
 *   **Build Tool:** Vite (client), esbuild (server)
 *   **Runtime:** Node.js
-*   **Deployment:** Replit Autoscale (min 0 replicas, max 5) — scales to zero when idle, spins up additional instances under load. Sessions are stored in PostgreSQL so they survive across instances.
+*   **Deployment:** Replit Autoscale (min 0 replicas, max 5): scales to zero when idle, spins up additional instances under load. Sessions are stored in PostgreSQL so they survive across instances.
 
 ## Where things live
 
@@ -70,7 +70,7 @@ Preferred communication style: Simple, everyday language.
 *   Supabase integration requires correct `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` to be set.
 *   Teacher login uses `bcryptjs` hashing; student login is passwordless.
 *   Legacy logo URLs (`/uploads/logos/*`) are 308 redirected to `/public-objects/logos/*`.
-*   **Contrast rule (light & dark mode):** `caribbean-bg` is always dark — use `text-white`. `glass-card`/`glass-card-teal`/`glass-card-coral` adapt between light and dark — always use `text-foreground` (semantic token) inside them. Never hardcode `text-gray-800`, `text-teal-900`, `text-blue-900`, etc. — they vanish in dark mode. Tinted labels must always pair a dark variant: `text-teal-800 dark:text-teal-200`. Coloured badges must include both `bg-X-100 text-X-700` and `dark:bg-X-900/40 dark:text-X-300`. Full rules are in the comment block at the top of `client/src/index.css`.
+*   **Contrast rule (light & dark mode):** `caribbean-bg` is always dark: use `text-white`. `glass-card`/`glass-card-teal`/`glass-card-coral` adapt between light and dark: always use `text-foreground` (semantic token) inside them. Never hardcode `text-gray-800`, `text-teal-900`, `text-blue-900`, etc.: they vanish in dark mode. Tinted labels must always pair a dark variant: `text-teal-800 dark:text-teal-200`. Coloured badges must include both `bg-X-100 text-X-700` and `dark:bg-X-900/40 dark:text-X-300`. Full rules are in the comment block at the top of `client/src/index.css`.
 
 ## Pointers
 

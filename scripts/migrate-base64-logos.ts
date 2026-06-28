@@ -62,7 +62,7 @@ async function main() {
 
     const parsed = parseDataUrl(logoUrl);
     if (!parsed) {
-      console.warn(`[${org.id}] Could not parse data URL — skipping.`);
+      console.warn(`[${org.id}] Could not parse data URL: skipping.`);
       failed++;
       continue;
     }
