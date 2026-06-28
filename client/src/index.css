@@ -18,8 +18,8 @@
       ✅ If you need a tinted label, always pair it:
          e.g.  text-teal-800 dark:text-teal-200
 
-   3. glass-card-coral / glass-card-teal follow the same pattern.
-      Both have .dark overrides defined below; don't remove them.
+   3. glass-card-coral / glass-card-teal / glass-card-light follow the
+      same pattern. Each has a .dark override defined below; don't remove them.
 
    4. For any coloured inline badge/pill on a coloured background,
       always add both light AND dark variants:
@@ -329,6 +329,23 @@
 .dark .glass-card-teal {
   background: linear-gradient(135deg, hsl(200 50% 10%) 0%, hsl(190 80% 50% / 0.18) 100%);
   border-color: hsl(190 80% 55% / 0.30);
+}
+
+/* Soft violet tinted card for use on the always-dark caribbean-bg.
+   Unlike glass-card-teal/coral (low-alpha tint that lets a dark page bleed
+   through), this fades white into an OPAQUE light violet so it never looks
+   muddy on a dark background. Has a matching .dark override below. */
+.glass-card-light {
+  background: linear-gradient(135deg, #FFFFFF 0%, hsl(262 65% 95%) 100%);
+  border: 1px solid hsl(262 70% 60% / 0.25);
+  border-radius: var(--radius-glass);
+  box-shadow: var(--shadow-sm);
+  color: hsl(var(--card-foreground));
+}
+
+.dark .glass-card-light {
+  background: linear-gradient(135deg, hsl(262 50% 12%) 0%, hsl(262 70% 55% / 0.20) 100%);
+  border-color: hsl(262 70% 60% / 0.30);
 }
 
 .glass-card:hover,

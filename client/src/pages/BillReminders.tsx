@@ -140,7 +140,7 @@ export default function BillReminders() {
               <p className="text-white/85 mt-1">Track upcoming bills and never miss a payment</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => detectMutation.mutate()} disabled={detectMutation.isPending} data-testid="button-auto-detect">
+              <Button variant="outline" className="bg-white/10 text-white [--button-outline:#ffffff4d]" onClick={() => detectMutation.mutate()} disabled={detectMutation.isPending} data-testid="button-auto-detect">
                 {detectMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2" />}
                 Auto-Detect Bills
               </Button>

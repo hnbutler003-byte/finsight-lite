@@ -103,7 +103,7 @@ function Eyebrow({ children, onCard = false }: { children: ReactNode; onCard?: b
   return (
     <span
       className={`inline-block font-display font-bold text-xs uppercase tracking-[0.12em] mb-3.5 ${
-        onCard ? "text-amber-600 dark:text-amber-300" : "text-amber-300"
+        onCard ? "text-amber-700 dark:text-amber-300" : "text-amber-300"
       }`}
     >
       {children}
@@ -293,7 +293,7 @@ export default function OurStory() {
         {/* FOR TEACHERS */}
         <section className="max-w-2xl mx-auto px-6 py-10 sm:py-14">
           <Reveal>
-            <div className="glass-card-teal p-8 sm:p-10">
+            <div className="glass-card-light p-8 sm:p-10 pt-12 sm:pt-14">
               <Eyebrow onCard>For teachers</Eyebrow>
               <h3 className="font-display font-bold text-foreground text-xl sm:text-2xl mb-2.5">
                 Built to fit your classroom, not replace it.

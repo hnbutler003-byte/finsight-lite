@@ -107,7 +107,7 @@ export default function Transactions() {
             <div className="flex gap-2">
                <DropdownMenu>
                  <DropdownMenuTrigger asChild>
-                   <Button variant="outline" className="gap-2">
+                   <Button variant="outline" className="gap-2 bg-white/10 text-white [--button-outline:#ffffff4d]">
                      <Download className="w-4 h-4" />
                      Export
                    </Button>
