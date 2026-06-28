@@ -2,12 +2,12 @@ import { TeacherSidebar } from "@/components/layout/TeacherSidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useTeacherAuth } from "@/hooks/use-teacher-auth";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import {
-  Users, BookOpen, Plus, Copy, Check, Loader2, Trophy, BarChart3,
-  GraduationCap, ArrowRight, Sparkles, X, CheckCircle2, Circle
+  Users, BookOpen, Plus, Copy, Check, Loader2, Trophy,
+  ArrowRight, Sparkles, X, CheckCircle2, Circle, BookMarked, FlaskConical,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -139,21 +139,85 @@ function ClassCard({ cls }: { cls: ClassItem }) {
   );
 }
 
+function QuickLinksWidget({ onLessonsClick }: { onLessonsClick: () => void }) {
+  const links = [
+    {
+      href: "/lessons",
+      label: "Lessons library",
+      description: "Browse curated learning content",
+      icon: BookMarked,
+      iconBg: "bg-teal-100 dark:bg-teal-900/30",
+      iconColor: "text-teal-600 dark:text-teal-400",
+      onClick: onLessonsClick,
+      testId: "lessons",
+    },
+    {
+      href: "/moneylab/upload",
+      label: "MoneyLab Upload",
+      description: "AI quiz generator for exam papers",
+      icon: FlaskConical,
+      iconBg: "bg-emerald-100 dark:bg-emerald-900/30",
+      iconColor: "text-emerald-600 dark:text-emerald-400",
+      onClick: undefined as (() => void) | undefined,
+      testId: "moneylab-upload",
+    },
+  ];
+
+  return (
+    <Card className="glass-card rounded-glass" data-testid="card-quick-links">
+      <CardContent className="p-5 space-y-3">
+        <p className="font-display font-bold text-sm">Quick links</p>
+        <div className="space-y-2">
+          {links.map(link => (
+            <Link key={link.href} href={link.href} onClick={link.onClick}>
+              <div
+                className="hover-elevate flex items-center gap-3 p-3 rounded-2xl border border-border hover:border-teal-300 dark:hover:border-teal-700 transition-colors cursor-pointer group"
+                data-testid={`link-quick-${link.testId}`}
+              >
+                <div className={`w-9 h-9 rounded-xl ${link.iconBg} flex items-center justify-center shrink-0`}>
+                  <link.icon className={`w-4 h-4 ${link.iconColor}`} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-sans text-sm font-bold text-foreground leading-snug">{link.label}</p>
+                  <p className="font-sans text-xs text-muted-foreground">{link.description}</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
+              </div>
+            </Link>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function TeacherDashboard() {
   const { teacher, isLoading: authLoading } = useTeacherAuth();
   const [location, setLocation] = useLocation();
   const [showCreate, setShowCreate] = useState(false);
   const [checklistDismissed, setChecklistDismissed] = useState(false);
+  const [lessonsExplored, setLessonsExplored] = useState(false);
 
   const isClassesView = location === "/teacher/classes";
 
+  const dismissKey = teacher ? `teacher_checklist_dismissed_${teacher.id}` : null;
+  const lessonsKey = teacher ? `teacher_lessons_explored_${teacher.id}` : null;
+
   useEffect(() => {
-    setChecklistDismissed(localStorage.getItem("teacher_checklist_dismissed") === "true");
-  }, []);
+    if (dismissKey) setChecklistDismissed(localStorage.getItem(dismissKey) === "true");
+    if (lessonsKey) setLessonsExplored(localStorage.getItem(lessonsKey) === "true");
+  }, [dismissKey, lessonsKey]);
 
   const dismissChecklist = () => {
-    localStorage.setItem("teacher_checklist_dismissed", "true");
+    if (dismissKey) localStorage.setItem(dismissKey, "true");
     setChecklistDismissed(true);
+  };
+
+  const markLessonsExplored = () => {
+    if (lessonsKey) {
+      localStorage.setItem(lessonsKey, "true");
+      setLessonsExplored(true);
+    }
   };
 
   const { data: classes, isLoading } = useQuery<ClassItem[]>({
@@ -161,6 +225,31 @@ export default function TeacherDashboard() {
     queryFn: () => fetch("/api/teacher/classes", { credentials: "include" }).then(r => r.json()),
     enabled: !!teacher,
   });
+
+  const { data: allChallenges } = useQuery<unknown[]>({
+    queryKey: ["/api/teacher/challenges"],
+    queryFn: () => fetch("/api/teacher/challenges", { credentials: "include" }).then(r => r.json()),
+    enabled: !!teacher,
+    select: (data: unknown) => Array.isArray(data) ? data as unknown[] : [],
+  });
+  const hasChallenges = (allChallenges?.length ?? 0) > 0;
+
+  const totalStudents = classes?.reduce((s, c) => s + c.enrollmentCount, 0) ?? 0;
+
+  const checklistItems = [
+    { label: "Create your first class", done: (classes?.length ?? 0) > 0 },
+    { label: "Add students to a class", done: totalStudents > 0 },
+    { label: "Post a challenge or quiz", done: hasChallenges },
+    { label: "Explore the lesson library", done: lessonsExplored },
+  ];
+  const allChecklistComplete = checklistItems.every(item => item.done);
+
+  useEffect(() => {
+    if (allChecklistComplete && !checklistDismissed && dismissKey) {
+      const timer = setTimeout(dismissChecklist, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [allChecklistComplete, checklistDismissed]);
 
   if (authLoading) {
     return (
@@ -175,7 +264,6 @@ export default function TeacherDashboard() {
     return null;
   }
 
-  const totalStudents = classes?.reduce((s, c) => s + c.enrollmentCount, 0) ?? 0;
   const displayedClasses = isClassesView ? (classes ?? []) : (classes?.slice(0, 2) ?? []);
   const hasMoreClasses = !isClassesView && (classes?.length ?? 0) > 2;
 
@@ -214,20 +302,26 @@ export default function TeacherDashboard() {
             </Button>
           </div>
 
-          {/* DASHBOARD ONLY: getting started checklist */}
-          {!isClassesView && !checklistDismissed && (
-            <Card className="glass-card rounded-glass border border-emerald-200 dark:border-emerald-800/50" data-testid="card-teacher-onboarding-checklist">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <p className="font-display font-bold text-sm mb-3">Getting started</p>
+          {/* DASHBOARD ONLY: getting started checklist + quick links side by side */}
+          {!isClassesView && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+              {/* Getting Started checklist */}
+              {!checklistDismissed && (
+                <Card className="glass-card rounded-glass border border-emerald-200 dark:border-emerald-800/50" data-testid="card-teacher-onboarding-checklist">
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <p className="font-display font-bold text-sm">Getting started</p>
+                      <button
+                        onClick={dismissChecklist}
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0 flex items-center gap-1"
+                        data-testid="button-dismiss-teacher-checklist"
+                      >
+                        <X className="w-3 h-3" />
+                        Skip for now
+                      </button>
+                    </div>
                     <div className="space-y-2">
-                      {[
-                        { label: "Create your first class", done: (classes?.length ?? 0) > 0 },
-                        { label: "Add students to a class", done: totalStudents > 0 },
-                        { label: "Post a challenge or quiz", done: false },
-                        { label: "Explore the lesson library", done: false },
-                      ].map(item => (
+                      {checklistItems.map(item => (
                         <div key={item.label} className="flex items-center gap-2.5">
                           {item.done
                             ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
@@ -236,18 +330,15 @@ export default function TeacherDashboard() {
                         </div>
                       ))}
                     </div>
-                  </div>
-                  <button
-                    onClick={dismissChecklist}
-                    className="text-muted-foreground hover:text-foreground transition-colors mt-0.5 shrink-0"
-                    data-testid="button-dismiss-teacher-checklist"
-                    title="Dismiss checklist"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Quick Links: beside checklist when visible, constrained when alone */}
+              <div className={checklistDismissed ? "max-w-sm" : ""}>
+                <QuickLinksWidget onLessonsClick={markLessonsExplored} />
+              </div>
+            </div>
           )}
 
           {/* DASHBOARD ONLY: stats overview */}
@@ -256,7 +347,7 @@ export default function TeacherDashboard() {
               {[
                 { label: "Total Classes", value: classes?.length ?? 0, icon: BookOpen, color: "emerald" },
                 { label: "Total Students", value: totalStudents, icon: Users, color: "blue" },
-                { label: "Active Challenges", value: "0", icon: Trophy, color: "amber" },
+                { label: "Active Challenges", value: allChallenges?.length ?? 0, icon: Trophy, color: "amber" },
               ].map(stat => (
                 <Card key={stat.label} className="glass-card rounded-glass">
                   <CardContent className="p-6 flex items-center gap-4">

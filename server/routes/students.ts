@@ -1231,6 +1231,17 @@ Rules:
     res.json({ ok: true });
   });
 
+  app.get("/api/teacher/challenges", isTeacher, async (req: any, res) => {
+    try {
+      const teacherClasses = await storage.getClassesByTeacher(req.session.teacherId);
+      if (!teacherClasses.length) return res.json([]);
+      const byClass = await Promise.all(teacherClasses.map(c => storage.getChallengesByClass(c.id)));
+      res.json(byClass.flat());
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
   // === TEACHER NOTIFICATION ROUTES ===
   app.get("/api/teacher/classes/:id/notifications", isTeacher, async (req: any, res) => {
     const id = parseInt(req.params.id);
