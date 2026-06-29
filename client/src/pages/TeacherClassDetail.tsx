@@ -11,7 +11,7 @@ import {
   ArrowLeft, Users, Trophy, Bell, BarChart3, Loader2, Copy, Check,
   Download, Trash2, Plus, Medal, Star, BookOpen, Gamepad2, Zap, Target,
   Send, Crown, TrendingUp, AlertCircle, Sparkles, BookMarked, GraduationCap, Clock,
-  MessageSquarePlus, PiggyBank
+  MessageSquarePlus, PiggyBank, Briefcase
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -303,6 +303,12 @@ export default function TeacherClassDetail() {
   const { data: analytics, isLoading: analyticsLoading } = useQuery<any>({
     queryKey: [`/api/teacher/classes/${classId}/analytics`],
     queryFn: () => fetch(`/api/teacher/classes/${classId}/analytics`, { credentials: "include" }).then(r => r.json()),
+    enabled: !!teacher && activeTab === "analytics",
+  });
+
+  const { data: investData, isLoading: investLoading } = useQuery<any>({
+    queryKey: [`/api/teacher/classes/${classId}/investment-analytics`],
+    queryFn: () => fetch(`/api/teacher/classes/${classId}/investment-analytics`, { credentials: "include" }).then(r => r.json()),
     enabled: !!teacher && activeTab === "analytics",
   });
 
@@ -720,6 +726,68 @@ export default function TeacherClassDetail() {
                     </Card>
                   )}
                 </>
+              )}
+
+              {/* Investment Simulator Analytics */}
+              {investLoading && (
+                <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-emerald-500" /></div>
+              )}
+              {!investLoading && investData && investData.totalStudents > 0 && (
+                <div className="console space-y-0">
+                  <div className="console-card p-4 space-y-4">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                      <Briefcase className="w-3.5 h-3.5" />
+                      Investment Simulator
+                    </h3>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {[
+                        { label: "Students Invested", value: `${investData.invested}/${investData.totalStudents}` },
+                        { label: "Avg Stocks Held", value: investData.avgDistinctStocks },
+                        { label: "Well Diversified (3+)", value: String(investData.diversifiedCount) },
+                        { label: "Most Active Trader", value: investData.topTrader ? `${investData.topTrader.trades} trades` : "None yet" },
+                      ].map(m => (
+                        <div key={m.label} className="console-card p-3">
+                          <p className="console-mono text-base">{m.value}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{m.label}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {investData.rows.length > 0 && (
+                      <div>
+                        <div className="console-table-header grid grid-cols-5 px-3 py-2 text-xs">
+                          <span className="col-span-2">Student</span>
+                          <span className="text-right">Net Worth</span>
+                          <span className="text-right">Gain/Loss</span>
+                          <span className="text-right">Trades</span>
+                        </div>
+                        {investData.rows.slice(0, 12).map((row: any) => (
+                          <div
+                            key={row.studentId}
+                            className="console-row grid grid-cols-5 px-3 text-sm"
+                            data-testid={`row-invest-${row.studentId}`}
+                          >
+                            <span className="col-span-2 truncate">{row.name}</span>
+                            <span className="console-mono text-right">
+                              {parseFloat(row.netWorth).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </span>
+                            <span className={`console-mono text-right ${parseFloat(row.gainLoss) >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                              {parseFloat(row.gainLoss) >= 0 ? "+" : ""}{parseFloat(row.gainLoss).toFixed(0)} ({row.gainLossPct}%)
+                            </span>
+                            <span className="console-mono text-right">{row.trades}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {investData.invested === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-3">
+                        No students have traded yet. Portfolio activity will appear here once they do.
+                      </p>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           )}

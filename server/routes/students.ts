@@ -28,6 +28,7 @@ import {
   supabase,
 } from "../supabase";
 import { isTeacher } from "./auth";
+import { getStockExplainer } from "./investmentExplainer";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -917,8 +918,20 @@ Rules:
   app.get("/api/investments/market", isAuthenticated, async (req, res) => {
     try {
       const currency = req.query.currency as string | undefined;
+      await storage.simulateMarketPrices();
       const stocks = await storage.getMarketStocks(currency);
       res.json(stocks);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/investments/explainer/:stockId", isAuthenticated, async (req, res) => {
+    try {
+      const stockId = parseInt(req.params.stockId);
+      if (isNaN(stockId)) return res.status(400).json({ message: "Invalid stockId" });
+      const explanation = await getStockExplainer(stockId);
+      res.json({ explanation });
     } catch (err: any) {
       res.status(500).json({ message: err.message });
     }
@@ -1162,6 +1175,18 @@ Rules:
     if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
     const analytics = await storage.getClassAnalytics(id);
     res.json(analytics);
+  });
+
+  app.get("/api/teacher/classes/:id/investment-analytics", isTeacher, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const cls = await storage.getClassById(id);
+      if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+      const data = await storage.getClassInvestmentAnalytics(id);
+      res.json(data);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
   });
 
   app.get("/api/teacher/classes/:id/lessons", isTeacher, async (req: any, res) => {

@@ -12,7 +12,7 @@ import { useState } from "react";
 import {
   Loader2, BookOpen, TrendingUp, Briefcase, ShoppingCart, ArrowUpRight, ArrowDownRight,
   CheckCircle2, Shield, Scale, Coins, PiggyBank, GraduationCap,
-  ChevronRight, Wallet, History, AlertTriangle, ExternalLink
+  ChevronRight, Wallet, History, AlertTriangle, ExternalLink, Brain
 } from "lucide-react";
 
 // ── BISX Widget ────────────────────────────────────────────────────────────
@@ -176,6 +176,28 @@ const ICON_MAP: Record<string, any> = {
   Coins, PiggyBank, TrendingUp, Shield, Scale, Briefcase,
 };
 
+const STOCK_FUN_FACTS: Record<string, string> = {
+  "BTC-BS": "BTC has connected Bahamian families across 700 islands since the 1960s. When hurricane season ends without major damage, demand for data services typically rises.",
+  "CBL-BS": "Commonwealth Bank is one of the largest locally-owned banks in the Bahamas. It earns most of its income from mortgages and business loans to Bahamian households.",
+  "FCL-BS": "Focol Holdings is the Bahamas' largest fuel distributor. Its profits track closely with tourism levels: more visitors mean more fuel sold at resorts and marinas.",
+  "CAB-BS": "Cable Bahamas was the first company to bring broadband internet to the islands. It competes with mobile carriers for the same household and business budgets.",
+  "BGRS-5Y": "The Bahamas Government Registered Stock is backed by the full faith of the Bahamian government. Prices are stable but may shift slightly if global interest rates change.",
+  "BTB-91": "Treasury Bills are 91-day instruments used by governments worldwide to manage cash flow. They are among the safest short-term investments available.",
+  "JNBS-JM": "JN Bank traces its roots to 1874 as a building society helping Jamaicans save for homes. Today it is Jamaica's second-largest deposit-taking institution.",
+  "GK-JM": "GraceKennedy products are sold in over 50 countries. Their food brands are a staple in Caribbean households and diaspora communities in North America and the UK.",
+  "BOJ-IN": "Bank of Jamaica Investment Notes are short-term instruments used to manage liquidity in Jamaica's banking system, considered risk-free for domestic investors.",
+  "NCBFG-JM": "NCB Financial Group operates across 21 countries and is Jamaica's largest financial conglomerate. It benefits when Caribbean tourism and remittance flows increase.",
+  "SEP-JM": "Scotia Group Jamaica is part of the global Scotiabank network, giving it access to international capital markets. It serves over 500,000 Jamaican customers.",
+  "PROVEN-JM": "Proven Investments focuses on high-growth sectors like real estate and financial services. Its share price can swing more than other stocks when investor sentiment shifts.",
+  "RFHL-TT": "Republic Financial Holdings operates in 18 countries and is one of the Caribbean's most diversified banking groups. It benefits from T&T's oil and gas export revenues.",
+  "TCL-TT": "Trinidad Cement supplies building materials across the Caribbean. Construction activity picks up after storms or during government infrastructure spending cycles.",
+  "GOTT-10Y": "The T&T 10-year government bond pays a fixed rate for a decade. Longer bonds usually offer higher interest than shorter ones because your money is locked in longer.",
+  "SFC-BB": "Sagicor Financial is one of the Caribbean's largest insurers and investment managers, with roots going back to 1840 in Barbados.",
+  "BGD-BB": "Barbados Government Debentures are backed by the country's ability to collect taxes. They offer a stable alternative to equity investments.",
+  "ECHMB-XC": "The EC Home Mortgage Bank helps Eastern Caribbean families finance homes through member banks. It is backed by the governments of the OECS member states.",
+  "DBL-GY": "Demerara Bank operates in Guyana, whose economy is rapidly expanding due to offshore oil discoveries. Higher oil revenues tend to increase bank lending activity.",
+};
+
 function getSymbol(code: string) {
   return CURRENCIES.find(c => c.code === code)?.symbol || "$";
 }
@@ -234,6 +256,18 @@ export default function InvestmentSimulator() {
 
   const { data: progress } = useQuery<UserLearningProgress[]>({
     queryKey: ["/api/learn/progress"],
+  });
+
+  const { data: explainerData, isFetching: explainerFetching } = useQuery<{ explanation: string | null }>({
+    queryKey: ["/api/investments/explainer", selectedStock?.id],
+    queryFn: async () => {
+      if (!selectedStock?.id) return { explanation: null };
+      const res = await fetch(`/api/investments/explainer/${selectedStock.id}`, { credentials: "include" });
+      if (!res.ok) return { explanation: null };
+      return res.json();
+    },
+    enabled: buyDialogOpen && !!selectedStock?.id,
+    staleTime: 1000 * 60 * 10,
   });
 
   const buyMutation = useMutation({
@@ -770,6 +804,32 @@ export default function InvestmentSimulator() {
                   )}
                 </div>
 
+                {/* AI price-movement explainer */}
+                {(explainerFetching || explainerData?.explanation) && (
+                  <div className="rounded-xl border border-blue-200 dark:border-blue-800/60 bg-blue-50 dark:bg-blue-950/30 p-3 space-y-1.5" data-testid="section-explainer">
+                    <p className="text-xs font-bold text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
+                      <Brain className="w-3.5 h-3.5" />
+                      Why this moved today
+                    </p>
+                    {explainerFetching ? (
+                      <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Generating explanation...
+                      </div>
+                    ) : (
+                      <p className="text-xs text-blue-800 dark:text-blue-300 leading-relaxed">{explainerData?.explanation}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Company snapshot / fun fact */}
+                {STOCK_FUN_FACTS[selectedStock.ticker] && (
+                  <div className="rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-1" data-testid="section-funfact">
+                    <p className="text-xs font-bold text-amber-700 dark:text-amber-400">Did you know?</p>
+                    <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">{STOCK_FUN_FACTS[selectedStock.ticker]}</p>
+                  </div>
+                )}
+
                 <div>
                   <label className="text-sm font-medium mb-1 block">How many do you want to buy?</label>
                   <div className="flex items-center gap-3">
@@ -892,17 +952,31 @@ function StockCard({ stock, onBuy }: { stock: SimulatedStock; onBuy: () => void 
     medium: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
     high: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   };
+  const changePct = parseFloat((stock.priceChangePct as string) ?? "0");
 
   return (
     <Card className="glass-card rounded-glass hover:shadow-lg transition-shadow" data-testid={`card-stock-${stock.id}`}>
       <CardContent className="p-5 space-y-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <Badge variant="outline" className="text-xs font-mono">{stock.ticker}</Badge>
               <Badge className={`text-xs ${riskColors[stock.riskLevel as keyof typeof riskColors]}`}>
                 {stock.riskLevel} risk
               </Badge>
+              {changePct !== 0 && (
+                <span
+                  className={`inline-flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded ${
+                    changePct > 0
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                  }`}
+                  data-testid={`badge-change-${stock.id}`}
+                >
+                  {changePct > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                  {changePct > 0 ? "+" : ""}{changePct.toFixed(2)}%
+                </span>
+              )}
             </div>
             <h4 className="font-semibold text-base leading-tight">{stock.name}</h4>
             {stock.issuer && (

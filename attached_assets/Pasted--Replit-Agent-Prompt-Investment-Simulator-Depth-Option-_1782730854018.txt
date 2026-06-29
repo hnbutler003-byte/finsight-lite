@@ -1,0 +1,89 @@
+# Replit Agent Prompt — Investment Simulator Depth (Option A)
+
+Paste this into Replit Agent as one prompt.
+
+-----
+
+## Goal
+
+Add real depth to the Investment Simulator without adding complexity to
+what a student sees on screen. Two required pieces, one optional.
+
+## 1. “Why this moved” explainer (student-facing, required)
+
+When a student views a stock whose price has changed since their last
+view (or on a refresh), show a short, AI-generated explanation of the
+move using claude-sonnet-4-6.
+
+Important: do not have the model claim a specific real-world cause for
+the price change (no fabricated news events, no “this happened because
+of X announcement”). The explanation should teach the general investing
+concept behind price movement using the actual direction and magnitude
+of the move, for example: “CBL is up 3% today. When more investors want
+to buy a stock than sell it, the price tends to rise. A 3% move in a day
+is fairly typical and not a sign of anything unusual happening at the
+company.” Keep it short, two to three sentences, age-appropriate for
+12 to 17, sentence case, no exclamation points stacked on top of each
+other.
+
+This should use the same AI infrastructure already powering the AI
+Tutor and AI Money Guide. Cache the explanation per stock per price
+point so it’s not regenerated on every page view, only when the price
+actually changes.
+
+This lives in the student app, so it follows the existing gamified
+branding (Baloo 2, glass cards, Caribbean palette), not the console
+tier.
+
+## 2. Teacher Dashboard investment analytics (required)
+
+Add a new section to the Teacher Dashboard showing investment behavior
+across the class, computed from existing simulator transaction data,
+no new data sources needed:
+
+- **Diversification** — how many distinct stocks the average student in
+  the class holds, and a simple breakdown of concentration (e.g., “60%
+  of students hold only 1 stock” vs “40% hold 3 or more”).
+- **Risk pattern** — how often students are trading (frequent trading
+  vs. buy-and-hold), and whether their holdings are concentrated in a
+  single stock or spread out.
+- **Decision quality** — portfolio value change over time per student,
+  shown as a simple distribution, not a leaderboard ranking that could
+  feel punitive.
+
+This is teacher-facing, so it follows the `.console` design tier
+established in the earlier restyle prompt: flat tables, hairline
+borders, monospace numbers, no coral, no gamified styling. Per the
+standing guide-sync rule, update the relevant section of
+`/docs/teacher-guide.md` to document this new dashboard section, since
+this changes teacher-facing UI.
+
+## 3. Company snapshot tags (optional, build last, easy to cut)
+
+For each of the six BISX-listed stocks in the simulator, add one short,
+factual line shown when a student selects that stock, something a
+student would find interesting, not a rating or score. Examples in
+spirit only, use real factual info about each actual listed company:
+“This company has been operating in the Bahamas for over 50 years,” or
+“This company is one of the largest local employers in its sector.”
+
+This is not an ESG scoring system and should not be framed as one, it’s
+a fun-fact layer, not a new curriculum concept. If this adds noticeable
+scope or doesn’t fit cleanly, skip it, it’s the lowest-priority item
+here.
+
+## Standing requirements
+
+- Any new database write function must throw a clear, catchable error
+  on failure, never silently return null/undefined/false.
+- Verify the new Teacher Dashboard section in both light and dark mode.
+- If this requires a fresh npm install, include the package-lock.json
+  proxy fix: `sed -i 's|http://package-firewall.replit.local/npm|https://registry.npmjs.org|g' package-lock.json`, then verify with grep (should return 0).
+- No em dashes in any user-facing copy this generates, in the app or in
+  the price-move explainer text. Use periods, commas, or conjunctions.
+- Use claude-sonnet-4-6 for the explainer generation, never the
+  deprecated claude-3-5-haiku-20241022.
+
+When done, report back: whether the company snapshot tags were
+included or skipped, confirmation the teacher guide was updated, and
+confirmation of light/dark mode verification.

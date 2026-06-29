@@ -1,0 +1,87 @@
+# Replit Agent Prompt — Finish Console Restyle + Verify Teacher Guide Details
+
+Paste this into Replit Agent as one prompt.
+
+-----
+
+## Context
+
+A previous session started the `.console` restyle (restrained, ed-tech
+look for Teacher and Org Admin portals, replacing the gamified student
+styling) but pivoted to a QA pass before finishing. That session’s own
+summary said: “The console CSS work is cosmetic and incomplete… note
+the outstanding styling work.” This prompt is to actually finish it,
+not just note it again.
+
+## Part 1: Finish the console restyle
+
+Audit every page below against the `.console` rules already defined in
+index.css (no coral, no student avatar icons, XP and streaks as plain
+mono numbers, Baloo 2 only on page H1, flat tables not glass cards, no
+ambient animation, no caribbean-bg gradient on working pages). For each
+one, confirm whether `.console` styling was actually applied, and finish
+it if not:
+
+**Org Admin portal:**
+
+- Dashboard, Students page, Lessons page (list, both states, create flow
+  steps 1 and 2, expanded detail view), Help Center page
+
+**Teacher portal:**
+
+- Teacher Dashboard, My Classes (and per-class detail view), content
+  upload flow, YouTube linking flow, per-student savings-goal view,
+  early-warning flags, Help Center page
+
+**Shared:**
+
+- Founder’s Preview As mode (teacher and org admin views)
+- Admin help chat widget styling
+
+Do not move to Part 2 until you’ve actually visually confirmed each one
+with a Playwright screenshot, light and dark mode, not just a code
+review. If a previous session already styled something correctly,
+verifying it takes seconds, don’t skip the check just because it might
+already be done.
+
+## Part 2: Extract verified teacher portal details
+
+While reading through the teacher portal pages above, record the exact,
+real details for each of these (no placeholders, no guessing):
+
+- The exact URL/route for teacher login and the teacher dashboard
+- The precise distinction between what Teacher Dashboard shows versus
+  what My Classes shows (confirm this matches the fix from the
+  duplicate-view bug, and describe it in plain terms a teacher would
+  understand)
+- The exact steps and UI labels for: uploading teacher content, linking
+  an external YouTube video to a class, viewing per-student savings goal
+  progress, and how early-warning flags for disengaged students are
+  displayed (what triggers one, what it looks like)
+- Whether teachers see anything related to the AI Tutor auto-routing
+  (is it visible to them at all, or fully invisible/automatic from their
+  side)
+- Any teacher-facing reference to the AI Money Guide chatbot, if any
+
+Update `/docs/teacher-guide.md` directly with these real details,
+replacing every `[verify]` placeholder currently in that file. Do not
+leave any placeholder text in the final version.
+
+## Standing requirements
+
+- Verify every restyled component in both light and dark mode.
+- No em dashes anywhere this touches, code comments, strings, or the
+  teacher-guide.md content. Use periods, commas, or conjunctions.
+- Any new database write function must throw a clear, catchable error
+  on failure, never silently return null/undefined/false.
+
+## When done, report back
+
+- Confirmation, page by page, that `.console` styling is now fully
+  applied and visually verified (not just present in code)
+- The exact teacher portal details gathered for Part 2, written out
+  plainly so they can be used to finalize the teacher guide document
+- Flag anything that’s ambiguous or inconsistent rather than guessing
+
+**Do not run the screenshot capture script from the guide-pipeline
+prompt until this entire prompt is complete and confirmed.**

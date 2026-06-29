@@ -92,6 +92,7 @@ export interface IStorage extends IAuthStorage {
   // Investment simulation
   getMarketStocks(currency?: string): Promise<SimulatedStock[]>;
   getStockById(id: number): Promise<SimulatedStock | undefined>;
+  simulateMarketPrices(): Promise<void>;
   getPortfolioHoldings(userId: string): Promise<(PortfolioHolding & { stock: SimulatedStock })[]>;
   getPortfolioHolding(userId: string, stockId: number): Promise<PortfolioHolding | undefined>;
   upsertPortfolioHolding(userId: string, stockId: number, quantity: number, avgPrice: number): Promise<PortfolioHolding>;
@@ -156,6 +157,7 @@ export interface IStorage extends IAuthStorage {
   logDeletion(data: InsertDeletionLog): Promise<void>;
   getClassLeaderboard(classId: number): Promise<any[]>;
   getClassAnalytics(classId: number): Promise<any>;
+  getClassInvestmentAnalytics(classId: number): Promise<any>;
 
   // Org Admin
   createOrgAdmin(data: InsertOrgAdmin & { passwordHash?: string | null }): Promise<OrgAdmin>;
@@ -428,6 +430,35 @@ export class DatabaseStorage implements IStorage {
   async getStockById(id: number): Promise<SimulatedStock | undefined> {
     const [stock] = await db.select().from(simulatedStocks).where(eq(simulatedStocks.id, id));
     return stock;
+  }
+
+  async simulateMarketPrices(): Promise<void> {
+    const today = new Date().toISOString().slice(0, 10);
+    const stocks = await db.select().from(simulatedStocks);
+    const needsUpdate = stocks.some(s => s.lastPriceUpdateDate !== today);
+    if (!needsUpdate) return;
+
+    for (const stock of stocks) {
+      if (stock.lastPriceUpdateDate === today) continue;
+      const current = parseFloat(stock.currentPrice as string);
+
+      let maxPct: number;
+      if (stock.riskLevel === "low") maxPct = 0.4;
+      else if (stock.riskLevel === "medium") maxPct = 1.8;
+      else maxPct = 3.2;
+
+      const rawChange = (Math.random() * 2 - 1) * maxPct;
+      const newPrice = Math.max(0.01, current * (1 + rawChange / 100));
+
+      await db.update(simulatedStocks)
+        .set({
+          previousPrice: stock.currentPrice,
+          currentPrice: newPrice.toFixed(2),
+          priceChangePct: rawChange.toFixed(2),
+          lastPriceUpdateDate: today,
+        })
+        .where(eq(simulatedStocks.id, stock.id));
+    }
   }
 
   async getPortfolioHoldings(userId: string): Promise<(PortfolioHolding & { stock: SimulatedStock })[]> {
@@ -1143,6 +1174,87 @@ export class DatabaseStorage implements IStorage {
     const topStudents = [...students].sort((a: any, b: any) => b.xp - a.xp).slice(0, 3);
     const engagementRate = students.length > 0 ? Math.round((students.filter((s: any) => s.gamesPlayed > 0).length / students.length) * 100) : 0;
     return { avgScore, avgLessons, totalStudents: students.length, topStudents, engagementRate, totalGames: summary.totalGames };
+  }
+
+  async getClassInvestmentAnalytics(classId: number): Promise<any> {
+    const enrollments = await db.select().from(classEnrollments)
+      .where(eq(classEnrollments.classId, classId));
+
+    if (enrollments.length === 0) {
+      return { totalStudents: 0, invested: 0, avgDistinctStocks: "0", diversifiedCount: 0, topTrader: null, rows: [] };
+    }
+
+    const studentIds = enrollments.map(e => e.studentId);
+
+    const [holdingRows, txRows, balanceRows, userRows] = await Promise.all([
+      db.select({ holding: portfolioHoldings, stock: simulatedStocks })
+        .from(portfolioHoldings)
+        .innerJoin(simulatedStocks, eq(portfolioHoldings.stockId, simulatedStocks.id))
+        .where(inArray(portfolioHoldings.userId, studentIds)),
+      db.select().from(portfolioTransactions)
+        .where(inArray(portfolioTransactions.userId, studentIds)),
+      db.select().from(userVirtualBalance)
+        .where(inArray(userVirtualBalance.userId, studentIds)),
+      db.select({ id: users.id, firstName: users.firstName })
+        .from(users)
+        .where(inArray(users.id, studentIds)),
+    ]);
+
+    const rows = studentIds.map(studentId => {
+      const myHoldings = holdingRows.filter(h => h.holding.userId === studentId);
+      const myTx = txRows.filter(t => t.userId === studentId);
+      const bal = balanceRows.find(b => b.userId === studentId);
+      const usr = userRows.find(u => u.id === studentId);
+
+      const distinctStocks = new Set(myHoldings.map(h => h.holding.stockId)).size;
+      const portfolioValue = myHoldings.reduce(
+        (sum, h) => sum + h.holding.quantity * parseFloat(h.stock.currentPrice as string), 0,
+      );
+      const virtualBalance = bal ? parseFloat(bal.balance as string) : 10000;
+      const netWorth = virtualBalance + portfolioValue;
+      const gainLoss = netWorth - 10000;
+      const gainLossPct = ((gainLoss / 10000) * 100).toFixed(1);
+
+      const highRiskValue = myHoldings
+        .filter(h => h.stock.riskLevel === "high")
+        .reduce((sum, h) => sum + h.holding.quantity * parseFloat(h.stock.currentPrice as string), 0);
+      const riskPct = portfolioValue > 0 ? Math.round((highRiskValue / portfolioValue) * 100) : 0;
+
+      const trades = myTx.length;
+      const buys = myTx.filter(t => t.type === "buy").length;
+      const sells = myTx.filter(t => t.type === "sell").length;
+
+      return {
+        studentId,
+        name: usr?.firstName ?? "Student",
+        distinctStocks,
+        portfolioValue: portfolioValue.toFixed(2),
+        netWorth: netWorth.toFixed(2),
+        gainLoss: gainLoss.toFixed(2),
+        gainLossPct,
+        riskPct,
+        trades,
+        buys,
+        sells,
+        isInvested: distinctStocks > 0,
+      };
+    });
+
+    const investedRows = rows.filter(r => r.isInvested);
+    const avgDistinctStocks = investedRows.length > 0
+      ? (investedRows.reduce((s, r) => s + r.distinctStocks, 0) / investedRows.length).toFixed(1)
+      : "0";
+    const diversifiedCount = rows.filter(r => r.distinctStocks >= 3).length;
+    const topTrader = [...rows].sort((a, b) => b.trades - a.trades)[0];
+
+    return {
+      totalStudents: studentIds.length,
+      invested: investedRows.length,
+      avgDistinctStocks,
+      diversifiedCount,
+      topTrader: topTrader && topTrader.trades > 0 ? topTrader : null,
+      rows: rows.sort((a, b) => parseFloat(b.netWorth) - parseFloat(a.netWorth)),
+    };
   }
 
   // === ADMIN METHODS ===
