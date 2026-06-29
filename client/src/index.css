@@ -633,3 +633,85 @@
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
 }
+
+/* ── 15. CONSOLE TIER (Teacher & Org Admin portal surfaces) ─ */
+/*
+   Apply the .console class to the outermost layout div in any
+   teacher or org-admin page. All tokens below reference existing
+   CSS variables so light/dark mode adapts automatically.
+*/
+.console {
+  background: hsl(var(--background));
+}
+
+/* Reset headings inside .console to Nunito; only h1 (page title) keeps Baloo 2 */
+.console h2,
+.console h3,
+.console h4,
+.console h5,
+.console h6 {
+  font-family: var(--font-body);
+  font-weight: 700;
+}
+
+.console .console-card {
+  background: hsl(var(--card));
+  border: 0.5px solid var(--card-border);
+  border-radius: 10px;
+  box-shadow: none;
+  color: hsl(var(--card-foreground));
+}
+
+.console .console-row {
+  border-top: 0.5px solid hsl(var(--border));
+  padding: 12px 16px;
+}
+
+.console .console-row:first-child {
+  border-top: none;
+}
+
+.console .console-card.border-dashed {
+  border-style: dashed;
+}
+
+.console .console-table-header {
+  background: hsl(var(--muted));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Works on both <div class="console-table-header"> and <thead class="console-table-header"> */
+.console thead.console-table-header th {
+  background: hsl(var(--muted));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.console .console-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: hsl(var(--accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+  color: hsl(var(--accent-foreground));
+  flex-shrink: 0;
+}
+
+.console .console-mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: hsl(var(--foreground));
+}

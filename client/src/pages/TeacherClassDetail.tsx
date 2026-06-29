@@ -53,20 +53,21 @@ type FeedbackItem = { id: number; message: string; createdAt: string; teacherNam
 
 function StudentRow({ s, onSelect }: { s: StudentData; onSelect: (s: StudentData) => void }) {
   const pct = Math.round((s.lessonsCompleted / s.totalLessons) * 100);
+  const initials = s.name.trim().split(/\s+/).map((p: string) => p[0]?.toUpperCase() ?? "").slice(0, 2).join("");
   return (
     <button
       onClick={() => onSelect(s)}
-      className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 hover:border-emerald-300 dark:hover:border-emerald-700 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 transition-all text-left group"
+      className="w-full flex items-center gap-4 console-row hover:bg-muted/30 transition-colors text-left group"
       data-testid={`button-student-${s.id}`}
     >
-      <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-xl shrink-0">
-        {AVATAR_MAP[s.avatar] || "🧑‍🎓"}
+      <div className="console-avatar">
+        {initials}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-bold text-sm">{s.name}</p>
           <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-lg font-bold">Lv {s.level}</span>
-          {s.streak > 0 && <span className="text-xs text-amber-600 font-bold">🔥 {s.streak}</span>}
+          {s.streak > 0 && <span className="text-xs text-muted-foreground">{s.streak}d</span>}
         </div>
         <div className="mt-1.5 h-1.5 rounded-full bg-muted overflow-hidden w-full max-w-[200px]">
           <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
@@ -437,7 +438,7 @@ export default function TeacherClassDetail() {
               {progressLoading ? (
                 <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>
               ) : !progress?.students.length ? (
-                <Card className="glass-card rounded-glass border-dashed">
+                <Card className="console-card border border-dashed border-border">
                   <CardContent className="p-10 text-center space-y-2">
                     <Users className="w-10 h-10 mx-auto text-muted-foreground" />
                     <p className="font-bold">No students yet</p>
@@ -452,7 +453,7 @@ export default function TeacherClassDetail() {
                       { label: "Avg XP", value: progress.avgXp, icon: Zap },
                       { label: "Total Games", value: progress.totalGames, icon: Gamepad2 },
                     ].map(s => (
-                      <Card key={s.label} className="glass-card rounded-glass">
+                      <Card key={s.label} className="console-card">
                         <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-3 text-center sm:text-left">
                           <s.icon className="w-5 h-5 text-emerald-500 shrink-0" />
                           <div>
@@ -476,7 +477,7 @@ export default function TeacherClassDetail() {
               {lbLoading ? (
                 <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>
               ) : !leaderboard?.length ? (
-                <Card className="glass-card rounded-glass border-dashed">
+                <Card className="console-card border border-dashed border-border">
                   <CardContent className="p-10 text-center">
                     <Trophy className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
                     <p className="font-bold">No students on the leaderboard yet</p>
@@ -730,7 +731,7 @@ export default function TeacherClassDetail() {
         open={!!selectedStudent}
         onOpenChange={(open) => { if (!open) { setSelectedStudent(null); setFeedbackMessage(""); } }}
       >
-        <DialogContent className="max-w-lg glass-card rounded-glass border-0 p-0 overflow-hidden">
+        <DialogContent className="max-w-lg console-card border-0 p-0 overflow-hidden">
           <DialogHeader className="p-6 pb-0">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-2xl shrink-0">

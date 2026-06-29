@@ -197,7 +197,7 @@ export default function OrgDashboard() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background console">
       <OrgSidebar />
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto space-y-8">
@@ -271,7 +271,7 @@ export default function OrgDashboard() {
           )}
 
           {orgSummary?.summary && (
-            <Card className="glass-card-teal rounded-glass" data-testid="card-ai-summary">
+            <Card className="console-card border border-teal-200 dark:border-teal-800" data-testid="card-ai-summary">
               <CardContent className="p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <Sparkles className="w-4 h-4 text-white/80" />

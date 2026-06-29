@@ -179,7 +179,7 @@ export default function OrgBranding() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background console">
       <OrgSidebar />
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-3xl mx-auto space-y-6">
@@ -197,12 +197,12 @@ export default function OrgBranding() {
             <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>
           ) : (
             <>
-              <Card className="glass-card rounded-glass">
+              <Card className="console-card">
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <Award className="w-5 h-5 text-amber-600" />
-                      <h3 className="font-display font-bold text-lg">Live Certificate Preview</h3>
+                      <h3 className="font-bold text-lg">Live Certificate Preview</h3>
                     </div>
                     {previewLoading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
                   </div>
@@ -230,11 +230,11 @@ export default function OrgBranding() {
                 </CardContent>
               </Card>
 
-              <Card className="glass-card rounded-glass">
+              <Card className="console-card">
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-center gap-3">
                     <ImageIcon className="w-5 h-5 text-blue-600" />
-                    <h3 className="font-display font-bold text-lg">Logo</h3>
+                    <h3 className="font-bold text-lg">Logo</h3>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Shown at the top of every certificate. PNG with transparent background works best. Max 5 MB.
@@ -295,9 +295,9 @@ export default function OrgBranding() {
                 </CardContent>
               </Card>
 
-              <Card className="glass-card rounded-glass">
+              <Card className="console-card">
                 <CardContent className="p-6 space-y-4">
-                  <h3 className="font-display font-bold text-lg">Signatures</h3>
+                  <h3 className="font-bold text-lg">Signatures</h3>
                   <p className="text-sm text-muted-foreground">
                     Two signature blocks appear at the bottom of each certificate. Leave blank to use defaults
                     ("{DEFAULT_LEFT_NAME}" / "{DEFAULT_RIGHT_NAME}").

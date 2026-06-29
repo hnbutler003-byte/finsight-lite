@@ -25,7 +25,7 @@ export function OrgSidebar() {
       <div className="flex items-center gap-3 mb-8 mt-2">
         <FinsightLiteLogo size={28} className="text-white shrink-0" data-testid="img-logo-org" />
         <div>
-          <p className="font-display font-bold text-sm leading-tight text-white">Org Admin</p>
+          <p className="font-bold text-sm leading-tight text-white">Org Admin</p>
           <p className="text-xs text-blue-100 font-medium truncate max-w-[120px]">{admin?.orgName || "Finsight Lite"}</p>
         </div>
       </div>

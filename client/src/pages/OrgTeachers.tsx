@@ -151,7 +151,7 @@ export default function OrgTeachers() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background console">
       <OrgSidebar />
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto space-y-8">
@@ -175,7 +175,7 @@ export default function OrgTeachers() {
                 <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
               </div>
             ) : teachers.length === 0 ? (
-              <Card className="glass-card rounded-glass">
+              <Card className="console-card">
                 <CardContent className="p-12 text-center">
                   <GraduationCap className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                   <p className="font-semibold text-muted-foreground">No teachers linked to this organisation yet.</p>
@@ -185,7 +185,7 @@ export default function OrgTeachers() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="glass-card rounded-glass overflow-hidden">
+              <Card className="console-card overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -316,7 +316,7 @@ export default function OrgTeachers() {
                 <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
               </div>
             ) : classes.length === 0 ? (
-              <Card className="glass-card rounded-glass">
+              <Card className="console-card">
                 <CardContent className="p-10 text-center">
                   <BookOpen className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
                   <p className="font-semibold text-muted-foreground">No classes yet</p>
@@ -326,7 +326,7 @@ export default function OrgTeachers() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="glass-card rounded-glass overflow-hidden">
+              <Card className="console-card overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -409,7 +409,7 @@ export default function OrgTeachers() {
           </div>
 
           {/* Notes card */}
-          <Card className="glass-card rounded-glass">
+          <Card className="console-card">
             <CardContent className="p-5 space-y-2 text-sm text-muted-foreground leading-relaxed">
               <p>
                 <span className="font-semibold text-foreground">Removing a teacher</span> revokes their access to this organisation's classes and data but does not delete their account; they can be linked to other organisations.{" "}

@@ -121,7 +121,7 @@ export default function OrgStudents() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background console">
       <OrgSidebar />
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto space-y-6">
@@ -153,10 +153,10 @@ export default function OrgStudents() {
               >
                 <Download className="w-4 h-4" /> Export CSV
               </Button>
-              <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/30 rounded-2xl px-4 py-2 border border-blue-100 dark:border-blue-800">
-                <Users className="w-4 h-4 text-blue-600" />
-                <span className="font-display font-bold text-lg text-blue-600" data-testid="text-student-count">{students?.length ?? 0}</span>
-                <span className="text-sm text-muted-foreground font-medium">enrolled</span>
+              <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-1.5">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <span className="console-mono font-bold text-foreground" data-testid="text-student-count">{students?.length ?? 0}</span>
+                <span className="text-sm text-muted-foreground">enrolled</span>
               </div>
             </div>
           </div>
@@ -187,13 +187,13 @@ export default function OrgStudents() {
           {isLoading ? (
             <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>
           ) : !students?.length ? (
-            <Card className="glass-card rounded-glass border-dashed">
+            <Card className="console-card border-dashed">
               <CardContent className="p-12 text-center space-y-4">
                 <div className="w-16 h-16 rounded-3xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto">
                   <Users className="w-8 h-8 text-blue-500" />
                 </div>
                 <div>
-                  <h3 className="font-display font-bold text-lg">No students yet</h3>
+                  <h3 className="font-bold text-lg">No students yet</h3>
                   <p className="text-muted-foreground text-sm mt-1">
                     Share your organization join code so students can enroll.
                   </p>
@@ -278,7 +278,7 @@ export default function OrgStudents() {
 
       {/* ── Purge Confirmation Dialog ── */}
       <Dialog open={!!confirmPurge} onOpenChange={(o) => { if (!o) setConfirmPurge(null); }}>
-        <DialogContent className="glass-card rounded-glass border-0">
+        <DialogContent className="console-card border-0">
           <DialogHeader>
             <DialogTitle className="text-foreground">Delete all data for {confirmPurge?.displayName}?</DialogTitle>
             <DialogDescription className="text-muted-foreground">

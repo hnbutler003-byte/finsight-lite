@@ -22,7 +22,7 @@ export function TeacherSidebar() {
       <div className="flex items-center gap-3 mb-8 mt-2">
         <FinsightLiteLogo size={28} className="text-white shrink-0" data-testid="img-logo-teacher" />
         <div>
-          <p className="font-display font-bold text-sm leading-tight text-white">Teacher Portal</p>
+          <p className="font-bold text-sm leading-tight text-white">Teacher Portal</p>
         </div>
       </div>
 

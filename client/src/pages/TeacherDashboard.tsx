@@ -46,39 +46,39 @@ function CreateClassModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <Card className="rounded-3xl border-2 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+      <Card className="console-card w-full max-w-md shadow-md" onClick={e => e.stopPropagation()}>
         <CardContent className="p-8 space-y-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
               <Plus className="w-5 h-5 text-emerald-600" />
             </div>
-            <h2 className="font-display font-bold text-xl">Create a New Class</h2>
+            <h2 className="font-bold text-xl">Create a New Class</h2>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-sm font-bold">Class Name</label>
               <input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 placeholder="e.g. Grade 7 Financial Literacy"
-                className="w-full rounded-2xl border-2 border-input bg-background px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400"
+                className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400"
                 data-testid="input-class-name" />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-bold">Subject</label>
               <input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
                 placeholder="Financial Literacy"
-                className="w-full rounded-2xl border-2 border-input bg-background px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400"
+                className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400"
                 data-testid="input-class-subject" />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-bold">Sponsor (optional)</label>
               <input value={form.sponsorName} onChange={e => setForm(f => ({ ...f, sponsorName: e.target.value }))}
                 placeholder="e.g. Commonwealth Bank"
-                className="w-full rounded-2xl border-2 border-input bg-background px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400"
+                className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400"
                 data-testid="input-class-sponsor" />
             </div>
             <div className="flex gap-3 pt-2">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1 rounded-2xl">Cancel</Button>
-              <Button type="submit" disabled={loading} className="flex-1 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700" data-testid="button-create-class-confirm">
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1 rounded-lg">Cancel</Button>
+              <Button type="submit" disabled={loading} className="flex-1 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700" data-testid="button-create-class-confirm">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Class"}
               </Button>
             </div>
@@ -101,23 +101,23 @@ function ClassCard({ cls }: { cls: ClassItem }) {
 
   return (
     <Link href={`/teacher/classes/${cls.id}`}>
-      <Card className="glass-card rounded-glass hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-lg transition-all cursor-pointer group">
-        <CardContent className="p-6 space-y-4">
+      <Card className="console-card hover:border-emerald-200 dark:hover:border-emerald-800 hover:shadow-sm transition-all cursor-pointer group">
+        <CardContent className="p-5 space-y-4">
           <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <h3 className="font-display font-bold text-lg group-hover:text-emerald-600 transition-colors">{cls.name}</h3>
-              <p className="text-sm text-muted-foreground font-medium">{cls.subject}</p>
+            <div className="space-y-0.5">
+              <h3 className="font-bold text-base group-hover:text-emerald-600 transition-colors">{cls.name}</h3>
+              <p className="text-sm text-muted-foreground">{cls.subject}</p>
             </div>
-            <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-emerald-600 group-hover:translate-x-1 transition-all mt-1" />
+            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-emerald-600 group-hover:translate-x-1 transition-all mt-0.5" />
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex-1 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl p-3 border border-emerald-100 dark:border-emerald-800">
-              <p className="text-xs text-muted-foreground font-medium mb-0.5">Class Code</p>
-              <p className="font-display font-bold text-xl tracking-widest text-emerald-600">{cls.code}</p>
+            <div className="flex-1 bg-muted rounded-lg p-3">
+              <p className="text-xs text-muted-foreground mb-0.5">Class Code</p>
+              <p className="console-mono font-bold tracking-widest text-emerald-600 dark:text-emerald-400">{cls.code}</p>
             </div>
-            <button onClick={copyCode} className="p-3 rounded-2xl border-2 border-emerald-100 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all" data-testid={`button-copy-code-${cls.id}`}>
-              {copied ? <Check className="w-5 h-5 text-emerald-600" /> : <Copy className="w-5 h-5 text-muted-foreground" />}
+            <button onClick={copyCode} className="p-3 rounded-lg border border-border hover:bg-muted transition-all" data-testid={`button-copy-code-${cls.id}`}>
+              {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
             </button>
           </div>
 
@@ -128,7 +128,7 @@ function ClassCard({ cls }: { cls: ClassItem }) {
             </div>
             {cls.sponsorName && (
               <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Sparkles className="w-4 h-4 text-amber-400" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                 <span className="text-xs font-medium">{cls.sponsorName}</span>
               </div>
             )}
@@ -164,22 +164,22 @@ function QuickLinksWidget({ onLessonsClick }: { onLessonsClick: () => void }) {
   ];
 
   return (
-    <Card className="glass-card rounded-glass" data-testid="card-quick-links">
+    <Card className="console-card" data-testid="card-quick-links">
       <CardContent className="p-5 space-y-3">
-        <p className="font-display font-bold text-sm">Quick links</p>
-        <div className="space-y-2">
+        <p className="font-bold text-sm text-foreground">Quick links</p>
+        <div className="space-y-1">
           {links.map(link => (
             <Link key={link.href} href={link.href} onClick={link.onClick}>
               <div
-                className="hover-elevate flex items-center gap-3 p-3 rounded-2xl border border-border hover:border-teal-300 dark:hover:border-teal-700 transition-colors cursor-pointer group"
+                className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-teal-300 dark:hover:border-teal-700 hover:bg-muted/30 transition-colors cursor-pointer group"
                 data-testid={`link-quick-${link.testId}`}
               >
-                <div className={`w-9 h-9 rounded-xl ${link.iconBg} flex items-center justify-center shrink-0`}>
+                <div className={`w-8 h-8 rounded-md ${link.iconBg} flex items-center justify-center shrink-0`}>
                   <link.icon className={`w-4 h-4 ${link.iconColor}`} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-sans text-sm font-bold text-foreground leading-snug">{link.label}</p>
-                  <p className="font-sans text-xs text-muted-foreground">{link.description}</p>
+                  <p className="text-sm font-semibold text-foreground leading-snug">{link.label}</p>
+                  <p className="text-xs text-muted-foreground">{link.description}</p>
                 </div>
                 <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
               </div>
@@ -268,14 +268,14 @@ export default function TeacherDashboard() {
   const hasMoreClasses = !isClassesView && (classes?.length ?? 0) > 2;
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background console">
       <TeacherSidebar />
       {showCreate && <CreateClassModal onClose={() => setShowCreate(false)} />}
 
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto space-y-8">
 
-          {/* PAGE HEADER: different title for Dashboard vs My Classes */}
+          {/* PAGE HEADER */}
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
               {isClassesView ? (
@@ -294,7 +294,7 @@ export default function TeacherDashboard() {
             </div>
             <Button
               onClick={() => setShowCreate(true)}
-              className="rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-lg px-6"
+              className="rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 px-5"
               data-testid="button-create-class"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -302,15 +302,14 @@ export default function TeacherDashboard() {
             </Button>
           </div>
 
-          {/* DASHBOARD ONLY: getting started checklist + quick links side by side */}
+          {/* DASHBOARD ONLY: getting started checklist + quick links */}
           {!isClassesView && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-              {/* Getting Started checklist */}
               {!checklistDismissed && (
-                <Card className="glass-card rounded-glass border border-emerald-200 dark:border-emerald-800/50" data-testid="card-teacher-onboarding-checklist">
+                <Card className="console-card border border-emerald-200 dark:border-emerald-800/50" data-testid="card-teacher-onboarding-checklist">
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between gap-3 mb-3">
-                      <p className="font-display font-bold text-sm">Getting started</p>
+                      <p className="font-bold text-sm text-foreground">Getting started</p>
                       <button
                         onClick={dismissChecklist}
                         className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0 flex items-center gap-1"
@@ -334,7 +333,6 @@ export default function TeacherDashboard() {
                 </Card>
               )}
 
-              {/* Quick Links: beside checklist when visible, constrained when alone */}
               <div className={checklistDismissed ? "max-w-sm" : ""}>
                 <QuickLinksWidget onLessonsClick={markLessonsExplored} />
               </div>
@@ -349,14 +347,14 @@ export default function TeacherDashboard() {
                 { label: "Total Students", value: totalStudents, icon: Users, color: "blue" },
                 { label: "Active Challenges", value: allChallenges?.length ?? 0, icon: Trophy, color: "amber" },
               ].map(stat => (
-                <Card key={stat.label} className="glass-card rounded-glass">
-                  <CardContent className="p-6 flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-2xl bg-${stat.color}-100 dark:bg-${stat.color}-900/30 flex items-center justify-center shrink-0`}>
-                      <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
+                <Card key={stat.label} className="console-card">
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-lg bg-${stat.color}-100 dark:bg-${stat.color}-900/30 flex items-center justify-center shrink-0`}>
+                      <stat.icon className={`w-5 h-5 text-${stat.color}-600 dark:text-${stat.color}-400`} />
                     </div>
                     <div>
-                      <p className="text-2xl font-display font-bold">{stat.value}</p>
-                      <p className="text-sm text-muted-foreground font-medium">{stat.label}</p>
+                      <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                      <p className="text-sm text-muted-foreground">{stat.label}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -364,11 +362,11 @@ export default function TeacherDashboard() {
             </div>
           )}
 
-          {/* CLASSES: dashboard shows first 2 with "See all" link; My Classes shows all */}
+          {/* CLASSES */}
           <div className="space-y-4">
             {!isClassesView && (
               <div className="flex items-center justify-between">
-                <h2 className="font-display font-bold text-xl">Your Classes</h2>
+                <h2 className="font-bold text-xl text-foreground">Your Classes</h2>
                 <Link
                   href="/teacher/classes"
                   className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold hover:underline flex items-center gap-1"
@@ -383,16 +381,16 @@ export default function TeacherDashboard() {
             {isLoading ? (
               <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>
             ) : !classes?.length ? (
-              <Card className="glass-card rounded-glass border-dashed">
+              <Card className="console-card border border-dashed border-border">
                 <CardContent className="p-12 text-center space-y-4">
-                  <div className="w-16 h-16 rounded-3xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto">
-                    <BookOpen className="w-8 h-8 text-emerald-500" />
+                  <div className="w-14 h-14 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto">
+                    <BookOpen className="w-7 h-7 text-emerald-500" />
                   </div>
                   <div>
-                    <h3 className="font-display font-bold text-lg">No classes yet</h3>
+                    <h3 className="font-bold text-base">No classes yet</h3>
                     <p className="text-muted-foreground text-sm mt-1">Create your first class to get started</p>
                   </div>
-                  <Button onClick={() => setShowCreate(true)} className="rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700" data-testid="button-create-first-class">
+                  <Button onClick={() => setShowCreate(true)} className="rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700" data-testid="button-create-first-class">
                     <Plus className="w-4 h-4 mr-2" /> Create First Class
                   </Button>
                 </CardContent>
