@@ -96,19 +96,19 @@ function StudentRow({ s, onSelect }: { s: StudentData; onSelect: (s: StudentData
       </div>
       <div className="hidden sm:flex items-center gap-4 text-xs text-muted-foreground shrink-0">
         <div className="text-center">
-          <p className="font-display font-bold text-base text-foreground">{s.xp}</p>
+          <p className="console-mono text-sm text-foreground">{s.xp}</p>
           <p>XP</p>
         </div>
         <div className="text-center">
-          <p className="font-display font-bold text-base text-foreground">{s.avgScore}%</p>
+          <p className="console-mono text-sm text-foreground">{s.avgScore}%</p>
           <p>Avg</p>
         </div>
         <div className="text-center">
-          <p className="font-display font-bold text-base text-foreground">{s.gamesPlayed}</p>
+          <p className="console-mono text-sm text-foreground">{s.gamesPlayed}</p>
           <p>Games</p>
         </div>
         <div className="text-center">
-          <p className="font-display font-bold text-base text-foreground">{s.badges}</p>
+          <p className="console-mono text-sm text-foreground">{s.badges}</p>
           <p>Badges</p>
         </div>
       </div>
@@ -384,7 +384,7 @@ export default function TeacherClassDetail() {
   const RANK_ICONS = ["🥇", "🥈", "🥉"];
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background console">
       <TeacherSidebar />
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto space-y-6">
@@ -400,7 +400,7 @@ export default function TeacherClassDetail() {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl px-4 py-2 border border-emerald-100 dark:border-emerald-800">
-                <span className="font-display font-bold text-lg tracking-widest text-emerald-600">{cls?.code}</span>
+                <span className="console-mono tracking-widest text-emerald-600">{cls?.code}</span>
                 <button onClick={copyCode} className="text-muted-foreground hover:text-emerald-600 p-1" data-testid="button-copy-code">
                   {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
                 </button>
@@ -463,7 +463,7 @@ export default function TeacherClassDetail() {
                         <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-3 text-center sm:text-left">
                           <s.icon className="w-5 h-5 text-emerald-500 shrink-0" />
                           <div>
-                            <p className="font-display font-bold text-lg leading-tight">{s.value}</p>
+                            <p className="console-mono text-base leading-tight">{s.value}</p>
                             <p className="text-xs text-muted-foreground font-medium leading-tight">{s.label}</p>
                           </div>
                         </CardContent>
@@ -502,7 +502,7 @@ export default function TeacherClassDetail() {
                         <p className="text-xs text-muted-foreground">Level {s.level}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="font-display font-bold text-lg text-emerald-600">{s.xp} XP</p>
+                        <p className="console-mono text-base text-emerald-600">{s.xp} XP</p>
                         <p className="text-xs text-muted-foreground">{s.badges} badge{s.badges !== 1 ? "s" : ""}</p>
                       </div>
                     </div>
@@ -525,7 +525,7 @@ export default function TeacherClassDetail() {
               {challLoading ? (
                 <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>
               ) : !challenges?.length ? (
-                <Card className="rounded-3xl border-2 border-dashed">
+                <Card className="console-card border-dashed">
                   <CardContent className="p-10 text-center space-y-2">
                     <Target className="w-10 h-10 mx-auto text-muted-foreground" />
                     <p className="font-bold">No challenges yet</p>
@@ -539,7 +539,7 @@ export default function TeacherClassDetail() {
                     const end = new Date(c.endDate);
                     const active = now <= end;
                     return (
-                      <Card key={c.id} className="rounded-2xl border-2">
+                      <Card key={c.id} className="console-card">
                         <CardContent className="p-5">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-start gap-3">
@@ -584,7 +584,7 @@ export default function TeacherClassDetail() {
               {notifLoading ? (
                 <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>
               ) : !notifications?.length ? (
-                <Card className="rounded-3xl border-2 border-dashed">
+                <Card className="console-card border-dashed">
                   <CardContent className="p-10 text-center space-y-2">
                     <Bell className="w-10 h-10 mx-auto text-muted-foreground" />
                     <p className="font-bold">No messages sent yet</p>
@@ -594,7 +594,7 @@ export default function TeacherClassDetail() {
               ) : (
                 <div className="space-y-3">
                   {notifications.map(n => (
-                    <Card key={n.id} className="rounded-2xl border-2">
+                    <Card key={n.id} className="console-card">
                       <CardContent className="p-5">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-start gap-3">
@@ -631,7 +631,7 @@ export default function TeacherClassDetail() {
               {lessonsLoading ? (
                 <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-teal-500" /></div>
               ) : orgLessons.length === 0 ? (
-                <Card className="rounded-3xl border-2 border-dashed">
+                <Card className="console-card border-dashed">
                   <CardContent className="p-10 text-center">
                     <BookOpen className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
                     <p className="font-bold">No lessons published yet</p>
@@ -641,7 +641,7 @@ export default function TeacherClassDetail() {
               ) : (
                 <div className="space-y-3">
                   {orgLessons.map((lesson: any) => (
-                    <Card key={lesson.id} className="rounded-2xl border-2" data-testid={`lesson-card-${lesson.id}`}>
+                    <Card key={lesson.id} className="console-card" data-testid={`lesson-card-${lesson.id}`}>
                       <CardContent className="p-4 flex items-center gap-4">
                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white shadow shrink-0">
                           <BookMarked className="w-6 h-6" />
@@ -682,16 +682,16 @@ export default function TeacherClassDetail() {
                       { label: "Engagement Rate", value: `${analytics.engagementRate}%`, icon: TrendingUp, color: "violet" },
                       { label: "Total Games", value: analytics.totalGames, icon: Gamepad2, color: "amber" },
                     ].map(s => (
-                      <Card key={s.label} className="rounded-2xl border-2">
+                      <Card key={s.label} className="console-card">
                         <CardContent className="p-4">
-                          <p className="text-xl font-display font-bold">{s.value}</p>
+                          <p className="console-mono text-xl">{s.value}</p>
                           <p className="text-xs text-muted-foreground font-medium mt-0.5">{s.label}</p>
                         </CardContent>
                       </Card>
                     ))}
                   </div>
                   {analytics.topStudents?.length > 0 && (
-                    <Card className="rounded-3xl border-2">
+                    <Card className="console-card">
                       <CardContent className="p-6">
                         <h3 className="font-bold mb-4 flex items-center gap-2"><Crown className="w-5 h-5 text-amber-500" /> Top Students</h3>
                         <div className="space-y-3">
@@ -717,7 +717,7 @@ export default function TeacherClassDetail() {
                     </Card>
                   )}
                   {analytics.totalStudents === 0 && (
-                    <Card className="rounded-3xl border-2 border-dashed">
+                    <Card className="console-card border-dashed">
                       <CardContent className="p-10 text-center">
                         <BarChart3 className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
                         <p className="font-bold">No analytics yet</p>
@@ -806,7 +806,7 @@ export default function TeacherClassDetail() {
                 {AVATAR_MAP[selectedStudent?.avatar ?? ""] || "🧑‍🎓"}
               </div>
               <div>
-                <DialogTitle className="font-display font-bold text-lg">{selectedStudent?.name}</DialogTitle>
+                <DialogTitle className="font-bold text-base">{selectedStudent?.name}</DialogTitle>
                 <p className="text-sm text-muted-foreground">
                   Level {selectedStudent?.level} · {selectedStudent?.xp} XP
                   {(selectedStudent?.streak ?? 0) > 0 && <span className="ml-2">🔥 {selectedStudent?.streak}</span>}
@@ -824,7 +824,7 @@ export default function TeacherClassDetail() {
                 { label: "Badges", value: selectedStudent?.badges ?? 0 },
               ].map(s => (
                 <div key={s.label} className="rounded-2xl bg-muted/30 p-3 text-center">
-                  <p className="font-display font-bold text-base">{s.value}</p>
+                  <p className="console-mono text-sm">{s.value}</p>
                   <p className="text-xs text-muted-foreground">{s.label}</p>
                 </div>
               ))}

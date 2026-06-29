@@ -236,11 +236,11 @@ export default function OrgDashboard() {
           </div>
 
           {!checklistDismissed && (
-            <Card className="glass-card rounded-glass border border-blue-200 dark:border-blue-800/50" data-testid="card-org-onboarding-checklist">
+            <Card className="console-card border border-blue-200 dark:border-blue-800/50" data-testid="card-org-onboarding-checklist">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
-                    <p className="font-display font-bold text-sm mb-3">Getting started</p>
+                    <p className="font-semibold text-sm mb-3">Getting started</p>
                     <div className="space-y-2">
                       {[
                         { label: "Share your student join code", done: (overview?.stats?.studentCount ?? 0) > 0 },
@@ -275,7 +275,7 @@ export default function OrgDashboard() {
               <CardContent className="p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <Sparkles className="w-4 h-4 text-white/80" />
-                  <p className="font-display font-bold text-white text-xs uppercase tracking-wider">This Month at a Glance</p>
+                  <p className="font-semibold text-white text-xs uppercase tracking-wider">This Month at a Glance</p>
                 </div>
                 <p className="text-white/90 text-sm leading-relaxed">{orgSummary.summary}</p>
               </CardContent>
@@ -293,13 +293,13 @@ export default function OrgDashboard() {
                   { label: "Environments", value: overview?.stats?.environmentCount ?? 0, icon: Layers, iconClass: "text-violet-600", bgClass: "bg-violet-100 dark:bg-violet-900/30" },
                   { label: "Published Lessons", value: overview?.stats?.publishedLessons ?? 0, icon: BookOpen, iconClass: "text-blue-600", bgClass: "bg-blue-100 dark:bg-blue-900/30" },
                 ].map(stat => (
-                  <Card key={stat.label} className="glass-card rounded-glass">
+                  <Card key={stat.label} className="console-card">
                     <CardContent className="p-5 flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${stat.bgClass}`}>
                         <stat.icon className={`w-5 h-5 ${stat.iconClass}`} />
                       </div>
                       <div>
-                        <p className="text-xl font-display font-bold">{stat.value}</p>
+                        <p className="console-mono text-xl">{stat.value}</p>
                         <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
                       </div>
                     </CardContent>
@@ -309,18 +309,18 @@ export default function OrgDashboard() {
 
               {overview?.env && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card className="glass-card rounded-glass">
+                  <Card className="console-card">
                     <CardContent className="p-6 space-y-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
                           <Building2 className="w-5 h-5 text-indigo-600" />
                         </div>
-                        <h3 className="font-display font-bold text-lg">Student Join Code</h3>
+                        <h3 className="font-bold text-base">Student Join Code</h3>
                       </div>
                       <p className="text-sm text-muted-foreground">Share this code so students can enroll in your organization</p>
                       <div className="flex items-center gap-3">
                         <div className="flex-1 bg-blue-50 dark:bg-blue-950/30 rounded-2xl p-3 border border-blue-100 dark:border-blue-800">
-                          <p className="font-display font-bold text-2xl tracking-widest text-blue-600 text-center">{overview.env.joinCode ?? "-"}</p>
+                          <p className="console-mono text-2xl text-blue-600 text-center">{overview.env.joinCode ?? "-"}</p>
                         </div>
                         <button
                           onClick={copyJoinCode}
@@ -333,13 +333,13 @@ export default function OrgDashboard() {
                     </CardContent>
                   </Card>
 
-                  <Card className="glass-card rounded-glass">
+                  <Card className="console-card">
                     <CardContent className="p-6 space-y-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                           <Globe className="w-5 h-5 text-blue-600" />
                         </div>
-                        <h3 className="font-display font-bold text-lg">Environment Info</h3>
+                        <h3 className="font-bold text-base">Environment Info</h3>
                       </div>
                       <div className="space-y-2 text-sm">
                         <div className="flex items-center justify-between">
@@ -361,13 +361,13 @@ export default function OrgDashboard() {
               )}
 
               {overview?.environments && overview.environments.length > 1 && (
-                <Card className="glass-card rounded-glass">
+                <Card className="console-card">
                   <CardContent className="p-6 space-y-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
                         <Layers className="w-5 h-5 text-violet-600" />
                       </div>
-                      <h3 className="font-display font-bold text-lg">All Environments</h3>
+                      <h3 className="font-bold text-base">All Environments</h3>
                     </div>
                     <div className="space-y-2">
                       {overview.environments.map((env: any) => (
@@ -391,7 +391,7 @@ export default function OrgDashboard() {
               )}
 
               {aiUsage && (
-                <Card className="glass-card rounded-glass" data-testid="card-ai-usage">
+                <Card className="console-card" data-testid="card-ai-usage">
                   <CardContent className="p-6 space-y-4">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div className="flex items-center gap-3">
@@ -399,7 +399,7 @@ export default function OrgDashboard() {
                           <Sparkles className="w-5 h-5 text-violet-600" />
                         </div>
                         <div>
-                          <h3 className="font-display font-bold text-lg">AI Usage Today</h3>
+                          <h3 className="font-bold text-base">AI Usage Today</h3>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -438,7 +438,7 @@ export default function OrgDashboard() {
                         return (
                           <div key={key} className="rounded-2xl border-2 border-input p-3 space-y-2" data-testid={`ai-usage-${key}`}>
                             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{label}</p>
-                            <p className="font-display font-bold text-xl">
+                            <p className="console-mono text-xl">
                               {row.live.toLocaleString()} <span className="text-sm text-muted-foreground font-medium">/ {row.limit.toLocaleString()} org</span>
                             </p>
                             <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -561,7 +561,7 @@ export default function OrgDashboard() {
               )}
 
               {emailStats && (
-                <Card className="glass-card rounded-glass" data-testid="card-email-stats">
+                <Card className="console-card" data-testid="card-email-stats">
                   <CardContent className="p-6 space-y-4">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
@@ -569,7 +569,7 @@ export default function OrgDashboard() {
                           <Mail className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                          <h3 className="font-display font-bold text-lg">Email deliverability (last 7 days)</h3>
+                          <h3 className="font-bold text-base">Email deliverability (last 7 days)</h3>
                           <p className="text-xs text-muted-foreground">Sent, delivered, bounced, opened, failed.</p>
                         </div>
                       </div>
@@ -595,7 +595,7 @@ export default function OrgDashboard() {
                       ].map((row) => (
                         <div key={row.k} className="rounded-2xl border bg-white/60 dark:bg-white/5 p-3">
                           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">{row.label}</p>
-                          <p className={`text-2xl font-display font-bold ${row.color}`} data-testid={`text-email-${row.k}`}>
+                          <p className={`console-mono text-2xl ${row.color}`} data-testid={`text-email-${row.k}`}>
                             {emailStats.totals?.[row.k] ?? 0}
                           </p>
                         </div>
@@ -625,7 +625,7 @@ export default function OrgDashboard() {
               {/* ── LEARNING METRICS: Avg XP + Lesson Completion Rate ── */}
               {learningMetrics && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Card className="glass-card rounded-glass" data-testid="card-avg-xp">
+                  <Card className="console-card" data-testid="card-avg-xp">
                     <CardContent className="p-6 space-y-2">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
@@ -633,14 +633,14 @@ export default function OrgDashboard() {
                         </div>
                         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Avg XP per Student</p>
                       </div>
-                      <p className="font-display font-extrabold text-3xl text-foreground" data-testid="text-avg-xp">
+                      <p className="console-mono text-3xl text-foreground" data-testid="text-avg-xp">
                         {(learningMetrics.avgXp ?? 0).toLocaleString()}
                       </p>
                       <p className="text-xs text-muted-foreground">Across {learningMetrics.totalStudents ?? 0} students in your org</p>
                     </CardContent>
                   </Card>
 
-                  <Card className="glass-card rounded-glass" data-testid="card-lesson-completion">
+                  <Card className="console-card" data-testid="card-lesson-completion">
                     <CardContent className="p-6 space-y-2">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
@@ -648,7 +648,7 @@ export default function OrgDashboard() {
                         </div>
                         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Lesson Completion Rate</p>
                       </div>
-                      <p className="font-display font-extrabold text-3xl text-foreground" data-testid="text-lesson-completion-rate">
+                      <p className="console-mono text-3xl text-foreground" data-testid="text-lesson-completion-rate">
                         {learningMetrics.lessonCompletionRate ?? 0}%
                       </p>
                       <div className="h-2 rounded-full bg-muted overflow-hidden mt-1">
@@ -665,14 +665,14 @@ export default function OrgDashboard() {
 
               {/* ── TOP 5 MONEY GAMES ── */}
               {topGames && topGames.length > 0 && (
-                <Card className="glass-card rounded-glass" data-testid="card-top-games">
+                <Card className="console-card" data-testid="card-top-games">
                   <CardContent className="p-6 space-y-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
                         <Gamepad2 className="w-5 h-5 text-violet-600" />
                       </div>
                       <div>
-                        <h3 className="font-display font-bold text-lg">Top Money Games</h3>
+                        <h3 className="font-bold text-base">Top Money Games</h3>
                         <p className="text-xs text-muted-foreground">By session count across your org</p>
                       </div>
                     </div>
@@ -685,7 +685,7 @@ export default function OrgDashboard() {
                           <div key={g.game} className="space-y-1" data-testid={`row-game-${i}`}>
                             <div className="flex items-center justify-between text-sm">
                               <span className="font-medium">{g.game}</span>
-                              <span className="font-display font-bold text-muted-foreground">{g.sessions.toLocaleString()} sessions</span>
+                              <span className="console-mono text-muted-foreground">{g.sessions.toLocaleString()} sessions</span>
                             </div>
                             <div className="h-2 rounded-full bg-muted overflow-hidden">
                               <div className={`h-full ${colors[i] ?? "bg-violet-500"} transition-all`} style={{ width: `${pct}%` }} />
@@ -699,14 +699,14 @@ export default function OrgDashboard() {
               )}
 
               {/* ── STUDENT TABLE (paginated, 25 per page) ── */}
-              <Card className="glass-card rounded-glass" data-testid="card-student-table">
+              <Card className="console-card" data-testid="card-student-table">
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                       <Users className="w-5 h-5 text-blue-600" />
                     </div>
                     <div>
-                      <h3 className="font-display font-bold text-lg">All Students</h3>
+                      <h3 className="font-bold text-base">All Students</h3>
                       <p className="text-xs text-muted-foreground">
                         {studentTable?.total ? `${studentTable.total} total` : ""}
                       </p>
@@ -737,7 +737,7 @@ export default function OrgDashboard() {
                                 <td className="py-2.5 px-2 text-muted-foreground">
                                   {s.joinedAt ? new Date(s.joinedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "-"}
                                 </td>
-                                <td className="py-2.5 px-2 text-right font-display font-bold text-amber-600">{(s.totalXp ?? 0).toLocaleString()}</td>
+                                <td className="py-2.5 px-2 text-right console-mono text-amber-600">{(s.totalXp ?? 0).toLocaleString()}</td>
                                 <td className="py-2.5 px-2 text-right">
                                   <span className="inline-flex items-center gap-1">
                                     <span className="font-bold">{s.lessonsCompleted}</span>
@@ -786,9 +786,9 @@ export default function OrgDashboard() {
               </Card>
 
               {overview?.org && (
-                <Card className="glass-card rounded-glass">
+                <Card className="console-card">
                   <CardContent className="p-6 space-y-3">
-                    <h3 className="font-display font-bold text-lg">Organization Details</h3>
+                    <h3 className="font-bold text-base">Organization Details</h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                       {[
                         { label: "Name", value: overview.org.name },

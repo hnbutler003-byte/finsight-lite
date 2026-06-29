@@ -216,10 +216,10 @@ export default function OrgStudents() {
                       <p className="font-bold text-sm">{s.displayName}</p>
                       {s.username && <span className="text-xs text-muted-foreground">@{s.username}</span>}
                       <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-lg font-bold">Lv {s.level}</span>
-                      {s.streak > 0 && <span className="text-xs text-amber-600 font-bold">🔥 {s.streak}</span>}
+                      {s.streak > 0 && <span className="console-mono text-xs text-muted-foreground">{s.streak}d</span>}
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-blue-500" />{s.xp} XP</span>
+                      <span className="console-mono text-xs">{s.xp} XP</span>
                       <span>Joined {formatDate(s.joined_at)}</span>
                       {s.envName && <span className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-lg font-medium">{s.envName}</span>}
                     </div>

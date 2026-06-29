@@ -1133,14 +1133,14 @@ function LessonCard({ lesson }: { lesson: LessonPlan }) {
       {showEdit && <EditLessonModal lesson={lesson} onClose={() => setShowEdit(false)} />}
       {showDelete && <DeleteConfirmDialog lesson={lesson} onClose={() => setShowDelete(false)} />}
       <Card
-        className={`glass-card rounded-glass transition-all ${lesson.is_published ? "border-blue-200 dark:border-blue-800" : "border-dashed"}`}
+        className={`console-card transition-all ${lesson.is_published ? "border-blue-200 dark:border-blue-800" : "border-dashed"}`}
         data-testid={`card-lesson-${lesson.id}`}
       >
         <CardContent className="p-6 space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <h3 className="font-display font-bold text-lg">{lesson.title}</h3>
+                <h3 className="font-bold text-base">{lesson.title}</h3>
                 <span className={`text-xs px-2 py-0.5 rounded-lg font-bold ${
                   lesson.is_published
                     ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
@@ -1274,7 +1274,7 @@ export default function OrgLessons() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background console">
       <OrgSidebar />
       {showCreate && <CreateLessonModal onClose={() => setShowCreate(false)} />}
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
@@ -1297,13 +1297,13 @@ export default function OrgLessons() {
           {isLoading ? (
             <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>
           ) : !lessons?.length ? (
-            <Card className="glass-card rounded-glass border-dashed">
+            <Card className="console-card border-dashed">
               <CardContent className="p-12 text-center space-y-4">
                 <div className="w-16 h-16 rounded-3xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto">
                   <BookOpen className="w-8 h-8 text-blue-500" />
                 </div>
                 <div>
-                  <h3 className="font-display font-bold text-lg">No lessons yet</h3>
+                  <h3 className="font-bold text-base">No lessons yet</h3>
                   <p className="text-muted-foreground text-sm mt-1">Create your first lesson plan to get started</p>
                 </div>
                 <Button onClick={() => setShowCreate(true)} className="rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
