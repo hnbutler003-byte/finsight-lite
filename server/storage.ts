@@ -142,7 +142,7 @@ export interface IStorage extends IAuthStorage {
   enrollStudent(classId: number, studentId: string): Promise<ClassEnrollment>;
   getStudentClasses(studentId: string): Promise<(ClassEnrollment & { class: Class })[]>;
   removeEnrollment(classId: number, studentId: string): Promise<void>;
-  getClassProgressSummary(classId: number): Promise<any>;
+  getClassProgressSummary(classId: number, opts?: { limit?: number; offset?: number }): Promise<any>;
   getChallengesByClass(classId: number): Promise<Challenge[]>;
   createChallenge(data: InsertChallenge): Promise<Challenge>;
   deleteChallenge(id: number, teacherId: number): Promise<void>;

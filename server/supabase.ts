@@ -499,6 +499,7 @@ export async function upsertLeaderboardSnapshot(entry: {
   if (error) {
     console.error("[Supabase] upsertLeaderboard:", error.message);
     captureError(new Error(`[Supabase] upsertLeaderboard failed: ${error.message}`), { fn: "upsertLeaderboardSnapshot" });
+    throw new Error(`[Supabase] upsertLeaderboard failed: ${error.message}`);
   }
 }
 
