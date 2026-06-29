@@ -1,0 +1,171 @@
+# Replit Agent Prompt — Teacher/Org "Console" Design Tier
+
+Paste this into Replit Agent as one prompt.
+
+---
+
+## Goal
+
+Finsight Lite currently uses one visual system everywhere — the playful,
+gamified styling built for the 12–17 student audience. Teachers and
+organization admins are adults using this as a professional tool and
+should get a more restrained, ed-tech-console-appropriate interface,
+while staying in the same brand family (same hues, just used differently).
+This must NOT touch the student-facing app at all.
+
+## 1. New design tokens (add to index.css, do not remove existing ones)
+
+Add a new set of tokens scoped to a `.console` class that wraps the root
+of the Teacher and Org Admin portals (apply it once, high up in each
+portal's layout component):
+
+```css
+.console {
+  /* No animated gradient on working pages — static surface instead */
+  background: hsl(var(--background));
+}
+
+.console .console-card {
+  background: hsl(var(--card));
+  border: 0.5px solid hsl(var(--card-border));
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.console .console-row {
+  border-top: 0.5px solid hsl(var(--border));
+  padding: 12px 16px;
+}
+
+.console .console-table-header {
+  background: hsl(var(--muted));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+
+.console .console-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: hsl(var(--accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+  color: hsl(var(--accent-foreground));
+}
+
+.console .console-mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: hsl(var(--foreground));
+}
+```
+
+Verify `.dark .console` resolves correctly too — the tokens reference
+existing CSS variables so it should work automatically, but check
+visually, don't assume.
+
+## 2. Rules for anything rendered inside `.console`
+
+- **No coral anywhere.** Coral is gamification-only per the design guide —
+  remove it completely from teacher/org surfaces, including any
+  `.glass-card-coral`, `.badge-coral`, `.streak-badge`, `.xp-pill`
+  classes currently used there. Replace with plain text/numbers per the
+  patterns below.
+- **No student-chosen avatar/icon.** Wherever a student's selected
+  avatar/character icon currently renders in teacher/org views, replace
+  it with a neutral initials circle using `.console-avatar` (first +
+  last initial, e.g. "AP" for Anaya Pinder).
+- **XP and streaks stay, but as plain data, not gamified UI.** Render as
+  a number in `.console-mono` inside a table column — no glow, no pulse
+  animation, no fire emoji, no gradient pill. A streak shows as "12d",
+  XP as "730", nothing more.
+- **Drop Baloo 2 except the page-level H1.** All other text — table
+  headers, row labels, buttons, nav — uses Nunito (the existing
+  `font-sans` default). Do not apply `font-display` to dense UI.
+- **No `.glass-card` / `.glass-card-heavy` / blur anywhere.** Replace with
+  `.console-card` (flat, hairline border, 10px radius, no backdrop-filter).
+- **Lists become tables, not stacked cards.** Use a header row
+  (`.console-table-header`) plus data rows (`.console-row`) with hairline
+  dividers between them, matching a real roster/admin table rather than a
+  feed of cards.
+- **No ambient animation.** Remove `animate-bounce-in`, `animate-pop-in`,
+  `animate-float`, `animate-wiggle`, `pulse-coral`, and the
+  `caribbean-bg`/`animate-caribbean` gradient drift from anything inside
+  `.console`. These stay exclusively in the student app.
+- **Amber stays for money figures only** (savings goal dollar amounts,
+  financial data) — this is the one accent color carried over with its
+  existing meaning intact.
+
+## 3. Apply across every surface — not just the dashboard
+
+Audit and update ALL of the following. Do not stop after the first one or
+two pages — this needs to be consistent everywhere a teacher or org admin
+looks:
+
+**Org Admin portal:**
+- Dashboard (stats cards, join code card, environment info, all
+  environments panel, org details)
+- Students page (the roster table)
+- Lessons page (list view, both Draft and Published states, the
+  lesson-creation flow steps 1 and 2, the expanded lesson detail view)
+- The Help Center page (`/org/help`) built in the earlier guide-pipeline
+  prompt
+
+**Teacher portal:**
+- Teacher Dashboard
+- My Classes (and any per-class detail view)
+- Content upload flow
+- YouTube video linking flow
+- Per-student savings-goal progress view
+- Early-warning flags for disengaged students
+- The Help Center page (`/teacher/help`) built in the earlier
+  guide-pipeline prompt
+
+**Shared:**
+- Founder's "Preview As" mode — when previewing as a teacher or org
+  admin, it must render through `.console`, not the student styling.
+  Verify this explicitly; it's an easy one to miss since it's low-traffic.
+- The admin help chat widget/UI itself, if it has its own card/bubble
+  styling — it should look like part of the console, not a gamified
+  chat bubble.
+
+If you find any other teacher- or org-facing page not listed above while
+doing this audit, apply the same treatment and report it back.
+
+## 4. Explicitly do NOT touch
+
+- The student-facing app, AI Money Guide chatbot UI, or anything under
+  student routes. No coral removal, no animation removal, no avatar
+  changes there. This entire prompt is scoped to teacher and org admin
+  surfaces only.
+
+## Standing requirements
+
+- Verify every changed component in both light and dark mode — text
+  contrast, table header legibility, avatar initials contrast against
+  `--accent`.
+- Any new database write function must throw a clear, catchable error on
+  failure — never silently return null/undefined/false.
+- No pricing or dollar amounts visible inside any authenticated product
+  view (existing savings-goal dollar amounts shown to teachers/admins
+  about a specific student's progress are fine — don't introduce new
+  pricing/plan-cost displays as part of this pass).
+
+## When done, report back
+
+- Full list of pages/components changed (confirm against section 3's
+  checklist, flag anything found that wasn't on the list)
+- Confirmation Preview As mode was checked
+- Confirmation light/dark mode was verified on each
+- Any place where removing the avatar icon or XP styling required a
+  layout adjustment worth knowing about
+
+**Do not run the screenshot capture script from the guide-pipeline prompt
+until this is complete and confirmed** — screenshots should be taken
+against this final styling, not the old gamified version.
