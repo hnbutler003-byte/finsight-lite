@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, ArrowRight, ArrowLeft, KeyRound, RotateCcw, PartyPopper, Zap, Sparkles, GraduationCap, TrendingUp, Coins, Users } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, KeyRound, RotateCcw, PartyPopper, Zap, Sparkles, GraduationCap, TrendingUp, Coins, Users, BookOpen, UserCheck } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
@@ -46,6 +46,24 @@ type Step =
 
 type Flow = "student" | "guest";
 type CodeType = "class" | "org" | null;
+
+const DESKTOP_FEATURES = [
+  {
+    Icon: BookOpen,
+    title: "9 core lessons",
+    copy: "Budgeting, saving, and needs vs wants",
+  },
+  {
+    Icon: TrendingUp,
+    title: "Real stock simulator",
+    copy: "19 Caribbean tickers across five territories",
+  },
+  {
+    Icon: Sparkles,
+    title: "AI money guide",
+    copy: "Help whenever a student gets stuck",
+  },
+];
 
 export default function AuthPage() {
   const [step, setStep]               = useState<Step>("hero");
@@ -158,10 +176,10 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center caribbean-bg px-4 py-12">
+    <div className="min-h-screen flex flex-col items-center justify-center caribbean-bg px-4 py-12 lg:px-8">
 
-      {/* Persistent micro-brand header + public nav */}
-      <div className="w-full max-w-sm flex items-center justify-between gap-3 mb-10">
+      {/* Persistent micro-brand header */}
+      <div className={`w-full flex items-center justify-between gap-3 mb-10 ${step === "hero" ? "max-w-5xl" : "max-w-sm"}`}>
         <FinsightLiteLogo size={34} className="text-white" data-testid="img-logo-auth" />
         <Link
           href="/our-story"
@@ -172,73 +190,106 @@ export default function AuthPage() {
         </Link>
       </div>
 
-      <div className="w-full max-w-sm">
+      <div className={`w-full ${step === "hero" ? "max-w-5xl" : "max-w-sm"}`}>
 
-        {/* ── HERO / LANDING ── */}
+        {/* HERO / LANDING */}
         {step === "hero" && (
-          <div className="space-y-8 animate-bounce-in">
-            <div className="text-center space-y-3">
-              <div className="flex items-center justify-center gap-3 mb-4 select-none">
-                <div className="w-12 h-12 rounded-icon bg-emerald-500/20 backdrop-blur-sm border border-emerald-400/30 flex items-center justify-center" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.4s' }}>
-                  <Coins className="w-6 h-6 text-emerald-300" />
+          <div className="animate-bounce-in">
+            <div className="space-y-8 lg:grid lg:grid-cols-2 lg:gap-16 lg:items-center lg:space-y-0">
+
+              {/* Left column */}
+              <div className="space-y-6">
+                {/* Mobile: floating icon decoration */}
+                <div className="flex items-center justify-center gap-3 select-none lg:hidden">
+                  <div className="w-12 h-12 rounded-icon bg-emerald-500/20 backdrop-blur-sm border border-emerald-400/30 flex items-center justify-center" style={{ animation: "float 3s ease-in-out infinite", animationDelay: "0.4s" }}>
+                    <Coins className="w-6 h-6 text-emerald-300" />
+                  </div>
+                  <div className="w-16 h-16 rounded-icon bg-primary/30 backdrop-blur-sm border border-primary/40 flex items-center justify-center animate-float shadow-lg">
+                    <TrendingUp className="w-8 h-8 text-white" />
+                  </div>
+                  <div className="w-12 h-12 rounded-icon bg-amber-500/20 backdrop-blur-sm border border-amber-400/30 flex items-center justify-center" style={{ animation: "float 3s ease-in-out infinite", animationDelay: "0.8s" }}>
+                    <Sparkles className="w-6 h-6 text-amber-300" />
+                  </div>
                 </div>
-                <div className="w-16 h-16 rounded-icon bg-primary/30 backdrop-blur-sm border border-primary/40 flex items-center justify-center animate-float shadow-lg">
-                  <TrendingUp className="w-8 h-8 text-white" />
+
+                {/* Mobile heading */}
+                <div className="text-center space-y-3 lg:hidden">
+                  <h1 className="text-4xl font-display font-bold text-white tracking-tight">Welcome!</h1>
+                  <p className="text-white/50 text-base">Your Caribbean financial literacy adventure starts here.</p>
                 </div>
-                <div className="w-12 h-12 rounded-icon bg-amber-500/20 backdrop-blur-sm border border-amber-400/30 flex items-center justify-center" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.8s' }}>
-                  <Sparkles className="w-6 h-6 text-amber-300" />
+
+                {/* Desktop heading */}
+                <div className="hidden lg:block space-y-4">
+                  <p className="text-xs uppercase tracking-widest text-white/50 font-semibold">Caribbean Financial Literacy</p>
+                  <h1 className="text-5xl font-display font-bold text-white tracking-tight leading-[1.1]">Money skills that actually stick</h1>
+                  <p className="text-white/60 text-lg">Your Caribbean financial literacy adventure starts here.</p>
+                </div>
+
+                {/* Action buttons, identical treatment */}
+                <div className="space-y-3">
+                  <button
+                    onClick={() => { clearError(); setFlow("guest"); setStep("guest-name"); }}
+                    className="glass-card-heavy rounded-glass card-hover w-full flex items-center gap-4 p-4 text-left group"
+                    data-testid="button-start-exploring"
+                  >
+                    <div className="w-10 h-10 rounded-icon bg-muted border border-border flex items-center justify-center shrink-0">
+                      <Zap className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-foreground font-display font-semibold">Start exploring, no account needed</p>
+                      <p className="text-muted-foreground text-sm">Jump in instantly as a guest</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  </button>
+
+                  <button
+                    onClick={() => { clearError(); setStep("entry"); }}
+                    className="glass-card-heavy rounded-glass card-hover w-full flex items-center gap-4 p-4 text-left group"
+                    data-testid="button-sign-in"
+                  >
+                    <div className="w-10 h-10 rounded-icon bg-muted border border-border flex items-center justify-center shrink-0">
+                      <KeyRound className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-foreground font-display font-semibold">Sign in or create account</p>
+                      <p className="text-muted-foreground text-sm">Student, teacher, or organisation</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  </button>
                 </div>
               </div>
-              <h1 className="text-4xl font-display font-bold text-white tracking-tight">Welcome!</h1>
-              <p className="text-white/50 text-base">Your Caribbean financial literacy adventure starts here.</p>
-            </div>
 
-            <div className="space-y-3">
-              <button
-                onClick={() => { clearError(); setFlow("guest"); setStep("guest-name"); }}
-                className="glass-card-heavy rounded-glass card-hover w-full flex items-center gap-4 p-4 text-left group"
-                data-testid="button-start-exploring"
-              >
-                <div className="w-10 h-10 rounded-icon bg-amber-500/15 flex items-center justify-center shrink-0">
-                  <Zap className="w-5 h-5 text-amber-600 dark:text-amber-300" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-foreground font-display font-semibold">Start exploring, no account needed</p>
-                  <p className="text-muted-foreground text-sm">Jump in instantly as a guest</p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-amber-500 dark:group-hover:text-amber-300 transition-colors" />
-              </button>
+              {/* Right column: feature highlights, desktop only */}
+              <div className="hidden lg:flex lg:flex-col lg:gap-8">
+                {DESKTOP_FEATURES.map(({ Icon, title, copy }) => (
+                  <div key={title} className="flex items-start gap-4">
+                    <div className="w-11 h-11 rounded-icon bg-white/10 border border-white/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <Icon className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-base">{title}</p>
+                      <p className="text-white/55 text-sm mt-0.5">{copy}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-              <button
-                onClick={() => { clearError(); setStep("entry"); }}
-                className="glass-card-heavy rounded-glass card-hover w-full flex items-center gap-4 p-4 text-left group"
-                data-testid="button-sign-in"
-              >
-                <div className="w-10 h-10 rounded-icon bg-primary/15 flex items-center justify-center shrink-0">
-                  <KeyRound className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-foreground font-display font-semibold">Sign in or create account</p>
-                  <p className="text-muted-foreground text-sm">Student, teacher, or organisation</p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-              </button>
             </div>
           </div>
         )}
 
-        {/* ── ENTRY SCREEN ── */}
+        {/* ENTRY SCREEN */}
         {step === "entry" && (
           <div className="space-y-8 animate-bounce-in">
             <div className="text-center space-y-3">
               <div className="flex items-center justify-center gap-3 mb-4 select-none">
-                <div className="w-12 h-12 rounded-icon bg-emerald-500/20 backdrop-blur-sm border border-emerald-400/30 flex items-center justify-center" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.4s' }}>
+                <div className="w-12 h-12 rounded-icon bg-emerald-500/20 backdrop-blur-sm border border-emerald-400/30 flex items-center justify-center" style={{ animation: "float 3s ease-in-out infinite", animationDelay: "0.4s" }}>
                   <Coins className="w-6 h-6 text-emerald-300" />
                 </div>
                 <div className="w-16 h-16 rounded-icon bg-primary/30 backdrop-blur-sm border border-primary/40 flex items-center justify-center animate-float shadow-lg">
                   <TrendingUp className="w-8 h-8 text-white" />
                 </div>
-                <div className="w-12 h-12 rounded-icon bg-amber-500/20 backdrop-blur-sm border border-amber-400/30 flex items-center justify-center" style={{ animation: 'float 3s ease-in-out infinite', animationDelay: '0.8s' }}>
+                <div className="w-12 h-12 rounded-icon bg-amber-500/20 backdrop-blur-sm border border-amber-400/30 flex items-center justify-center" style={{ animation: "float 3s ease-in-out infinite", animationDelay: "0.8s" }}>
                   <Sparkles className="w-6 h-6 text-amber-300" />
                 </div>
               </div>
@@ -295,7 +346,7 @@ export default function AuthPage() {
           </div>
         )}
 
-        {/* ── STUDENT ACCESS ── */}
+        {/* STUDENT ACCESS */}
         {step === "student-access" && (
           <div className="space-y-8 animate-bounce-in">
             <div className="text-center space-y-3">
@@ -365,11 +416,13 @@ export default function AuthPage() {
           </div>
         )}
 
-        {/* ── STUDENT CODE ── */}
+        {/* STUDENT CODE */}
         {step === "student-code" && (
           <div className="space-y-8 animate-bounce-in">
             <div className="text-center space-y-3">
-              <div className="text-5xl mb-2">🔑</div>
+              <div className="w-14 h-14 rounded-icon bg-primary/25 backdrop-blur-sm border border-primary/40 flex items-center justify-center mx-auto mb-2">
+                <KeyRound className="w-7 h-7 text-white" />
+              </div>
               <h1 className="text-3xl font-bold text-white">Enter your code</h1>
               <p className="text-white/50 text-sm">Your teacher or school gave you this</p>
             </div>
@@ -428,11 +481,13 @@ export default function AuthPage() {
           </div>
         )}
 
-        {/* ── STUDENT RESUME ── */}
+        {/* STUDENT RESUME */}
         {step === "student-resume" && (
           <div className="space-y-8 animate-bounce-in">
             <div className="text-center space-y-3">
-              <div className="text-5xl mb-2">👋</div>
+              <div className="w-14 h-14 rounded-icon bg-teal-500/25 backdrop-blur-sm border border-teal-400/40 flex items-center justify-center mx-auto mb-2">
+                <UserCheck className="w-7 h-7 text-white" />
+              </div>
               <h1 className="text-3xl font-bold text-white">Welcome back!</h1>
               <p className="text-white/50 text-sm">Enter your username to continue</p>
             </div>
@@ -470,11 +525,13 @@ export default function AuthPage() {
           </div>
         )}
 
-        {/* ── STUDENT NAME (after code accepted) ── */}
+        {/* STUDENT NAME (after code accepted) */}
         {step === "student-name" && (
           <div className="space-y-8 animate-bounce-in">
             <div className="text-center space-y-3">
-              <div className="text-5xl mb-2">🎉</div>
+              <div className="w-14 h-14 rounded-icon bg-violet-500/25 backdrop-blur-sm border border-violet-400/40 flex items-center justify-center mx-auto mb-2">
+                <PartyPopper className="w-7 h-7 text-white" />
+              </div>
               <h1 className="text-3xl font-bold text-white">Code accepted!</h1>
               <p className="text-white/50 text-sm">
                 Joining <span className="text-violet-300 font-semibold">{className}</span>
@@ -487,7 +544,7 @@ export default function AuthPage() {
                 value={name}
                 onChange={(e) => { setName(e.target.value); clearError(); }}
                 onKeyDown={(e) => e.key === "Enter" && handleNameNext()}
-                placeholder="First name (e.g. Alex, Keisha, Jamal…)"
+                placeholder="First name (e.g. Alex, Keisha, Jamal...)"
                 className={`h-12 text-lg rounded-2xl${shakeEl === "name" ? " animate-shake" : ""}`}
                 onAnimationEnd={() => shakeEl === "name" && setShakeEl(null)}
                 autoFocus
@@ -523,7 +580,7 @@ export default function AuthPage() {
           </div>
         )}
 
-        {/* ── GUEST NAME ── */}
+        {/* GUEST NAME */}
         {step === "guest-name" && (
           <div className="space-y-8 animate-bounce-in">
             <div className="text-center space-y-3">
@@ -539,7 +596,7 @@ export default function AuthPage() {
                 value={name}
                 onChange={(e) => { setName(e.target.value); clearError(); }}
                 onKeyDown={(e) => e.key === "Enter" && handleNameNext()}
-                placeholder="First name (e.g. Alex, Keisha, Jamal…)"
+                placeholder="First name (e.g. Alex, Keisha, Jamal...)"
                 className="h-12 text-lg rounded-2xl"
                 autoFocus
                 data-testid="input-name"
@@ -571,7 +628,7 @@ export default function AuthPage() {
           </div>
         )}
 
-        {/* ── WELCOME ── */}
+        {/* WELCOME */}
         {step === "welcome" && createdUser && (
           <div className="space-y-8 text-center animate-bounce-in">
             <div className="space-y-3">
@@ -581,8 +638,8 @@ export default function AuthPage() {
               <h1 className="text-3xl font-bold text-white">You're in!</h1>
               <p className="text-white/50 text-sm">
                 {flow === "student" && className
-                  ? <>Welcome to <span className="text-violet-300 font-semibold">{className}</span> 🎉</>
-                  : "Your adventure starts now 🎉"}
+                  ? <>Welcome to <span className="text-violet-300 font-semibold">{className}</span></>
+                  : "Your adventure starts now"}
               </p>
             </div>
 
@@ -609,7 +666,7 @@ export default function AuthPage() {
       </div>
 
       {/* Footer */}
-      <div className="mt-12 flex flex-col items-center gap-2">
+      <div className={`mt-12 flex flex-col items-center gap-2 ${step === "hero" ? "w-full max-w-5xl" : ""}`}>
         <p className="text-white/15 text-xs">© {new Date().getFullYear()} Finsight Limited</p>
         <div className="flex gap-4">
           <a href="/privacy" className="text-white/20 text-xs hover:text-white/40 transition-colors">Privacy Policy</a>

@@ -1,0 +1,104 @@
+# Replit Agent Prompt — Desktop Welcome Screen Redesign
+
+Paste this into Replit Agent as one prompt.
+
+---
+
+## Goal
+
+The welcome/landing screen currently uses a single centered narrow column
+layout regardless of viewport width. On desktop screens this leaves large
+empty areas of background on both sides and looks squeezed rather than
+using the available space. Add a responsive desktop layout while keeping
+the existing narrow layout for mobile.
+
+## 1. Find the breakpoint
+
+Find the existing Tailwind breakpoint convention already used elsewhere
+in the app (likely `lg:` or `xl:`) and use the same one here for
+consistency. Below that breakpoint, keep the current centered single
+column layout exactly as it is today, no changes to mobile.
+
+## 2. Logo and icons (apply on both mobile and desktop)
+
+Before building the layout, fix two things already present on this
+screen today:
+
+- **Logo**: use the actual Finsight Lite logo asset file
+  (`finsightlitelogoreversed.jpg` for this dark background), rendered
+  as a real image, not redrawn or approximated with custom shapes or
+  different colors. Confirm it's pulling the same logo asset used
+  elsewhere in the app, not a separate one-off recreation.
+- **Icons**: replace any raw emoji currently used for the entry button
+  icons or anywhere else on this screen with proper outline-style icon
+  glyphs from the icon library already used elsewhere in the app (for
+  example Lucide, if that's what's already in use, check existing
+  components first rather than introducing a new icon library). Emoji
+  render inconsistently across devices and don't match the rest of the
+  product's visual language.
+
+## 3. Desktop layout (at or above the breakpoint)
+
+Replace the single centered column with a two column layout that uses
+the full width of the page (not edge to edge, keep reasonable max-width
+and side padding so it doesn't feel cramped against the browser edge):
+
+**Left column:**
+- Small eyebrow label above the headline (uppercase, small, muted)
+- A larger headline than currently used, something like "Money skills
+  that actually stick"
+- One line of supporting copy
+- The two entry action buttons, see styling rules below
+
+**Right column:**
+- Three short feature highlight rows, each with an icon, a bold short
+  title, and one line of supporting copy. Use real platform facts, for
+  example: "9 core lessons, budgeting, saving, and needs vs wants",
+  "Real stock simulator, 19 Caribbean tickers across five territories",
+  "AI money guide, help whenever a student gets stuck"
+
+Keep the logo and "Our Story" pill in a header row above both columns,
+and the copyright/privacy/terms row centered below, same as today.
+
+## 4. Button consistency (apply on both mobile and desktop layouts)
+
+This is the most important detail to get right. The two entry buttons
+("Start exploring, no account needed" and "Sign in or create account")
+must use fully identical visual styling, no distinguishing accent
+between them at all. Audit the current implementation, since they
+currently use visibly different styles (one solid white filled, one
+transparent outline), and fix this everywhere this welcome screen
+renders, not just on the new desktop layout.
+
+Both buttons should be exactly the same:
+- Same translucent dark card background
+- Same border color and weight
+- Same icon-square treatment and sizing
+- Same text hierarchy (bold title, muted subtitle)
+- Same arrow affordance on the right
+
+Do not add any accent color, border difference, or other visual cue to
+make one button look more "primary" than the other. They should read
+as two equally weighted choices.
+
+## Standing requirements
+
+- Verify the new layout and button styling in both light and dark mode
+  if this screen has a dark mode variant, if it's dark-only by design,
+  confirm that's intentional and consistent with how it works today.
+- No em dashes anywhere this touches, code comments, strings, or any
+  copy text. Use periods, commas, or conjunctions.
+- If this requires a fresh npm install, include the package-lock.json
+  proxy fix: `sed -i 's|http://package-firewall.replit.local/npm|https://registry.npmjs.org|g' package-lock.json`, then verify with grep (should return 0).
+
+## When done, report back
+
+- Confirmation the real logo asset is rendering correctly (not a
+  recreation) and confirmation all emoji on this screen were replaced
+  with proper icon glyphs
+- Confirmation of the breakpoint used and that mobile layout is
+  unchanged
+- Screenshot or description confirming both buttons now share the same
+  base treatment
+- Any other place in the app where these same two buttons or a similar
+  inconsistency appears, flag it even if out of scope for this prompt
