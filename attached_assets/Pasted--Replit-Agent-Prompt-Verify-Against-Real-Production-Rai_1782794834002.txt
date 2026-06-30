@@ -1,0 +1,89 @@
+# Replit Agent Prompt — Verify Against Real Production (Railway)
+
+Paste this into Replit Agent as one prompt.
+
+---
+
+## Context, important correction
+
+Previous sessions reported "no production deployment found" because
+`fetch_deployment_logs` only checks Replit's own deployment system.
+This app is actually deployed and live on Railway, confirmed by
+checking finsightlite.com directly in a browser just now, it is
+running current code (the new desktop welcome screen redesign is
+live). Railway was already listed as the hosting provider, this was
+simply the wrong verification target being checked in prior sessions.
+
+This prompt exists to actually verify three pieces of recent work
+against the real Railway production environment, since none of them
+have been confirmed there yet, only in the Replit dev workspace:
+
+1. The PerfAgent lazy-init 401 fix
+2. The MoneyGuide migration to Anthropic
+3. The new daily AI health check job
+
+## 1. Confirm what's actually deployed on Railway
+
+- Find out how this Railway deployment is connected to the codebase,
+  most likely auto-deploys from the GitHub repo on push to main, or a
+  manual deploy trigger. Confirm which.
+- Confirm the currently live commit SHA on Railway matches the latest
+  local commit (the one containing the PerfAgent fix and the MoneyGuide
+  migration). If you don't have direct Railway API/CLI access from this
+  environment, check whatever is available (Railway CLI if installed,
+  a deploy webhook log, or ask me to confirm the deployed SHA from the
+  Railway dashboard directly if you cannot check it yourself).
+
+## 2. Confirm Railway's environment variables, not Replit's
+
+This is the most important check. The
+`AI_INTEGRATIONS_ANTHROPIC_API_KEY` and
+`AI_INTEGRATIONS_ANTHROPIC_BASE_URL` variables are Replit-managed
+integration credentials. Confirm whether these same variable names and
+values are actually present in Railway's environment variables, since
+Railway does not automatically share Replit's integration credentials,
+they may need to be manually copied into Railway's own environment
+variable settings.
+
+If you do not have visibility into Railway's environment variables
+from this tool, say so clearly and tell me exactly what to check in
+the Railway dashboard, do not guess or assume they are present just
+because they work in the Replit dev workspace.
+
+Also confirm whether `SENTRY_DSN` is set in Railway's environment
+specifically. This was already confirmed missing in the Replit dev
+workspace, it needs to be checked and set in Railway, not Replit, since
+Railway is where the real traffic and real errors happen.
+
+## 3. Test the real thing
+
+If you have a way to reach the live finsightlite.com backend directly
+(not the Replit dev workspace), test:
+
+- A real MoneyGuide message against production, confirm it responds
+  using Anthropic and not a leftover OpenAI path
+- The PerfAgent scan endpoint against production, confirm no 401
+- The AI health check endpoint against production, confirm it reports
+  healthy
+
+If you cannot reach the live backend directly from this tool, tell me
+exactly what URL or command I should run myself to test each of these
+three things, in plain terms, since I am not technical and will need
+exact steps, not assumptions that I know how to do this.
+
+## Standing requirements
+
+- No em dashes anywhere this touches, code, comments, or report text.
+  Use periods, commas, or conjunctions instead.
+
+## When done, report back
+
+- Whether Railway's deployed commit matches the latest local commit
+- Whether the Anthropic integration variables are confirmed present in
+  Railway specifically, or whether this needs to be manually checked
+  or added
+- Whether SENTRY_DSN is confirmed present in Railway specifically
+- Results of testing MoneyGuide, PerfAgent, and the health check
+  against the real production backend, or exact plain-language
+  instructions for me to test each one myself if you could not reach
+  it directly
