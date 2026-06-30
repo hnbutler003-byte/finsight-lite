@@ -1,0 +1,73 @@
+# Replit Agent Prompt — Diagnose 401 Invalid API Key Error
+
+Paste this into Replit Agent as one prompt.
+
+---
+
+## Context
+
+Production is throwing this error from a background process:
+
+```
+Error: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CcYjSwBFofhzrZLMBiTZx"}
+```
+
+The stack trace shows it originating from a scheduler-triggered function
+referred to as "PerfAgent" (logs show `[PerfAgent] Starting scan
+(triggeredBy=scheduler)`), which appears to call the Anthropic API to
+generate findings and opportunities reports. This is a diagnostic
+prompt only, do not change any application features yet, just
+investigate and report back.
+
+## 1. Identify what "PerfAgent" actually is
+
+- Search the codebase for "PerfAgent" and confirm whether this is part
+  of the Finsight Lite application code, or whether it's a Replit
+  platform-level feature running independently of the app (a built-in
+  performance/code-health scanner Replit runs on a schedule, separate
+  from anything we've built).
+- If it is part of the app's own code, find the file it lives in, what
+  triggers it (the scheduler), and what it's actually meant to do.
+- If it is a Replit platform feature, confirm this and report it
+  clearly, since the fix would be in Replit's project settings, not in
+  application code.
+
+## 2. Check how the Anthropic API key is configured
+
+- Find every place in the codebase that reads an Anthropic API key
+  environment variable (likely `ANTHROPIC_API_KEY` or similar). List
+  all of them, since there may be more than one if PerfAgent uses a
+  different key/config path than the AI Tutor, Money Guide, or
+  investment explainer features.
+- For each one, confirm: is it reading from the same environment
+  variable, or a different one?
+- Do not print the actual key value anywhere in output, just confirm
+  whether each variable is set (non-empty) or missing in the production
+  environment.
+
+## 3. Check whether other AI features are also affected
+
+- Test, or check recent logs for, whether the AI Tutor, AI Money Guide
+  chatbot, investment price-move explainer, and the org-admin AI usage
+  features (AI summary, admin help chat) are currently working in
+  production, or whether they're also failing with the same 401 error.
+- This tells us whether this is isolated to the PerfAgent background
+  job specifically, or whether the whole app's AI key is broken.
+
+## 4. Report back, do not fix yet
+
+Report:
+- What PerfAgent is and whether it's part of our application or a
+  Replit platform feature
+- Every place an Anthropic API key is referenced in the codebase, and
+  whether each one is set or missing in production right now
+- Whether any other AI feature (Tutor, Money Guide, investment
+  explainer, admin help chat) is also currently failing
+- A clear recommendation: does this need a new key generated in the
+  Anthropic Console and added to Railway's environment variables, or is
+  it something else (wrong variable name, key set in the wrong
+  environment, etc.)
+
+Do not rotate or change any environment variables yet, this is
+diagnosis only. Once the cause is confirmed, a follow-up prompt will
+handle the actual fix.
