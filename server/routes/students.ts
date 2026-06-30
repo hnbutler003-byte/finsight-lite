@@ -29,6 +29,7 @@ import {
 } from "../supabase";
 import { isTeacher } from "./auth";
 import { getStockExplainer } from "./investmentExplainer";
+import { classifyAiAccess, AI_BLOCKED_MSG } from "./ai";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -930,6 +931,14 @@ Rules:
     try {
       const stockId = parseInt(req.params.stockId);
       if (isNaN(stockId)) return res.status(400).json({ message: "Invalid stockId" });
+
+      const userId = (req.user as any).id;
+      const orgIds = await getStudentOrgIds(userId).catch(() => [] as string[]);
+      const accessTier = classifyAiAccess((req.user as any).username ?? "", orgIds);
+      if (accessTier !== "enrolled") {
+        return res.status(403).json({ message: AI_BLOCKED_MSG[accessTier], blocked: true });
+      }
+
       const explanation = await getStockExplainer(stockId);
       res.json({ explanation });
     } catch (err: any) {

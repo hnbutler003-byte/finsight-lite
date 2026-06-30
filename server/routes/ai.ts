@@ -56,6 +56,24 @@ function getGuideClient(): Anthropic {
   return _guideClient;
 }
 
+export function classifyAiAccess(username: string, orgIds: string[]): "enrolled" | "guest" | "qa_test" {
+  if (
+    username.startsWith("qa_s") ||
+    /^tester/i.test(username) ||
+    username.startsWith("Td")
+  ) {
+    return "qa_test";
+  }
+  if (orgIds.length === 0) return "guest";
+  return "enrolled";
+}
+
+export const AI_BLOCKED_MSG: Record<"guest" | "qa_test", string> = {
+  guest:
+    "AI features are available to students enrolled through their school. Ask your teacher for a join code to unlock them.",
+  qa_test: "AI features are not available on test accounts.",
+};
+
 export async function registerAiRoutes(app: Express): Promise<void> {
 
   // AI Insights
@@ -65,6 +83,10 @@ export async function registerAiRoutes(app: Express): Promise<void> {
 
       const orgIds = await getStudentOrgIds(userId).catch(() => [] as string[]);
       const orgId = orgIds[0] ?? null;
+      const accessTier = classifyAiAccess((req.user as any).username ?? "", orgIds);
+      if (accessTier !== "enrolled") {
+        return res.status(403).json({ message: AI_BLOCKED_MSG[accessTier], blocked: true });
+      }
 
       const model = "gpt-4o-mini";
       const reservation = await reserveQuota({ userId, orgId, kind: "ai_insights", model });
@@ -369,6 +391,10 @@ export async function registerAiRoutes(app: Express): Promise<void> {
 
       const orgIds = await getStudentOrgIds(userId).catch(() => [] as string[]);
       const orgId = orgIds[0] ?? null;
+      const accessTier = classifyAiAccess((req.user as any).username ?? "", orgIds);
+      if (accessTier !== "enrolled") {
+        return res.status(403).json({ message: AI_BLOCKED_MSG[accessTier], blocked: true });
+      }
 
       const model = "gpt-4o-mini";
       const modelVersion = `${model}-v1`;
@@ -520,6 +546,10 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
 
       const orgIds = await getStudentOrgIds(userId).catch(() => [] as string[]);
       const orgId = orgIds[0] ?? null;
+      const accessTier = classifyAiAccess((req.user as any).username ?? "", orgIds);
+      if (accessTier !== "enrolled") {
+        return res.status(403).json({ message: AI_BLOCKED_MSG[accessTier], blocked: true });
+      }
 
       const model = GUIDE_MODEL;
 
