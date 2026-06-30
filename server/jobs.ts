@@ -91,7 +91,6 @@ export interface JobResults {
   };
   "ai-health-check": {
     anthropicOk: boolean;
-    openaiOk: boolean;
     durationMs: number;
   };
   "org-weekly-email": {

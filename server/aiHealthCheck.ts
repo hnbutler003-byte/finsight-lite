@@ -25,59 +25,26 @@ async function pingAnthropic(): Promise<void> {
   }
 }
 
-async function pingOpenAI(): Promise<void> {
-  const { openai } = await import("./replit_integrations/chat/routes");
-  const resp = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    max_tokens: 4,
-    messages: [{ role: "user", content: "ping" }],
-  });
-  if (!resp.choices || resp.choices.length === 0) {
-    throw new Error("OpenAI returned an empty response");
-  }
-}
-
 export interface AiHealthResult {
   anthropicOk: boolean;
-  openaiOk: boolean;
   durationMs: number;
 }
 
 export async function runAiHealthCheck(triggeredBy = "scheduler"): Promise<AiHealthResult> {
   const start = Date.now();
-  const failures: string[] = [];
   let anthropicOk = false;
-  let openaiOk = false;
 
-  // Anthropic covers: MoneyLab tutor explain, investment explainer,
-  // org AI summary, and admin help chat.
   try {
     await pingAnthropic();
     anthropicOk = true;
   } catch (e) {
-    const msg = `AI health check failed: Anthropic (MoneyLab, investment explainer, org AI) -- ${(e as Error).message}`;
-    failures.push(msg);
+    const durationMs = Date.now() - start;
+    const msg = `AI health check failed: Anthropic -- ${(e as Error).message}`;
     captureError(new Error(msg), { job: "ai-health-check", feature: "anthropic", triggeredBy });
-  }
-
-  // OpenAI covers: MoneyGuide chat mentor.
-  try {
-    await pingOpenAI();
-    openaiOk = true;
-  } catch (e) {
-    const msg = `AI health check failed: MoneyGuide (OpenAI) -- ${(e as Error).message}`;
-    failures.push(msg);
-    captureError(new Error(msg), { job: "ai-health-check", feature: "openai-moneyguide", triggeredBy });
+    throw new Error(`AI health check: 1 failure in ${durationMs}ms:\n${msg}`);
   }
 
   const durationMs = Date.now() - start;
-
-  if (failures.length > 0) {
-    throw new Error(
-      `AI health check: ${failures.length} failure(s) in ${durationMs}ms:\n${failures.join("\n")}`,
-    );
-  }
-
-  console.log(`[ai-health-check] All AI features healthy (anthropic + openai) in ${durationMs}ms (triggeredBy=${triggeredBy})`);
-  return { anthropicOk, openaiOk, durationMs };
+  console.log(`[ai-health-check] All AI features healthy (anthropic) in ${durationMs}ms (triggeredBy=${triggeredBy})`);
+  return { anthropicOk, durationMs };
 }

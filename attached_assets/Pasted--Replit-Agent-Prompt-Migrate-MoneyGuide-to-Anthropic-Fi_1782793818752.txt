@@ -1,0 +1,117 @@
+# Replit Agent Prompt — Migrate MoneyGuide to Anthropic + Final Production Verification
+
+Paste this into Replit Agent as one prompt.
+
+---
+
+## Context
+
+A recent diagnostic discovered that MoneyGuide is the only AI feature
+in the app running on OpenAI (gpt-4o-mini), while every other AI
+feature, MoneyLab, the investment explainer, the org AI summary, the
+admin help chat, and PerfAgent, runs on Anthropic (claude-sonnet-4-6).
+This was not an intentional decision, it was just discovered while
+building the new AI health check job. The goal now is to put
+everything on one provider so there is a single integration to manage,
+monitor, and reason about.
+
+## 1. Find and understand the current MoneyGuide implementation
+
+Locate the file or files that implement the MoneyGuide chatbot. Read
+through the full prompt construction, conversation handling, any
+system prompt that guides it toward Caribbean-relevant financial
+literacy topics, and how responses are streamed or returned to the
+student. Do not change anything yet, understand the current behavior
+fully first so the migration doesn't lose any existing functionality
+or tone.
+
+## 2. Migrate MoneyGuide to Anthropic
+
+- Replace the OpenAI client and API calls with the same Anthropic
+  client pattern already used elsewhere in the app (the lazy
+  `getClient()` singleton pattern from `investmentExplainer.ts` and the
+  now-fixed `perfAgent.ts`, reading from the existing
+  `AI_INTEGRATIONS_ANTHROPIC_API_KEY` and
+  `AI_INTEGRATIONS_ANTHROPIC_BASE_URL` variables).
+- Use claude-sonnet-4-6, consistent with every other AI feature in the
+  app. Do not use claude-3-5-haiku-20241022 or any other deprecated
+  model.
+- Preserve the existing system prompt and Caribbean-relevant framing as
+  closely as possible. If the prompt structure needs adjusting for
+  Anthropic's API shape (system prompt as a separate parameter rather
+  than a system-role message, for example), adjust the structure but
+  keep the actual instructional content the same.
+- If MoneyGuide currently streams responses, confirm Anthropic
+  streaming is implemented correctly so students do not experience a
+  regression in responsiveness.
+- Remove the now-unused OpenAI client code and the OpenAI API key
+  dependency for this feature, but first confirm nothing else in the
+  app still depends on OpenAI before removing any shared OpenAI setup
+  code. If something else does use OpenAI, leave that part in place and
+  only remove what was specific to MoneyGuide.
+
+## 3. Update the AI health check job
+
+The new `aiHealthCheck.ts` currently pings both Anthropic and OpenAI
+separately, since MoneyGuide was on OpenAI. Now that everything is on
+Anthropic, simplify the health check to a single Anthropic ping, since
+one successful Anthropic call now effectively covers all AI features
+including MoneyGuide. Remove the OpenAI ping and any now-unused OpenAI
+client code in that file.
+
+## 4. Test MoneyGuide directly
+
+Send a real test message to MoneyGuide as if you were a student asking
+a basic money question, and confirm the response is coherent, on
+topic, and reflects the same Caribbean-relevant guidance the original
+system prompt was designed to produce. This is the one feature in this
+migration where behavior, not just successful connection, actually
+matters.
+
+## 5. Final production verification
+
+A production deployment was triggered after the previous session, this
+prompt should confirm its current state and verify everything end to
+end:
+
+- Confirm the deployment is live and confirm the current deployed
+  commit matches the latest local commit (SHA comparison), including
+  this MoneyGuide migration.
+- Confirm `SENTRY_DSN` is present and non-empty in the deployed
+  environment's secrets. If it is missing, report this clearly and stop,
+  since `captureError` is a silent no-op without it and the whole
+  health check and Sentry alerting effort would be invisible without
+  this one variable.
+- Trigger the AI health check manually against production via
+  `POST /api/admin/ai-health-check` and confirm it returns healthy.
+- Trigger a PerfAgent scan against production and confirm it completes
+  without a 401 or any authentication error.
+- Send a real MoneyGuide test message against production specifically
+  (not dev) and confirm a coherent response comes back.
+- Confirm the `DISABLE_AI_HEALTH_CHECK` and `DISABLE_PERF_SCAN` kill
+  switches are not accidentally set in production right now (they
+  should be unset so both jobs run normally).
+
+## Standing requirements
+
+- No em dashes anywhere this touches, code, comments, commit messages,
+  or any report text. Use periods, commas, or conjunctions instead.
+- Use claude-sonnet-4-6 for all Anthropic calls, never the deprecated
+  claude-3-5-haiku-20241022.
+- Verify any UI touched by this change in both light and dark mode if
+  applicable.
+- Any new or modified database write function must throw a clear,
+  catchable error on failure, never silently return
+  null/undefined/false.
+
+## When done, report back
+
+- Confirmation MoneyGuide is now fully running on Anthropic, with the
+  test message and response quality confirmed
+- Confirmation the health check job was simplified to a single
+  Anthropic ping
+- Confirmation of every item in the production verification checklist
+  in section 5, including the SENTRY_DSN check specifically, do not
+  skip reporting on this one even if everything else passes
+- Whether the app now has a single AI provider with zero remaining
+  OpenAI dependencies, or whether something else still requires it

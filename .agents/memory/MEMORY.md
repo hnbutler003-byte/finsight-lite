@@ -5,4 +5,5 @@
 - [GitHub push workflow](github-push-workflow.md) — main agent can't commit; platform auto-commits on mark_task_complete even when validation FAILS, then push github main + verify via git ls-remote.
 - [Vite ?raw imports](vite-raw-imports.md) — add client/src/env.d.ts with `/// <reference types="vite/client" />` to enable TS support for ?raw string imports.
 - [AI gateway supported models](ai-gateway-models.md) — Replit Anthropic gateway only accepts claude-sonnet-4-6; haiku/older ids 400 "not supported"; build SDK with apiKey+baseURL from AI_INTEGRATIONS_*.
+- [OpenAI still used in ai.ts](openai-remaining-usage.md) — AI Insight (line ~102) and MoneyLab tutor explain (line ~419) still use OpenAI gpt-4o-mini; openai import must stay. MoneyGuide migrated to Anthropic.
 - [executeSql vs app DB](executesql-vs-app-db.md) — executeSql hits Replit built-in PG, app uses Supabase; seed/verify via app endpoints (demo login, no password), not executeSql.

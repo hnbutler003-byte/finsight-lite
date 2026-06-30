@@ -28,6 +28,7 @@ import { getStudentOrgIds } from "../supabase";
 import { isAdmin, isOrgAdmin, ADMIN_EMAIL } from "./auth";
 import fs from "fs";
 import * as nodePath from "path";
+import Anthropic from "@anthropic-ai/sdk";
 
 const examUpload = multer({
   storage: multer.memoryStorage(),
@@ -42,6 +43,18 @@ const examUpload = multer({
     }
   },
 });
+
+const GUIDE_MODEL = "claude-sonnet-4-6";
+let _guideClient: Anthropic | null = null;
+function getGuideClient(): Anthropic {
+  if (!_guideClient) {
+    _guideClient = new Anthropic({
+      apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+      baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+    });
+  }
+  return _guideClient;
+}
 
 export async function registerAiRoutes(app: Express): Promise<void> {
 
@@ -508,9 +521,7 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
       const orgIds = await getStudentOrgIds(userId).catch(() => [] as string[]);
       const orgId = orgIds[0] ?? null;
 
-      const totalChars = sanitizedMessages.reduce((sum: number, m: any) => sum + m.content.length, 0);
-      const useMini = sanitizedMessages.length <= 2 && totalChars < 1500;
-      const model = useMini ? "gpt-4o-mini" : "gpt-4o";
+      const model = GUIDE_MODEL;
 
       const reservation = await reserveQuota({ userId, orgId, kind: "guide_chat", model });
       if (!reservation.ok) {
@@ -584,37 +595,30 @@ If the user asks about FinSight Lite features, you can mention:
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      const chatMessages = [
-        { role: "system" as const, content: systemPrompt },
-        ...sanitizedMessages,
-      ];
-
-      const stream = await openai.chat.completions.create({
+      const stream = getGuideClient().messages.stream({
         model,
-        messages: chatMessages,
-        stream: true,
-        stream_options: { include_usage: true },
-        max_completion_tokens: 1024,
+        max_tokens: 1024,
         temperature: 0.8,
+        system: systemPrompt,
+        messages: sanitizedMessages,
       });
 
-      let promptTokens = 0;
-      let completionTokens = 0;
-      for await (const chunk of stream) {
-        if (chunk.usage) {
-          promptTokens = chunk.usage.prompt_tokens ?? 0;
-          completionTokens = chunk.usage.completion_tokens ?? 0;
-        }
-        const content = chunk.choices[0]?.delta?.content || "";
-        if (content) {
-          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      let inputTokens = 0;
+      let outputTokens = 0;
+      for await (const event of stream) {
+        if (event.type === "message_start") {
+          inputTokens = event.message.usage.input_tokens;
+        } else if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+          res.write(`data: ${JSON.stringify({ content: event.delta.text })}\n\n`);
+        } else if (event.type === "message_delta") {
+          outputTokens = event.usage.output_tokens;
         }
       }
 
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();
       await finalizeUsage(reservation.reservationId, {
-        tokensIn: promptTokens, tokensOut: completionTokens, model,
+        tokensIn: inputTokens, tokensOut: outputTokens, model,
       });
       finalized = true;
       } finally {
