@@ -439,15 +439,15 @@ function ImportStudentsDialog({
               <div className="space-y-3" data-testid="import-preview">
                 <div className="grid grid-cols-3 gap-3">
                   <div className="rounded-2xl border-2 p-3 text-center">
-                    <p className="font-display font-bold text-2xl">{preview.summary.total}</p>
+                    <p className="font-bold text-2xl">{preview.summary.total}</p>
                     <p className="text-xs text-muted-foreground">Total rows</p>
                   </div>
                   <div className="rounded-2xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/10 p-3 text-center">
-                    <p className="font-display font-bold text-2xl text-emerald-600">{preview.summary.ok}</p>
+                    <p className="font-bold text-2xl text-emerald-600">{preview.summary.ok}</p>
                     <p className="text-xs text-muted-foreground">Ready to import</p>
                   </div>
                   <div className="rounded-2xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/10 p-3 text-center">
-                    <p className="font-display font-bold text-2xl text-red-600">{preview.summary.errors}</p>
+                    <p className="font-bold text-2xl text-red-600">{preview.summary.errors}</p>
                     <p className="text-xs text-muted-foreground">Need fixing</p>
                   </div>
                 </div>
@@ -510,15 +510,15 @@ function ImportStudentsDialog({
           <div className="space-y-3" data-testid="import-result">
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-2xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/10 p-4 text-center">
-                <p className="font-display font-bold text-2xl text-emerald-600">{commitResult.summary.created}</p>
+                <p className="font-bold text-2xl text-emerald-600">{commitResult.summary.created}</p>
                 <p className="text-xs text-muted-foreground">Students created</p>
               </div>
               <div className="rounded-2xl border-2 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/10 p-4 text-center">
-                <p className="font-display font-bold text-2xl text-blue-600">{commitResult.summary.emailed}</p>
+                <p className="font-bold text-2xl text-blue-600">{commitResult.summary.emailed}</p>
                 <p className="text-xs text-muted-foreground">Welcome emails sent</p>
               </div>
               <div className="rounded-2xl border-2 p-4 text-center">
-                <p className="font-display font-bold text-2xl">{commitResult.summary.skipped}</p>
+                <p className="font-bold text-2xl">{commitResult.summary.skipped}</p>
                 <p className="text-xs text-muted-foreground">Skipped</p>
               </div>
             </div>

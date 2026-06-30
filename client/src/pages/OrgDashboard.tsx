@@ -243,10 +243,10 @@ export default function OrgDashboard() {
                     <p className="font-semibold text-sm mb-3">Getting started</p>
                     <div className="space-y-2">
                       {[
-                        { label: "Share your student join code", done: (overview?.stats?.studentCount ?? 0) > 0 },
+                        { label: "Create your admin account", done: true },
                         { label: "Enrol at least one student", done: (overview?.stats?.studentCount ?? 0) > 0 },
                         { label: "Publish your first lesson", done: (overview?.stats?.publishedLessons ?? 0) > 0 },
-                        { label: "Customise your branding", done: false },
+                        { label: "Set up your branding", done: false },
                       ].map(item => (
                         <div key={item.label} className="flex items-center gap-2.5">
                           {item.done
@@ -255,6 +255,7 @@ export default function OrgDashboard() {
                           <span className={`text-sm ${item.done ? "text-muted-foreground line-through" : "text-foreground"}`}>{item.label}</span>
                         </div>
                       ))}
+                      <a href="/org/help" className="inline-block mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline">Need help? View the Help Center</a>
                     </div>
                   </div>
                   <button

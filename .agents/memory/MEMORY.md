@@ -3,5 +3,6 @@
 - [Supabase org schema migrations](supabase-org-schema-migrations.md) — 6 columns were missing from live organizations table; startup probe uses `display_label` as sentinel for all org migrations.
 - [deleteUserAllData transaction](delete-user-transaction.md) — must be wrapped in db.transaction(); conversations table has no userId so AI chat history is NOT deleted on purge (known gap).
 - [GitHub push workflow](github-push-workflow.md) — main agent can't commit; platform auto-commits on mark_task_complete even when validation FAILS, then push github main + verify via git ls-remote.
+- [Vite ?raw imports](vite-raw-imports.md) — add client/src/env.d.ts with `/// <reference types="vite/client" />` to enable TS support for ?raw string imports.
 - [AI gateway supported models](ai-gateway-models.md) — Replit Anthropic gateway only accepts claude-sonnet-4-6; haiku/older ids 400 "not supported"; build SDK with apiKey+baseURL from AI_INTEGRATIONS_*.
 - [executeSql vs app DB](executesql-vs-app-db.md) — executeSql hits Replit built-in PG, app uses Supabase; seed/verify via app endpoints (demo login, no password), not executeSql.

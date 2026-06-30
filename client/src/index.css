@@ -715,3 +715,22 @@
   font-size: 13px;
   color: hsl(var(--foreground));
 }
+
+/* ── MARKDOWN PROSE ───────────────────────────────────────── */
+/* Used by Help Center pages rendered via react-markdown       */
+.md-prose h1 { font-weight: 700; font-size: 1.5rem; margin-bottom: 1rem; color: hsl(var(--foreground)); }
+.md-prose h2 { font-weight: 600; font-size: 1.15rem; margin-top: 2rem; margin-bottom: 0.6rem; padding-bottom: 0.4rem; border-bottom: 1px solid hsl(var(--border)); color: hsl(var(--foreground)); }
+.md-prose h3 { font-weight: 600; font-size: 0.95rem; margin-top: 1.25rem; margin-bottom: 0.4rem; color: hsl(var(--foreground)); }
+.md-prose p  { font-size: 0.875rem; line-height: 1.65; margin-bottom: 0.85rem; color: hsl(var(--foreground)); }
+.md-prose ul,
+.md-prose ol { padding-left: 1.25rem; margin-bottom: 0.85rem; }
+.md-prose li { font-size: 0.875rem; line-height: 1.6; margin-bottom: 0.25rem; color: hsl(var(--foreground)); }
+.md-prose ul { list-style-type: disc; }
+.md-prose ol { list-style-type: decimal; }
+.md-prose strong { font-weight: 600; }
+.md-prose code { font-family: var(--font-mono); font-size: 0.8rem; background: hsl(var(--muted)); padding: 0.1em 0.35em; border-radius: 4px; }
+.md-prose pre  { background: hsl(var(--muted)); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; overflow-x: auto; }
+.md-prose pre code { background: transparent; padding: 0; }
+.md-prose hr  { border: none; border-top: 1px solid hsl(var(--border)); margin: 1.5rem 0; }
+.md-prose a   { color: hsl(var(--primary)); text-decoration: underline; }
+.md-prose blockquote { border-left: 3px solid hsl(var(--border)); padding-left: 1rem; color: hsl(var(--muted-foreground)); margin-bottom: 0.85rem; }

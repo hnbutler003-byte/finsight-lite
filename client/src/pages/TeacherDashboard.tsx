@@ -237,10 +237,10 @@ export default function TeacherDashboard() {
   const totalStudents = classes?.reduce((s, c) => s + c.enrollmentCount, 0) ?? 0;
 
   const checklistItems = [
+    { label: "Create your teacher account", done: true },
     { label: "Create your first class", done: (classes?.length ?? 0) > 0 },
     { label: "Add students to a class", done: totalStudents > 0 },
     { label: "Post a challenge or quiz", done: hasChallenges },
-    { label: "Explore the lesson library", done: lessonsExplored },
   ];
   const allChecklistComplete = checklistItems.every(item => item.done);
 
@@ -329,6 +329,7 @@ export default function TeacherDashboard() {
                         </div>
                       ))}
                     </div>
+                    <a href="/teacher/help" className="inline-block mt-3 text-xs text-emerald-600 dark:text-emerald-400 hover:underline">Need help? View the Help Center</a>
                   </CardContent>
                 </Card>
               )}

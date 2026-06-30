@@ -1,0 +1,114 @@
+# Replit Agent Prompt — Onboarding Checklist, Help Center, and Stale Sweep
+
+Paste this into Replit Agent as one prompt.
+
+---
+
+## Part 1: Audit and improve the existing onboarding checklist
+
+There is already an onboarding checklist somewhere in the Teacher and/or
+Org Admin portals. Find it first, read how it currently works (where it
+lives, what steps it tracks, whether it persists or can be dismissed
+permanently, whether progress is saved), before changing anything.
+
+Once you understand the current implementation, improve it against
+these principles:
+
+- **Always visible until complete, not buried.** It should live
+  somewhere prominent on the Dashboard, not tucked into a settings menu
+  or a dismissible toast that disappears for good once closed.
+- **Starts partially complete, not at zero.** If a step like "create
+  your account" is functionally already done by the time someone sees
+  the checklist, it should already be checked off, the progress bar
+  should never start at 0%. Confirm whether this is already the case;
+  if it starts at 0% today, fix it.
+- **Steps should lead to each role's real first value moment, not just
+  generic setup.** For a teacher, that's likely: create your first
+  class, get students enrolled or share your join code, assign or
+  publish your first lesson, then check the savings-goal or investment
+  analytics view once a student has real activity. For an org admin,
+  it's likely: get your join code in front of students, see your first
+  student enrol, publish your first lesson. Audit whether the current
+  checklist's steps actually match this kind of sequence, and reorder
+  or rewrite steps if they don't.
+- **No gamification leak on the teacher/org side.** This checklist
+  lives inside `.console` styling, plain progress bar, no confetti, no
+  XP, no streak language, consistent with the existing console design
+  tier.
+- **Ask for less, earlier.** While in this area, check the actual
+  account creation/registration flow for both Teacher and Org Admin and
+  flag (don't necessarily fix unless trivial) any field being collected
+  that isn't actually needed yet, unnecessary required fields at signup
+  are a common silent source of drop-off.
+
+## Part 2: Build the Help Center pages
+
+These were planned in an earlier guide-pipeline prompt but never built.
+Add `/org/help` and `/teacher/help` routes in their respective portals.
+
+- Render the existing `docs/org-guide.md` and `docs/teacher-guide.md`
+  markdown files using a proper markdown renderer, not raw text.
+- Style with the `.console` design tier already established (flat,
+  hairline borders, no glass cards, no coral, restrained), consistent
+  with the rest of the teacher/org chrome.
+- Add a "Help" sidebar nav entry with an appropriate icon in both
+  portals pointing to these routes.
+- Add a small, low-key link or button from the onboarding checklist
+  (Part 1) to the relevant Help Center page, so a stuck user has an
+  obvious next step beyond the checklist itself.
+- If the admin help chat widget exists and can be enhanced cheaply,
+  wire it to use the same markdown files as grounding context so its
+  answers and the Help Center page stay consistent. If this is a bigger
+  lift than expected, skip it and report back rather than guessing.
+
+## Part 3: Stale and bug sweep
+
+Audit the codebase for anything left over from recent work that may
+have gone stale or inconsistent. Specifically check for:
+
+- **Naming inconsistencies.** A previous QA pass flagged that the admin
+  lesson endpoint uses snake_case field names (`video_url`,
+  `grade_level`) while the org-admin endpoint uses camelCase
+  (`videoUrl`, `gradeLevel`). Both work today but this was left as a
+  flagged hold item. Decide whether to normalize this now or confirm
+  it's still safe to leave, and report which.
+- **Orphaned code from the console restyle.** Check for any leftover
+  `glass-card`, `font-display`, coral-related classes, or gamified
+  styling helper functions that are no longer referenced anywhere in
+  the Teacher or Org Admin portals after the restyle, and remove dead
+  code if found.
+- **Broken or stale links and references.** Check internal links,
+  especially anything that might reference old routes, old branding
+  text, or placeholder copy that was never replaced.
+- **Signup/registration flow**, end to end, for both Teacher and Org
+  Admin: actually walk through creating a new account as if you were a
+  brand new user, not just reviewing the code. Note any friction,
+  confusing copy, unnecessary fields, or broken states encountered.
+- **Anything else stale** you notice while working through the above,
+  outdated comments referencing removed features, unused imports,
+  console.log statements left in from debugging, etc. Use judgment, this
+  doesn't need to be exhaustive, but flag anything that looks like
+  leftover scaffolding rather than finished work.
+
+## Standing requirements
+
+- No em dashes anywhere this touches, code, comments, copy, or
+  markdown. Use periods, commas, or conjunctions instead.
+- Verify all new/changed UI in both light and dark mode.
+- Any new database write function must throw a clear, catchable error
+  on failure, never silently return null/undefined/false.
+- Use claude-sonnet-4-6 for any AI feature touched, never the
+  deprecated claude-3-5-haiku-20241022.
+- If this requires a fresh npm install, include the package-lock.json
+  proxy fix: `sed -i 's|http://package-firewall.replit.local/npm|https://registry.npmjs.org|g' package-lock.json`, then verify with grep (should return 0).
+
+## When done, report back
+
+- What the onboarding checklist looked like before and what changed
+- Confirmation both Help Center pages are live, styled correctly, and
+  linked from the sidebar and the checklist
+- Whether the admin help chat was wired to the guide files or skipped,
+  and why if skipped
+- Full list of stale/bug items found and fixed, plus anything flagged
+  but intentionally left alone
+- Any friction found while walking the actual signup flow as a new user

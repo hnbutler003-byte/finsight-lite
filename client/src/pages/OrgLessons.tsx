@@ -399,7 +399,7 @@ function CreateLessonModal({ onClose }: { onClose: () => void }) {
               <Plus className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h2 className="font-display font-bold text-xl">Create New Lesson</h2>
+              <h2 className="font-bold text-xl">Create New Lesson</h2>
               <p className="text-xs text-muted-foreground">
                 {step === "details" ? "Step 1 of 3: Lesson details" : step === "content" ? "Step 2 of 3: Content sections" : "Step 3 of 3: Quiz questions (optional)"}
               </p>
@@ -576,7 +576,7 @@ function EditLessonModal({ lesson, onClose }: { lesson: LessonPlan; onClose: () 
               <Pencil className="w-5 h-5 text-indigo-600" />
             </div>
             <div>
-              <h2 className="font-display font-bold text-xl">Edit Lesson</h2>
+              <h2 className="font-bold text-xl">Edit Lesson</h2>
               <p className="text-xs text-muted-foreground">
                 {step === "details" ? "Step 1 of 3: Lesson details" : step === "content" ? "Step 2 of 3: Content sections" : "Step 3 of 3: Quiz questions"}
               </p>
@@ -683,7 +683,7 @@ function DeleteConfirmDialog({ lesson, onClose }: { lesson: LessonPlan; onClose:
             <Trash2 className="w-7 h-7 text-red-500" />
           </div>
           <div>
-            <h2 className="font-display font-bold text-xl">Delete Lesson?</h2>
+            <h2 className="font-bold text-xl">Delete Lesson?</h2>
             <p className="text-sm text-muted-foreground mt-2">
               This will permanently delete <span className="font-semibold text-foreground">"{lesson.title}"</span> and all its quiz questions. This cannot be undone.
             </p>

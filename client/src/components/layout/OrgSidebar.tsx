@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useOrgAuth } from "@/hooks/use-org-auth";
 import { FinsightLiteLogo } from "@/components/FinsightLiteLogo";
 import {
-  LayoutDashboard, Users, BookOpen, LogOut, Building2, Menu, X, ChevronRight, Award, GraduationCap
+  LayoutDashboard, Users, BookOpen, LogOut, Building2, Menu, X, ChevronRight, Award, GraduationCap, HelpCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -13,6 +13,7 @@ const navItems = [
   { href: "/org/teachers", label: "Teachers", icon: GraduationCap },
   { href: "/org/lessons", label: "Lessons", icon: BookOpen },
   { href: "/org/branding", label: "Certificate Branding", icon: Award },
+  { href: "/org/help", label: "Help", icon: HelpCircle },
 ];
 
 export function OrgSidebar() {

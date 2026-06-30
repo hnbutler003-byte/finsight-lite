@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useTeacherAuth } from "@/hooks/use-teacher-auth";
 import { FinsightLiteLogo } from "@/components/FinsightLiteLogo";
 import {
-  LayoutDashboard, BookOpen, LogOut, GraduationCap, Menu, X, ChevronRight
+  LayoutDashboard, BookOpen, LogOut, GraduationCap, Menu, X, ChevronRight, HelpCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -10,6 +10,7 @@ import { useState } from "react";
 const navItems = [
   { href: "/teacher/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/teacher/classes", label: "My Classes", icon: BookOpen },
+  { href: "/teacher/help", label: "Help", icon: HelpCircle },
 ];
 
 export function TeacherSidebar() {

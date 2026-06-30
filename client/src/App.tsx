@@ -37,6 +37,8 @@ import OrgStudents from "@/pages/OrgStudents";
 import OrgTeachers from "@/pages/OrgTeachers";
 import OrgLessons from "@/pages/OrgLessons";
 import OrgBranding from "@/pages/OrgBranding";
+import TeacherHelp from "@/pages/TeacherHelp";
+import OrgHelp from "@/pages/OrgHelp";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import OurStory from "@/pages/OurStory";
@@ -163,6 +165,7 @@ function Router() {
         <Route path="/teacher/dashboard" component={TeacherDashboard} />
         <Route path="/teacher/classes/:id" component={TeacherClassDetail} />
         <Route path="/teacher/classes" component={TeacherDashboard} />
+        <Route path="/teacher/help" component={TeacherHelp} />
         <Route path="/teacher">{() => <Redirect to="/teacher/login" />}</Route>
         <Route path="/org/login" component={OrgLogin} />
         <Route path="/org/register" component={OrgRegister} />
@@ -172,6 +175,7 @@ function Router() {
         <Route path="/org/teachers" component={OrgTeachers} />
         <Route path="/org/lessons" component={OrgLessons} />
         <Route path="/org/branding" component={OrgBranding} />
+        <Route path="/org/help" component={OrgHelp} />
         <Route path="/org">{() => <Redirect to="/org/login" />}</Route>
         <Route path="/privacy" component={PrivacyPolicy} />
         <Route path="/terms" component={TermsOfService} />
