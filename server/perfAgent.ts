@@ -2,10 +2,16 @@ import Anthropic from "@anthropic-ai/sdk";
 import fs from "fs";
 import path from "path";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
-});
+let _client: Anthropic | null = null;
+function getClient(): Anthropic {
+  if (!_client) {
+    _client = new Anthropic({
+      apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+      baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+    });
+  }
+  return _client;
+}
 
 const SCAN_TARGETS = [
   {
@@ -122,7 +128,7 @@ Respond with ONLY valid JSON, no markdown, no preamble, no trailing text:
 Rules: max 5 findings, max 3 opportunities. Only report real, specific issues, no vague advice. Be direct and practical.`;
 
   try {
-    const message = await anthropic.messages.create({
+    const message = await getClient().messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 2048,
       messages: [{ role: "user", content: prompt }],

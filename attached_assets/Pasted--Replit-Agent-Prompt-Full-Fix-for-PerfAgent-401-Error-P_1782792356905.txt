@@ -1,0 +1,93 @@
+# Replit Agent Prompt — Full Fix for PerfAgent 401 Error
+
+Paste this into Replit Agent as one prompt.
+
+---
+
+## Context
+
+A diagnostic pass already confirmed the following, do not re-diagnose,
+go straight to fixing:
+
+- The error is `401 invalid x-api-key` from PerfAgent
+  (`server/perfAgent.ts`), a code-health scanner that calls Claude on a
+  schedule.
+- All four AI-calling files (`perfAgent.ts`, `investmentExplainer.ts`,
+  `routes/ai.ts`, `routes/orgs.ts`) read the same two Replit-managed
+  integration variables: `AI_INTEGRATIONS_ANTHROPIC_API_KEY` and
+  `AI_INTEGRATIONS_ANTHROPIC_BASE_URL`. There is no bare
+  `ANTHROPIC_API_KEY` anywhere, do not introduce one, do not generate a
+  new key from console.anthropic.com, that would bypass Replit's
+  billing gateway and not fix anything.
+- `perfAgent.ts` builds its Anthropic client once at module import time
+  (`const anthropic = new Anthropic({...})` at the top of the file),
+  unlike the other three files which build their client lazily, fresh
+  on each request. If the integration variables aren't populated yet at
+  the exact moment the server boots and this module is first imported,
+  the client freezes with a bad/empty key permanently, even if the
+  variables become available a moment later.
+
+## 1. Check and fix the integration linkage, if possible from here
+
+Determine whether the Replit Anthropic AI integration is actually
+connected to the deployed (Autoscale) environment, not just the dev
+workspace. Use whatever tools or commands are available to you to
+check this (for example, checking if `AI_INTEGRATIONS_ANTHROPIC_API_KEY`
+and `AI_INTEGRATIONS_ANTHROPIC_BASE_URL` are present and non-empty in
+the actual deployed environment, not just the dev workspace).
+
+If you have the ability to relink, refresh, or sync the integration to
+the deployment yourself, do so. If this requires a manual action in the
+Replit dashboard UI that you cannot perform (for example, a button only
+clickable through the web interface, outside of file/shell access),
+stop and clearly report exactly what manual step is needed and why you
+can't complete it yourself, rather than guessing or leaving it
+ambiguous.
+
+## 2. Fix the structural bug in perfAgent.ts regardless of part 1's outcome
+
+This needs fixing either way, since it's the difference between a
+credential issue self-healing versus freezing permanently.
+
+Change `perfAgent.ts` so it builds its Anthropic client lazily, the
+same pattern already used in `investmentExplainer.ts` (a `getClient()`
+singleton function that constructs the client on first use, not at
+module load). Do not change the scan logic, the file-reading behavior,
+or the report output, only the client initialization pattern.
+
+## 3. Test whether other AI features are also affected
+
+Since deployment logs weren't available during the diagnostic pass, use
+whatever method is available to you (test endpoints, a manual request
+through the app itself if you can simulate one, or any way you can
+trigger MoneyGuide, MoneyLab, the investment explainer, or the org AI
+features) to confirm whether they are currently working in the deployed
+environment or also failing with the same 401. Report this clearly,
+since it confirms whether this was an isolated PerfAgent issue or
+affected the whole app's AI features.
+
+## 4. Verify the fix
+
+Once the lazy-init change is in and the integration linkage is
+confirmed (or the manual blocker is reported), trigger a PerfAgent scan
+manually if possible and confirm it completes without the 401 error.
+
+## Standing requirements
+
+- No em dashes anywhere this touches, code, comments, or any report
+  text. Use periods, commas, or conjunctions.
+- Any new database write function must throw a clear, catchable error
+  on failure, never silently return null/undefined/false.
+- Do not introduce a new environment variable or bare API key, this
+  must stay on the existing Replit-managed integration variables.
+
+## When done, report back
+
+- Whether the integration linkage was already fine, was fixed by you,
+  or requires a manual step you can't complete, with exact instructions
+  for that manual step if so
+- Confirmation the lazy-init fix is in place in perfAgent.ts
+- Whether other AI features (MoneyGuide, MoneyLab, investment
+  explainer, org AI features) were found to be affected or unaffected
+- Confirmation a PerfAgent scan now completes successfully, or an
+  explanation of what's still blocking it if it doesn't
