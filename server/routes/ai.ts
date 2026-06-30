@@ -711,6 +711,16 @@ If the user asks about FinSight Lite features, you can mention:
     res.json({ jobId: job.id });
   });
 
+  // === AI FEATURE HEALTH CHECK ===
+  app.post("/api/admin/ai-health-check", isAdmin, async (_req, res) => {
+    try {
+      const job = await enqueueJob({ kind: "ai-health-check", payload: { triggeredBy: "admin" } });
+      res.json({ jobId: job.id });
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
   // === PERFORMANCE AGENT ===
   app.post("/api/admin/perf-scan", isAdmin, async (_req, res) => {
     try {

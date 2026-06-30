@@ -195,6 +195,44 @@ function startOrgWeeklyEmailScheduler() {
   setInterval(() => { void maybeRunOrgWeeklyEmail(); }, 15 * 60 * 1000);
 }
 
+// ── AI feature health check scheduler ─────────────────────────────────────
+// Fires once per day at 06:00 UTC to confirm Anthropic and OpenAI are reachable.
+// Set DISABLE_AI_HEALTH_CHECK=1 to silence the scheduler without touching code.
+function startAiHealthCheckScheduler() {
+  if (process.env.DISABLE_AI_HEALTH_CHECK === "1") {
+    log("ai-health-check scheduler disabled (DISABLE_AI_HEALTH_CHECK=1)", "health");
+    return;
+  }
+
+  function msUntilNextUtcHour(hour: number): number {
+    const now = new Date();
+    const next = new Date(Date.UTC(
+      now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),
+      hour, 0, 0, 0,
+    ));
+    if (next.getTime() <= now.getTime()) next.setUTCDate(next.getUTCDate() + 1);
+    return next.getTime() - now.getTime();
+  }
+
+  async function enqueue(trigger: string) {
+    try {
+      await enqueueJob({ kind: "ai-health-check", payload: { triggeredBy: trigger } });
+      log(`ai-health-check enqueued (${trigger})`, "health");
+    } catch (e) {
+      log(`ai-health-check enqueue failed: ${(e as Error).message}`, "health");
+    }
+  }
+
+  const delayMs = msUntilNextUtcHour(6);
+  const nextRun = new Date(Date.now() + delayMs);
+  log(`ai-health-check scheduler armed; first run at ${nextRun.toISOString()}`, "health");
+
+  setTimeout(() => {
+    void enqueue("scheduler-daily");
+    setInterval(() => void enqueue("scheduler-daily"), 24 * 60 * 60 * 1000);
+  }, delayMs);
+}
+
 // ── Performance scan scheduler ─────────────────────────────────────────────
 // Enqueues a perf-scan job on a configurable interval (default: 1 hour).
 // Set PERF_SCAN_INTERVAL_MS env var to override (e.g. "1800000" for 30 min).
@@ -275,6 +313,7 @@ process.on("SIGINT", stopUptimeWorker);
   startWeeklyDigestScheduler();
   startAiUsagePurgeScheduler();
   startPerfScanScheduler();
+  startAiHealthCheckScheduler();
   startOrgWeeklyEmailScheduler();
 
 

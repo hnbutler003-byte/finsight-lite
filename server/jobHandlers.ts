@@ -63,6 +63,18 @@ export function registerJobHandlers() {
     return runPerfScan(job.payload.triggeredBy ?? "job");
   });
 
+  // === AI feature health check ===
+  registerJobHandler("ai-health-check", async (job) => {
+    const { runAiHealthCheck } = await import("./aiHealthCheck");
+    const { captureError: capture } = await import("./sentry");
+    try {
+      return await runAiHealthCheck(job.payload.triggeredBy ?? "job");
+    } catch (err) {
+      capture(err, { job: "ai-health-check", triggeredBy: job.payload.triggeredBy });
+      throw err;
+    }
+  });
+
   // === AI usage purge ===
   registerJobHandler("purge-ai-usage", async (job) => {
     const { olderThanDays } = job.payload;

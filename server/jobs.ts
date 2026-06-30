@@ -45,6 +45,9 @@ export interface JobPayloads {
   "perf-scan": {
     triggeredBy?: string;
   };
+  "ai-health-check": {
+    triggeredBy?: string;
+  };
   "org-weekly-email": {
     weekStart: string;
   };
@@ -85,6 +88,11 @@ export interface JobResults {
     warningCount: number;
     durationMs: number;
     filesScanned: number;
+  };
+  "ai-health-check": {
+    anthropicOk: boolean;
+    openaiOk: boolean;
+    durationMs: number;
   };
   "org-weekly-email": {
     orgsProcessed: number;

@@ -1,0 +1,110 @@
+# Replit Agent Prompt — Automated AI Feature Health Check
+
+Paste this into Replit Agent as one prompt.
+
+---
+
+## Goal
+
+Build a small, automated, scheduled check that confirms the app's AI
+features are actually working, MoneyGuide, MoneyLab, the investment
+explainer, and the org AI features (AI summary, admin help chat), and
+surfaces any failure through the existing Sentry alerting that's
+already wired up and already sends email. This requires no manual
+checking from the founder, it should just run on its own and only make
+noise when something is actually broken.
+
+## 0. Precondition, confirm before building anything new
+
+The PerfAgent lazy-init fix was verified in the dev workspace only, a
+live scan completed cleanly there after a restart. It was never
+confirmed against the actual deployed production environment, and the
+original question of whether MoneyGuide, MoneyLab, the investment
+explainer, or the org AI features were also affected by the 401 was
+never actually tested, only reasoned about.
+
+Before building the new health check job, do this first:
+
+- Deploy the current code (with the PerfAgent lazy-init fix already in
+  it) to production if it hasn't been deployed yet.
+- Once deployed, make a real test request to MoneyGuide, MoneyLab, the
+  investment explainer, and an org AI feature (AI summary or admin help
+  chat) against the live production environment, not dev, and confirm
+  each one succeeds.
+- Trigger a PerfAgent scan against production specifically (not just
+  dev) and confirm it completes without the 401.
+
+Report the result of this verification clearly before moving to the
+new health check job below. If anything still fails in production,
+stop and report that first, since it means the root cause isn't fully
+resolved yet and the new health check would just be monitoring a
+still-broken system.
+
+## 1. Build the health check job
+
+Create a new scheduled job, following the same pattern already used by
+`perfAgent.ts` and its scheduler trigger in `jobHandlers.ts` (reuse
+that existing scheduling mechanism rather than introducing a new one).
+
+The job should:
+
+- Run once per day (pick a low-traffic time, e.g. early morning UTC, to
+  avoid interfering with real usage)
+- Make a lightweight, real test call to each of: MoneyGuide, MoneyLab,
+  the investment explainer, and the org AI summary/admin help chat,
+  using minimal/cheap prompts purely to confirm each one returns a
+  successful response, not to generate anything meaningful
+- Use claude-sonnet-4-6 for these test calls, consistent with every
+  other AI feature in the app
+- If any feature fails, throw a clear, descriptive error (e.g. "AI
+  health check failed: MoneyGuide returned 401", "AI health check
+  failed: investment explainer timed out") so it gets caught by Sentry
+  the same way other errors already are. This follows the existing
+  standing rule that failures must throw catchable errors, never fail
+  silently.
+- If all features succeed, log a simple success line, no alert needed,
+  silence is the expected good state.
+
+## 2. Apply the lazy-initialization pattern from the start
+
+Build this new health check job's Anthropic client using the same lazy
+singleton pattern as `investmentExplainer.ts` (client built on first
+use, not at module load), so this new code doesn't reintroduce the
+exact bug that caused the original PerfAgent issue.
+
+## 3. Confirm Sentry actually catches it
+
+Verify that an error thrown from this new scheduled job is captured by
+the existing Sentry integration the same way other server-side errors
+are. If Sentry is only configured to catch errors from request handlers
+and not from background/scheduled jobs, fix that gap so this new check
+is actually covered, otherwise this whole feature is silently useless.
+
+## 4. Add a kill switch
+
+Same pattern as PerfAgent's `DISABLE_PERF_SCAN=1`, add an environment
+variable (e.g. `DISABLE_AI_HEALTH_CHECK=1`) that can silence this job
+entirely if needed, without touching code.
+
+## Standing requirements
+
+- No em dashes anywhere this touches, code, comments, or any output
+  text. Use periods, commas, or conjunctions.
+- Use claude-sonnet-4-6 for all test calls, never the deprecated
+  claude-3-5-haiku-20241022.
+- This must use the existing `AI_INTEGRATIONS_ANTHROPIC_API_KEY` and
+  `AI_INTEGRATIONS_ANTHROPIC_BASE_URL` variables, the same ones every
+  other AI feature uses, do not introduce a separate key.
+
+## When done, report back
+
+- Confirmation that production (not just dev) was verified clean first:
+  PerfAgent, MoneyGuide, MoneyLab, the investment explainer, and an org
+  AI feature all tested live against the deployed environment
+- Confirmation the job is scheduled and running on the chosen interval
+- Confirmation it was tested by intentionally simulating a failure (for
+  example, temporarily pointing it at a bad endpoint) to verify Sentry
+  actually receives and emails the alert, not just that the code looks
+  correct
+- Confirmation the kill switch works
+- The exact daily time the check runs, so it's on record
