@@ -4,7 +4,6 @@ import { isAuthenticated } from "../replit_integrations/auth";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
-import { openai } from "../replit_integrations/chat/routes";
 import { enqueueJob, listRecentJobs } from "../jobs";
 import {
   reserveQuota,
@@ -88,7 +87,7 @@ export async function registerAiRoutes(app: Express): Promise<void> {
         return res.status(403).json({ message: AI_BLOCKED_MSG[accessTier], blocked: true });
       }
 
-      const model = "gpt-4o-mini";
+      const model = "claude-sonnet-4-6";
       const reservation = await reserveQuota({ userId, orgId, kind: "ai_insights", model });
       if (!reservation.ok) {
         return res.status(429).json({ message: quotaErrorMessage(reservation), quota: reservation });
@@ -134,19 +133,24 @@ export async function registerAiRoutes(app: Express): Promise<void> {
       
       Keep the tone helpful and Caribbean-focused.`;
 
-      const response = await openai.chat.completions.create({
+      const response = await getGuideClient().messages.create({
         model,
-        messages: [{ role: "system", content: "You are a senior financial advisor specializing in Caribbean economies and personal finance." }, { role: "user", content: prompt }],
-        response_format: { type: "json_object" }
+        max_tokens: 1024,
+        system: "You are a senior financial advisor specializing in Caribbean economies and personal finance. Respond with valid JSON only. Do not include any text outside the JSON object.",
+        messages: [{ role: "user", content: prompt }],
       });
 
       await finalizeUsage(reservation.reservationId, {
-        tokensIn: response.usage?.prompt_tokens ?? 0,
-        tokensOut: response.usage?.completion_tokens ?? 0,
+        tokensIn: response.usage.input_tokens,
+        tokensOut: response.usage.output_tokens,
       });
       finalized = true;
 
-      const content = response.choices[0].message.content || "{}";
+      const block = response.content[0];
+      const raw = block.type === "text" ? block.text.trim() : "{}";
+      const jsonStart = raw.indexOf("{");
+      const jsonEnd = raw.lastIndexOf("}");
+      const content = jsonStart >= 0 && jsonEnd >= 0 ? raw.slice(jsonStart, jsonEnd + 1) : "{}";
       res.json(JSON.parse(content));
       } finally {
         if (!finalized) await releaseReservation(reservation.reservationId);
@@ -396,7 +400,7 @@ export async function registerAiRoutes(app: Express): Promise<void> {
         return res.status(403).json({ message: AI_BLOCKED_MSG[accessTier], blocked: true });
       }
 
-      const model = "gpt-4o-mini";
+      const model = "claude-sonnet-4-6";
       const modelVersion = `${model}-v1`;
       const questionHash = hashTutorQuestion({ questionText, options, correctAnswer, subject });
 
@@ -455,15 +459,13 @@ Question: ${questionText}
 ${options ? `Options: ${options.join(", ")}` : ""}
 ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
 
-      const stream = await openai.chat.completions.create({
+      const stream = getGuideClient().messages.stream({
         model,
+        system: systemPrompt,
         messages: [
-          { role: "system", content: systemPrompt },
           { role: "user", content: `Please explain this exam question to me:\n\n${questionContext}` },
         ],
-        stream: true,
-        stream_options: { include_usage: true },
-        max_completion_tokens: 1024,
+        max_tokens: 1024,
         temperature: 0.7,
       });
 
@@ -473,19 +475,21 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
       let completionTokens = 0;
       const PLACEHOLDER = "[STUDENT_NAME]";
       const HOLDBACK = PLACEHOLDER.length - 1;
-      for await (const chunk of stream) {
-        if (chunk.usage) {
-          promptTokens = chunk.usage.prompt_tokens ?? 0;
-          completionTokens = chunk.usage.completion_tokens ?? 0;
-        }
-        const content = chunk.choices[0]?.delta?.content || "";
-        if (!content) continue;
-        fullContent += content;
-        pending += content;
-        if (pending.length > HOLDBACK) {
-          const emit = pending.slice(0, pending.length - HOLDBACK).split(PLACEHOLDER).join(userName);
-          pending = pending.slice(pending.length - HOLDBACK);
-          if (emit) res.write(`data: ${JSON.stringify({ content: emit })}\n\n`);
+      for await (const event of stream) {
+        if (event.type === "message_start") {
+          promptTokens = event.message.usage.input_tokens;
+        } else if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+          const content = event.delta.text;
+          if (!content) continue;
+          fullContent += content;
+          pending += content;
+          if (pending.length > HOLDBACK) {
+            const emit = pending.slice(0, pending.length - HOLDBACK).split(PLACEHOLDER).join(userName);
+            pending = pending.slice(pending.length - HOLDBACK);
+            if (emit) res.write(`data: ${JSON.stringify({ content: emit })}\n\n`);
+          }
+        } else if (event.type === "message_delta") {
+          completionTokens = event.usage.output_tokens;
         }
       }
       if (pending) {
