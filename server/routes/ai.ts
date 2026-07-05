@@ -432,6 +432,7 @@ export async function registerAiRoutes(app: Express): Promise<void> {
       res.setHeader("Connection", "keep-alive");
 
       const NAME_PLACEHOLDER = "[STUDENT_NAME]";
+      const topicLabel = subject ? `${subject}` : "this topic";
       const systemPrompt = `You are an AI Tutor for Caribbean high school students (ages 14-18). 
 You explain exam questions in simple, friendly language.
 
@@ -446,13 +447,14 @@ Your style:
 
 Format:
 1. Start with "Hey ${NAME_PLACEHOLDER}!" as the greeting (use the literal string ${NAME_PLACEHOLDER}, do NOT substitute a name yourself).
-2. Explain what the question is asking
-3. Walk through why the correct answer is right
-4. Briefly mention why other options are wrong
-5. Give a real-world example
-6. End with a memorable tip
+2. Acknowledge that the student got this specific ${topicLabel} question wrong and that it is okay. Name the exact concept or topic the question is testing.
+3. Explain what the question is actually asking in plain language.
+4. Walk through why the correct answer is right.
+5. Briefly mention why the other options are wrong.
+6. Give a real-world Caribbean example of the concept in action.
+7. End with a memorable Quick Tip for remembering the concept.
 
-IMPORTANT: Use the exact placeholder ${NAME_PLACEHOLDER} wherever you would address the student. Do not use any other names. Do not invent names.`;
+IMPORTANT: Use the exact placeholder ${NAME_PLACEHOLDER} wherever you would address the student. Do not use any other names. Do not invent names. Do not use em dashes anywhere in your response.`;
 
       const questionContext = `Subject: ${subject || "General"}
 Question: ${questionText}
@@ -463,7 +465,7 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
         model,
         system: systemPrompt,
         messages: [
-          { role: "user", content: `Please explain this exam question to me:\n\n${questionContext}` },
+          { role: "user", content: `I got this question wrong and need help understanding the concept. Please explain it to me:\n\n${questionContext}` },
         ],
         max_tokens: 1024,
         temperature: 0.7,

@@ -7,6 +7,15 @@ import { eq } from "drizzle-orm";
 
 const MODEL = "claude-sonnet-4-6";
 
+const TICKER_CONTEXT: Record<string, string> = {
+  CBL: "Commonwealth Bank is the largest locally-owned commercial bank in the Bahamas, providing mortgages, personal loans, and business credit to thousands of Bahamian families. Its stock moves with interest rate changes set by the Central Bank of the Bahamas and consumer confidence in the housing market.",
+  FCL: "FOCOL Holdings is the Bahamas' largest fuel distributor, supplying gasoline, diesel, and aviation fuel to resorts, marinas, and households across the islands. Its profits track directly with tourism volumes and global oil prices, so a busy cruise season or a spike in jet fuel costs both move this stock.",
+  CAB: "Cable Bahamas was the first company to bring broadband internet and cable TV to the Bahamas. Its revenue depends on how many households and businesses subscribe each month. Competition from streaming services and rival internet providers can pressure its stock downward.",
+  DHS: "Doctors Hospital Health System is the leading private healthcare provider in New Providence, the Bahamas. It earns revenue from patient visits, surgeries, and diagnostic services. Stock movements can reflect insurance payout rates, medical tourism demand, and changes in healthcare spending by Bahamians.",
+  JSJ: "J.S. Johnson and Company is one of the oldest and largest insurance companies in the Bahamas, offering general and life insurance products. Its stock is directly affected by hurricane and tropical storm seasons, which drive up claim payouts and can reduce profits.",
+  CHB: "Colina Holdings (Bahamas) is a financial services conglomerate offering life insurance, pension management, and investment products. As more Bahamians plan for retirement through pension funds, demand for Colina's services grows, which can lift its stock price.",
+};
+
 let _client: Anthropic | null = null;
 function getClient(): Anthropic {
   if (!_client) {
@@ -45,13 +54,17 @@ export async function getStockExplainer(stockId: number): Promise<string | null>
   const prevFormatted = parseFloat(stock.previousPrice as string).toFixed(2);
   const currFormatted = parseFloat(stock.currentPrice as string).toFixed(2);
 
+  const tickerContext = TICKER_CONTEXT[stock.ticker] ?? "";
+
   const prompt = `You are a friendly financial literacy teacher helping Caribbean high school students understand investing.
+
+${tickerContext ? `About this company: ${tickerContext}` : ""}
 
 The simulated ${stock.type} "${stock.name}" (${stock.ticker}) moved ${direction} by ${absPct}% today.
 Previous price: ${sym} ${prevFormatted}. New price: ${sym} ${currFormatted}.
 Risk level: ${stock.riskLevel}. Region: ${stock.region ?? "Caribbean"}.
 
-In 2-3 short sentences, explain to a student WHY a ${stock.type} like this might move ${direction} by about ${absPct}% in a day. Be specific to this type of company or government instrument. Use simple, friendly language and mention one real-world Caribbean factor (for example: tourism, energy prices, interest rates, or weather). Do not use em dashes. Keep your answer under 60 words.`;
+In 2-3 short sentences, explain to a student WHY this specific company's stock might move ${direction} by about ${absPct}% in a day. Use the company context above to give a specific, real Caribbean reason. Use simple, friendly language. Do not use em dashes. Keep your answer under 65 words.`;
 
   try {
     const response = await getClient().messages.create({

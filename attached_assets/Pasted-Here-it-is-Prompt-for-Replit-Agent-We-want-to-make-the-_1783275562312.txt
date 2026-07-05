@@ -1,0 +1,78 @@
+Here it is:
+
+Prompt for Replit Agent:
+
+We want to make the Finsight Lite pilot semester with The Financial Academy exceptional across five specific dimensions. Please implement all five in one pass, showing me the current state of each area before touching anything.
+1. Make the student feel known
+
+On the student dashboard, surface a contextual welcome message that references their last activity specifically. For example: "Welcome back Kadian. You completed Budgeting Basics on Tuesday. Ready to start Saving Habits?" Use their actual display name, actual last completed module name, and actual last active date from the database. If they have never logged in before, show a warm first-time welcome instead.
+In the AI Tutor explanation panel, when a student gets a question wrong, the explanation must reference the specific question topic, not a generic "here is the answer" message. Pass the question context into the Anthropic prompt so the tutor says something like "You got the compound interest question wrong. Here is what that actually means in plain terms."
+In the Investment Simulator, when a stock price has moved that day, the AI explanation must connect the movement to something Caribbean-specific and real where possible. This is already partially implemented for some tickers. Verify it works for all six BISX tickers (CBL, FCL, CAB, DHS, JSJ, CHB) and fill in any gaps.
+
+2. Make the teacher feel powerful
+
+On the Teacher Dashboard class detail Analytics tab, add three new insight cards above the existing stats:
+
+"Falling Behind": students who completed at least one lesson but have not had any activity in the last 7 days, shown as a count with a list on hover or expand
+"Lowest Completion Module": which of the nine lessons has the lowest completion rate across this class
+"Quiet Streaks": students who had a streak of 3 or more days but have gone quiet for 5 or more days since
+
+
+Each card uses glass-card styling on the console-style teacher portal (not caribbean-bg), correct dark mode pairs, and no hardcoded hex values
+
+3. Make the moment of learning memorable
+
+When a student levels up, replace the current level-up notification (if any) with a full animate-bounce-in modal or overlay that says something specific to their achievement. Not just "Level 5." Instead: "You just reached Level 5. That means you have learned more about money than most adults in the Caribbean. Keep going." Use font-display (Baloo 2) for the headline, Nunito for the body, coral glass card, and the existing bounce-in keyframe.
+When a student completes all lessons in a module (e.g. all three lessons in Module 1), trigger a module completion celebration using animate-pop-in with a specific message referencing the module name. For example: "Module 1 complete. You now understand budgeting, saving, and needs vs wants. That is real knowledge."
+These moments must also work correctly in dark mode.
+
+4. Make the end of semester feel like graduation
+
+Build a student certificate generation endpoint and UI. When a teacher clicks "Generate Certificates" on the class detail page, it produces a branded PDF certificate for each student containing:
+
+Student display name
+Class name and teacher name
+Total XP earned
+Number of lessons completed out of 9
+Number of simulated trades made
+Average quiz score as a percentage
+Date of completion
+Finsight Lite primary logo (finsightlitelogoprimary.jpg) top right
+Thin brand gradient rule (violet to burnt orange to teal) below the logo
+"Issued by Finsight Lite in partnership with [org name]" at the bottom
+
+
+Certificates download as a ZIP of individual PDFs, one per student
+No em dashes anywhere in certificate copy
+
+5. Make the data tell the institutional story
+
+Add an "Impact Summary" button to the Teacher Dashboard class detail Analytics tab
+When clicked, it generates a one-page PDF containing:
+
+Class name, org name, semester date range (first student join date to today)
+Total students enrolled
+Lessons completed: X out of a possible Y (students x 9)
+Average quiz score improvement: first attempt average vs most recent attempt average
+Total simulated trades made across the class
+Most active student (by XP, anonymized as "Top Student" if preferred)
+Most completed lesson
+Least completed lesson
+A closing line: "Powered by Finsight Lite, the Caribbean's financial literacy platform for students ages 12 to 17. www.finsightlite.com"
+Finsight Lite letterhead: primary logo top right, brand gradient rule below
+
+
+This PDF should be clean, print-ready, and look like something you would hand to a bank or government agency
+
+Standing requirements for this entire prompt:
+
+No em dashes anywhere in any code, comments, strings, copy, or generated content
+Every new UI component verified in both light mode and dark mode
+All new database reads must handle empty states gracefully, no crashes if a student has zero activity
+Every new database write must throw a clear catchable error on failure, never silent null or undefined
+Caribbean teen names and realistic data in any placeholder or dummy content, not "Student 1" or "Lesson A"
+Glass card variants on any caribbean-bg surface, console card style on teacher and org admin surfaces
+Animations default on: every new screen element that reveals, completes, or celebrates must have an intentional entrance animation using existing keyframes
+Guide auto-sync: update teacher-guide.md to reflect the new Analytics tab cards, the Impact Summary button, and the certificate generation feature in the same pass
+After all changes are made, run a full SHA comparison between local HEAD and GitHub remote, show actual SHA values, do not just report success
+Report back which files were changed and a one-line summary of what each change does

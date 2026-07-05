@@ -3,7 +3,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   ArrowLeft, BookOpen, CheckCircle2, XCircle, Trophy,
@@ -18,6 +18,7 @@ import { jsPDF } from "jspdf";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { generateFinancialAcademyCertificate } from "@/lib/financialAcademyCertificate";
+import { LevelUpModal } from "@/components/LevelUpModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -502,6 +503,29 @@ function ModuleCard({
   );
 }
 
+function getModuleCompleteMessage(moduleTitle: string): string {
+  const lower = moduleTitle.toLowerCase();
+  if (lower.includes("money") || lower.includes("currency")) {
+    return `You now understand what money is, how currencies work in the Caribbean, and why your money has value. Most adults never think about this. You do.`;
+  }
+  if (lower.includes("saving") || lower.includes("budget") || lower.includes("spend")) {
+    return `You now understand budgeting, saving, and the difference between needs and wants. That is real knowledge. Most adults wish they had learned this earlier.`;
+  }
+  if (lower.includes("stock") || lower.includes("invest")) {
+    return `You now understand how stocks work and why companies list on exchanges like the BISX. Most adults never learn this. You just did.`;
+  }
+  if (lower.includes("bond") || lower.includes("government")) {
+    return `You now understand bonds and how governments and companies borrow money. Most investors learn this the hard way. You learned it here first.`;
+  }
+  if (lower.includes("risk") || lower.includes("reward")) {
+    return `You now understand risk, reward, and why diversification matters. That knowledge will protect you for the rest of your life.`;
+  }
+  if (lower.includes("portfolio") || lower.includes("building")) {
+    return `You now know how to build an investment portfolio. That knowledge belongs to you. No one can take it away.`;
+  }
+  return `You have finished all the lessons in this module. The knowledge you just gained is real and it belongs to you.`;
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function Lessons() {
@@ -518,6 +542,22 @@ export default function Lessons() {
   const [showResult, setShowResult] = useState(false);
   const [answers, setAnswers] = useState<string[]>([]);
   const [quizResults, setQuizResults] = useState<any>(null);
+  const [levelUpLevel, setLevelUpLevel] = useState<number | null>(null);
+  const [showModuleComplete, setShowModuleComplete] = useState(false);
+  const [moduleCompleteTitle, setModuleCompleteTitle] = useState("");
+  const prevLevelRef = useRef<number | null>(null);
+
+  const { data: xpData } = useQuery<{ totalXp: number; level: number }>({
+    queryKey: ["/api/user/xp"],
+  });
+
+  useEffect(() => {
+    if (!xpData) return;
+    if (prevLevelRef.current !== null && xpData.level > prevLevelRef.current) {
+      setLevelUpLevel(xpData.level);
+    }
+    prevLevelRef.current = xpData.level;
+  }, [xpData?.level]);
 
   // Static lesson completion tracking
   const [completedStatic, setCompletedStatic] = useState<string[]>(() => {
@@ -678,11 +718,16 @@ export default function Lessons() {
           let updatedCompleted = completedStatic;
           if (scorePct >= 80) {
             updatedCompleted = markStaticDone(selectedLesson.id);
+            queryClient.invalidateQueries({ queryKey: ["/api/user/xp"] });
           }
           // Detect module completion: all lessons in activeModule completed with 80%+
           const moduleComplete = activeModule
             ? activeModule.lessons.every(l => updatedCompleted.includes(l.static_lesson_id))
             : false;
+          if (moduleComplete && activeModule) {
+            setModuleCompleteTitle(activeModule.title);
+            setTimeout(() => setShowModuleComplete(true), 600);
+          }
           setQuizResults({ finalCorrect, total, xpEarned, moduleComplete });
           setPageState("results");
         } else {
@@ -713,6 +758,37 @@ export default function Lessons() {
   return (
     <div className="flex min-h-screen caribbean-bg">
       <Sidebar />
+
+      {levelUpLevel !== null && (
+        <LevelUpModal level={levelUpLevel} onClose={() => setLevelUpLevel(null)} />
+      )}
+
+      {showModuleComplete && moduleCompleteTitle && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowModuleComplete(false); }}
+          data-testid="modal-module-complete"
+        >
+          <div className="glass-card rounded-glass p-8 max-w-md w-full text-center shadow-2xl animate-pop-in">
+            <div className="text-5xl mb-4">🏅</div>
+            <h2 className="font-display text-2xl font-bold text-foreground mb-3" data-testid="text-module-complete-title">
+              {moduleCompleteTitle} Complete
+            </h2>
+            <p className="font-sans text-base text-muted-foreground leading-relaxed mb-6" data-testid="text-module-complete-message">
+              {getModuleCompleteMessage(moduleCompleteTitle)}
+            </p>
+            <Button
+              onClick={() => setShowModuleComplete(false)}
+              className="rounded-2xl w-full font-bold"
+              data-testid="button-module-complete-close"
+            >
+              Keep Going
+            </Button>
+          </div>
+        </div>
+      )}
+
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-3xl mx-auto">
 
@@ -1017,7 +1093,7 @@ export default function Lessons() {
                   <p className="text-green-400 font-bold text-sm mt-1">✓ Lesson marked as complete</p>
                 )}
                 {quizResults?.moduleComplete && activeModule && (
-                  <p className="text-amber-400 font-bold text-sm mt-1">🏅 Module "{activeModule.title}" fully completed!</p>
+                  <p className="text-amber-400 font-bold text-sm mt-1">🏅 {activeModule.title} fully completed!</p>
                 )}
               </div>
 

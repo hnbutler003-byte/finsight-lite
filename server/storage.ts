@@ -158,6 +158,9 @@ export interface IStorage extends IAuthStorage {
   getClassLeaderboard(classId: number): Promise<any[]>;
   getClassAnalytics(classId: number): Promise<any>;
   getClassInvestmentAnalytics(classId: number): Promise<any>;
+  getClassInsightCards(classId: number): Promise<any>;
+  getClassImpactSummary(classId: number): Promise<any>;
+  getStudentLastActivity(userId: string): Promise<{ lastActivityDate: Date | null; lastCompletedModuleName: string | null; isFirstTime: boolean }>;
 
   // Org Admin
   createOrgAdmin(data: InsertOrgAdmin & { passwordHash?: string | null }): Promise<OrgAdmin>;
@@ -1255,6 +1258,204 @@ export class DatabaseStorage implements IStorage {
       topTrader: topTrader && topTrader.trades > 0 ? topTrader : null,
       rows: rows.sort((a, b) => parseFloat(b.netWorth) - parseFloat(a.netWorth)),
     };
+  }
+
+  async getClassInsightCards(classId: number): Promise<any> {
+    const [{ count: totalEnrolled }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(classEnrollments)
+      .where(eq(classEnrollments.classId, classId));
+
+    if (totalEnrolled === 0) {
+      return { fallingBehind: { count: 0, students: [] }, lowestModule: null, quietStreaks: { count: 0, students: [] } };
+    }
+
+    const enrollmentRows = await db
+      .select({ enrollment: classEnrollments, student: users })
+      .from(classEnrollments)
+      .innerJoin(users, eq(classEnrollments.studentId, users.id))
+      .where(eq(classEnrollments.classId, classId));
+
+    const studentIds = enrollmentRows.map(r => r.enrollment.studentId);
+    const studentNames = new Map(enrollmentRows.map(r => [r.enrollment.studentId, r.student.firstName || r.student.username || r.enrollment.studentId]));
+
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
+
+    const [allXp, allProgress] = await Promise.all([
+      db.select().from(userXp).where(inArray(userXp.userId, studentIds)),
+      db.select().from(userLearningProgress).where(inArray(userLearningProgress.userId, studentIds)),
+    ]);
+
+    const xpByUser = new Map(allXp.map(x => [x.userId, x]));
+    const lessonsByUser = new Map<string, number>();
+    for (const p of allProgress) {
+      if (p.completed) lessonsByUser.set(p.userId, (lessonsByUser.get(p.userId) || 0) + 1);
+    }
+
+    const fallingBehindStudents: string[] = [];
+    const quietStreakStudents: string[] = [];
+
+    for (const sid of studentIds) {
+      const xp = xpByUser.get(sid);
+      const lessonsCompleted = lessonsByUser.get(sid) || 0;
+      const lastPlayed = xp?.lastPlayedAt ? new Date(xp.lastPlayedAt) : null;
+      const currentStreak = xp?.currentStreak ?? 0;
+      const longestStreak = xp?.longestStreak ?? 0;
+
+      if (lessonsCompleted > 0 && (!lastPlayed || lastPlayed < sevenDaysAgo)) {
+        fallingBehindStudents.push(studentNames.get(sid) || sid);
+      }
+      if (longestStreak >= 3 && currentStreak === 0 && (!lastPlayed || lastPlayed < fiveDaysAgo)) {
+        quietStreakStudents.push(studentNames.get(sid) || sid);
+      }
+    }
+
+    const moduleCounts = new Map<number, { completed: number; total: number; name: string }>();
+    const allModules = await db.select().from(learningModules);
+    for (const mod of allModules) {
+      moduleCounts.set(mod.id, { completed: 0, total: studentIds.length, name: mod.title });
+    }
+    for (const p of allProgress) {
+      if (p.completed) {
+        const entry = moduleCounts.get(p.moduleId);
+        if (entry) entry.completed += 1;
+      }
+    }
+
+    let lowestModule: { name: string; completionRate: number } | null = null;
+    if (allModules.length > 0) {
+      let lowestRate = Infinity;
+      for (const [, data] of Array.from(moduleCounts.entries())) {
+        if (data.total === 0) continue;
+        const rate = data.completed / data.total;
+        if (rate < lowestRate) {
+          lowestRate = rate;
+          lowestModule = { name: data.name, completionRate: Math.round(rate * 100) };
+        }
+      }
+    }
+
+    return {
+      fallingBehind: { count: fallingBehindStudents.length, students: fallingBehindStudents },
+      lowestModule,
+      quietStreaks: { count: quietStreakStudents.length, students: quietStreakStudents },
+    };
+  }
+
+  async getClassImpactSummary(classId: number): Promise<any> {
+    const clsRows = await db
+      .select({ cls: classes, teacher: teachers })
+      .from(classes)
+      .innerJoin(teachers, eq(classes.teacherId, teachers.id))
+      .where(eq(classes.id, classId))
+      .limit(1);
+    if (clsRows.length === 0) throw new Error("[Storage] Class not found");
+
+    const { cls, teacher } = clsRows[0];
+
+    const enrollmentRows = await db
+      .select({ enrollment: classEnrollments, student: users })
+      .from(classEnrollments)
+      .innerJoin(users, eq(classEnrollments.studentId, users.id))
+      .where(eq(classEnrollments.classId, classId));
+
+    const studentIds = enrollmentRows.map(r => r.enrollment.studentId);
+    const joinedDates = enrollmentRows.map(r => r.enrollment.joinedAt).filter(Boolean) as Date[];
+    const firstJoin = joinedDates.length > 0 ? new Date(Math.min(...joinedDates.map(d => d.getTime()))) : null;
+
+    const totalStudents = studentIds.length;
+    if (totalStudents === 0) {
+      return {
+        className: cls.name, teacherName: `${teacher.firstName} ${teacher.lastName}`,
+        firstJoinDate: null, totalStudents: 0, lessonsCompleted: 0, possibleLessons: 0,
+        avgScore: 0, totalTrades: 0, topStudentName: "None yet",
+        mostCompletedModule: null, leastCompletedModule: null,
+      };
+    }
+
+    const [allXp, allProgress, sessionRows, tradeRows, allModules] = await Promise.all([
+      db.select().from(userXp).where(inArray(userXp.userId, studentIds)),
+      db.select().from(userLearningProgress).where(inArray(userLearningProgress.userId, studentIds)),
+      db.select().from(gameSessions).where(inArray(gameSessions.userId, studentIds)).orderBy(asc(gameSessions.completedAt)),
+      db.select({ count: sql<number>`count(*)::int` }).from(portfolioTransactions).where(inArray(portfolioTransactions.userId, studentIds)),
+      db.select().from(learningModules),
+    ]);
+
+    const lessonsCompleted = allProgress.filter(p => p.completed).length;
+    const possibleLessons = totalStudents * Math.max(allModules.length, 9);
+    const totalTrades = tradeRows[0]?.count ?? 0;
+
+    let avgScore = 0;
+    if (sessionRows.length > 0) {
+      const scored = sessionRows.filter(s => s.totalQuestions > 0);
+      if (scored.length > 0) {
+        avgScore = Math.round(scored.reduce((sum, s) => sum + (s.correctAnswers / s.totalQuestions) * 100, 0) / scored.length);
+      }
+    }
+
+    let topStudentName = "Top Student";
+    if (allXp.length > 0) {
+      const topXp = [...allXp].sort((a, b) => b.totalXp - a.totalXp)[0];
+      const topUser = enrollmentRows.find(r => r.enrollment.studentId === topXp.userId)?.student;
+      topStudentName = topUser?.firstName || "Top Student";
+    }
+
+    const moduleCounts = new Map<number, { completed: number; name: string }>();
+    for (const mod of allModules) moduleCounts.set(mod.id, { completed: 0, name: mod.title });
+    for (const p of allProgress) {
+      if (p.completed) {
+        const entry = moduleCounts.get(p.moduleId);
+        if (entry) entry.completed += 1;
+      }
+    }
+
+    let mostCompletedModule: string | null = null;
+    let leastCompletedModule: string | null = null;
+    if (moduleCounts.size > 0) {
+      let mostCount = -1;
+      let leastCount = Infinity;
+      for (const [, data] of Array.from(moduleCounts.entries())) {
+        if (data.completed > mostCount) { mostCount = data.completed; mostCompletedModule = data.name; }
+        if (data.completed < leastCount) { leastCount = data.completed; leastCompletedModule = data.name; }
+      }
+    }
+
+    return {
+      className: cls.name,
+      teacherName: `${teacher.firstName} ${teacher.lastName}`,
+      firstJoinDate: firstJoin,
+      totalStudents,
+      lessonsCompleted,
+      possibleLessons,
+      avgScore,
+      totalTrades,
+      topStudentName,
+      mostCompletedModule,
+      leastCompletedModule,
+    };
+  }
+
+  async getStudentLastActivity(userId: string): Promise<{ lastActivityDate: Date | null; lastCompletedModuleName: string | null; isFirstTime: boolean }> {
+    const [xpRow, lastProgressRow] = await Promise.all([
+      db.select().from(userXp).where(eq(userXp.userId, userId)).limit(1),
+      db
+        .select({ progress: userLearningProgress, module: learningModules })
+        .from(userLearningProgress)
+        .innerJoin(learningModules, eq(userLearningProgress.moduleId, learningModules.id))
+        .where(eq(userLearningProgress.userId, userId))
+        .orderBy(desc(userLearningProgress.completedAt))
+        .limit(1),
+    ]);
+
+    const xp = xpRow[0];
+    const isFirstTime = !xp || (xp.totalXp === 0 && xp.currentStreak === 0);
+    const lastActivityDate = xp?.lastPlayedAt ? new Date(xp.lastPlayedAt) : null;
+    const lastCompletedModuleName = lastProgressRow[0]?.progress.completed
+      ? lastProgressRow[0].module.title
+      : null;
+
+    return { lastActivityDate, lastCompletedModuleName, isFirstTime };
   }
 
   // === ADMIN METHODS ===

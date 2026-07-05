@@ -44,6 +44,36 @@ const COLORS = [
   '#ec4899', '#3b82f6', '#f97316', '#06b6d4', '#84cc16',
 ];
 
+function buildGreeting(
+  firstName: string | null,
+  activity: { lastActivityDate: string | null; lastCompletedModuleName: string | null; isFirstTime: boolean } | null,
+): string {
+  const name = firstName ? `, ${firstName}` : "";
+  if (!activity || activity.isFirstTime) {
+    return `Welcome to FinSight Lite${name}. Let's start learning how money works.`;
+  }
+  const lastDate = activity.lastActivityDate ? new Date(activity.lastActivityDate) : null;
+  let whenStr = "";
+  if (lastDate) {
+    const diffMs = Date.now() - lastDate.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) whenStr = "today";
+    else if (diffDays === 1) whenStr = "yesterday";
+    else if (diffDays < 7) whenStr = `on ${lastDate.toLocaleDateString("en-US", { weekday: "long" })}`;
+    else whenStr = `on ${lastDate.toLocaleDateString("en-US", { month: "long", day: "numeric" })}`;
+  }
+  if (activity.lastCompletedModuleName) {
+    const prefix = whenStr
+      ? `You completed ${activity.lastCompletedModuleName} ${whenStr}.`
+      : `You completed ${activity.lastCompletedModuleName} recently.`;
+    return `Welcome back${name}. ${prefix} Ready to keep going?`;
+  }
+  if (whenStr) {
+    return `Welcome back${name}. Last active ${whenStr}. Ready to continue?`;
+  }
+  return `Hey${name}! Here's your money at a glance.`;
+}
+
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const [currency, setCurrency] = useState("BSD");
@@ -75,6 +105,14 @@ export default function Dashboard() {
 
   const { data: savingsGoals } = useQuery<any[]>({
     queryKey: ["/api/savings-goals"],
+  });
+
+  const { data: lastActivity } = useQuery<{
+    lastActivityDate: string | null;
+    lastCompletedModuleName: string | null;
+    isFirstTime: boolean;
+  }>({
+    queryKey: ["/api/student/last-activity"],
   });
 
   const [checklistDismissed, setChecklistDismissed] = useState(
@@ -132,7 +170,7 @@ export default function Dashboard() {
                 My Money
               </h1>
               <p className="text-white/85 mt-1" data-testid="text-dashboard-greeting">
-                Hey {user?.firstName || "there"}! Here's your money at a glance.
+                {buildGreeting(user?.firstName || null, lastActivity ?? null)}
               </p>
             </div>
             <div className="flex items-center gap-3">

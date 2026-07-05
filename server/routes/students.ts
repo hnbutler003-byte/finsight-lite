@@ -96,6 +96,18 @@ export async function registerStudentRoutes(app: Express): Promise<void> {
     res.json({ rates: EXCHANGE_RATES_TO_USD });
   });
 
+  app.get("/api/student/last-activity", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ message: "Not authenticated" });
+      const data = await storage.getStudentLastActivity(userId);
+      res.json(data);
+    } catch (err: any) {
+      captureError(err);
+      res.status(500).json({ message: err.message });
+    }
+  });
+
   app.get("/api/stats/converted", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
@@ -1194,6 +1206,32 @@ Rules:
       const data = await storage.getClassInvestmentAnalytics(id);
       res.json(data);
     } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/teacher/classes/:id/insights", isTeacher, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const cls = await storage.getClassById(id);
+      if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+      const data = await storage.getClassInsightCards(id);
+      res.json(data);
+    } catch (err: any) {
+      captureError(err);
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/teacher/classes/:id/impact-summary", isTeacher, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const cls = await storage.getClassById(id);
+      if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+      const data = await storage.getClassImpactSummary(id);
+      res.json(data);
+    } catch (err: any) {
+      captureError(err);
       res.status(500).json({ message: err.message });
     }
   });

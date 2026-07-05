@@ -11,10 +11,12 @@ import {
   ArrowLeft, Users, Trophy, Bell, BarChart3, Loader2, Copy, Check,
   Download, Trash2, Plus, Medal, Star, BookOpen, Gamepad2, Zap, Target,
   Send, Crown, TrendingUp, AlertCircle, Sparkles, BookMarked, GraduationCap, Clock,
-  MessageSquarePlus, PiggyBank, Briefcase
+  MessageSquarePlus, PiggyBank, Briefcase, FileText, ChevronDown, ChevronUp, AlertTriangle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { generateTeacherCertificatesZip } from "@/lib/teacherCertificates";
+import { generateImpactSummaryPdf } from "@/lib/impactSummary";
 
 const AVATAR_MAP: Record<string, string> = {
   lion: "🦁", dolphin: "🐬", parrot: "🦜", turtle: "🐢",
@@ -279,7 +281,7 @@ export default function TeacherClassDetail() {
   const { data: progress, isLoading: progressLoading } = useQuery<{ students: StudentData[]; avgXp: number; avgLessons: number; totalGames: number }>({
     queryKey: [`/api/teacher/classes/${classId}/students`],
     queryFn: () => fetch(`/api/teacher/classes/${classId}/students?limit=200`, { credentials: "include" }).then(r => r.json()),
-    enabled: !!teacher && activeTab === "students",
+    enabled: !!teacher && (activeTab === "students" || activeTab === "analytics"),
   });
 
   const { data: leaderboard, isLoading: lbLoading } = useQuery<StudentData[]>({
@@ -318,10 +320,29 @@ export default function TeacherClassDetail() {
     enabled: !!teacher && activeTab === "lessons" && !!cls?.envId,
   });
 
+  const { data: insightsData, isLoading: insightsLoading } = useQuery<{
+    fallingBehind: { count: number; students: string[] };
+    lowestModule: { name: string; completionRate: number } | null;
+    quietStreaks: { count: number; students: string[] };
+  }>({
+    queryKey: [`/api/teacher/classes/${classId}/insights`],
+    queryFn: () => fetch(`/api/teacher/classes/${classId}/insights`, { credentials: "include" }).then(r => r.json()),
+    enabled: !!teacher && activeTab === "analytics",
+  });
+
+  const { data: impactData } = useQuery<any>({
+    queryKey: [`/api/teacher/classes/${classId}/impact-summary`],
+    queryFn: () => fetch(`/api/teacher/classes/${classId}/impact-summary`, { credentials: "include" }).then(r => r.json()),
+    enabled: !!teacher && activeTab === "analytics",
+  });
+
   const TABS = cls?.envId ? [...BASE_TABS, LESSONS_TAB] : BASE_TABS;
 
   const [selectedStudent, setSelectedStudent] = useState<StudentData | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [fallingBehindExpanded, setFallingBehindExpanded] = useState(false);
+  const [quietStreaksExpanded, setQuietStreaksExpanded] = useState(false);
+  const [certGenerating, setCertGenerating] = useState(false);
 
   const { data: studentFeedback = [], isLoading: feedbackLoading } = useQuery<FeedbackItem[]>({
     queryKey: [`/api/teacher/feedback`, selectedStudent?.id],
@@ -374,6 +395,49 @@ export default function TeacherClassDetail() {
 
   const downloadCSV = () => {
     window.open(`/api/teacher/classes/${classId}/report.csv`, "_blank");
+  };
+
+  const handleGenerateCerts = async () => {
+    if (certGenerating || !progress?.students?.length) return;
+    setCertGenerating(true);
+    try {
+      const tradeMap = new Map<string, number>();
+      for (const row of (investData?.rows ?? [])) {
+        tradeMap.set(row.studentId, row.trades ?? 0);
+      }
+      const certStudents = progress.students.map((s: StudentData) => ({
+        name: s.name,
+        xp: s.xp,
+        lessonsCompleted: s.lessonsCompleted,
+        trades: tradeMap.get(s.id) ?? 0,
+        avgScore: s.avgScore ?? 0,
+      }));
+      await generateTeacherCertificatesZip(
+        certStudents,
+        cls?.name ?? "Class",
+        teacher ? `${teacher.firstName} ${teacher.lastName}` : "Teacher",
+        (cls as any)?.orgName ?? (cls as any)?.sponsorName ?? "FinSight Lite",
+      );
+    } catch (e) {
+      console.error("Certificate generation failed:", e);
+      toast({ title: "Failed to generate certificates", variant: "destructive" });
+    } finally {
+      setCertGenerating(false);
+    }
+  };
+
+  const handleImpactSummary = async () => {
+    if (!impactData) return;
+    try {
+      await generateImpactSummaryPdf({
+        ...impactData,
+        orgName: impactData.orgName ?? (cls as any)?.sponsorName ?? "FinSight Lite",
+        firstJoinDate: impactData.firstJoinDate ?? null,
+      });
+    } catch (e) {
+      console.error("Impact summary failed:", e);
+      toast({ title: "Failed to generate impact summary", variant: "destructive" });
+    }
   };
 
   const TYPE_ICONS: Record<string, string> = {
@@ -671,6 +735,131 @@ export default function TeacherClassDetail() {
 
           {activeTab === "analytics" && (
             <div className="space-y-4">
+              {/* Action buttons */}
+              <div className="flex gap-2 flex-wrap justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-2xl border-2 gap-2"
+                  onClick={handleImpactSummary}
+                  disabled={!impactData}
+                  data-testid="button-impact-summary"
+                >
+                  <FileText className="w-4 h-4" />
+                  Impact Summary PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-2xl border-2 gap-2"
+                  onClick={handleGenerateCerts}
+                  disabled={certGenerating || !progress?.students?.length}
+                  data-testid="button-generate-certificates"
+                >
+                  {certGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <GraduationCap className="w-4 h-4" />}
+                  {certGenerating ? "Generating..." : `Generate Certificates (${progress?.students?.length ?? 0})`}
+                </Button>
+              </div>
+
+              {/* Insight cards */}
+              {insightsLoading ? (
+                <div className="flex justify-center py-3"><Loader2 className="w-5 h-5 animate-spin text-emerald-500" /></div>
+              ) : insightsData ? (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Falling Behind */}
+                  <Card className="console-card border-amber-200 dark:border-amber-800">
+                    <CardContent className="p-4 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                        <p className="font-bold text-sm">Falling Behind</p>
+                      </div>
+                      <p className="console-mono text-2xl text-amber-600 dark:text-amber-400">
+                        {insightsData.fallingBehind.count}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {insightsData.fallingBehind.count === 0
+                          ? "All students active this week."
+                          : `Student${insightsData.fallingBehind.count !== 1 ? "s" : ""} not active in 7+ days`}
+                      </p>
+                      {insightsData.fallingBehind.count > 0 && (
+                        <button
+                          onClick={() => setFallingBehindExpanded(v => !v)}
+                          className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 font-medium"
+                          data-testid="button-expand-falling-behind"
+                        >
+                          {fallingBehindExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                          {fallingBehindExpanded ? "Hide" : "See who"}
+                        </button>
+                      )}
+                      {fallingBehindExpanded && (
+                        <ul className="text-xs text-muted-foreground space-y-0.5">
+                          {insightsData.fallingBehind.students.map(name => (
+                            <li key={name} className="truncate">{name}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Lowest Completion Module */}
+                  <Card className="console-card border-violet-200 dark:border-violet-800">
+                    <CardContent className="p-4 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-violet-500 shrink-0" />
+                        <p className="font-bold text-sm">Needs Attention</p>
+                      </div>
+                      {insightsData.lowestModule ? (
+                        <>
+                          <p className="console-mono text-2xl text-violet-600 dark:text-violet-400">
+                            {insightsData.lowestModule.completionRate}%
+                          </p>
+                          <p className="text-xs text-muted-foreground leading-snug">
+                            Lowest completion: <span className="font-medium text-foreground">{insightsData.lowestModule.name}</span>
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">No lesson modules found.</p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Quiet Streaks */}
+                  <Card className="console-card border-teal-200 dark:border-teal-800">
+                    <CardContent className="p-4 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-teal-500 shrink-0" />
+                        <p className="font-bold text-sm">Quiet Streaks</p>
+                      </div>
+                      <p className="console-mono text-2xl text-teal-600 dark:text-teal-400">
+                        {insightsData.quietStreaks.count}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {insightsData.quietStreaks.count === 0
+                          ? "No streak resets this week."
+                          : `Student${insightsData.quietStreaks.count !== 1 ? "s" : ""} with lapsed 3+ day streaks`}
+                      </p>
+                      {insightsData.quietStreaks.count > 0 && (
+                        <button
+                          onClick={() => setQuietStreaksExpanded(v => !v)}
+                          className="flex items-center gap-1 text-xs text-teal-600 dark:text-teal-400 font-medium"
+                          data-testid="button-expand-quiet-streaks"
+                        >
+                          {quietStreaksExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                          {quietStreaksExpanded ? "Hide" : "See who"}
+                        </button>
+                      )}
+                      {quietStreaksExpanded && (
+                        <ul className="text-xs text-muted-foreground space-y-0.5">
+                          {insightsData.quietStreaks.students.map(name => (
+                            <li key={name} className="truncate">{name}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : null}
+
               {analyticsLoading ? (
                 <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>
               ) : !analytics ? null : (

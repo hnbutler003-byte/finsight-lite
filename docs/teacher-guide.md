@@ -84,9 +84,22 @@ Each message has a title and a body. Messages are stored and visible to students
 
 #### Analytics Tab
 
-The analytics section has two parts.
+The analytics tab now includes action buttons, insight cards, class summary stats, and investment analytics.
 
-**Class summary stats** (four cards at the top):
+**Action buttons** (top right of the analytics tab):
+
+- **Impact Summary PDF** - Generates a downloadable one-page PDF showing the class's learning outcomes across the semester: total students, lessons completed, average quiz score, total simulated trades, most and least completed module, and the top student by XP. Use this for reporting to school leadership or sponsors.
+- **Generate Certificates (N)** - Generates a personalised PDF certificate for every student in the class and bundles all certificates into a single ZIP file for download. Each certificate shows the student's name, class, teacher, total XP earned, lessons completed, trades made, and average quiz score. The number in brackets is the count of students who will receive a certificate.
+
+**Insight cards** (three cards below the action buttons):
+
+| Card | What it shows |
+|---|---|
+| Falling Behind | Students who have completed at least one lesson but have not been active in 7 or more days. Expand the card to see the student names. |
+| Needs Attention | The learning module with the lowest completion rate across the class. Use this to decide which topic to revisit or spend more time on. |
+| Quiet Streaks | Students who previously had a streak of 3 or more days but whose streak has since lapsed and have not been active in 5 or more days. These students were engaged but have dropped off. |
+
+**Class summary stats** (four cards below the insight cards):
 
 | Stat | What it measures |
 |---|---|
