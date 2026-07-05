@@ -69,7 +69,7 @@ In 2-3 short sentences, explain to a student WHY this specific company's stock m
   try {
     const response = await getClient().messages.create({
       model: MODEL,
-      max_tokens: 150,
+      max_tokens: 1024,
       messages: [{ role: "user", content: prompt }],
     });
 

@@ -17,8 +17,8 @@ function getClient(): Anthropic {
 async function pingAnthropic(): Promise<void> {
   const resp = await getClient().messages.create({
     model: MODEL,
-    max_tokens: 4,
-    messages: [{ role: "user", content: "ping" }],
+    max_tokens: 1024,
+    messages: [{ role: "user", content: "Reply with one word: ok" }],
   });
   if (!resp.content || resp.content.length === 0) {
     throw new Error("Anthropic returned an empty response");

@@ -1336,14 +1336,16 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
       });
       const message = await anthropic.messages.create({
         model: "claude-sonnet-4-6",
-        max_tokens: 256,
+        max_tokens: 1024,
         system: "You are a helpful assistant for Finsight Lite, a Caribbean financial literacy platform for youth ages 12-17. Write a 2-3 sentence plain-English summary of this organisation's student engagement this month. Be specific with the numbers. Keep the tone warm and encouraging. Do not use em dashes.",
         messages: [{ role: "user", content: statsText }],
       });
       const summary = (message.content[0] as any).text as string;
       orgSummaryCache.set(orgId, { text: summary, expiresAt: Date.now() + 24 * 60 * 60 * 1000 });
       res.json({ summary });
-    } catch {
+    } catch (aiErr) {
+      captureError(aiErr, { feature: "org-summary-ai", orgId });
+      console.error("[org-summary-ai] Anthropic error:", (aiErr as Error).message);
       res.status(500).json({ message: "AI summary unavailable" });
     }
   });
