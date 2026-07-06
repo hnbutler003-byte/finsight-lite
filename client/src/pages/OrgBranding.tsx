@@ -1,4 +1,5 @@
 import { OrgSidebar } from "@/components/layout/OrgSidebar";
+import OrgLogo from "@/components/OrgLogo";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -237,24 +238,11 @@ export default function OrgBranding() {
                     <h3 className="font-bold text-lg">Logo</h3>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Shown at the top of every certificate. PNG with transparent background works best. Max 5 MB.
+                    Shown at the top of every certificate. For best results, upload a transparent PNG, ideally wider than it is tall. Max 5 MB.
                   </p>
 
                   <div className="flex items-start gap-6 flex-wrap">
-                    <div
-                      className="w-40 h-40 rounded-2xl border-2 border-dashed border-input bg-muted/30 flex items-center justify-center overflow-hidden"
-                      data-testid="branding-logo-preview"
-                    >
-                      {logoUrl ? (
-                        <img src={logoUrl} alt="Logo preview" className="max-w-full max-h-full object-contain" />
-                      ) : (
-                        <div className="text-center text-muted-foreground">
-                          <ImageIcon className="w-8 h-8 mx-auto mb-2" />
-                          <p className="text-xs">No logo set</p>
-                          <p className="text-[10px] mt-1">(default will be used)</p>
-                        </div>
-                      )}
-                    </div>
+                    <OrgLogo src={logoUrl} alt="Logo preview" size={160} />
 
                     <div className="flex flex-col gap-2">
                       <input

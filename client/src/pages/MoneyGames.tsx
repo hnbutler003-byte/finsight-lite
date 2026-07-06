@@ -995,11 +995,11 @@ function SavingsGoalGame({ currency }: { currency: string }) {
   }
 
   return (
-    <Card className="rounded-3xl border-2 border-dashed border-violet-300 dark:border-violet-700">
+    <Card className="glass-card-coral rounded-glass animate-bounce-in">
       <CardContent className="p-8 space-y-6">
         <div className="text-center space-y-2">
           <div className="text-5xl">{selectedGoal?.emoji || "🎯"}</div>
-          <h3 className="font-display text-2xl font-bold">Your Savings Plan</h3>
+          <h3 className="font-display text-2xl font-bold text-foreground">Your Savings Plan</h3>
           <p className="text-muted-foreground">for <strong>{goalName}</strong>: {sym}{goalAmount.toFixed(2)}</p>
         </div>
 

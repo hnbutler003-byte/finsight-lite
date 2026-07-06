@@ -1,0 +1,43 @@
+FIX 1: Robust org logo rendering (certificates + anywhere org logos appear)
+
+Create a shared component, OrgLogo, used everywhere an uploaded org logo renders 
+(certificates, org branding preview, in-app header). Requirements:
+
+- Fixed-height container (h-10 for header, h-14 for certificates), NEVER fixed width
+- object-fit: contain, never cover, so no logo is ever cropped or stretched
+- max-width constraint (e.g. max-w-[160px]) so extremely wide logos don't overrun layout
+- Wrap in a neutral padded box (8px padding, white or transparent background 
+  depending on light/dark mode) so logos with white backgrounds or transparent PNGs 
+  both look intentional, not pasted on
+- If no logo uploaded, fall back to the default Finsight Lite mark, never a broken 
+  image icon or empty space
+
+Replace the current logo rendering on the certificate template and org branding 
+preview with this component. Add upload guidance text on the Branding page: 
+"For best results, upload a transparent PNG, ideally wider than it is tall."
+
+FIX 2: Visual consistency sweep across all 7 money games
+
+Audit every game's result/end-state screen (not just the main play screen) for:
+- Background must be caribbean-bg or sit on an established glass-card, never a 
+  standalone dark slate/teal/navy background
+- All result cards must use .glass-card or .glass-card-coral (for wins/streaks), 
+  never a plain solid-color div
+- Text on any card must have a light mode AND dark mode color pair 
+  (e.g. text-slate-700 dark:text-slate-200), never a single hardcoded color that 
+  was tuned for one mode only
+- Border radius must be --radius-glass (28px) on all cards, not a mismatched 
+  rounded-lg or rounded-xl left over from an older pattern
+
+Start with Budget Grocery Challenge's result screen and Compound It's chart panel, 
+since these are confirmed off-brand right now. Then check the other 5 games' 
+result/end screens for the same pattern (Needs vs Wants, and any others with a 
+win/lose/summary state).
+
+Standard requirements for this prompt:
+- No em dashes anywhere in code, comments, or UI copy
+- Verify every changed screen in both light mode and dark mode before considering 
+  it done
+- Apply intentional animation to any result screen that doesn't already have one 
+  (bounce-in for wins, pop-in for neutral summaries), using existing keyframes only
+- Do not touch game logic or scoring, this is a visual/branding fix only
