@@ -547,7 +547,7 @@ function SponsorDialog({ existing, onClose }: { existing?: any; onClose: () => v
       <div>
         <Label className="text-slate-300">Sponsor Name</Label>
         <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-          placeholder="e.g. Commonwealth Bank" className="mt-1 bg-slate-700 border-slate-600 text-white" />
+          placeholder="e.g. Local Credit Union" className="mt-1 bg-slate-700 border-slate-600 text-white" />
       </div>
       <div>
         <Label className="text-slate-300">Type</Label>

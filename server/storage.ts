@@ -1719,7 +1719,6 @@ export class DatabaseStorage implements IStorage {
       [cls] = await db.insert(classes).values({
         teacherId: teacher.id, name: "Financial Literacy 101",
         subject: "Financial Literacy", code: "DEMO01",
-        sponsorName: "Commonwealth Bank",
       }).returning();
     }
 

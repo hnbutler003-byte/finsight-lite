@@ -72,7 +72,7 @@ function CreateClassModal({ onClose }: { onClose: () => void }) {
             <div className="space-y-1.5">
               <label className="text-sm font-bold">Sponsor (optional)</label>
               <input value={form.sponsorName} onChange={e => setForm(f => ({ ...f, sponsorName: e.target.value }))}
-                placeholder="e.g. Commonwealth Bank"
+                placeholder="e.g. Local Credit Union"
                 className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400"
                 data-testid="input-class-sponsor" />
             </div>

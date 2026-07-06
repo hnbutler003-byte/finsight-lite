@@ -1,0 +1,52 @@
+FIX 1: Robust org logo rendering (certificates + anywhere org logos appear)
+
+Create a shared component, OrgLogo, used everywhere an uploaded org logo renders 
+(certificates, org branding preview, in-app header). Requirements:
+- Fixed-height container (h-10 for header, h-14 for certificates), NEVER fixed width
+- object-fit: contain, never cover, so no logo is ever cropped or stretched
+- max-width constraint (e.g. max-w-[160px]) so wide logos don't overrun layout
+- Wrap in a neutral padded box (8px padding, background depending on light/dark mode)
+- Fallback to the default Finsight Lite mark if no logo uploaded
+Replace current logo rendering on the certificate template and org branding preview. 
+Add upload guidance text on the Branding page: "For best results, upload a 
+transparent PNG, ideally wider than it is tall."
+
+FIX 2: Visual consistency sweep across all 7 money games
+
+Grep the games directory for any hardcoded dark background colors (slate/navy/teal 
+hex values, bg-slate-*, bg-gray-800 etc.) outside of caribbean-bg or glass-card 
+classes, across every game's play AND result/end-state screens. For each one found:
+- Background must be caribbean-bg or sit on an established glass-card
+- Result cards must use .glass-card or .glass-card-coral (wins/streaks)
+- All text must have light AND dark mode color pairs
+- Border radius must be --radius-glass (28px), not a mismatched rounded-lg/xl
+Confirmed offenders to start with: Budget Grocery Challenge result screen, 
+Compound It chart panel. Then sweep the remaining 5 games' result states.
+
+FIX 3: Custom icon set replacing functional emoji
+
+Two files are attached: finsight-icons.tsx (React components: IconGame, IconTrophy, 
+IconTip, IconStreak, BadgeSeaGrape, BadgeSteelPan, BadgeCoconutPalm, BadgeWave) and 
+finsight-slider.css (custom slider track/thumb styling).
+
+- Add finsight-icons.tsx to the components/icons directory
+- Replace functional emoji used as UI icons (game controller emoji on game cards, 
+  trophy emoji on achievements, lightbulb emoji on tips, flame emoji on streaks) 
+  with IconGame, IconTrophy, IconTip, IconStreak respectively. Size and color via 
+  existing className patterns (text-primary, text-coral, etc.), same as other 
+  lucide-react icons already in use
+- Keep decorative/celebratory emoji as-is (confetti, party popper on win states), 
+  do not touch those
+- Use BadgeSeaGrape, BadgeSteelPan, BadgeCoconutPalm, and BadgeWave as achievement 
+  badge icons in place of generic star/trophy shapes on the badges/achievements 
+  screen, one motif per badge tier or category, your choice on mapping
+- Import finsight-slider.css and apply the finsight-slider className to the Slider 
+  component instances on Compound It and any other screen using a range slider
+
+Standard requirements for this prompt:
+- No em dashes anywhere in code, comments, or UI copy
+- Verify every changed screen in both light mode and dark mode before considering 
+  it done
+- Apply intentional animation to any result screen that doesn't already have one 
+  (bounce-in for wins, pop-in for neutral summaries), using existing keyframes only
+- Do not touch game logic or scoring, this is a visual/branding fix only

@@ -162,7 +162,10 @@ async function buildStudentCert(
   doc.setFont("helvetica", "italic");
   doc.setFontSize(7.5);
   doc.setTextColor(130, 130, 150);
-  doc.text(`Issued by Finsight Lite in partnership with ${orgName}`, W / 2, H - 11, { align: "center" });
+  const footerText = orgName && orgName !== "FinSight Lite"
+    ? `Issued by Finsight Lite in partnership with ${orgName}`
+    : "Issued by Finsight Lite";
+  doc.text(footerText, W / 2, H - 11, { align: "center" });
 
   return doc;
 }
