@@ -34,3 +34,9 @@ rejects, so state it as completed.
 
 Never print the remote URL with embedded credentials; redact with
 `sed -E 's#https://[^@ ]*@#https://#g'`. The `github` remote embeds a PAT.
+
+The PAT embedded in the `github` remote URL can go STALE ("Invalid username or
+token"). When that happens, push with the live secret inline instead:
+`git push "https://x-access-token:${GITHUB_PAT}@github.com/<owner>/<repo>.git" main`
+(redact all output through the sed above). Verify the same way with
+`git ls-remote "https://x-access-token:${GITHUB_PAT}@github.com/<owner>/<repo>.git" refs/heads/main`.
