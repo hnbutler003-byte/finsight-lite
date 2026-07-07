@@ -19,6 +19,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { generateFinancialAcademyCertificate } from "@/lib/financialAcademyCertificate";
 import { LevelUpModal } from "@/components/LevelUpModal";
+import { QuizCta } from "@/components/QuizCta";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -101,6 +102,7 @@ type StaticModuleVisual = {
   colorFrom: string;
   colorTo: string;
   textColor: string;
+  labelOnDark: string;
   bgMuted: string;
   borderColor: string;
 };
@@ -112,60 +114,31 @@ const MODULE_VISUAL_CONFIG: Record<string, StaticModuleVisual> = {
     icon: <Wallet className="w-6 h-6" />,
     lessonIcon: (id) => id === "static-budget-2" ? <BarChart3 className="w-5 h-5" /> : id === "static-budget-3" ? <Lightbulb className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />,
     colorFrom: "from-amber-500", colorTo: "to-orange-500",
-    textColor: "text-amber-400", bgMuted: "bg-amber-500/10", borderColor: "border-amber-500/30",
+    textColor: "text-amber-600 dark:text-amber-400", labelOnDark: "text-amber-300", bgMuted: "bg-amber-500/10", borderColor: "border-amber-500/30",
   },
   saving: {
     icon: <PiggyBank className="w-6 h-6" />,
     lessonIcon: (id) => id === "static-save-2" ? <Target className="w-5 h-5" /> : id === "static-save-3" ? <Star className="w-5 h-5" /> : <PiggyBank className="w-5 h-5" />,
     colorFrom: "from-teal-500", colorTo: "to-cyan-500",
-    textColor: "text-teal-400", bgMuted: "bg-teal-500/10", borderColor: "border-teal-500/30",
+    textColor: "text-teal-600 dark:text-teal-400", labelOnDark: "text-teal-300", bgMuted: "bg-teal-500/10", borderColor: "border-teal-500/30",
   },
   investing: {
     icon: <TrendingUp className="w-6 h-6" />,
     lessonIcon: (id) => id === "static-invest-2" ? <Layers className="w-5 h-5" /> : id === "static-invest-3" ? <Award className="w-5 h-5" /> : <TrendingUp className="w-5 h-5" />,
     colorFrom: "from-violet-500", colorTo: "to-purple-600",
-    textColor: "text-violet-400", bgMuted: "bg-violet-500/10", borderColor: "border-violet-500/30",
+    textColor: "text-violet-600 dark:text-violet-400", labelOnDark: "text-violet-300", bgMuted: "bg-violet-500/10", borderColor: "border-violet-500/30",
   },
   "sand-dollar": {
     icon: <Smartphone className="w-6 h-6" />,
     lessonIcon: (id) => id === "static-cbdc-2" ? <Globe className="w-5 h-5" /> : id === "static-cbdc-3" ? <KeyRound className="w-5 h-5" /> : id === "static-cbdc-4" ? <Shield className="w-5 h-5" /> : <Smartphone className="w-5 h-5" />,
     colorFrom: "from-blue-500", colorTo: "to-indigo-600",
-    textColor: "text-blue-400", bgMuted: "bg-blue-500/10", borderColor: "border-blue-500/30",
+    textColor: "text-blue-600 dark:text-blue-400", labelOnDark: "text-blue-300", bgMuted: "bg-blue-500/10", borderColor: "border-blue-500/30",
   },
 };
 
 function getModuleVisual(moduleId: string): StaticModuleVisual {
   return MODULE_VISUAL_CONFIG[moduleId] ?? MODULE_VISUAL_CONFIG.budgeting;
 }
-
-// ─── OECD-Aligned Static Modules (legacy reference, unused, tree-shaken in prod) ──
-
-type StaticLesson = {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  duration: string;
-  videoUrl?: string;
-  objectives: string[];
-  content_sections: ContentSection[];
-  questions: QuizQuestion[];
-};
-
-type StaticModule = {
-  id: string;
-  title: string;
-  subtitle: string;
-  objective: string;
-  icon: React.ReactNode;
-  colorFrom: string;
-  colorTo: string;
-  textColor: string;
-  bgMuted: string;
-  borderColor: string;
-  lessons: StaticLesson[];
-};
-
 
 const STORAGE_KEY = "finsight_static_completed";
 
@@ -282,7 +255,7 @@ function LessonVideoPlayer({ url }: { url: string | null | undefined }) {
       <Card className="glass-card rounded-glass border-0">
         <CardContent className="p-5 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center flex-shrink-0">
-            <Video className="w-5 h-5 text-violet-400" />
+            <Video className="w-5 h-5 text-violet-600 dark:text-violet-400" />
           </div>
           <div>
             <p className="font-bold text-sm">Video Coming Soon</p>
@@ -323,7 +296,7 @@ function LessonVideoPlayer({ url }: { url: string | null | undefined }) {
         <Card className="glass-card rounded-glass border-0">
           <CardContent className="p-5 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-              <AlertTriangle className="w-5 h-5 text-amber-400" />
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
               <p className="font-bold text-sm">Video not available</p>
@@ -353,7 +326,7 @@ function LessonVideoPlayer({ url }: { url: string | null | undefined }) {
     <Card className="glass-card rounded-glass border-0">
       <CardContent className="p-4 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center flex-shrink-0">
-          <Video className="w-5 h-5 text-teal-400" />
+          <Video className="w-5 h-5 text-teal-600 dark:text-teal-400" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-sm">Lesson Video</p>
@@ -363,7 +336,7 @@ function LessonVideoPlayer({ url }: { url: string | null | undefined }) {
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs font-bold text-teal-400 hover:text-teal-300 shrink-0"
+          className="text-xs font-bold text-teal-700 hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-300 shrink-0"
         >
           Open →
         </a>
@@ -451,7 +424,7 @@ function ModuleCard({
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
                     isDone
-                      ? "bg-green-500/20 text-green-400"
+                      ? "bg-green-500/20 text-green-600 dark:text-green-400"
                       : `${module.bgMuted} ${module.textColor}`
                   }`}>
                     {isDone ? <CheckCircle2 className="w-5 h-5" /> : module.lessonIcon(lesson.static_lesson_id)}
@@ -459,7 +432,7 @@ function ModuleCard({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-muted-foreground">Lesson {idx + 1}</span>
-                      {isDone && <span className="text-xs font-bold text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">Completed</span>}
+                      {isDone && <span className="text-xs font-bold text-green-700 dark:text-green-300 bg-green-500/10 px-2 py-0.5 rounded-full">Completed</span>}
                     </div>
                     <p className="font-bold text-sm text-foreground truncate">{lesson.title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5 leading-snug line-clamp-1">{lesson.description}</p>
@@ -470,7 +443,7 @@ function ModuleCard({
                         <Clock className="w-3.5 h-3.5" />{lesson.duration}
                       </span>
                     )}
-                    <ChevronRight className={`w-4 h-4 text-muted-foreground group-hover:${module.textColor} transition-colors`} />
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   </div>
                 </button>
               );
@@ -558,6 +531,7 @@ export default function Lessons() {
     }
     prevLevelRef.current = xpData.level;
   }, [xpData?.level]);
+
 
   // Static lesson completion tracking
   const [completedStatic, setCompletedStatic] = useState<string[]>(() => {
@@ -841,13 +815,13 @@ export default function Lessons() {
                 ) : lessons.length === 0 ? (
                   <div className="space-y-3">
                     <div className="glass-card rounded-glass p-8 text-center">
-                      <BookOpen className="w-10 h-10 text-teal-400 mx-auto mb-3 opacity-60" />
+                      <BookOpen className="w-10 h-10 text-teal-600 dark:text-teal-400 mx-auto mb-3 opacity-60" />
                       <p className="font-bold">No school lessons yet</p>
                       <p className="text-muted-foreground text-sm mt-1">Enter your class or organization code to unlock lessons from your school.</p>
                     </div>
                     <div className="glass-card rounded-glass p-5 space-y-3">
                       <div className="flex items-center gap-2 mb-1">
-                        <KeyRound className="w-5 h-5 text-violet-400" />
+                        <KeyRound className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                         <span className="font-bold text-sm">Enter your code</span>
                       </div>
                       <div className="flex gap-2">
@@ -870,7 +844,7 @@ export default function Lessons() {
                         </Button>
                       </div>
                       {joinError && <p className="text-destructive text-sm font-medium" data-testid="text-join-error">{joinError}</p>}
-                      {joinSuccess && <p className="text-green-400 text-sm font-medium" data-testid="text-join-success">{joinSuccess}</p>}
+                      {joinSuccess && <p className="text-green-700 dark:text-green-300 text-sm font-medium" data-testid="text-join-success">{joinSuccess}</p>}
                     </div>
                   </div>
                 ) : (
@@ -921,7 +895,7 @@ export default function Lessons() {
                 <div className="flex-1 min-w-0">
                   {activeModule && (
                     <div className={`flex items-center gap-1.5 mb-1`}>
-                      <span className={`text-xs font-bold uppercase tracking-wide ${activeModule.textColor}`}>{activeModule.title}</span>
+                      <span className={`text-xs font-bold uppercase tracking-wide ${activeModule.labelOnDark}`}>{activeModule.title}</span>
                     </div>
                   )}
                   <h1 className="font-display text-2xl font-bold text-white truncate" data-testid="text-lesson-title">{selectedLesson.title}</h1>
@@ -942,7 +916,7 @@ export default function Lessons() {
                   <CardContent className="p-6">
                     <h2 className="font-display font-bold text-lg flex items-center gap-2 mb-4">
                       <div className="w-8 h-8 rounded-xl bg-violet-500/20 flex items-center justify-center">
-                        <Target className="w-4 h-4 text-violet-400" />
+                        <Target className="w-4 h-4 text-violet-600 dark:text-violet-400" />
                       </div>
                       Learning Objectives
                     </h2>
@@ -950,7 +924,7 @@ export default function Lessons() {
                       {selectedLesson.objectives.map((obj, i) => (
                         <li key={i} className="flex items-start gap-3 text-sm" data-testid={`objective-${i}`}>
                           <div className="w-6 h-6 rounded-full bg-teal-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <span className="text-teal-400 font-bold text-xs">{i + 1}</span>
+                            <span className="text-teal-700 dark:text-teal-400 font-bold text-xs">{i + 1}</span>
                           </div>
                           <span className="text-foreground">{obj}</span>
                         </li>
@@ -966,7 +940,7 @@ export default function Lessons() {
                   <CardContent className="p-6">
                     <h2 className="font-display font-bold text-lg flex items-center gap-2 mb-3">
                       <div className="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                        <BookOpen className="w-4 h-4 text-amber-400" />
+                        <BookOpen className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                       </div>
                       {section.heading}
                     </h2>
@@ -991,23 +965,11 @@ export default function Lessons() {
 
               {/* Start Quiz */}
               {selectedLesson.questions.length > 0 && (
-                <Card className="glass-card-coral rounded-glass border-0">
-                  <CardContent className="p-6 flex items-center justify-between gap-4">
-                    <div>
-                      <h3 className="font-display font-bold text-lg text-foreground">Ready to test yourself?</h3>
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        {selectedLesson.questions.length} questions · Earn {selectedLesson.questions.length * 10} XP
-                      </p>
-                    </div>
-                    <Button
-                      onClick={startQuiz}
-                      className="rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold px-6 shadow-lg shrink-0"
-                      data-testid="button-start-quiz"
-                    >
-                      Start Quiz
-                    </Button>
-                  </CardContent>
-                </Card>
+                <QuizCta
+                  subtitle={`${selectedLesson.questions.length} questions · Earn ${selectedLesson.questions.length * 10} XP`}
+                  buttonTestId="button-start-quiz"
+                  onStart={startQuiz}
+                />
               )}
             </div>
           )}
@@ -1100,13 +1062,13 @@ export default function Lessons() {
               <div className="grid grid-cols-3 gap-3">
                 <Card className="glass-card rounded-glass border-0">
                   <CardContent className="p-4 text-center">
-                    <p className="text-2xl font-bold text-teal-400" data-testid="text-quiz-score">{quizResults.finalCorrect}/{quizResults.total}</p>
+                    <p className="text-2xl font-bold text-teal-700 dark:text-teal-400" data-testid="text-quiz-score">{quizResults.finalCorrect}/{quizResults.total}</p>
                     <p className="text-xs font-bold text-muted-foreground mt-1">Correct</p>
                   </CardContent>
                 </Card>
                 <Card className="glass-card rounded-glass border-0">
                   <CardContent className="p-4 text-center">
-                    <p className="text-2xl font-bold text-amber-400">{pct}%</p>
+                    <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{pct}%</p>
                     <p className="text-xs font-bold text-muted-foreground mt-1">Score</p>
                   </CardContent>
                 </Card>
@@ -1153,7 +1115,7 @@ export default function Lessons() {
                 <Card className="glass-card rounded-glass border-0" style={{ borderColor: "rgba(251,191,36,0.3)" }}>
                   <CardContent className="p-5 flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                      <Trophy className="w-6 h-6 text-amber-400" />
+                      <Trophy className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                     </div>
                     <div className="flex-1 text-left">
                       <p className="font-bold text-sm">Module Complete! 🏅</p>
@@ -1161,7 +1123,7 @@ export default function Lessons() {
                       <p className="text-xs text-muted-foreground mt-1.5">
                         Certificate name: <span className="font-semibold text-foreground" data-testid="text-certificate-name-module">{certificateFullName}</span>
                         {" · "}
-                        <Link href="/settings" className="underline text-teal-300 hover:text-teal-200" data-testid="link-edit-name-module">Edit name</Link>
+                        <Link href="/settings" className="underline text-teal-700 hover:text-teal-800 dark:text-teal-300 dark:hover:text-teal-200" data-testid="link-edit-name-module">Edit name</Link>
                       </p>
                     </div>
                     <Button
@@ -1184,7 +1146,7 @@ export default function Lessons() {
                 <Card className="glass-card rounded-glass border-0" style={{ borderColor: "rgba(251,191,36,0.2)" }}>
                   <CardContent className="p-5 flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                      <Award className="w-6 h-6 text-amber-400" />
+                      <Award className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                     </div>
                     <div className="flex-1 text-left">
                       <p className="font-bold text-sm">
@@ -1200,7 +1162,7 @@ export default function Lessons() {
                       <p className="text-xs text-muted-foreground mt-1.5">
                         Certificate name: <span className="font-semibold text-foreground" data-testid="text-certificate-name-lesson">{certificateFullName}</span>
                         {" · "}
-                        <Link href="/settings" className="underline text-teal-300 hover:text-teal-200" data-testid="link-edit-name-lesson">Edit name</Link>
+                        <Link href="/settings" className="underline text-teal-700 hover:text-teal-800 dark:text-teal-300 dark:hover:text-teal-200" data-testid="link-edit-name-lesson">Edit name</Link>
                       </p>
                     </div>
                     <Button

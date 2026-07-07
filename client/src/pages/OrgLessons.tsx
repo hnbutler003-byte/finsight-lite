@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { VideoField } from "@/components/VideoField";
 import { useVideoEmbed } from "@/hooks/use-video-embed";
+import { QuizCta } from "@/components/QuizCta";
 
 type QuizQuestion = {
   question: string;
@@ -918,7 +919,7 @@ function LessonPreviewModal({ lesson, onClose }: { lesson: LessonPlan; onClose: 
                   <CardContent className="p-6">
                     <h2 className="font-display font-bold text-lg flex items-center gap-2 mb-4">
                       <div className="w-8 h-8 rounded-xl bg-violet-500/20 flex items-center justify-center">
-                        <Target className="w-4 h-4 text-violet-400" />
+                        <Target className="w-4 h-4 text-violet-600 dark:text-violet-400" />
                       </div>
                       Learning Objectives
                     </h2>
@@ -926,7 +927,7 @@ function LessonPreviewModal({ lesson, onClose }: { lesson: LessonPlan; onClose: 
                       {previewLesson.objectives.map((obj, i) => (
                         <li key={i} className="flex items-start gap-3 text-sm">
                           <div className="w-6 h-6 rounded-full bg-teal-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                            <span className="text-teal-400 font-bold text-xs">{i + 1}</span>
+                            <span className="text-teal-700 dark:text-teal-400 font-bold text-xs">{i + 1}</span>
                           </div>
                           <span className="text-foreground">{obj}</span>
                         </li>
@@ -941,7 +942,7 @@ function LessonPreviewModal({ lesson, onClose }: { lesson: LessonPlan; onClose: 
                   <CardContent className="p-6">
                     <h2 className="font-display font-bold text-lg flex items-center gap-2 mb-3">
                       <div className="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                        <BookOpen className="w-4 h-4 text-amber-400" />
+                        <BookOpen className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                       </div>
                       {section.heading}
                     </h2>
@@ -963,21 +964,11 @@ function LessonPreviewModal({ lesson, onClose }: { lesson: LessonPlan; onClose: 
               ))}
 
               {previewLesson.questions.length > 0 ? (
-                <Card className="glass-card-coral rounded-glass border-0">
-                  <CardContent className="p-6 flex items-center justify-between gap-4">
-                    <div>
-                      <h3 className="font-display font-bold text-lg text-foreground">Ready to test yourself?</h3>
-                      <p className="text-sm text-muted-foreground mt-0.5">{previewLesson.questions.length} questions · Preview only (no XP saved)</p>
-                    </div>
-                    <Button
-                      onClick={() => { setPage("quiz"); setCurrentQ(0); setSelected(null); setShowResult(false); setAnswers([]); }}
-                      className="rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold px-6 shadow-lg shrink-0"
-                      data-testid="button-preview-start-quiz"
-                    >
-                      Start Quiz
-                    </Button>
-                  </CardContent>
-                </Card>
+                <QuizCta
+                  subtitle={`${previewLesson.questions.length} questions · Preview only (no XP saved)`}
+                  buttonTestId="button-preview-start-quiz"
+                  onStart={() => { setPage("quiz"); setCurrentQ(0); setSelected(null); setShowResult(false); setAnswers([]); }}
+                />
               ) : (
                 <Card className="glass-card rounded-glass border-0">
                   <CardContent className="p-5 text-center text-muted-foreground text-sm">No quiz questions added to this lesson yet.</CardContent>
@@ -1065,19 +1056,19 @@ function LessonPreviewModal({ lesson, onClose }: { lesson: LessonPlan; onClose: 
               <div className="grid grid-cols-3 gap-3">
                 <Card className="glass-card rounded-glass border-0">
                   <CardContent className="p-4 text-center">
-                    <p className="text-2xl font-bold text-teal-400">{finalCorrect}/{previewLesson.questions.length}</p>
+                    <p className="text-2xl font-bold text-teal-700 dark:text-teal-400">{finalCorrect}/{previewLesson.questions.length}</p>
                     <p className="text-xs font-bold text-muted-foreground mt-1">Correct</p>
                   </CardContent>
                 </Card>
                 <Card className="glass-card rounded-glass border-0">
                   <CardContent className="p-4 text-center">
-                    <p className="text-2xl font-bold text-amber-400">{pct}%</p>
+                    <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{pct}%</p>
                     <p className="text-xs font-bold text-muted-foreground mt-1">Score</p>
                   </CardContent>
                 </Card>
                 <Card className="glass-card rounded-glass border-0">
                   <CardContent className="p-4 text-center">
-                    <p className="text-2xl font-bold text-violet-400">{previewLesson.questions.length}</p>
+                    <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">{previewLesson.questions.length}</p>
                     <p className="text-xs font-bold text-muted-foreground mt-1">Questions</p>
                   </CardContent>
                 </Card>
