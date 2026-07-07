@@ -1,0 +1,13 @@
+We need to create a demo environment showing CFAL-branded student and teacher views, so we can take real screenshots for a sponsorship pitch. Do not fabricate or assume any part of this is already built, verify each piece exists and works before using it.
+Step 1: Audit first. Confirm the Org Admin Branding page (/org/branding) actually lets an admin upload a PNG or JPG logo, and confirm that logo actually renders in the app header and on student dashboards as documented. Report back what you find before proceeding, if this doesn't work as expected, stop and tell me rather than working around it silently.
+Step 2: Create a demo organization. Register a new org through the normal /org/register flow (not a direct database seed) named "CFAL Junior Investor Prep (Demo)". Use a throwaway admin email I can access.
+Step 3: Apply CFAL branding. I will upload CFAL's actual logo file separately, once I have it, use it here. Do not use a placeholder.
+Step 4: Create realistic demo data, through the normal app flows, not direct database writes:
+
+One teacher account, one class named "Grade 10 Financial Literacy, Junior Investor Prep"
+Five to six students with real Caribbean teen names (not "Student 1"), each with realistic XP, levels, streaks, and Investment Simulator activity using real BISX tickers (CBL, FCL, JSJ, CAB, DHS, CHB) so the dashboard and analytics don't look empty
+If any step requires a direct database write instead of the UI, that function must throw a clear, catchable error on failure, never fail silently
+
+Step 5: Confirm rendering in both light and dark mode, since this will be screenshotted, verify the branding and cards look correct in both before I capture anything.
+Step 6: Report back the exact URLs for the student dashboard and teacher dashboard/analytics view for this demo org, so I can navigate to them directly for screenshots.
+No em dashes anywhere in any UI copy touched during this. If any teacher-facing or org-admin-facing UI changes in the process, update teacher-guide.md or org-guide.md accordingly in the same pass.
