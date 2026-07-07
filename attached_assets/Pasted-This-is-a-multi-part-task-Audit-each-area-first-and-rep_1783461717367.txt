@@ -1,0 +1,44 @@
+This is a multi-part task. Audit each area first and report back before writing any code, don't assume anything is already built.
+Part 1: Teacher lesson and quiz creation
+
+Audit: confirm the exact current permission boundary between Org Admin and Teacher for lesson creation (/org/lessons vs /teacher/classes/:id Lessons tab).
+Extend lesson creation, including the existing optional quiz-question step, to teachers, scoped to their own class only, not published org-wide. A teacher-created lesson/quiz should only be visible to students in that teacher's class, never to other classes or other teachers, unless an Org Admin explicitly promotes it later (not part of this build).
+Org Admin-created lessons keep working exactly as they do today, environment-wide.
+If this requires a schema change (e.g. a created_by_teacher_id and scope field), any migration must run cleanly on the live Supabase instance, and any new database write function must throw a clear, catchable error on failure, never fail silently.
+Update teacher-guide.md with a new section explaining this.
+
+Part 2: Fix the quiz CTA card inconsistency
+
+Audit every place the "Ready to test yourself?" card renders across all modules (Budgeting, Sand Dollar, Investing, and any others).
+Confirm it's using one shared component, not multiple copy-pasted versions with different hardcoded colors. If it's duplicated, consolidate to one component.
+Standardize on one treatment site-wide, using the coral/amber gamification tokens already defined in the design system (this is a rewards/achievement moment), not an arbitrary purple or gray-blue.
+While in there, audit all lesson-page cards and buttons in light mode specifically for any other wrong-color, low-contrast, or inconsistent elements, and fix what you find. Report what you fixed, don't just say "done."
+
+Part 3: Em dash sweep, lesson content specifically
+
+The earlier em-dash sweep did not cover lesson content stored in the database. Audit every lesson's title, body text, and examples across all modules for em dashes and replace with periods, commas, or conjunctions, matching how the rest of the copy is written.
+Confirm this covers the Budgeting, Sand Dollar, and Investing modules specifically, and any others that exist.
+
+Part 4: Embed Central Bank of The Bahamas videos in the Sand Dollar module
+
+Two candidate official videos: the 2020 Sand Dollar national launch coverage (youtube.com/watch?v=uZJKuXDemKc) and a Central Bank staff update from December 2024 (youtube.com/watch?v=cS57rju0SUI). Verify both actually allow embedding before using them.
+Search for anything more specific to each individual lesson topic (what the Sand Dollar is, why it exists, using the wallet and QR payments, CBDC vs cryptocurrency) if better matches exist on the Central Bank's official channel. Don't force one generic video into all four lessons if better-fitted ones exist.
+Embed at the top of each relevant lesson, above the Learning Objectives card, using the platform's existing YouTube embed support for teacher-uploaded content.
+If no well-matched official video exists for a given lesson, leave it without one rather than forcing an unrelated video in.
+
+Part 5: Make the Investing module, and lesson presentation generally, less static
+
+Audit current lesson content block types. Right now it appears to be title plus paragraph plus example pills, repeated. Add variety: at minimum, support an embeddable video block and a visual/diagram block, not just text.
+For the Investing Fundamentals module specifically, identify one or two good, embeddable, factually accurate finance-education videos per lesson (compound interest, risk and return) and embed them the same way as Part 4.
+This should become a reusable content block type, not a one-off hack for this module, since it'll be used again.
+
+Part 6: Add Org Admin view to the public demo page
+
+Audit the current /demo page implementation to see how the existing student and teacher demo views are built (likely read-only seeded data, no real login).
+Add a third tab or toggle for an Org Admin view, using the same no-signup pattern. Show at minimum: the Dashboard (org stats, AI usage, student table), the Branding page (so a visiting sponsor can see exactly where their logo would go), and the Lessons page (so the publish/draft flow is visible).
+Use the same realistic seeded demo data conventions as the existing student/teacher demo views, don't leave any panel empty or showing zeros.
+This is read-only and public-facing, make sure nothing on it allows an actual write to real data.
+Update the navigation quick reference doc to include the new demo URL/tab for Org Admin.
+
+Standing rules for all parts: no em dashes anywhere in any code, copy, or content touched. Any new npm package requires the pnpm/package-lock.json proxy fix. Any database write requires error-throwing on failure. Any UI change requires light and dark mode verification before reporting done. Any teacher-facing or org-admin-facing UI change requires a corresponding update to teacher-guide.md or org-guide.md in the same pass.
+Report back after each part before moving to the next, this is too large to verify all at once.
