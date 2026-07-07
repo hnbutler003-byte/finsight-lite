@@ -571,8 +571,10 @@ export class DatabaseStorage implements IStorage {
   async seedMarketData(): Promise<void> {
     const existing = await db.select().from(simulatedStocks).limit(1);
     if (existing.length > 0) return;
+    await db.insert(simulatedStocks).values(DatabaseStorage.MARKET_DATA_SEED);
+  }
 
-    await db.insert(simulatedStocks).values([
+  static readonly MARKET_DATA_SEED: (typeof simulatedStocks.$inferInsert)[] = [
       { name: "Bahamas Telecommunications Company", ticker: "BTC-BS", type: "stock", description: "The national telecom provider of The Bahamas. Owning this stock means you own a small piece of the company that keeps Bahamians connected.", currentPrice: "5.50", currency: "BSD", issuer: "BTC Ltd.", region: "Bahamas", riskLevel: "medium", annualReturnPct: "4.20" },
       { name: "Commonwealth Bank", ticker: "CBL-BS", type: "stock", description: "One of the largest banks in The Bahamas. Banks make money by lending and investing, and shareholders benefit when the bank does well.", currentPrice: "8.25", currency: "BSD", issuer: "Commonwealth Bank Ltd.", region: "Bahamas", riskLevel: "medium", annualReturnPct: "5.10" },
       { name: "Focol Holdings", ticker: "FCL-BS", type: "stock", description: "A Bahamian energy company that distributes fuel. Energy companies tend to be stable because people always need electricity and gas.", currentPrice: "3.80", currency: "BSD", issuer: "Focol Holdings Ltd.", region: "Bahamas", riskLevel: "medium", annualReturnPct: "3.50" },
@@ -592,14 +594,15 @@ export class DatabaseStorage implements IStorage {
       { name: "Barbados Government Debenture", ticker: "BGD-BB", type: "bond", description: "A bond issued by the Government of Barbados. Debentures are unsecured bonds backed by the government's reputation and ability to collect taxes.", currentPrice: "100.00", currency: "BBD", issuer: "Central Bank of Barbados", region: "Barbados", riskLevel: "low", annualReturnPct: "5.00" },
       { name: "East Caribbean Home Mortgage Bank", ticker: "ECHMB-XC", type: "bond", description: "A bond from the EC Home Mortgage Bank that helps people in Eastern Caribbean countries buy homes. Your investment helps fund housing!", currentPrice: "100.00", currency: "XCD", issuer: "ECHMB", region: "Eastern Caribbean", riskLevel: "low", annualReturnPct: "4.75" },
       { name: "Demerara Bank", ticker: "DBL-GY", type: "stock", description: "A leading commercial bank in Guyana. With Guyana's growing oil economy, banks there are handling more business than ever.", currentPrice: "250.00", currency: "GYD", issuer: "Demerara Bank Ltd.", region: "Guyana", riskLevel: "high", annualReturnPct: "7.50" },
-    ]);
-  }
+  ];
 
   async seedLearningModules(): Promise<void> {
     const existing = await db.select().from(learningModules).limit(1);
     if (existing.length > 0) return;
+    await db.insert(learningModules).values(DatabaseStorage.LEARNING_MODULES_SEED);
+  }
 
-    await db.insert(learningModules).values([
+  static readonly LEARNING_MODULES_SEED = [
       {
         title: "What is Money?",
         slug: "what-is-money",
@@ -648,8 +651,7 @@ export class DatabaseStorage implements IStorage {
         order: 6,
         icon: "Briefcase",
       },
-    ]);
-  }
+  ];
 
   // === MONEYLAB ===
 

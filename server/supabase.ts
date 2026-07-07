@@ -887,7 +887,7 @@ const STATIC_MODULES_DATA = [
   { id: "sand-dollar", title: "The Sand Dollar", subtitle: "Digital Money in The Bahamas", objective: "Students will understand what the Sand Dollar is, why the Central Bank of The Bahamas created it, how to use a digital wallet, and how a government-issued digital currency differs from cryptocurrency.", display_order: 3, territories: ["BSD"] },
 ];
 
-const STATIC_LESSONS_DATA: Array<{
+export const STATIC_LESSONS_DATA: Array<{
   grade_level: string; topic: string; title: string; instructor: string;
   duration: string; video_url: string | null; objectives: string[]; content_sections: ContentSection[];
   questions: Omit<LessonQuizQuestion, "id" | "lesson_id">[];
