@@ -1530,6 +1530,18 @@ Rules:
     res.json(data);
   });
 
+  app.get("/api/student/org-logo", isAuthenticated, async (req: any, res) => {
+    try {
+      const studentUserId = String((req.user as any).id);
+      const orgIds = await getStudentOrgIds(studentUserId);
+      if (!orgIds.length) return res.json({ logoUrl: null });
+      const org = await getOrganization(orgIds[0]);
+      res.json({ logoUrl: org?.logo_url ?? null });
+    } catch {
+      res.json({ logoUrl: null });
+    }
+  });
+
   app.get("/api/student/classes/:classId/notifications", isAuthenticated, async (req: any, res) => {
     const classId = parseInt(req.params.classId);
     const studentId = (req.user as any).id;

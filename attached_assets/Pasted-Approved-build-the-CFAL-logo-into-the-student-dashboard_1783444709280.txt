@@ -1,0 +1,13 @@
+Approved: build the CFAL logo into the student dashboard header for real, this is not a one-off for a screenshot, it's a permanent feature every future sponsor org will use. Also approved: create the join code via the admin API, then register the org admin through the normal /org/register flow with that code.
+Step A: Build sponsor logo display in the student dashboard header.
+
+Add the org's logo_url (already saved correctly via /org/branding, confirmed working in the audit) to the student-facing Sidebar.tsx header, alongside the existing Finsight Lite logo, not replacing it. Finsight Lite branding stays primary; the org logo reads as "Sponsored by [logo]," matching how the certificate treatment already handles it.
+If an org has no logo set, the header must render exactly as it does today, don't break the default case.
+This must work correctly in both light and dark mode. Verify both before reporting back, don't assume.
+No em dashes in any UI copy touched.
+Since this changes student-facing UI, note it in the relevant section of teacher-guide.md if teachers would notice or need to know about it (e.g. if it affects what they see when previewing the student view).
+
+Step B: Create the join code and demo org, using the admin API and ADMIN_EMAIL/ADMIN_PASSWORD as you proposed. Name the org "CFAL Junior Investor Prep (Demo)."
+Step C: Apply CFAL's logo. I don't have the file yet, leave this step ready but unexecuted. Report back what format/dimensions the upload expects so we're not blocked the moment the file arrives.
+Step D: Create realistic demo data through normal app flows, not direct database writes: one teacher, one class ("Grade 10 Financial Literacy, Junior Investor Prep"), five to six students with real Caribbean teen names, realistic XP/levels/streaks, and Investment Simulator activity using real BISX tickers (CBL, FCL, JSJ, CAB, DHS, CHB). Any required direct database write must throw a clear, catchable error on failure, never fail silently.
+Step E: Report back the exact student dashboard and teacher dashboard/analytics URLs for this demo org, plus confirmation that Step A renders correctly in both modes.

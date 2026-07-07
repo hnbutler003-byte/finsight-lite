@@ -27,7 +27,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const AVATAR_EMOJIS: Record<string, string> = {
   lion: "🦁", dolphin: "🐬", parrot: "🦜", turtle: "🐢",
@@ -278,10 +278,16 @@ export function Sidebar() {
     item.href === "/" ? location === "/" : location.startsWith(item.href)
   ) || NAV_ITEMS[0];
 
+  const { data: orgBranding } = useQuery<{ logoUrl: string | null }>({
+    queryKey: ["/api/student/org-logo"],
+    staleTime: 1000 * 60 * 10,
+  });
+  const orgLogoUrl = orgBranding?.logoUrl ?? null;
+
   const NavContent = () => (
     <div className="flex flex-col h-full caribbean-bg text-white">
       <div className="p-5 pb-4 border-b border-white/10 flex items-start justify-between gap-2">
-        <div>
+        <div className="flex-1 min-w-0">
           <div className="mb-1">
             <FinsightLiteLogo size={32} className="text-white" data-testid="img-logo-sidebar" />
           </div>
@@ -289,6 +295,19 @@ export function Sidebar() {
             <Sparkles className="w-3 h-3 text-amber-400" />
             by FinSight Ltd.
           </p>
+          {orgLogoUrl && (
+            <div className="mt-3 pt-3 border-t border-white/10">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-1.5">Sponsored by</p>
+              <div className="inline-flex items-center bg-white/95 rounded-xl px-2 py-1 max-w-[120px]">
+                <img
+                  src={orgLogoUrl}
+                  alt="Sponsor logo"
+                  className="h-5 max-h-5 max-w-full object-contain"
+                  data-testid="img-sponsor-logo"
+                />
+              </div>
+            </div>
+          )}
         </div>
         <button
           onClick={toggleCollapse}
