@@ -1,3 +1,5 @@
+import type { ContentSection } from "@shared/schema";
+
 export interface RegionInfo {
   country: string;
   currency: string;
@@ -137,4 +139,153 @@ Key takeaway: A good portfolio is diversified. Start small, stay consistent, and
   };
 
   return modules[slug] || null;
+}
+
+// ─── Structured content, all regions ───────────────────────────────────────────
+// Mirrors the ContentSection/ContentDiagram format used for the BSD static
+// seed (server/storage.ts). Generated per-region from real regional_content
+// data instead of hand-authored per currency, so all 6 regions stay in sync
+// if the underlying facts ever change.
+
+function whatIsMoneySections(r: RegionInfo): ContentSection[] {
+  const ownSide = r.pegged
+    ? { title: "Pegged (locked)", points: [r.currency, "Exchange rate stays steady", "Value doesn't drift day to day"] }
+    : { title: "Floating (free)", points: [r.currency, "Value moves with supply and demand", "Can rise or fall day to day"] };
+  const otherSide = r.pegged
+    ? { title: "Floating (free)", points: ["Jamaican Dollar (JMD)", "Value moves with supply and demand", "Can rise or fall day to day"] }
+    : { title: "Pegged (locked)", points: ["Bahamian Dollar (BSD)", "Exchange rate stays steady", "Always equal to 1 US Dollar"] };
+  return [
+    { heading: "What is money?", body: `Money is anything that people agree to use to buy and sell things. In ${r.country}, we use the ${r.currency} (${r.currencyCode}).` },
+    {
+      type: "diagram", heading: "Pegged vs. floating currencies",
+      body: "Each country's government controls how much of its own money exists. That control works two different ways.",
+      diagram: { kind: "compare", left: ownSide, right: otherSide, note: `Key takeaway: money is a tool. ${r.pegNote}` },
+    },
+  ];
+}
+
+function savingVsSpendingSections(r: RegionInfo): ContentSection[] {
+  return [
+    { heading: "Spending vs. saving", body: `Every time you get money, whether it's an allowance, a gift, or pay from a part-time job, you have a choice: spend it now or save it for later. Spending gives you something right away. Saving means you wait, but your money can grow. Put money in a savings account at a bank like ${r.mainBank}, and they'll pay you interest, a small reward for letting them use your money.` },
+    {
+      type: "diagram", heading: "The 50/30/20 rule", body: "A simple guide for splitting any money you receive.",
+      diagram: {
+        kind: "bars",
+        items: [
+          { label: "Needs (school supplies, lunch)", value: 50, display: "50%" },
+          { label: "Wants (entertainment, treats)", value: 30, display: "30%" },
+          { label: "Savings (future you)", value: 20, display: "20%" },
+        ],
+        note: `Budgeting is just making a plan for your money before you spend it. Whether you have ${r.symbol}10 or ${r.symbol}1,000, making a plan is always smart.`,
+      },
+    },
+  ];
+}
+
+function whatIsAStockSections(r: RegionInfo): ContentSection[] {
+  return [
+    { heading: "What is a stock?", body: `A stock, also called a share, is a tiny piece of ownership in a company. When a company wants to raise money to grow, it can sell shares to the public. Buy one share of ${r.mainBank} on the ${r.exchange} (${r.exchangeAbbr}), and you literally own a small piece of that bank.` },
+    {
+      type: "diagram", heading: "Why buy a stock?", body: "",
+      diagram: {
+        kind: "steps",
+        items: [
+          { label: "Growth", detail: "If the company does well, its stock price goes up. You could sell your share for more than you paid." },
+          { label: "Dividends", detail: "Some companies share their profits with stockholders, regular cash payments just for owning the stock." },
+        ],
+        note: "The flip side: if the company does poorly, the stock price can go down and you could lose money. That's why stocks are considered riskier than savings accounts.",
+      },
+    },
+    {
+      heading: "Real example",
+      body: `${r.exampleCompany1} (${r.exampleCompany1Ticker}) in ${r.country} ${r.exampleCompany1Desc}. If the company does well, its stock might go up, but disruptions can drop it temporarily. Key takeaway: stocks let you share in a company's success, and its risk. They're best for money you won't need for a long time.`,
+      examples: [`${r.mainBank}, owns a piece of the bank`, `${r.exampleCompany1Ticker}, ${r.exampleCompany1}`],
+    },
+  ];
+}
+
+function whatIsABondSections(r: RegionInfo): ContentSection[] {
+  const yearlyInterest = (1000 * parseFloat(r.bondRate) / 100).toFixed(0);
+  return [
+    { heading: "What is a bond?", body: `A bond is like an IOU. When you buy a bond, you're lending money to a government or company. They promise to pay you back the full amount, called the face value, on a set date, plus regular interest payments along the way. The ${r.centralBank} issues bonds called ${r.bondName}. A 5-year one might pay ${r.bondRate} interest per year: invest ${r.symbol}1,000, earn about ${r.symbol}${yearlyInterest} every year for 5 years, then get your ${r.symbol}1,000 back.` },
+    {
+      type: "diagram", heading: "Bonds vs. stocks", body: "The trade-off between the two comes down to certainty versus growth.",
+      diagram: {
+        kind: "compare",
+        left: { title: "Bonds", points: ["You know the interest in advance", "Government is very unlikely to default", "Your original investment comes back"] },
+        right: { title: "Stocks", points: ["No guaranteed return", "Can gain 8 to 10% in a great year", "Can also lose value"] },
+        note: `Bonds usually earn less than stocks over time, a steady ${r.bondRate} instead of a swinging 8 to 10%. That's the price of the extra safety.`,
+      },
+    },
+    {
+      heading: "Other Caribbean bonds",
+      body: "Key takeaway: bonds are a safer way to earn steady returns. They're great for money you want to protect while still earning more than a savings account.",
+      examples: ["Bank of Jamaica Investment Notes", "Trinidad & Tobago Government Bonds", "EC Home Mortgage Bank bonds"],
+    },
+  ];
+}
+
+function riskAndRewardSections(r: RegionInfo): ContentSection[] {
+  return [
+    { heading: "Risk and reward go together", body: "In investing, the more risk you take, the more you might earn, but you also might lose more. Here's roughly where common options sit on that scale." },
+    {
+      type: "diagram", heading: "The risk ladder", body: "",
+      diagram: {
+        kind: "bars",
+        items: [
+          { label: `Savings account, low risk, at ${r.mainBank}`, value: 2, display: "1 to 2%" },
+          { label: `Government bonds, e.g. ${r.bondName}`, value: 5, display: r.bondRate },
+          { label: `Stocks, e.g. ${r.exampleCompany1} (${r.exampleCompany1Ticker})`, value: 10, display: "5 to 10%+" },
+          { label: "Speculative investments, high risk", value: 20, display: "highly variable" },
+        ],
+        note: "Higher bars mean higher potential reward, and higher potential loss. Speculative investments could double your money, or lose most of it.",
+      },
+    },
+    { heading: "Spread it out", body: "The key concept is diversification: don't put all your eggs in one basket. Spread your money across different types of investments, some stocks, some bonds, some savings, so a loss in one area won't wipe out everything. Your age matters too. As a teenager, you have decades ahead of you, which means you can afford more risk because you have time to recover from losses. Key takeaway: there's no such thing as a guaranteed high return. Always understand the risk before you invest." },
+  ];
+}
+
+function buildingAPortfolioSections(r: RegionInfo): ContentSection[] {
+  return [
+    { heading: "What is a portfolio?", body: "A portfolio is simply the collection of all your investments put together. Building a good portfolio means mixing different types of investments so your money is balanced and protected." },
+    {
+      type: "diagram", heading: "A starter portfolio", body: "A simple mix for a young investor, called asset allocation.",
+      diagram: {
+        kind: "bars",
+        items: [
+          { label: `Stocks, e.g. ${r.mainBank}, ${r.exampleCompany1}, for growth`, value: 50, display: "50%" },
+          { label: `Bonds, e.g. ${r.bondName}, for stability`, value: 30, display: "30%" },
+          { label: "Savings, for emergencies and short-term needs", value: 20, display: "20%" },
+        ],
+        note: "Stocks grow your money over time, bonds provide steady income and protect against stock market drops, savings give you quick access to cash when you need it.",
+      },
+    },
+    {
+      type: "diagram", heading: "Two habits that keep a portfolio healthy", body: "",
+      diagram: {
+        kind: "steps",
+        items: [
+          { label: "Rebalancing", detail: "If your stocks do really well, they might grow to 70% of your portfolio, more risk than you planned. Sell some stocks and buy more bonds to get back to your target mix." },
+          { label: "Dollar-cost averaging", detail: `Instead of investing all at once, invest a small amount regularly, like ${r.symbol}50 a month. You buy more shares when prices are low and fewer when high, averaging out your cost over time.` },
+        ],
+      },
+    },
+    {
+      heading: "Where to actually invest",
+      body: "Key takeaway: a good portfolio is diversified. Start small, stay consistent, and let time work in your favor.",
+      examples: [`${r.exchangeAbbr}, ${r.exchange}`, `${r.exampleCompany1Ticker}, ${r.exampleCompany1}`, `${r.exampleCompany2Ticker}, ${r.exampleCompany2}`],
+    },
+  ];
+}
+
+export function getLocalizedContentSections(slug: string, region: RegionInfo): ContentSection[] | null {
+  switch (slug) {
+    case "what-is-money": return whatIsMoneySections(region);
+    case "saving-vs-spending": return savingVsSpendingSections(region);
+    case "what-is-a-stock": return whatIsAStockSections(region);
+    case "what-is-a-bond": return whatIsABondSections(region);
+    case "risk-and-reward": return riskAndRewardSections(region);
+    case "building-a-portfolio": return buildingAPortfolioSections(region);
+    default: return null;
+  }
 }

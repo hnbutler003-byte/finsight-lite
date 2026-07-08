@@ -162,7 +162,7 @@ function JSEWidget() {
 }
 
 import type { SimulatedStock, LearningModule, UserLearningProgress, PortfolioHolding, PortfolioTransaction, UserVirtualBalance } from "@shared/schema";
-import { getLocalizedModuleContent, LESSON_FACTS, type RegionInfo } from "@/data/learning-content";
+import { getLocalizedModuleContent, getLocalizedContentSections, LESSON_FACTS, type RegionInfo } from "@/data/learning-content";
 
 const CURRENCIES = [
   { code: "BSD", name: "Bahamian Dollar", symbol: "B$" },
@@ -430,23 +430,32 @@ export default function InvestmentSimulator() {
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {(regionData ?? BSD_FALLBACK).currencyCode === "BSD" && selectedModule.contentSections && selectedModule.contentSections.length > 0 ? (
-                      // Structured block rendering, currently BSD only. The other five
-                      // currencies still use the templated plain-text path below via
-                      // getLocalizedModuleContent, until that content is migrated too.
-                      <div className="space-y-4">
-                        {selectedModule.contentSections.map((section, i) => (
-                          <LessonContentBlock key={i} section={section} index={i} />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        {(getLocalizedModuleContent(selectedModule.slug, regionData ?? BSD_FALLBACK)?.content || selectedModule.content)
-                          .split("\n\n").map((paragraph, i) => (
-                          <p key={i} className="text-foreground leading-relaxed mb-4">{paragraph}</p>
-                        ))}
-                      </div>
-                    )}
+                    {(() => {
+                      const region = regionData ?? BSD_FALLBACK;
+                      const sections = region.currencyCode === "BSD"
+                        ? selectedModule.contentSections
+                        : getLocalizedContentSections(selectedModule.slug, region);
+                      if (sections && sections.length > 0) {
+                        return (
+                          <div className="space-y-4">
+                            {sections.map((section, i) => (
+                              <LessonContentBlock key={i} section={section} index={i} />
+                            ))}
+                          </div>
+                        );
+                      }
+                      // Fallback for anything not yet covered above (shouldn't
+                      // happen for the 6 known modules, but protects any future
+                      // module added without structured content yet).
+                      return (
+                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                          {(getLocalizedModuleContent(selectedModule.slug, region)?.content || selectedModule.content)
+                            .split("\n\n").map((paragraph, i) => (
+                            <p key={i} className="text-foreground leading-relaxed mb-4">{paragraph}</p>
+                          ))}
+                        </div>
+                      );
+                    })()}
                     {!isModuleCompleted(selectedModule.id) ? (
                       <Button
                         onClick={() => completeMutation.mutate(selectedModule.id)}
