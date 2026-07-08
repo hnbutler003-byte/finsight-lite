@@ -14,12 +14,6 @@ const CLEANUP_INTERVAL_MS          = Number.isFinite(_intervalMs) && _intervalMs
 
 // Typed payloads / results so handlers and call sites stay honest.
 export interface JobPayloads {
-  "extract-paper": {
-    paperId: number;
-    fileB64: string;
-    ext: string;
-    subject: string;
-  };
   "admin-csv-export": {
     type: "students" | "teachers" | "classes" | "schools" | "sponsors";
   };
@@ -54,13 +48,6 @@ export interface JobPayloads {
 }
 
 export interface JobResults {
-  "extract-paper": {
-    paperId: number;
-    questionCount?: number;
-    subject?: string;
-    ok?: boolean;
-    reason?: string;
-  };
   "admin-csv-export": {
     type: string;
     rowCount: number;

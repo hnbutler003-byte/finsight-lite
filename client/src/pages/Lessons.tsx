@@ -1239,11 +1239,11 @@ export default function Lessons() {
                     </div>
                     <div className="flex-1 text-left">
                       <p className="font-bold text-sm text-teal-800 dark:text-teal-200">Need help with this topic?</p>
-                      <p className="text-xs text-teal-700 dark:text-teal-300 mt-0.5">Your AI Tutor can explain <span className="font-bold">{selectedLesson.title}</span> in simple steps.</p>
+                      <p className="text-xs text-teal-700 dark:text-teal-300 mt-0.5">Money Guide can explain <span className="font-bold">{selectedLesson.title}</span> in simple steps.</p>
                     </div>
-                    <Link href={`/moneylab/tutor?q=${encodeURIComponent(selectedLesson.title)}`}>
+                    <Link href={`/guide?q=${encodeURIComponent(selectedLesson.title)}`}>
                       <Button size="sm" className="rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-bold shrink-0" data-testid="button-ask-ai-tutor">
-                        Ask AI Tutor
+                        Ask Money Guide
                       </Button>
                     </Link>
                   </CardContent>

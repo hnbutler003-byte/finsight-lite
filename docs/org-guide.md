@@ -26,7 +26,7 @@ The dashboard is your home base. It shows:
 
 **Monthly AI summary** (when available): a plain-language overview of this month's activity, generated automatically.
 
-**AI usage today**: tokens consumed for MoneyLab, MoneyGuide AI, and AI Insights versus the daily org limit. Limits reset at midnight UTC.
+**AI usage today**: tokens consumed for Money Guide and AI Insights versus the daily org limit. Limits reset at midnight UTC.
 
 **Email stats**: sent, opened, bounced, and failed counts for all platform emails.
 

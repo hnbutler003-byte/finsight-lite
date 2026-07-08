@@ -23,7 +23,6 @@ const FEATURE_LIST = [
   "6 interactive financial literacy modules",
   "7 money games with real-time scoring",
   "Investment simulator with BSD currency",
-  "MoneyLab exam-style quiz platform",
   "AI Money Guide chatbot",
   "Teacher dashboard with class management",
   "Leaderboards and XP reward system",

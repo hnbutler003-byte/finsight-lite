@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS org_environments (
   display_name text NOT NULL,
   theme_color text DEFAULT '#7c3aed',
   custom_logo_url text,
-  features_enabled text[] DEFAULT ARRAY['money_games','investment_sim','money_guide','moneylab'],
+  features_enabled text[] DEFAULT ARRAY['money_games','investment_sim','money_guide'],
   join_code text UNIQUE,
   created_at timestamptz NOT NULL DEFAULT now()
 );

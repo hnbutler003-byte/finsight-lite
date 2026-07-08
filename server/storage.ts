@@ -1,7 +1,7 @@
 import { 
   users, categories, transactions, budgets, linkedCards, documentUploads, savingsGoals, billReminders,
   simulatedStocks, portfolioHoldings, portfolioTransactions, learningModules, userLearningProgress, userVirtualBalance,
-  examPapers, extractedQuestions, gameSessions, userXp, userBadges,
+  gameSessions, userXp, userBadges,
   schools, sponsors,
   teachers, classes, classEnrollments, challenges, classNotifications, studentFeedback,
   deletionLog, emailContacts,
@@ -32,8 +32,6 @@ import {
   type UserVirtualBalance,
   type DashboardStats,
   type Conversation, type Message,
-  type ExamPaper, type InsertExamPaper,
-  type ExtractedQuestion, type InsertExtractedQuestion,
   type GameSession, type InsertGameSession,
   type UserXp,
   type UserBadge, type InsertUserBadge,
@@ -109,15 +107,7 @@ export interface IStorage extends IAuthStorage {
   seedMarketData(): Promise<void>;
   seedLearningModules(): Promise<void>;
 
-  // MoneyLab
-  createExamPaper(paper: InsertExamPaper): Promise<ExamPaper>;
-  updateExamPaper(id: number, data: Partial<ExamPaper>): Promise<ExamPaper>;
-  getExamPapers(userId: string): Promise<ExamPaper[]>;
-  getExamPaper(id: number): Promise<ExamPaper | undefined>;
-  deleteExamPaper(id: number, userId: string): Promise<void>;
-  createExtractedQuestion(question: InsertExtractedQuestion): Promise<ExtractedQuestion>;
-  getQuestionsByPaper(paperId: number): Promise<ExtractedQuestion[]>;
-  getAllQuestions(filters?: { subject?: string }): Promise<(ExtractedQuestion & { paper?: ExamPaper })[]>;
+  // Shared game/quiz scoring (used platform-wide, not exam-paper-exclusive)
   createGameSession(session: InsertGameSession): Promise<GameSession>;
   getGameSessions(userId: string): Promise<GameSession[]>;
   getLeaderboard(filters?: { subject?: string; period?: string; limit?: number }): Promise<{ userId: string; userName: string; avatar: string; totalScore: number; gamesPlayed: number }[]>;
@@ -653,51 +643,7 @@ export class DatabaseStorage implements IStorage {
       },
   ];
 
-  // === MONEYLAB ===
-
-  async createExamPaper(paper: InsertExamPaper): Promise<ExamPaper> {
-    const [created] = await db.insert(examPapers).values(paper).returning();
-    return created;
-  }
-
-  async updateExamPaper(id: number, data: Partial<ExamPaper>): Promise<ExamPaper> {
-    const [updated] = await db.update(examPapers).set(data).where(eq(examPapers.id, id)).returning();
-    return updated;
-  }
-
-  async getExamPapers(userId: string): Promise<ExamPaper[]> {
-    return await db.select().from(examPapers).where(eq(examPapers.userId, userId)).orderBy(desc(examPapers.createdAt));
-  }
-
-  async getExamPaper(id: number): Promise<ExamPaper | undefined> {
-    const [paper] = await db.select().from(examPapers).where(eq(examPapers.id, id));
-    return paper;
-  }
-
-  async deleteExamPaper(id: number, userId: string): Promise<void> {
-    await db.delete(examPapers).where(and(eq(examPapers.id, id), eq(examPapers.userId, userId)));
-  }
-
-  async createExtractedQuestion(question: InsertExtractedQuestion): Promise<ExtractedQuestion> {
-    const [created] = await db.insert(extractedQuestions).values(question).returning();
-    return created;
-  }
-
-  async getQuestionsByPaper(paperId: number): Promise<ExtractedQuestion[]> {
-    return await db.select().from(extractedQuestions).where(eq(extractedQuestions.paperId, paperId)).orderBy(extractedQuestions.order);
-  }
-
-  async getAllQuestions(filters?: { subject?: string }): Promise<(ExtractedQuestion & { paper?: ExamPaper })[]> {
-    let conditions = [];
-    if (filters?.subject) {
-      conditions.push(eq(extractedQuestions.subject, filters.subject));
-    }
-    const results = await db.select({ question: extractedQuestions, paper: examPapers })
-      .from(extractedQuestions)
-      .innerJoin(examPapers, eq(extractedQuestions.paperId, examPapers.id))
-      .where(conditions.length > 0 ? and(...conditions) : undefined);
-    return results.map(r => ({ ...r.question, paper: r.paper }));
-  }
+  // === SHARED GAME/QUIZ SCORING (platform-wide, not exam-paper-exclusive) ===
 
   async createGameSession(session: InsertGameSession): Promise<GameSession> {
     const [created] = await db.insert(gameSessions).values(session).returning();
@@ -1142,7 +1088,6 @@ export class DatabaseStorage implements IStorage {
     await db.transaction(async (tx) => {
       await tx.delete(studentFeedback).where(eq(studentFeedback.studentId, userId));
       await tx.delete(classEnrollments).where(eq(classEnrollments.studentId, userId));
-      await tx.delete(examPapers).where(eq(examPapers.userId, userId));
       await tx.delete(gameSessions).where(eq(gameSessions.userId, userId));
       await tx.delete(userXp).where(eq(userXp.userId, userId));
       await tx.delete(userBadges).where(eq(userBadges.userId, userId));

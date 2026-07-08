@@ -282,38 +282,13 @@ export const insertOrgAdminSchema = createInsertSchema(orgAdmins).omit({ id: tru
 export type OrgAdmin = typeof orgAdmins.$inferSelect;
 export type InsertOrgAdmin = z.infer<typeof insertOrgAdminSchema>;
 
-// === MONEYLAB TABLES ===
-
-export const examPapers = pgTable("exam_papers", {
-  id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  title: text("title").notNull(),
-  subject: text("subject").notNull(),
-  fileName: text("file_name").notNull(),
-  fileType: text("file_type").notNull(),
-  status: text("status", { enum: ["processing", "completed", "failed"] }).default("processing").notNull(),
-  questionCount: integer("question_count").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (t) => ({
-  statusCreatedIdx: index("idx_exam_papers_status_created").on(t.status, t.createdAt),
-  userIdx: index("idx_exam_papers_user").on(t.userId),
-}));
-
-export const extractedQuestions = pgTable("extracted_questions", {
-  id: serial("id").primaryKey(),
-  paperId: integer("paper_id").notNull().references(() => examPapers.id, { onDelete: "cascade" }),
-  questionText: text("question_text").notNull(),
-  options: text("options").array().notNull(),
-  correctAnswer: text("correct_answer").notNull(),
-  subject: text("subject"),
-  difficulty: text("difficulty", { enum: ["easy", "medium", "hard"] }).default("medium"),
-  order: integer("order").default(0),
-});
+// === SHARED GAME/QUIZ SCORING TABLE ===
+// Used platform-wide: lesson quizzes, Money Games, and leaderboard rollups.
+// Not exclusive to any one feature, do not remove or gate behind a single feature flag.
 
 export const gameSessions = pgTable("game_sessions", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
-  paperId: integer("paper_id").references(() => examPapers.id),
   mode: text("mode", { enum: ["quiz", "timed", "challenge"] }).notNull(),
   score: integer("score").notNull(),
   totalQuestions: integer("total_questions").notNull(),
@@ -534,18 +509,8 @@ export const userVirtualBalanceRelations = relations(userVirtualBalance, ({ one 
   user: one(users, { fields: [userVirtualBalance.userId], references: [users.id] }),
 }));
 
-export const examPapersRelations = relations(examPapers, ({ one, many }) => ({
-  user: one(users, { fields: [examPapers.userId], references: [users.id] }),
-  questions: many(extractedQuestions),
-}));
-
-export const extractedQuestionsRelations = relations(extractedQuestions, ({ one }) => ({
-  paper: one(examPapers, { fields: [extractedQuestions.paperId], references: [examPapers.id] }),
-}));
-
 export const gameSessionsRelations = relations(gameSessions, ({ one }) => ({
   user: one(users, { fields: [gameSessions.userId], references: [users.id] }),
-  paper: one(examPapers, { fields: [gameSessions.paperId], references: [examPapers.id] }),
 }));
 
 export const userXpRelations = relations(userXp, ({ one }) => ({
@@ -596,7 +561,6 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   portfolioTransactions: many(portfolioTransactions),
   learningProgress: many(userLearningProgress),
   virtualBalance: one(userVirtualBalance),
-  examPapers: many(examPapers),
   gameSessions: many(gameSessions),
   xp: one(userXp),
   badges: many(userBadges),
@@ -625,8 +589,6 @@ export const insertClassSchema = createInsertSchema(classes).omit({ id: true, cr
 export const insertClassEnrollmentSchema = createInsertSchema(classEnrollments).omit({ id: true, joinedAt: true });
 export const insertChallengeSchema = createInsertSchema(challenges).omit({ id: true, createdAt: true });
 export const insertClassNotificationSchema = createInsertSchema(classNotifications).omit({ id: true, createdAt: true });
-export const insertExamPaperSchema = createInsertSchema(examPapers).omit({ id: true, createdAt: true, questionCount: true, status: true });
-export const insertExtractedQuestionSchema = createInsertSchema(extractedQuestions).omit({ id: true });
 export const insertGameSessionSchema = createInsertSchema(gameSessions).omit({ id: true, completedAt: true });
 export const insertUserXpSchema = createInsertSchema(userXp).omit({ id: true });
 export const insertUserBadgeSchema = createInsertSchema(userBadges).omit({ id: true, earnedAt: true });
@@ -660,13 +622,9 @@ export type InsertSimulatedStock = z.infer<typeof insertSimulatedStockSchema>;
 export type InsertPortfolioHolding = z.infer<typeof insertPortfolioHoldingSchema>;
 export type InsertPortfolioTransaction = z.infer<typeof insertPortfolioTransactionSchema>;
 export type InsertLearningModule = z.infer<typeof insertLearningModuleSchema>;
-export type ExamPaper = typeof examPapers.$inferSelect;
-export type ExtractedQuestion = typeof extractedQuestions.$inferSelect;
 export type GameSession = typeof gameSessions.$inferSelect;
 export type UserXp = typeof userXp.$inferSelect;
 export type UserBadge = typeof userBadges.$inferSelect;
-export type InsertExamPaper = z.infer<typeof insertExamPaperSchema>;
-export type InsertExtractedQuestion = z.infer<typeof insertExtractedQuestionSchema>;
 export type InsertGameSession = z.infer<typeof insertGameSessionSchema>;
 export type InsertUserBadge = z.infer<typeof insertUserBadgeSchema>;
 export type School = typeof schools.$inferSelect;

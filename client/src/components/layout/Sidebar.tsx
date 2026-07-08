@@ -12,7 +12,7 @@ import {
   Sparkles,
   Gamepad2,
   Bot,
-  FlaskConical,
+  Trophy,
   UsersRound,
   X,
   Loader2,
@@ -52,7 +52,6 @@ const NAV_GROUPS = [
     items: [
       { label: "Investment Simulator", href: "/invest", icon: GraduationCap },
       { label: "Lessons", href: "/lessons", icon: BookMarked },
-      { label: "MoneyLab", href: "/moneylab", icon: FlaskConical },
     ],
   },
   {
@@ -60,6 +59,7 @@ const NAV_GROUPS = [
     items: [
       { label: "Money Games", href: "/games", icon: Gamepad2 },
       { label: "Money Guide", href: "/guide", icon: Bot },
+      { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
     ],
   },
 ];

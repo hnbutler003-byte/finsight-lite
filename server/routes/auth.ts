@@ -586,7 +586,7 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
         display_name:     body.orgName,
         theme_color:      "#7c3aed",
         join_code,
-        features_enabled: ["money_games", "investment_sim", "money_guide", "moneylab"],
+        features_enabled: ["money_games", "investment_sim", "money_guide"],
       });
       if (!env) return res.status(500).json({ message: "Failed to create organization environment." });
 

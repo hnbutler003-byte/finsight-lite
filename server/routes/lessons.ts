@@ -717,6 +717,23 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
         lastPlayedAt: new Date(),
       });
 
+      // Record a quiz session so the platform-wide leaderboard stays live.
+      // game_sessions is the leaderboard's only data source; without this,
+      // no new rows would ever be written after the exam-paper feature removal.
+      if (total > 0) {
+        await storage.createGameSession({
+          userId,
+          mode: "quiz",
+          score: xpEarned,
+          totalQuestions: total,
+          correctAnswers,
+          timeSpent: null,
+          xpEarned,
+        });
+        const { cacheInvalidate } = await import("../cache");
+        cacheInvalidate("moneylab:leaderboard:");
+      }
+
       res.json({ xpEarned, totalXp: newTotalXp, level: newLevel, correctAnswers, total });
     } catch (e: any) {
       if (e instanceof z.ZodError) {

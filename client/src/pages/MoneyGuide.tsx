@@ -2,6 +2,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useSearch } from "wouter";
 import {
   Send, Loader2, Sparkles, Lightbulb, Target, PiggyBank,
   TrendingUp, HelpCircle, RotateCcw, Bot, User as UserIcon
@@ -28,6 +29,8 @@ export default function MoneyGuide() {
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const search = useSearch();
+  const explainTriggeredRef = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -36,6 +39,80 @@ export default function MoneyGuide() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Auto-triggered when a student lands here from a low quiz score
+  // (see Lessons.tsx: /guide?q=<lesson title>). Uses the dedicated
+  // explain endpoint, which has its own tuned prompt and response
+  // caching, rather than the general chat endpoint.
+  const explainTopic = async (topic: string) => {
+    const userMessage: ChatMessage = { role: "user", content: `Can you explain: ${topic}?` };
+    const assistantMessage: ChatMessage = { role: "assistant", content: "" };
+    setMessages([userMessage, assistantMessage]);
+    setIsStreaming(true);
+
+    try {
+      const response = await fetch("/api/moneylab/tutor/explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionText: topic, options: null, correctAnswer: null, subject: null }),
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        let friendly = "Oops! I had a little hiccup. Try asking me again! 🤔";
+        try {
+          const data = await response.json();
+          if (data?.message) friendly = data.message;
+        } catch {}
+        setMessages([userMessage, { role: "assistant", content: friendly }]);
+        return;
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = "";
+      let buffer = "";
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop() || "";
+          for (const part of parts) {
+            const lines = part.split("\n");
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+                  if (data.content) {
+                    fullContent += data.content;
+                    setMessages([userMessage, { role: "assistant", content: fullContent }]);
+                  }
+                } catch (e) {
+                  if (!(e instanceof SyntaxError)) throw e;
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      setMessages([userMessage, { role: "assistant", content: "Oops! I had a little hiccup. Try asking me again! 🤔" }]);
+    } finally {
+      setIsStreaming(false);
+    }
+  };
+
+  useEffect(() => {
+    if (explainTriggeredRef.current) return;
+    const topic = new URLSearchParams(search).get("q");
+    if (topic) {
+      explainTriggeredRef.current = true;
+      explainTopic(topic);
+    }
+  }, [search]);
 
   const sendMessage = async (content: string) => {
     if (!content.trim() || isStreaming) return;
@@ -276,7 +353,7 @@ export default function MoneyGuide() {
             </Button>
           </form>
           <p className="text-center text-xs text-muted-foreground mt-2 font-medium">
-            Money Guide gives educational info only, not real financial advice!
+            Money Guide is powered by Claude AI and gives educational info only, not real financial advice. Always double-check with your teacher!
           </p>
         </div>
         </div>

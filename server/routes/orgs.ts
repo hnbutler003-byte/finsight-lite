@@ -461,7 +461,7 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
   app.get("/api/admin/jobs", isAdmin, async (req, res) => {
     const limit = Math.min(parseInt(String(req.query.limit ?? "50")) || 50, 200);
     const kindParam = req.query.kind ? String(req.query.kind) : undefined;
-    const kind = (kindParam === "extract-paper" || kindParam === "admin-csv-export" || kindParam === "purge-ai-usage") ? kindParam as import("../jobs").JobKind : undefined;
+    const kind = (kindParam === "admin-csv-export" || kindParam === "purge-ai-usage") ? kindParam as import("../jobs").JobKind : undefined;
     const rows = await listRecentJobs({ limit, kind });
     res.json(rows.map(({ payload, result, ...rest }: any) => ({ ...rest, hasResult: !!result })));
   });
@@ -648,7 +648,7 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
         slug: z.string().min(1).regex(/^[a-z0-9-]+$/),
         display_name: z.string().min(1),
         theme_color: z.string().optional(),
-        features_enabled: z.array(z.string()).default(["money_games", "investment_sim", "money_guide", "moneylab"]),
+        features_enabled: z.array(z.string()).default(["money_games", "investment_sim", "money_guide"]),
       }).parse(req.body);
       const env = await createOrgEnvironment({ org_id: req.params.id, ...body, custom_logo_url: undefined });
       if (!env) return res.status(500).json({ message: "Failed to create environment" });

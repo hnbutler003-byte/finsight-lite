@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Trophy, Medal, Crown, Loader2 } from "lucide-react";
+import { Trophy, Medal, Crown, Loader2 } from "lucide-react";
 
 const AVATAR_EMOJIS: Record<string, string> = {
   lion: "🦁", dolphin: "🐬", parrot: "🦜", turtle: "🐢",
@@ -49,17 +49,12 @@ export default function MoneyLabLeaderboard() {
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="flex items-center gap-3">
-            <Link href="/moneylab">
-              <Button variant="outline" size="icon" className="rounded-2xl border-2" data-testid="button-back">
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-            </Link>
             <div className="flex-1">
               <h1 className="font-display text-2xl font-bold flex items-center gap-2" data-testid="text-leaderboard-title">
                 <Trophy className="w-6 h-6 text-amber-500" />
                 Leaderboard
               </h1>
-              <p className="text-sm text-muted-foreground">Top MoneyLab players</p>
+              <p className="text-sm text-muted-foreground">Top players across lessons, quizzes, and games</p>
             </div>
           </div>
 
@@ -92,7 +87,7 @@ export default function MoneyLabLeaderboard() {
                 <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-30" />
                 <p className="text-lg font-bold">No games played yet</p>
                 <p className="text-muted-foreground mt-1">Be the first to get on the leaderboard!</p>
-                <Link href="/moneylab/play">
+                <Link href="/games">
                   <Button className="mt-4 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 font-bold" data-testid="button-play-now">
                     Play Now
                   </Button>

@@ -7,7 +7,7 @@ import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import {
   Users, BookOpen, Plus, Copy, Check, Loader2, Trophy,
-  ArrowRight, Sparkles, X, CheckCircle2, Circle, BookMarked, FlaskConical,
+  ArrowRight, Sparkles, X, CheckCircle2, Circle, BookMarked,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -150,16 +150,6 @@ function QuickLinksWidget({ onLessonsClick }: { onLessonsClick: () => void }) {
       iconColor: "text-teal-600 dark:text-teal-400",
       onClick: onLessonsClick,
       testId: "lessons",
-    },
-    {
-      href: "/moneylab/upload",
-      label: "MoneyLab Upload",
-      description: "AI quiz generator for exam papers",
-      icon: FlaskConical,
-      iconBg: "bg-emerald-100 dark:bg-emerald-900/30",
-      iconColor: "text-emerald-600 dark:text-emerald-400",
-      onClick: undefined as (() => void) | undefined,
-      testId: "moneylab-upload",
     },
   ];
 

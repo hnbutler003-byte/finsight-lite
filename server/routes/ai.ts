@@ -2,8 +2,6 @@ import { Express } from "express";
 import { storage } from "../storage";
 import { isAuthenticated } from "../replit_integrations/auth";
 import { z } from "zod";
-import multer from "multer";
-import path from "path";
 import { enqueueJob, listRecentJobs } from "../jobs";
 import {
   reserveQuota,
@@ -29,20 +27,6 @@ import { respondAiFailure } from "../aiFailure";
 import fs from "fs";
 import * as nodePath from "path";
 import Anthropic from "@anthropic-ai/sdk";
-
-const examUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    const allowed = [".pdf", ".jpg", ".jpeg", ".png"];
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (allowed.includes(ext)) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only PDF, JPG, and PNG files are supported"));
-    }
-  },
-});
 
 const GUIDE_MODEL = "claude-sonnet-4-6";
 let _guideClient: Anthropic | null = null;
@@ -161,216 +145,7 @@ export async function registerAiRoutes(app: Express): Promise<void> {
     }
   });
 
-  // === MONEYLAB ROUTES ===
-  app.post("/api/moneylab/upload", isAuthenticated, examUpload.single("file"), async (req, res) => {
-    try {
-      const userId = (req.user as any).id;
-      const file = req.file;
-      if (!file) {
-        return res.status(400).json({ message: "No file uploaded" });
-      }
-
-      const title = req.body.title || file.originalname.replace(/\.[^/.]+$/, "");
-      const subject = req.body.subject || "General";
-      const ext = path.extname(file.originalname).toLowerCase();
-
-      const paper = await storage.createExamPaper({
-        userId,
-        title,
-        subject,
-        fileName: file.originalname,
-        fileType: ext.replace(".", ""),
-      });
-
-      const job = await enqueueJob({
-        kind: "extract-paper",
-        ownerId: userId,
-        payload: {
-          paperId: paper.id,
-          fileB64: file.buffer.toString("base64"),
-          ext,
-          subject,
-        },
-      });
-
-      res.json({ paper, jobId: job.id, message: "Processing..." });
-    } catch (err: any) {
-      console.error("MoneyLab upload error:", err?.message || err);
-      res.status(500).json({ message: "Could not upload your paper. Please try again." });
-    }
-  });
-
-  app.get("/api/moneylab/papers", isAuthenticated, async (req, res) => {
-    try {
-      const userId = (req.user as any).id;
-      const papers = await storage.getExamPapers(userId);
-      res.json(papers);
-    } catch (err: any) {
-      console.error("MoneyLab papers error:", err?.message || err);
-      res.status(500).json({ message: "Could not load your papers. Please try again." });
-    }
-  });
-
-  // SECURITY: admin-only. Exposes all students' papers; must not be accessible to students.
-  app.get("/api/moneylab/papers/all", isAdmin, async (req, res) => {
-    try {
-      const { examPapers } = await import("@shared/schema");
-      const { db } = await import("../db");
-      const { eq, desc } = await import("drizzle-orm");
-      const rawLimit = Number(req.query.limit);
-      const rawOffset = Number(req.query.offset);
-      const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(Math.floor(rawLimit), 200) : 50;
-      const offset = Number.isFinite(rawOffset) && rawOffset >= 0 ? Math.floor(rawOffset) : 0;
-      const allPapers = await db.select().from(examPapers).where(eq(examPapers.status, "completed")).orderBy(desc(examPapers.createdAt)).limit(limit).offset(offset);
-      res.json(allPapers);
-    } catch (err: any) {
-      console.error("Admin papers list error:", err?.message || err);
-      res.status(500).json({ message: "Could not load papers. Please try again." });
-    }
-  });
-
-  // SECURITY: ownership enforced. Students may only fetch their own paper.
-  app.get("/api/moneylab/papers/:id", isAuthenticated, async (req, res) => {
-    try {
-      const userId = (req.user as any).id;
-      const paper = await storage.getExamPaper(parseInt(req.params.id));
-      if (!paper) return res.status(404).json({ message: "Paper not found" });
-      if (paper.userId !== userId) return res.status(403).json({ message: "Forbidden" });
-      const questions = await storage.getQuestionsByPaper(paper.id);
-      res.json({ paper, questions });
-    } catch (err: any) {
-      console.error("MoneyLab paper fetch error:", err?.message || err);
-      res.status(500).json({ message: "Could not load this paper. Please try again." });
-    }
-  });
-
-  app.delete("/api/moneylab/papers/:id", isAuthenticated, async (req, res) => {
-    try {
-      const userId = (req.user as any).id;
-      await storage.deleteExamPaper(parseInt(req.params.id), userId);
-      res.json({ success: true });
-    } catch (err: any) {
-      console.error("MoneyLab paper delete error:", err?.message || err);
-      res.status(500).json({ message: "Could not delete this paper. Please try again." });
-    }
-  });
-
-  app.post("/api/moneylab/games/submit", isAuthenticated, async (req, res) => {
-    try {
-      const userId = (req.user as any).id;
-      const { paperId, mode, score, totalQuestions, correctAnswers, timeSpent } = req.body;
-
-      if (!mode || score === undefined || !totalQuestions || correctAnswers === undefined) {
-        return res.status(400).json({ message: "Missing required game data" });
-      }
-
-      const baseXp = correctAnswers * 10;
-      const modeBonus = mode === "challenge" ? 1.5 : mode === "timed" ? 1.25 : 1;
-      const accuracyBonus = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 20) : 0;
-      const xpEarned = Math.round(baseXp * modeBonus + accuracyBonus);
-
-      const session = await storage.createGameSession({
-        userId,
-        paperId: paperId || null,
-        mode,
-        score,
-        totalQuestions,
-        correctAnswers,
-        timeSpent: timeSpent || null,
-        xpEarned,
-      });
-
-      const currentXp = await storage.getUserXp(userId);
-      const newTotalXp = currentXp.totalXp + xpEarned;
-      const newLevel = Math.floor(newTotalXp / 100) + 1;
-
-      const now = new Date();
-      const lastPlayed = currentXp.lastPlayedAt ? new Date(currentXp.lastPlayedAt) : null;
-      let newStreak = currentXp.currentStreak;
-      if (lastPlayed) {
-        const todayStr = now.toISOString().slice(0, 10);
-        const lastStr = lastPlayed.toISOString().slice(0, 10);
-        if (todayStr === lastStr) {
-          newStreak = currentXp.currentStreak;
-        } else {
-          const lastDate = new Date(lastStr);
-          const todayDate = new Date(todayStr);
-          const diffDays = Math.round((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
-          if (diffDays === 1) {
-            newStreak = currentXp.currentStreak + 1;
-          } else {
-            newStreak = 1;
-          }
-        }
-      } else {
-        newStreak = 1;
-      }
-      const longestStreak = Math.max(currentXp.longestStreak, newStreak);
-
-      await storage.updateUserXp(userId, {
-        totalXp: newTotalXp,
-        level: newLevel,
-        currentStreak: newStreak,
-        longestStreak,
-        lastPlayedAt: now,
-      });
-
-      const { cacheInvalidate } = await import("../cache");
-      cacheInvalidate("moneylab:leaderboard:");
-
-      const earnedBadges: string[] = [];
-      const allSessions = await storage.getGameSessions(userId);
-      const existingBadges = await storage.getUserBadges(userId);
-      const hasBadge = (id: string) => existingBadges.some(b => b.badgeId === id);
-
-      const badgeChecks = [
-        { id: "first_game", condition: allSessions.length >= 1, label: "First Steps" },
-        { id: "ten_games", condition: allSessions.length >= 10, label: "Game Veteran" },
-        { id: "perfect_score", condition: correctAnswers === totalQuestions && totalQuestions >= 5, label: "Perfect Score" },
-        { id: "streak_3", condition: newStreak >= 3, label: "On Fire" },
-        { id: "streak_7", condition: newStreak >= 7, label: "Week Warrior" },
-        { id: "level_5", condition: newLevel >= 5, label: "Rising Star" },
-        { id: "level_10", condition: newLevel >= 10, label: "Money Master" },
-        { id: "xp_500", condition: newTotalXp >= 500, label: "XP Hunter" },
-        { id: "xp_1000", condition: newTotalXp >= 1000, label: "XP Legend" },
-        { id: "challenge_win", condition: mode === "challenge" && correctAnswers >= totalQuestions * 0.8, label: "Challenge Champion" },
-        { id: "speed_demon", condition: mode === "timed" && timeSpent && timeSpent < totalQuestions * 10, label: "Speed Demon" },
-      ];
-
-      for (const check of badgeChecks) {
-        if (check.condition && !hasBadge(check.id)) {
-          await storage.addUserBadge({ userId, badgeId: check.id });
-          earnedBadges.push(check.id);
-        }
-      }
-
-      res.json({
-        session,
-        xpEarned,
-        totalXp: newTotalXp,
-        level: newLevel,
-        streak: newStreak,
-        newBadges: earnedBadges,
-      });
-    } catch (err: any) {
-      console.error("MoneyLab game submit error:", err?.message || err);
-      res.status(500).json({ message: "Could not save your game results. Please try again." });
-    }
-  });
-
-  app.get("/api/moneylab/xp", isAuthenticated, async (req, res) => {
-    try {
-      const userId = (req.user as any).id;
-      const xp = await storage.getUserXp(userId);
-      const badges = await storage.getUserBadges(userId);
-      const sessions = await storage.getGameSessions(userId);
-      res.json({ xp, badges, totalGames: sessions.length });
-    } catch (err: any) {
-      console.error("MoneyLab XP error:", err?.message || err);
-      res.status(500).json({ message: "Could not load your progress. Please try again." });
-    }
-  });
-
+  // === SHARED LEADERBOARD (used platform-wide, not exam-paper-exclusive) ===
   app.get("/api/moneylab/leaderboard", isAuthenticated, async (req, res) => {
     try {
       const period = (req.query.period as string) || "all";
@@ -519,17 +294,6 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
       }
     } catch (err: any) {
       respondAiFailure(res, "tutor_explain", err);
-    }
-  });
-
-  app.get("/api/moneylab/history", isAuthenticated, async (req, res) => {
-    try {
-      const userId = (req.user as any).id;
-      const sessions = await storage.getGameSessions(userId);
-      res.json(sessions);
-    } catch (err: any) {
-      console.error("MoneyLab history error:", err?.message || err);
-      res.status(500).json({ message: "Could not load your game history. Please try again." });
     }
   });
 
@@ -853,7 +617,7 @@ KEY ADMIN FEATURES YOU CAN HELP WITH:
 
 5. LEARNING & LESSON MANAGEMENT
    - Lessons and modules are managed via Supabase-backed content tables. Static content seeds automatically on startup.
-   - The MoneyLab feature lets students upload exam papers and get AI-generated quizzes and explanations.
+   - Money Guide is the AI chat assistant students use for money questions and lesson explanations.
 
 6. ANALYTICS & REPORTS
    - The Reports tab provides exportable summaries of student activity, AI usage, and org-level engagement.

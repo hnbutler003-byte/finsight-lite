@@ -15,6 +15,13 @@
       "when": 1782731723918,
       "tag": "0001_tearful_whiplash",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783477482108,
+      "tag": "0002_confused_iron_monger",
+      "breakpoints": true
     }
   ]
 }

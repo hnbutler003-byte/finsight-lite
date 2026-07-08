@@ -5,11 +5,10 @@ FinSight Lite is a financial literacy learning simulator that teaches school-age
 ## Run & Operate
 
 *   **Run Dev Server:** `npm run dev`
-*   **Build Client:** `npm run build:client`
-*   **Build Server:** `npm run build:server`
-*   **Typecheck:** `npm run typecheck`
-*   **Generate Drizzle Kit Migrations:** `drizzle-kit generate:pg`
-*   **Push DB Schema:** `drizzle-kit push:pg`
+*   **Build (client + server):** `npm run build`
+*   **Typecheck:** `npm run check` (or the `typecheck` workflow, which filters template noise)
+*   **Generate Drizzle Kit Migrations:** `npx drizzle-kit generate`
+*   **Push DB Schema:** `npm run db:push`
 
 **Required Environment Variables:**
 *   `SESSION_SECRET` (for Express sessions)
@@ -45,7 +44,7 @@ FinSight Lite is a financial literacy learning simulator that teaches school-age
 *   **Shared Type System:** `shared/` directory ensures type safety across frontend and backend with Drizzle ORM and Zod for API contracts.
 *   **Multi-Auth Strategy:** Separate authentication flows for students (passwordless avatar-based), teachers (email/password with separate session key), and founder admins (hardcoded env vars).
 *   **External Data Storage:** Replit Object Storage for public assets (logos), Supabase for organizational data, leaderboard snapshots, and analytics events to offload specific data types and leverage external capabilities.
-*   **Gamification & Learning Modules:** All learning content and game logic are primarily frontend-driven (except for MoneyLab's AI features and progress tracking) to ensure responsiveness and minimize server load for interactive elements.
+*   **Gamification & Learning Modules:** All learning content and game logic are primarily frontend-driven (except for AI features and progress tracking) to ensure responsiveness and minimize server load for interactive elements.
 *   **Regional Localization:** Investment simulator and learning modules are deeply localized by currency, with real-life Caribbean examples dynamically loaded based on the user's selected region.
 
 ## Product
@@ -54,7 +53,7 @@ FinSight Lite is a financial literacy learning simulator that teaches school-age
 *   **Investment Simulator:** Learn about stocks and bonds in a risk-free environment with Caribbean-specific examples.
 *   **Learning Modules:** Structured educational content on money management and investing.
 *   **Money Games:** Interactive games to reinforce financial concepts.
-*   **MoneyLab:** Upload exam papers, play AI-generated quizzes, and get AI explanations.
+*   **Leaderboard:** Platform-wide student ranking at /leaderboard, scored from lesson quiz results (all-time and weekly views).
 *   **Money Guide AI:** Chatbot mentor providing financial advice.
 *   **Teacher Dashboard:** Classroom management, student progress tracking, challenge creation.
 *   **Founder Admin Dashboard:** Global oversight, school/sponsor management, reporting.
@@ -65,7 +64,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Gotchas
 
-*   Always run `drizzle-kit generate:pg` after schema changes and `drizzle-kit push:pg` to apply migrations.
+*   Always run `npx drizzle-kit generate` after schema changes to keep the migration snapshot in sync (hand-applied live SQL changes still need a regenerated snapshot).
 *   `SESSION_SECRET` and `DATABASE_URL` are critical for core functionality.
 *   Supabase integration requires correct `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` to be set.
 *   Teacher login uses `bcryptjs` hashing; student login is passwordless.

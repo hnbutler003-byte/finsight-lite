@@ -38,8 +38,8 @@ const TOUR_STEPS = [
   },
   {
     icon: GraduationCap,
-    title: "MoneyLab Exams",
-    description: "Test what you've learned with real exams, earn XP, and climb the leaderboard. Show what you know!",
+    title: "Leaderboard",
+    description: "Earn XP from lessons, quizzes, and games, then see how you stack up. Climb the leaderboard!",
     color: "from-pink-500 to-rose-500",
   },
   {
