@@ -129,12 +129,33 @@ export const portfolioTransactions = pgTable("portfolio_transactions", {
   executedAt: timestamp("executed_at").defaultNow(),
 });
 
+// Reusable lesson content block types, shared between learning_modules
+// (Investment Simulator) and lesson_plans (org-admin lessons). "type"
+// defaults to "text" when absent so existing plain-text rows keep working.
+export type ContentDiagram =
+  | { kind: "bars"; items: { label: string; value: number; display?: string }[]; note?: string }
+  | { kind: "steps"; items: { label: string; detail?: string }[]; note?: string }
+  | { kind: "compare"; left: { title: string; points: string[] }; right: { title: string; points: string[] }; note?: string };
+
+export type ContentSection = {
+  type?: "text" | "video" | "diagram";
+  heading: string;
+  body: string;
+  examples?: string[];
+  video_url?: string;
+  diagram?: ContentDiagram;
+};
+
 export const learningModules = pgTable("learning_modules", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description").notNull(),
   content: text("content").notNull(),
+  // New structured format. Nullable/empty on old rows; renderer falls back
+  // to the plain `content` field when this is absent, so nothing breaks
+  // mid-migration.
+  contentSections: jsonb("content_sections").$type<ContentSection[]>(),
   order: integer("order").notNull(),
   icon: text("icon"),
 });

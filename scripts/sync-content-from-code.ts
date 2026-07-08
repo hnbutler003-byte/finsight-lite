@@ -75,9 +75,13 @@ async function main() {
   for (const mod of DatabaseStorage.LEARNING_MODULES_SEED) {
     const res = await pool.query(
       `UPDATE learning_modules
-         SET title = $1, description = $2, content = $3, icon = $4, "order" = $5
-       WHERE slug = $6`,
-      [mod.title, mod.description, mod.content, mod.icon, mod.order, mod.slug]
+         SET title = $1, description = $2, content = $3, icon = $4, "order" = $5, content_sections = $6::jsonb
+       WHERE slug = $7`,
+      [
+        mod.title, mod.description, mod.content, mod.icon, mod.order,
+        mod.contentSections ? JSON.stringify(mod.contentSections) : null,
+        mod.slug,
+      ]
     );
     if (res.rowCount !== 1) {
       throw new Error(`learning_modules update for slug ${mod.slug} matched ${res.rowCount} rows (expected 1). Aborting.`);

@@ -33,6 +33,7 @@ import {
   type DashboardStats,
   type Conversation, type Message,
   type GameSession, type InsertGameSession,
+  type ContentSection,
   type UserXp,
   type UserBadge, type InsertUserBadge,
 } from "@shared/schema";
@@ -598,6 +599,23 @@ export class DatabaseStorage implements IStorage {
         slug: "what-is-money",
         description: "Learn why different countries have different currencies and how money works.",
         content: `Money is anything that people agree to use to buy and sell things. In The Bahamas, we use the Bahamian Dollar (BSD), which is worth the same as one US Dollar. Jamaica uses the Jamaican Dollar (JMD), Trinidad uses the Trinidad & Tobago Dollar (TTD), and many Eastern Caribbean islands share the East Caribbean Dollar (XCD).\n\nWhy do different countries have different currencies? Each country's government prints its own money and controls how much exists. This helps them manage their economy. Some currencies are "pegged" (locked) to the US Dollar, like the Bahamian Dollar, which means the exchange rate stays the same. Others, like the Jamaican Dollar, "float" freely and change value based on supply and demand.\n\nKey takeaway: Money is a tool. Understanding how it works in your country is the first step to using it wisely!`,
+        contentSections: [
+          {
+            heading: "What is money?",
+            body: "Money is anything that people agree to use to buy and sell things. In The Bahamas, we use the Bahamian Dollar (BSD), which is worth the same as one US Dollar. Jamaica uses the Jamaican Dollar (JMD), Trinidad uses the TT Dollar (TTD), and many Eastern Caribbean islands share the East Caribbean Dollar (XCD).",
+          },
+          {
+            type: "diagram",
+            heading: "Pegged vs. floating currencies",
+            body: "Each country's government controls how much of its own money exists. That control works two different ways.",
+            diagram: {
+              kind: "compare",
+              left: { title: "Pegged (locked)", points: ["Bahamian Dollar (BSD)", "Exchange rate never changes", "Always equal to 1 US Dollar"] },
+              right: { title: "Floating (free)", points: ["Jamaican Dollar (JMD)", "Value moves with supply and demand", "Can rise or fall day to day"] },
+              note: "Key takeaway: money is a tool. Understanding how it works in your country is the first step to using it wisely.",
+            },
+          },
+        ] as ContentSection[],
         order: 1,
         icon: "Coins",
       },
@@ -606,6 +624,26 @@ export class DatabaseStorage implements IStorage {
         slug: "saving-vs-spending",
         description: "Discover the power of saving and how to make smart spending choices.",
         content: `Every time you get money (whether it's an allowance, a gift, or pay from a part-time job) you have a choice: spend it now or save it for later.\n\nSpending gives you something right away (a snack, a game, new clothes). Saving means you wait, but your money can grow. If you put money in a savings account at a bank like Commonwealth Bank in The Bahamas, they'll pay you interest, a small reward for letting them use your money.\n\nThe 50/30/20 Rule is a simple guide:\n• 50% for needs (school supplies, lunch)\n• 30% for wants (entertainment, treats)\n• 20% for savings (your future self will thank you!)\n\nBudgeting is just making a plan for your money before you spend it. Even small amounts saved regularly can add up to something big over time!`,
+        contentSections: [
+          {
+            heading: "Spending vs. saving",
+            body: "Every time you get money, whether it's an allowance, a gift, or pay from a part-time job, you have a choice: spend it now or save it for later. Spending gives you something right away. Saving means you wait, but your money can grow. Put money in a savings account at a bank like Commonwealth Bank, and they'll pay you interest, a small reward for letting them use your money.",
+          },
+          {
+            type: "diagram",
+            heading: "The 50/30/20 rule",
+            body: "A simple guide for splitting any money you receive.",
+            diagram: {
+              kind: "bars",
+              items: [
+                { label: "Needs (school supplies, lunch)", value: 50, display: "50%" },
+                { label: "Wants (entertainment, treats)", value: 30, display: "30%" },
+                { label: "Savings (future you)", value: 20, display: "20%" },
+              ],
+              note: "Budgeting is just making a plan for your money before you spend it. Even small amounts saved regularly add up over time.",
+            },
+          },
+        ] as ContentSection[],
         order: 2,
         icon: "PiggyBank",
       },
@@ -614,6 +652,30 @@ export class DatabaseStorage implements IStorage {
         slug: "what-is-a-stock",
         description: "Learn what it means to own a piece of a company.",
         content: `A stock (also called a "share") is a tiny piece of ownership in a company. When a company wants to raise money to grow, it can sell shares to the public. If you buy one share of Commonwealth Bank (CBL) on the Bahamas International Securities Exchange (BISX), you literally own a small piece of that bank!\n\nWhy would you buy a stock?\n1. Growth: If the company does well, its stock price goes up. You could sell your share for more than you paid.\n2. Dividends: Some companies share their profits with stockholders by paying dividends, regular cash payments just for owning the stock.\n\nBut there's risk: if the company does poorly, the stock price can go down, and you could lose money. That's why stocks are considered riskier than savings accounts.\n\nReal example: Focol Holdings (FCL) in The Bahamas distributes fuel. If more people buy gas, Focol earns more money, and its stock might go up. But if a hurricane disrupts operations, the stock might drop temporarily.\n\nKey takeaway: Stocks let you share in a company's success (and risk). They're best for money you won't need for a long time.`,
+        contentSections: [
+          {
+            heading: "What is a stock?",
+            body: "A stock, also called a share, is a tiny piece of ownership in a company. When a company wants to raise money to grow, it can sell shares to the public. Buy one share of Commonwealth Bank (CBL) on the Bahamas International Securities Exchange (BISX), and you literally own a small piece of that bank.",
+          },
+          {
+            type: "diagram",
+            heading: "Why buy a stock?",
+            body: "",
+            diagram: {
+              kind: "steps",
+              items: [
+                { label: "Growth", detail: "If the company does well, its stock price goes up. You could sell your share for more than you paid." },
+                { label: "Dividends", detail: "Some companies share their profits with stockholders, regular cash payments just for owning the stock." },
+              ],
+              note: "The flip side: if the company does poorly, the stock price can go down and you could lose money. That's why stocks are considered riskier than savings accounts.",
+            },
+          },
+          {
+            heading: "Real example",
+            body: "Focol Holdings (FCL) in The Bahamas distributes fuel. If more people buy gas, Focol earns more money and its stock might go up. But if a hurricane disrupts operations, the stock might drop temporarily. Key takeaway: stocks let you share in a company's success, and its risk. They're best for money you won't need for a long time.",
+            examples: ["CBL, Commonwealth Bank, owns a piece of the bank", "FCL, Focol Holdings, fuel distribution"],
+          },
+        ] as ContentSection[],
         order: 3,
         icon: "TrendingUp",
       },
@@ -622,6 +684,28 @@ export class DatabaseStorage implements IStorage {
         slug: "what-is-a-bond",
         description: "Understand how bonds work and why governments issue them.",
         content: `A bond is like an IOU. When you buy a bond, you're lending money to a government or company. They promise to pay you back the full amount (called the "face value") on a set date, plus regular interest payments along the way.\n\nThe Central Bank of The Bahamas issues bonds called "Government Registered Stock." For example, a 5-year Government Registered Stock might pay 4.5% interest per year. If you invest B$1,000, you'd earn about B$45 every year for 5 years, then get your B$1,000 back.\n\nWhy are bonds considered safer than stocks?\n• You know exactly how much interest you'll earn\n• The government is very unlikely to fail to pay you back\n• Your original investment is returned at the end\n\nBut there's a trade-off: bonds usually earn less than stocks over time. A stock might gain 8-10% in a great year, but a bond gives you a steady, predictable 4-5%.\n\nOther Caribbean bonds:\n• Bank of Jamaica Investment Notes: Jamaica's central bank bonds\n• Trinidad & Tobago Government Bonds: longer-term bonds from T&T\n• EC Home Mortgage Bank bonds: help fund housing in the Eastern Caribbean\n\nKey takeaway: Bonds are a safer way to earn steady returns. They're great for money you want to protect while still earning more than a savings account.`,
+        contentSections: [
+          {
+            heading: "What is a bond?",
+            body: "A bond is like an IOU. When you buy a bond, you're lending money to a government or company. They promise to pay you back the full amount, called the face value, on a set date, plus regular interest payments along the way. The Central Bank of The Bahamas issues bonds called Government Registered Stock. A 5-year one might pay 4.5% interest per year: invest B$1,000, earn about B$45 every year for 5 years, then get your B$1,000 back.",
+          },
+          {
+            type: "diagram",
+            heading: "Bonds vs. stocks",
+            body: "The trade-off between the two comes down to certainty versus growth.",
+            diagram: {
+              kind: "compare",
+              left: { title: "Bonds", points: ["You know the interest in advance", "Government is very unlikely to default", "Your original investment comes back"] },
+              right: { title: "Stocks", points: ["No guaranteed return", "Can gain 8 to 10% in a great year", "Can also lose value"] },
+              note: "Bonds usually earn less than stocks over time, a steady 4 to 5% instead of a swinging 8 to 10%. That's the price of the extra safety.",
+            },
+          },
+          {
+            heading: "Other Caribbean bonds",
+            body: "Key takeaway: bonds are a safer way to earn steady returns. They're great for money you want to protect while still earning more than a savings account.",
+            examples: ["Bank of Jamaica Investment Notes", "Trinidad & Tobago Government Bonds", "EC Home Mortgage Bank bonds"],
+          },
+        ] as ContentSection[],
         order: 4,
         icon: "Shield",
       },
@@ -630,6 +714,31 @@ export class DatabaseStorage implements IStorage {
         slug: "risk-and-reward",
         description: "Learn why higher returns come with higher risk.",
         content: `In investing, risk and reward go hand in hand. The more risk you take, the more you might earn, but you also might lose more.\n\nThink of it like this:\n🏦 Savings Account (Low Risk, Low Reward): Your money is safe, but earns maybe 1-2% per year.\n📄 Government Bonds (Low-Medium Risk, Medium Reward): Very safe, earns 3-5% per year. Example: Bahamas Government Registered Stock pays about 4.5%.\n📈 Stocks (Medium-High Risk, Higher Reward): Can earn 5-10%+ per year on average, but prices go up AND down. Example: GraceKennedy (GK) stock in Jamaica has seen good years and tough years.\n🎲 Speculative Investments (High Risk, Highest Potential Reward): New companies or volatile markets. You could double your money, or lose most of it.\n\nThe key concept is "diversification": don't put all your eggs in one basket! If you spread your money across different types of investments (some stocks, some bonds, some savings), a loss in one area won't wipe out everything.\n\nYour age matters too! As a teenager, you have decades ahead of you. That means you can afford to take more risk because you have time to recover from losses. An adult nearing retirement would want to play it safer.\n\nKey takeaway: There's no such thing as a guaranteed high return. Always understand the risk before you invest!`,
+        contentSections: [
+          {
+            heading: "Risk and reward go together",
+            body: "In investing, the more risk you take, the more you might earn, but you also might lose more. Here's roughly where common options sit on that scale.",
+          },
+          {
+            type: "diagram",
+            heading: "The risk ladder",
+            body: "",
+            diagram: {
+              kind: "bars",
+              items: [
+                { label: "Savings account, low risk", value: 2, display: "1 to 2%" },
+                { label: "Government bonds, e.g. Bahamas Registered Stock", value: 5, display: "3 to 5%" },
+                { label: "Stocks, e.g. GraceKennedy (GK)", value: 10, display: "5 to 10%+" },
+                { label: "Speculative investments, high risk", value: 20, display: "highly variable" },
+              ],
+              note: "Higher bars mean higher potential reward, and higher potential loss. Speculative investments could double your money, or lose most of it.",
+            },
+          },
+          {
+            heading: "Spread it out",
+            body: "The key concept is diversification: don't put all your eggs in one basket. Spread your money across different types of investments, some stocks, some bonds, some savings, so a loss in one area won't wipe out everything. Your age matters too. As a teenager, you have decades ahead of you, which means you can afford more risk because you have time to recover from losses. Key takeaway: there's no such thing as a guaranteed high return. Always understand the risk before you invest.",
+          },
+        ] as ContentSection[],
         order: 5,
         icon: "Scale",
       },
@@ -638,6 +747,43 @@ export class DatabaseStorage implements IStorage {
         slug: "building-a-portfolio",
         description: "Learn how to combine different investments for a balanced approach.",
         content: `A portfolio is simply the collection of all your investments put together. Building a good portfolio means mixing different types of investments so that your money is balanced and protected.\n\nA simple starter portfolio for a young investor might look like:\n• 50% Stocks: for growth (e.g., Commonwealth Bank, GraceKennedy)\n• 30% Bonds: for stability (e.g., Bahamas Government Registered Stock)\n• 20% Savings: for emergencies and short-term needs\n\nThis is called "asset allocation." The idea is:\n• Stocks grow your money over time\n• Bonds provide steady income and protect against stock market drops\n• Savings give you quick access to cash when you need it\n\nRebalancing: Over time, if your stocks do really well, they might become 70% of your portfolio. That means more risk than you planned! Rebalancing means selling some stocks and buying more bonds to get back to your target mix.\n\nDollar-Cost Averaging: Instead of investing all your money at once, invest a small amount regularly (like B$50 every month). This way, you buy more shares when prices are low and fewer when prices are high, which averages out your cost over time.\n\nReal-world tip: In The Bahamas, you can invest through BISX (Bahamas International Securities Exchange). In Jamaica, the Jamaica Stock Exchange (JSE) is one of the best-performing stock markets in the world. The Trinidad & Tobago Stock Exchange offers access to energy and finance companies.\n\nKey takeaway: A good portfolio is diversified. Start small, stay consistent, and let time work in your favor!`,
+        contentSections: [
+          {
+            heading: "What is a portfolio?",
+            body: "A portfolio is simply the collection of all your investments put together. Building a good portfolio means mixing different types of investments so your money is balanced and protected.",
+          },
+          {
+            type: "diagram",
+            heading: "A starter portfolio",
+            body: "A simple mix for a young investor, called asset allocation.",
+            diagram: {
+              kind: "bars",
+              items: [
+                { label: "Stocks, e.g. Commonwealth Bank, GraceKennedy, for growth", value: 50, display: "50%" },
+                { label: "Bonds, e.g. Bahamas Government Registered Stock, for stability", value: 30, display: "30%" },
+                { label: "Savings, for emergencies and short-term needs", value: 20, display: "20%" },
+              ],
+              note: "Stocks grow your money over time, bonds provide steady income and protect against stock market drops, savings give you quick access to cash when you need it.",
+            },
+          },
+          {
+            type: "diagram",
+            heading: "Two habits that keep a portfolio healthy",
+            body: "",
+            diagram: {
+              kind: "steps",
+              items: [
+                { label: "Rebalancing", detail: "If your stocks do really well, they might grow to 70% of your portfolio, more risk than you planned. Sell some stocks and buy more bonds to get back to your target mix." },
+                { label: "Dollar-cost averaging", detail: "Instead of investing all at once, invest a small amount regularly, like B$50 a month. You buy more shares when prices are low and fewer when high, averaging out your cost over time." },
+              ],
+            },
+          },
+          {
+            heading: "Where to actually invest",
+            body: "Key takeaway: a good portfolio is diversified. Start small, stay consistent, and let time work in your favor.",
+            examples: ["BISX, Bahamas International Securities Exchange", "JSE, Jamaica Stock Exchange", "Trinidad & Tobago Stock Exchange"],
+          },
+        ] as ContentSection[],
         order: 6,
         icon: "Briefcase",
       },

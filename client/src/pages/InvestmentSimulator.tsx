@@ -9,10 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState } from "react";
+import { LessonContentBlock } from "@/components/LessonBlocks";
 import {
   Loader2, BookOpen, TrendingUp, Briefcase, ShoppingCart, ArrowUpRight, ArrowDownRight,
   CheckCircle2, Shield, Scale, Coins, PiggyBank, GraduationCap,
-  ChevronRight, Wallet, History, AlertTriangle, ExternalLink, Brain
+  ChevronRight, Wallet, History, AlertTriangle, ExternalLink, Brain, Lightbulb, Target,
 } from "lucide-react";
 
 // ── BISX Widget ────────────────────────────────────────────────────────────
@@ -161,7 +162,7 @@ function JSEWidget() {
 }
 
 import type { SimulatedStock, LearningModule, UserLearningProgress, PortfolioHolding, PortfolioTransaction, UserVirtualBalance } from "@shared/schema";
-import { getLocalizedModuleContent, type RegionInfo } from "@/data/learning-content";
+import { getLocalizedModuleContent, LESSON_FACTS, type RegionInfo } from "@/data/learning-content";
 
 const CURRENCIES = [
   { code: "BSD", name: "Bahamian Dollar", symbol: "B$" },
@@ -408,6 +409,8 @@ export default function InvestmentSimulator() {
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 </div>
               ) : selectedModule ? (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+                <div className="lg:col-span-2">
                 <Card className="glass-card rounded-glass">
                   <CardHeader className="space-y-3">
                     <Button
@@ -427,12 +430,23 @@ export default function InvestmentSimulator() {
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                      {(getLocalizedModuleContent(selectedModule.slug, regionData ?? BSD_FALLBACK)?.content || selectedModule.content)
-                        .split("\n\n").map((paragraph, i) => (
-                        <p key={i} className="text-foreground leading-relaxed mb-4">{paragraph}</p>
-                      ))}
-                    </div>
+                    {(regionData ?? BSD_FALLBACK).currencyCode === "BSD" && selectedModule.contentSections && selectedModule.contentSections.length > 0 ? (
+                      // Structured block rendering, currently BSD only. The other five
+                      // currencies still use the templated plain-text path below via
+                      // getLocalizedModuleContent, until that content is migrated too.
+                      <div className="space-y-4">
+                        {selectedModule.contentSections.map((section, i) => (
+                          <LessonContentBlock key={i} section={section} index={i} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        {(getLocalizedModuleContent(selectedModule.slug, regionData ?? BSD_FALLBACK)?.content || selectedModule.content)
+                          .split("\n\n").map((paragraph, i) => (
+                          <p key={i} className="text-foreground leading-relaxed mb-4">{paragraph}</p>
+                        ))}
+                      </div>
+                    )}
                     {!isModuleCompleted(selectedModule.id) ? (
                       <Button
                         onClick={() => completeMutation.mutate(selectedModule.id)}
@@ -455,6 +469,38 @@ export default function InvestmentSimulator() {
                     )}
                   </CardContent>
                 </Card>
+                </div>
+
+                <div className="space-y-4">
+                  <Card className="glass-card rounded-glass">
+                    <CardContent className="p-4 space-y-2">
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                        <Target className="w-3.5 h-3.5" /> Your progress
+                      </p>
+                      <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all duration-700"
+                          style={{ width: `${totalModules > 0 ? (completedCount / totalModules) * 100 : 0}%` }}
+                        />
+                      </div>
+                      <p className="text-sm text-foreground">{completedCount} of {totalModules} lessons done</p>
+                    </CardContent>
+                  </Card>
+
+                  {LESSON_FACTS[selectedModule.slug] && (
+                    <Card className="glass-card-teal rounded-glass border-0">
+                      <CardContent className="p-4 space-y-2">
+                        <p className="text-xs font-bold text-teal-700 dark:text-teal-300 uppercase tracking-wide flex items-center gap-1.5">
+                          <Lightbulb className="w-3.5 h-3.5" /> Did you know
+                        </p>
+                        <p className="text-sm text-foreground leading-relaxed" data-testid="text-lesson-fact">
+                          {LESSON_FACTS[selectedModule.slug]}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {modules?.map((mod) => {

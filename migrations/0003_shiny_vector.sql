@@ -1,0 +1,1 @@
+ALTER TABLE "learning_modules" ADD COLUMN "content_sections" jsonb;

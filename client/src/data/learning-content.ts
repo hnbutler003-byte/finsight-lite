@@ -19,6 +19,15 @@ export interface RegionInfo {
   pegNote: string;
 }
 
+export const LESSON_FACTS: Record<string, string> = {
+  "what-is-money": "The Bahamian Dollar has been pegged 1:1 to the US Dollar for decades, so B$1 has bought exactly US$1 the whole time.",
+  "saving-vs-spending": "Saving just B$5 a week adds up to more than B$250 in a year, before any interest.",
+  "what-is-a-stock": "BISX, the Bahamas International Securities Exchange, opened in 2000 and lists companies across banking, insurance, and retail.",
+  "what-is-a-bond": "Bahamas Government Registered Stock can be bought in amounts as small as a few hundred dollars, government bonds aren't only for large investors.",
+  "risk-and-reward": "Spreading money across several investments instead of one, diversification, is one of the few strategies that lowers risk without also lowering potential reward.",
+  "building-a-portfolio": "The Jamaica Stock Exchange has ranked among the best-performing stock exchanges in the world in some years, proof Caribbean markets can compete globally.",
+};
+
 export function getLocalizedModuleContent(slug: string, region: RegionInfo): { content: string; description: string } | null {
   const r = region;
 
