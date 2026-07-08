@@ -1,0 +1,33 @@
+Fix two legibility/consistency bugs in the Investment Simulator:
+
+1. COMPOUNDING GAME — "Money Growing Over Time" chart card
+Currently the chart card uses low-contrast light-gray text on a purple/lavender 
+background. Locate this component (compounding calculator / savings growth chart) and:
+- Replace the chart card wrapper with the standard .glass-card class (or 
+  .glass-card-teal if it's informational, not gamification)
+- Chart title, axis labels (Y1/Y5/Y10/Y15/Y20), and legend text ("What you put in", 
+  "Interest earned") must use text-foreground or text-muted-foreground — never a 
+  hardcoded gray hex
+- Verify contrast ratio meets WCAG AA in BOTH light and dark mode
+- The three summary cards below (YOU PUT IN / INTEREST EARNED / TOTAL VALUE) are fine, 
+  leave their structure alone, just confirm they're using .glass-card, not a custom style
+
+2. INVESTMENT SIMULATOR — "My Portfolio" tab, Recent Trades list
+Locate the Recent Trades component under the My Portfolio tab. It currently uses a 
+one-off dark teal gradient background that doesn't match our design system, with 
+low-contrast trade description text.
+- Replace the card wrapper with .glass-card
+- Wrap each individual trade row in .glass-inset (matches the "nested stat inside a 
+  card" pattern used elsewhere)
+- Trade name (e.g. "Bought 10x BTC-BS") uses text-foreground, font-semibold
+- Company/description subtext (e.g. "Bahamas Telecommunications Company") uses 
+  text-muted-foreground — not a hardcoded gray
+- Trade amount: keep red for negative/buy, but pair it — e.g. 
+  text-red-600 dark:text-red-400 — so it stays readable in dark mode
+- Icon circles (shopping cart icon): use --radius-icon (14px) consistently, 
+  background hsl(var(--primary) / 0.1) or similar token-based tint, not a hardcoded color
+- Verify in both light and dark mode before considering this done
+
+Standing requirements apply: no em dashes anywhere in code/comments/UI copy. Any new 
+UI or visual change must be verified in both light AND dark mode per the contrast 
+rules at the top of index.css. Production-ready, not demo-ware.

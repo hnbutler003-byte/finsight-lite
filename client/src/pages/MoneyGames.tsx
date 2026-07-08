@@ -1419,9 +1419,9 @@ function CompoundItGame({ currency }: { currency: string }) {
         </CardContent>
       </Card>
 
-      <div className="space-y-2">
-        <p className="text-sm font-semibold text-center">Your money growing over time</p>
-        <div className="flex items-end gap-1 h-48 bg-muted/30 rounded-2xl p-4 border-2 overflow-hidden">
+      <div className="glass-card p-4 space-y-2">
+        <p className="text-sm font-semibold text-center text-foreground">Your money growing over time</p>
+        <div className="flex items-end gap-1 h-48 glass-inset overflow-hidden">
           {yearlyData.map((d, i) => {
             const height = (d.balance / maxBar) * 100;
             const contribHeight = (d.contributed / maxBar) * 100;
@@ -1441,7 +1441,7 @@ function CompoundItGame({ currency }: { currency: string }) {
             );
           })}
         </div>
-        <div className="flex justify-center gap-6 text-xs">
+        <div className="flex justify-center gap-6 text-xs text-muted-foreground">
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-teal-300 dark:bg-teal-700" /> What you put in</span>
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-teal-500 dark:bg-teal-400" /> Interest earned</span>
         </div>
