@@ -1,0 +1,25 @@
+This closes out the project before the September launch.
+Step 0: verify before touching anything. Check what's already applied before doing any work, don't redo anything that's already there.
+
+Check if server/lessonImport.ts exists and /api/org-admin/lessons/import is a registered route. If yes, the lesson-import patch is already applied, skip it entirely, don't reapply.
+Check if client/src/data/learning-content.ts has LESSON_FACTS: Record<string, Record. If yes, the facts patch is already applied, skip it. If it's still the old flat Record<string, string> version, apply finsight-lite-part5c-facts.patch (attached).
+Report what you found before proceeding to Part 1.
+
+Then proceed through the following in order. Report back after each part, but keep reports brief, this is the last round.
+Part 1: Teacher lesson creation, class-scoped. Extend lesson and quiz creation to teachers, scoped to their own class only, not published org-wide. This needs a schema addition (created_by_teacher_id, class_id on lesson_plans) and new teacher-facing routes mirroring the existing org-admin ones. Update teacher-guide.md.
+Part 4: Central Bank of The Bahamas videos for the Sand Dollar module. Search per lesson topic (what it is, why it exists, wallet and QR payments, CBDC vs cryptocurrency) for genuine official Central Bank videos. Verify each is actually embeddable before using it. If no good match exists for a given lesson, leave it without one rather than forcing a weak fit.
+Part 7: Certificate customization, audit first. Before building anything, confirm what already exists, prior work (Task #16 and related commits) may have already added org logo and signature branding to certificates. Report exactly what's dynamic per-org today versus still hardcoded. Only build what's actually missing: at minimum, confirm org name, teacher name, class name, and completion date all pull from real data, not a fixed identity. Do not build a draw-your-own-signature tool, out of scope.
+Part 5 finish: confirm the "Did you know" fact card renders correctly for two or three non-BSD currencies now that the facts patch is confirmed applied.
+Final bug sweep, be specific, not open-ended:
+
+Grep the entire codebase for any remaining dead links or route mismatches, anywhere a doc, nav item, or button points to a route that no longer exists, following the same pattern as the MoneyLab cleanup and the /money-guide vs /guide doc mismatch found earlier.
+Full typecheck and a real production build, zero errors, not just "typecheck passes."
+One full light-mode and dark-mode pass across every page touched by any part of this whole project, not just the newest changes.
+Confirm no temporary dev-only routes or test helpers remain anywhere in the codebase, grep for anything matching prior throwaway patterns (e.g. screenshot-login).
+
+Close-out:
+
+Confirm every commit from this session is pushed to GitHub main, verify local HEAD matches the remote hash directly via git ls-remote, not just an assumption.
+Give a final one-paragraph summary of what shipped across the entire project, plus a short list of anything knowingly deferred (image sourcing, teacher-created lesson promotion to org-wide) so nothing is a surprise later.
+
+No em dashes anywhere. Any database write throws a clear error on failure. Any new dependency gets the pnpm lockfile proxy fix before committing.

@@ -496,14 +496,14 @@ export default function InvestmentSimulator() {
                     </CardContent>
                   </Card>
 
-                  {(regionData ?? BSD_FALLBACK).currencyCode === "BSD" && LESSON_FACTS[selectedModule.slug] && (
+                  {LESSON_FACTS[(regionData ?? BSD_FALLBACK).currencyCode]?.[selectedModule.slug] && (
                     <Card className="glass-card-teal rounded-glass border-0">
                       <CardContent className="p-4 space-y-2">
                         <p className="text-xs font-bold text-teal-700 dark:text-teal-300 uppercase tracking-wide flex items-center gap-1.5">
                           <Lightbulb className="w-3.5 h-3.5" /> Did you know
                         </p>
                         <p className="text-sm text-foreground leading-relaxed" data-testid="text-lesson-fact">
-                          {LESSON_FACTS[selectedModule.slug]}
+                          {LESSON_FACTS[(regionData ?? BSD_FALLBACK).currencyCode][selectedModule.slug]}
                         </p>
                       </CardContent>
                     </Card>

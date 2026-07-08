@@ -4,7 +4,7 @@
 - [deleteUserAllData transaction](delete-user-transaction.md) — must be wrapped in db.transaction(); conversations table has no userId so AI chat history is NOT deleted on purge (known gap).
 - [GitHub push workflow](github-push-workflow.md) — main agent can't commit; platform auto-commits on mark_task_complete even when validation FAILS, then push github main + verify via git ls-remote.
 - [Org read cache invalidation](org-cache-invalidation.md) — updateOrganization does not invalidate the 5-min getOrganization cache; every write site must invalidate manually.
-- [Public demo guard audit](public-demo-guard-audit.md) — read-only demo guard lives in isOrgAdmin; routes doing raw session checks or side-effect GETs bypass it, grep session.orgAdminId when adding entry points.
+- [Public demo guard audit](public-demo-guard-audit.md) — demo read-only guard lives in isOrgAdmin; raw session checks or side-effect GETs bypass it.
 - [executeSql vs app DB](executesql-vs-app-db.md) — the executeSql tool queries Replit's built-in Postgres, but the app uses Supabase; data seeded via executeSql is invisible to the app.
 - [AI error sanitation](ai-error-sanitation.md) — how AI provider failures must be surfaced to users and Sentry.
 - [AI gateway models](ai-gateway-models.md) — which Anthropic models the Replit AI gateway accepts and how to construct the SDK client.

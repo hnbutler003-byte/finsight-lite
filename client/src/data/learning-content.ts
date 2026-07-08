@@ -21,13 +21,55 @@ export interface RegionInfo {
   pegNote: string;
 }
 
-export const LESSON_FACTS: Record<string, string> = {
-  "what-is-money": "The Bahamian Dollar has been pegged 1:1 to the US Dollar for decades, so B$1 has bought exactly US$1 the whole time.",
-  "saving-vs-spending": "Saving just B$5 a week adds up to more than B$250 in a year, before any interest.",
-  "what-is-a-stock": "BISX, the Bahamas International Securities Exchange, opened in 2000 and lists companies across banking, insurance, and retail.",
-  "what-is-a-bond": "Bahamas Government Registered Stock can be bought in amounts as small as a few hundred dollars, government bonds aren't only for large investors.",
-  "risk-and-reward": "Spreading money across several investments instead of one, diversification, is one of the few strategies that lowers risk without also lowering potential reward.",
-  "building-a-portfolio": "The Jamaica Stock Exchange has ranked among the best-performing stock exchanges in the world in some years, proof Caribbean markets can compete globally.",
+export const LESSON_FACTS: Record<string, Record<string, string>> = {
+  BSD: {
+    "what-is-money": "The Bahamian Dollar has been pegged 1:1 to the US Dollar for decades, so B$1 has bought exactly US$1 the whole time.",
+    "saving-vs-spending": "Saving just B$5 a week adds up to more than B$250 in a year, before any interest.",
+    "what-is-a-stock": "BISX, the Bahamas International Securities Exchange, opened in 2000 and lists companies across banking, insurance, and retail.",
+    "what-is-a-bond": "Bahamas Government Registered Stock can be bought in amounts as small as a few hundred dollars, government bonds aren't only for large investors.",
+    "risk-and-reward": "Spreading money across several investments instead of one, diversification, is one of the few strategies that lowers risk without also lowering potential reward.",
+    "building-a-portfolio": "The Jamaica Stock Exchange has ranked among the best-performing stock exchanges in the world in some years, proof Caribbean markets can compete globally.",
+  },
+  BBD: {
+    "what-is-money": "The Barbadian Dollar has been pegged at 2 to 1 with the US Dollar since 1975, over 50 years of exchange-rate stability.",
+    "saving-vs-spending": "Saving just Bds$5 a week adds up to more than Bds$250 in a year, before any interest.",
+    "what-is-a-stock": "The Barbados Stock Exchange was established in 1987, one of the oldest stock exchanges in the Caribbean.",
+    "what-is-a-bond": "Barbados Government Savings Bonds can be bought in small amounts, government bonds aren't only for large investors.",
+    "risk-and-reward": "Spreading money across several investments instead of one, diversification, is one of the few strategies that lowers risk without also lowering potential reward.",
+    "building-a-portfolio": "The Barbados Stock Exchange works closely with the Jamaica and Trinidad and Tobago exchanges, so investors can trade across all three markets.",
+  },
+  JMD: {
+    "what-is-money": "The Jamaican Dollar floats freely, its value is set by supply and demand rather than a fixed peg.",
+    "saving-vs-spending": "Saving just J$5 a week adds up to more than J$250 in a year, before any interest.",
+    "what-is-a-stock": "The Jamaica Stock Exchange was the first stock exchange in the Caribbean, opening in 1969.",
+    "what-is-a-bond": "Bank of Jamaica Investment Notes can be bought in small amounts, government bonds aren't only for large investors.",
+    "risk-and-reward": "Spreading money across several investments instead of one, diversification, is one of the few strategies that lowers risk without also lowering potential reward.",
+    "building-a-portfolio": "The Jamaica Stock Exchange has been named the world's best-performing stock market by both Bloomberg and the Financial Times.",
+  },
+  TTD: {
+    "what-is-money": "The Trinidad and Tobago Dollar has a managed float, the Central Bank influences its value, but it can still shift day to day.",
+    "saving-vs-spending": "Saving just TT$5 a week adds up to more than TT$250 in a year, before any interest.",
+    "what-is-a-stock": "The Trinidad and Tobago Stock Exchange opened in 1981 and is the largest stock exchange in the Caribbean by market value.",
+    "what-is-a-bond": "Trinidad & Tobago Government Bonds can be bought in small amounts, government bonds aren't only for large investors.",
+    "risk-and-reward": "Spreading money across several investments instead of one, diversification, is one of the few strategies that lowers risk without also lowering potential reward.",
+    "building-a-portfolio": "Companies from Barbados, Jamaica, and the Eastern Caribbean can cross-list and trade right on the Trinidad and Tobago Stock Exchange.",
+  },
+  XCD: {
+    "what-is-money": "The East Caribbean Dollar is pegged at 2.70 to the US Dollar and shared across eight islands in the Eastern Caribbean Currency Union.",
+    "saving-vs-spending": "Saving just EC$5 a week adds up to more than EC$250 in a year, before any interest.",
+    "what-is-a-stock": "The Eastern Caribbean Securities Exchange lets investors across all eight member islands buy and sell the very same shares.",
+    "what-is-a-bond": "ECCB Treasury Bills can be bought in small amounts, government bonds aren't only for large investors.",
+    "risk-and-reward": "Spreading money across several investments instead of one, diversification, is one of the few strategies that lowers risk without also lowering potential reward.",
+    "building-a-portfolio": "The Eastern Caribbean Securities Exchange serves all eight islands of the currency union from one shared market.",
+  },
+  GYD: {
+    "what-is-money": "The Guyanese Dollar floats freely, and its value has been strengthening in recent years as Guyana's oil industry has grown rapidly.",
+    "saving-vs-spending": "Saving just G$5 a week adds up to more than G$250 in a year, before any interest.",
+    "what-is-a-stock": "Guyana's economy has been one of the fastest-growing in the world in recent years, driven by newly discovered offshore oil.",
+    "what-is-a-bond": "Guyana Treasury Bills can be bought in small amounts, government bonds aren't only for large investors.",
+    "risk-and-reward": "Spreading money across several investments instead of one, diversification, is one of the few strategies that lowers risk without also lowering potential reward.",
+    "building-a-portfolio": "Banks DIH and Demerara Distillers are two of the best-known companies trading in Guyana's growing economy.",
+  },
 };
 
 export function getLocalizedModuleContent(slug: string, region: RegionInfo): { content: string; description: string } | null {
