@@ -25,6 +25,7 @@ import { aiUsageEvents } from "@shared/schema";
 import { lt as ltDrizzle, sql as sqlEmail } from "drizzle-orm";
 import { getStudentOrgIds } from "../supabase";
 import { isAdmin, isOrgAdmin, ADMIN_EMAIL } from "./auth";
+import { respondAiFailure } from "../aiFailure";
 import fs from "fs";
 import * as nodePath from "path";
 import Anthropic from "@anthropic-ai/sdk";
@@ -156,8 +157,7 @@ export async function registerAiRoutes(app: Express): Promise<void> {
         if (!finalized) await releaseReservation(reservation.reservationId);
       }
     } catch (err: any) {
-      console.error("AI Insight error:", err?.message || "Unknown error");
-      res.status(500).json({ message: "Failed to generate insights" });
+      respondAiFailure(res, "ai_insights", err);
     }
   });
 
@@ -195,7 +195,8 @@ export async function registerAiRoutes(app: Express): Promise<void> {
 
       res.json({ paper, jobId: job.id, message: "Processing..." });
     } catch (err: any) {
-      res.status(500).json({ message: err.message });
+      console.error("MoneyLab upload error:", err?.message || err);
+      res.status(500).json({ message: "Could not upload your paper. Please try again." });
     }
   });
 
@@ -205,7 +206,8 @@ export async function registerAiRoutes(app: Express): Promise<void> {
       const papers = await storage.getExamPapers(userId);
       res.json(papers);
     } catch (err: any) {
-      res.status(500).json({ message: err.message });
+      console.error("MoneyLab papers error:", err?.message || err);
+      res.status(500).json({ message: "Could not load your papers. Please try again." });
     }
   });
 
@@ -222,7 +224,8 @@ export async function registerAiRoutes(app: Express): Promise<void> {
       const allPapers = await db.select().from(examPapers).where(eq(examPapers.status, "completed")).orderBy(desc(examPapers.createdAt)).limit(limit).offset(offset);
       res.json(allPapers);
     } catch (err: any) {
-      res.status(500).json({ message: err.message });
+      console.error("Admin papers list error:", err?.message || err);
+      res.status(500).json({ message: "Could not load papers. Please try again." });
     }
   });
 
@@ -236,7 +239,8 @@ export async function registerAiRoutes(app: Express): Promise<void> {
       const questions = await storage.getQuestionsByPaper(paper.id);
       res.json({ paper, questions });
     } catch (err: any) {
-      res.status(500).json({ message: err.message });
+      console.error("MoneyLab paper fetch error:", err?.message || err);
+      res.status(500).json({ message: "Could not load this paper. Please try again." });
     }
   });
 
@@ -246,7 +250,8 @@ export async function registerAiRoutes(app: Express): Promise<void> {
       await storage.deleteExamPaper(parseInt(req.params.id), userId);
       res.json({ success: true });
     } catch (err: any) {
-      res.status(500).json({ message: err.message });
+      console.error("MoneyLab paper delete error:", err?.message || err);
+      res.status(500).json({ message: "Could not delete this paper. Please try again." });
     }
   });
 
@@ -348,7 +353,8 @@ export async function registerAiRoutes(app: Express): Promise<void> {
         newBadges: earnedBadges,
       });
     } catch (err: any) {
-      res.status(500).json({ message: err.message });
+      console.error("MoneyLab game submit error:", err?.message || err);
+      res.status(500).json({ message: "Could not save your game results. Please try again." });
     }
   });
 
@@ -360,7 +366,8 @@ export async function registerAiRoutes(app: Express): Promise<void> {
       const sessions = await storage.getGameSessions(userId);
       res.json({ xp, badges, totalGames: sessions.length });
     } catch (err: any) {
-      res.status(500).json({ message: err.message });
+      console.error("MoneyLab XP error:", err?.message || err);
+      res.status(500).json({ message: "Could not load your progress. Please try again." });
     }
   });
 
@@ -379,7 +386,8 @@ export async function registerAiRoutes(app: Express): Promise<void> {
       );
       res.json(leaderboard);
     } catch (err: any) {
-      res.status(500).json({ message: err.message });
+      console.error("MoneyLab leaderboard error:", err?.message || err);
+      res.status(500).json({ message: "Could not load the leaderboard. Please try again." });
     }
   });
 
@@ -510,13 +518,7 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
         if (!finalized) await releaseReservation(reservation.reservationId);
       }
     } catch (err: any) {
-      console.error("Tutor explain error:", err);
-      if (res.headersSent) {
-        res.write(`data: ${JSON.stringify({ error: "Something went wrong" })}\n\n`);
-        res.end();
-      } else {
-        res.status(500).json({ message: err.message });
-      }
+      respondAiFailure(res, "tutor_explain", err);
     }
   });
 
@@ -526,7 +528,8 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
       const sessions = await storage.getGameSessions(userId);
       res.json(sessions);
     } catch (err: any) {
-      res.status(500).json({ message: err.message });
+      console.error("MoneyLab history error:", err?.message || err);
+      res.status(500).json({ message: "Could not load your game history. Please try again." });
     }
   });
 
@@ -654,13 +657,7 @@ If the user asks about FinSight Lite features:
         if (!finalized) await releaseReservation(reservation.reservationId);
       }
     } catch (error) {
-      console.error("Guide chat error:", error);
-      if (res.headersSent) {
-        res.write(`data: ${JSON.stringify({ error: "Something went wrong" })}\n\n`);
-        res.end();
-      } else {
-        res.status(500).json({ message: "Failed to get response" });
-      }
+      respondAiFailure(res, "guide_chat", error);
     }
   });
 
@@ -672,7 +669,8 @@ If the user asks about FinSight Lite features:
       const usage = await getOrgUsageToday(admin.orgId);
       res.json(usage);
     } catch (err: any) {
-      res.status(500).json({ message: err.message });
+      console.error("Org AI usage error:", err?.message || err);
+      res.status(500).json({ message: "Could not load AI usage data. Please try again." });
     }
   });
 
@@ -683,7 +681,8 @@ If the user asks about FinSight Lite features:
       const usage = await getOrgUsageThisMonth(admin.orgId);
       res.json(usage);
     } catch (err: any) {
-      res.status(500).json({ message: err.message });
+      console.error("Org AI usage monthly error:", err?.message || err);
+      res.status(500).json({ message: "Could not load AI usage data. Please try again." });
     }
   });
 
@@ -694,7 +693,8 @@ If the user asks about FinSight Lite features:
       const settings = await getOrgQuotaSettings(admin.orgId);
       res.json(settings);
     } catch (err: any) {
-      res.status(500).json({ message: err.message });
+      console.error("Org AI quotas error:", err?.message || err);
+      res.status(500).json({ message: "Could not load quota settings. Please try again." });
     }
   });
 
@@ -720,7 +720,8 @@ If the user asks about FinSight Lite features:
       await audit({ actorType: "org_admin", actorId: admin.id, actorEmail: admin.email, action: "org_admin.ai_quota.update", orgId: admin.orgId, meta: parsed.data, req });
       res.json(settings);
     } catch (err: any) {
-      res.status(500).json({ message: err.message });
+      console.error("Org AI quota update error:", err?.message || err);
+      res.status(500).json({ message: "Could not update quota settings. Please try again." });
     }
   });
 
@@ -734,7 +735,8 @@ If the user asks about FinSight Lite features:
       const [purgeableRow] = await emailDb.select({ n: sqlEmail<number>`count(*)::int` }).from(aiUsageEvents).where(ltDrizzle(aiUsageEvents.createdAt, cutoff));
       res.json({ total: totalRow.n, purgeable: purgeableRow.n, cutoffDays, cutoffDate: cutoff.toISOString() });
     } catch (e) {
-      res.status(500).json({ message: (e as Error).message });
+      console.error("AI usage stats error:", (e as Error)?.message || e);
+      res.status(500).json({ message: "Could not load usage stats. Please try again." });
     }
   });
 
@@ -750,7 +752,8 @@ If the user asks about FinSight Lite features:
       const job = await enqueueJob({ kind: "ai-health-check", payload: { triggeredBy: "admin" } });
       res.json({ jobId: job.id });
     } catch (e: any) {
-      res.status(500).json({ message: e.message });
+      console.error("AI health check enqueue error:", e?.message || e);
+      res.status(500).json({ message: "Could not start the health check. Please try again." });
     }
   });
 
@@ -760,7 +763,8 @@ If the user asks about FinSight Lite features:
       const job = await enqueueJob({ kind: "perf-scan", payload: { triggeredBy: "admin" } });
       res.json({ jobId: job.id });
     } catch (e: any) {
-      res.status(500).json({ message: e.message });
+      console.error("Perf scan enqueue error:", e?.message || e);
+      res.status(500).json({ message: "Could not start the scan. Please try again." });
     }
   });
 
@@ -779,7 +783,8 @@ If the user asks about FinSight Lite features:
         });
       res.json(files);
     } catch (e: any) {
-      res.status(500).json({ message: e.message });
+      console.error("Perf reports list error:", e?.message || e);
+      res.status(500).json({ message: "Could not load reports. Please try again." });
     }
   });
 
@@ -792,7 +797,8 @@ If the user asks about FinSight Lite features:
       const content = fs.readFileSync(filePath, "utf-8");
       res.json({ name: safe, content });
     } catch (e: any) {
-      res.status(500).json({ message: e.message });
+      console.error("Perf report read error:", e?.message || e);
+      res.status(500).json({ message: "Could not load this report. Please try again." });
     }
   });
 
@@ -877,8 +883,7 @@ Always answer based on these features. If an admin asks about something outside 
       const text = response.content[0].type === "text" ? response.content[0].text : "";
       res.json({ reply: text });
     } catch (e: any) {
-      console.error("Admin help chat error:", e.message);
-      res.status(500).json({ message: "Failed to get a response. Please try again." });
+      respondAiFailure(res, "admin_help_chat", e);
     }
   });
 }

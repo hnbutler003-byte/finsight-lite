@@ -7,3 +7,4 @@
 - [AI gateway supported models](ai-gateway-models.md) — Replit Anthropic gateway only accepts claude-sonnet-4-6; other ids 400; build SDK with apiKey+baseURL from AI_INTEGRATIONS_*.
 - [executeSql vs app DB](executesql-vs-app-db.md) — executeSql hits Replit built-in PG, app uses Supabase; seed/verify via app endpoints (demo login, no password), not executeSql.
 - [Screenshot auth verification](screenshot-auth-verification.md) — temp dev-only GET login route + session.save() + top-level redirect + DOM driver; iframes capture blank.
+- [AI error sanitation contract](ai-error-sanitation.md) — all AI catches use the shared helper; Sentry alerts key off ai_failure tag; SSE clients must handle data.error; 403/429 quota messages pass through verbatim.

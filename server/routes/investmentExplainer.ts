@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import crypto from "crypto";
+import { reportAiFailure } from "../aiFailure";
 import { getCachedExplanation, setCachedExplanation } from "../aiUsage";
 import { db } from "../db";
 import { simulatedStocks } from "@shared/schema";
@@ -80,7 +81,7 @@ In 2-3 short sentences, explain to a student WHY this specific company's stock m
     await setCachedExplanation(hash, MODEL, text);
     return text;
   } catch (err) {
-    console.error("[investmentExplainer] Anthropic error:", (err as Error).message);
+    reportAiFailure("investment_explainer", err, { stockId, ticker: stock.ticker });
     return null;
   }
 }

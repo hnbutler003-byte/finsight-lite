@@ -19,13 +19,18 @@ export function initSentry() {
   }
 }
 
-export function captureError(err: unknown, ctx?: Record<string, any>) {
+export function captureError(err: unknown, ctx?: Record<string, any>, tags?: Record<string, string>) {
   if (!initialized) return;
   try {
     Sentry.withScope((scope) => {
       if (ctx) {
         for (const [k, v] of Object.entries(ctx)) {
           scope.setExtra(k, v);
+        }
+      }
+      if (tags) {
+        for (const [k, v] of Object.entries(tags)) {
+          scope.setTag(k, v);
         }
       }
       Sentry.captureException(err);
@@ -61,6 +66,9 @@ export function sentryRequestContext(req: Request, _res: Response, next: NextFun
       // enough to alert on and click through to logs.
       _res.on("finish", () => {
         try {
+          // Skip if the handler already sent a richer capture for this
+          // response (e.g. respondAiFailure), to avoid duplicate events.
+          if (_res.locals?.sentryCaptured) return;
           if (_res.statusCode >= 500 && _res.statusCode <= 599) {
             const synthetic = new Error(
               `HTTP ${_res.statusCode} ${req.method} ${req.originalUrl || req.url}`,

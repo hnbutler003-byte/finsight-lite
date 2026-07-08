@@ -1344,9 +1344,9 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
       orgSummaryCache.set(orgId, { text: summary, expiresAt: Date.now() + 24 * 60 * 60 * 1000 });
       res.json({ summary });
     } catch (aiErr) {
-      captureError(aiErr, { feature: "org-summary-ai", orgId });
-      console.error("[org-summary-ai] Anthropic error:", (aiErr as Error).message);
-      res.status(500).json({ message: "AI summary unavailable" });
+      const { reportAiFailure } = await import("../aiFailure");
+      reportAiFailure("org_engagement_summary", aiErr, { orgId });
+      res.status(500).json({ message: "The engagement summary is taking a quick break. Please try again later." });
     }
   });
 

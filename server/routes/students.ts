@@ -709,11 +709,26 @@ Rules:
 - If the file appears to be in an unsupported format or is not a bank statement, return {"transactions": [], "error": "Could not parse this file as a bank statement"}
 - Return ONLY valid JSON, no other text`;
 
-        const aiResponse = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [{ role: "user", content: parsePrompt }],
-          response_format: { type: "json_object" },
-        });
+        let aiResponse;
+        try {
+          aiResponse = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [{ role: "user", content: parsePrompt }],
+            response_format: { type: "json_object" },
+          });
+        } catch (aiErr) {
+          const { reportAiFailure } = await import("../aiFailure");
+          reportAiFailure("bank_statement_parse", aiErr, { uploadId: docUpload.id });
+          await storage.updateDocumentUpload(docUpload.id, {
+            status: "failed",
+            errorMessage: "We could not read this statement right now. Please try again in a few minutes.",
+          });
+          return res.status(200).json({
+            upload: await storage.getDocumentUploads(userId).then(u => u.find(d => d.id === docUpload.id)),
+            transactions: [],
+            error: "We could not read this statement right now. Please try again in a few minutes.",
+          });
+        }
 
         const parsed = JSON.parse(aiResponse.choices[0].message.content || "{}");
 

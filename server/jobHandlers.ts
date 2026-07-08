@@ -64,15 +64,11 @@ export function registerJobHandlers() {
   });
 
   // === AI feature health check ===
+  // Sentry reporting happens inside runAiHealthCheck (via reportAiFailure),
+  // so no extra capture here to avoid duplicate events.
   registerJobHandler("ai-health-check", async (job) => {
     const { runAiHealthCheck } = await import("./aiHealthCheck");
-    const { captureError: capture } = await import("./sentry");
-    try {
-      return await runAiHealthCheck(job.payload.triggeredBy ?? "job");
-    } catch (err) {
-      capture(err, { job: "ai-health-check", triggeredBy: job.payload.triggeredBy });
-      throw err;
-    }
+    return runAiHealthCheck(job.payload.triggeredBy ?? "job");
   });
 
   // === AI usage purge ===
@@ -91,8 +87,10 @@ export function registerJobHandlers() {
       return await runExtractPaper(paperId, fileB64, ext, subject, job.attempts >= job.maxAttempts);
     } catch (err) {
       // On the *terminal* attempt, sync paper status so the UI doesn't show
-      // it stuck at 'processing' forever.
+      // it stuck at 'processing' forever, and alert via Sentry.
       if (job.attempts >= job.maxAttempts) {
+        const { reportAiFailure } = await import("./aiFailure");
+        reportAiFailure("paper_extraction", err, { paperId, attempts: job.attempts });
         try {
           await storage.updateExamPaper(paperId, { status: "failed" });
         } catch { /* ignore */ }

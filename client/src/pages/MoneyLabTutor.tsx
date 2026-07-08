@@ -81,6 +81,13 @@ export default function MoneyLabTutor() {
                     fullContent += data.content;
                     setExplanation(fullContent);
                   }
+                  if (data.error) {
+                    const friendly = typeof data.error === "string" && data.error.trim()
+                      ? data.error
+                      : "Oops! Could not get an explanation right now. Try again!";
+                    setExplanation(friendly);
+                    return;
+                  }
                 } catch (e) {
                   if (!(e instanceof SyntaxError)) throw e;
                 }

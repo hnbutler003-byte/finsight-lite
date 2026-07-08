@@ -99,7 +99,17 @@ export default function MoneyGuide() {
                       return updated;
                     });
                   }
-                  if (data.error) throw new Error(data.error);
+                  if (data.error) {
+                    const friendly = typeof data.error === "string" && data.error.trim()
+                      ? data.error
+                      : "Oops! I had a little hiccup. Try asking me again! 🤔";
+                    setMessages(prev => {
+                      const updated = [...prev];
+                      updated[updated.length - 1] = { role: "assistant", content: friendly };
+                      return updated;
+                    });
+                    return;
+                  }
                 } catch (e) {
                   if (e instanceof SyntaxError) continue;
                   throw e;

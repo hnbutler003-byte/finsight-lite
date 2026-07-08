@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { captureError } from "./sentry";
+import { reportAiFailure } from "./aiFailure";
 
 const MODEL = "claude-sonnet-4-6";
 
@@ -17,7 +17,7 @@ function getClient(): Anthropic {
 async function pingAnthropic(): Promise<void> {
   const resp = await getClient().messages.create({
     model: MODEL,
-    max_tokens: 1024,
+    max_tokens: 16,
     messages: [{ role: "user", content: "Reply with one word: ok" }],
   });
   if (!resp.content || resp.content.length === 0) {
@@ -40,7 +40,7 @@ export async function runAiHealthCheck(triggeredBy = "scheduler"): Promise<AiHea
   } catch (e) {
     const durationMs = Date.now() - start;
     const msg = `AI health check failed: Anthropic -- ${(e as Error).message}`;
-    captureError(new Error(msg), { job: "ai-health-check", feature: "anthropic", triggeredBy });
+    reportAiFailure("ai_health_check", e, { job: "ai-health-check", triggeredBy });
     throw new Error(`AI health check: 1 failure in ${durationMs}ms:\n${msg}`);
   }
 

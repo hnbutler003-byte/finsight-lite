@@ -196,26 +196,39 @@ function startOrgWeeklyEmailScheduler() {
 }
 
 // ── AI feature health check scheduler ─────────────────────────────────────
-// Fires once per day at 06:00 UTC to confirm Anthropic and OpenAI are reachable.
+// Pings Anthropic on an interval (default: every 60 min) so provider outages
+// (rate limits, auth, quota) trigger a Sentry alert instead of being found by
+// a student. Any failure is reported with tags ai_failure=true so one Sentry
+// alert rule catches it alongside real user-facing AI failures.
+// Set AI_HEALTH_CHECK_INTERVAL_MS to override the interval (min 5 min).
 // Set DISABLE_AI_HEALTH_CHECK=1 to silence the scheduler without touching code.
+// In development the scheduler stays off (to avoid a ping on every restart)
+// unless AI_HEALTH_CHECK_IN_DEV=1 is set.
 function startAiHealthCheckScheduler() {
   if (process.env.DISABLE_AI_HEALTH_CHECK === "1") {
     log("ai-health-check scheduler disabled (DISABLE_AI_HEALTH_CHECK=1)", "health");
     return;
   }
-
-  function msUntilNextUtcHour(hour: number): number {
-    const now = new Date();
-    const next = new Date(Date.UTC(
-      now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),
-      hour, 0, 0, 0,
-    ));
-    if (next.getTime() <= now.getTime()) next.setUTCDate(next.getUTCDate() + 1);
-    return next.getTime() - now.getTime();
+  if (process.env.NODE_ENV !== "production" && process.env.AI_HEALTH_CHECK_IN_DEV !== "1") {
+    log("ai-health-check scheduler off in development (set AI_HEALTH_CHECK_IN_DEV=1 to enable)", "health");
+    return;
   }
+
+  const rawInterval = parseInt(process.env.AI_HEALTH_CHECK_INTERVAL_MS ?? "3600000", 10);
+  const intervalMs = Math.max(5 * 60_000, Number.isFinite(rawInterval) ? rawInterval : 3_600_000);
 
   async function enqueue(trigger: string) {
     try {
+      // Deduplicate: skip if a health check was already enqueued or run
+      // within the current interval window (covers restarts and multiple
+      // autoscale instances).
+      const windowStart = new Date(Date.now() - intervalMs);
+      const [existing] = await db
+        .select({ id: jobs.id })
+        .from(jobs)
+        .where(and(eq(jobs.kind, "ai-health-check"), gte(jobs.scheduledAt, windowStart)))
+        .limit(1);
+      if (existing) return;
       await enqueueJob({ kind: "ai-health-check", payload: { triggeredBy: trigger } });
       log(`ai-health-check enqueued (${trigger})`, "health");
     } catch (e) {
@@ -223,14 +236,9 @@ function startAiHealthCheckScheduler() {
     }
   }
 
-  const delayMs = msUntilNextUtcHour(6);
-  const nextRun = new Date(Date.now() + delayMs);
-  log(`ai-health-check scheduler armed; first run at ${nextRun.toISOString()}`, "health");
-
-  setTimeout(() => {
-    void enqueue("scheduler-daily");
-    setInterval(() => void enqueue("scheduler-daily"), 24 * 60 * 60 * 1000);
-  }, delayMs);
+  log(`ai-health-check scheduler armed; interval=${Math.round(intervalMs / 60000)}min`, "health");
+  setTimeout(() => { void enqueue("scheduler"); }, 90_000);
+  setInterval(() => { void enqueue("scheduler"); }, intervalMs);
 }
 
 // ── Performance scan scheduler ─────────────────────────────────────────────
