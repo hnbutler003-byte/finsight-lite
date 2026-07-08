@@ -75,6 +75,65 @@ function CreateLessonModal({ onClose }: { onClose: () => void }) {
   const [objectives, setObjectives] = useState<string[]>([""]);
   const [sections, setSections] = useState<ContentFormSection[]>([emptySection()]);
   const [questions, setQuestions] = useState<QuizQuestion[]>([emptyQuestion()]);
+  const [importing, setImporting] = useState(false);
+  const [importWarnings, setImportWarnings] = useState<string[]>([]);
+
+  const handleFileImport = async (file: File) => {
+    setImporting(true);
+    setImportWarnings([]);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/org-admin/lessons/import", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.message || `Import failed (${res.status})`);
+      }
+      const parsed = await res.json();
+
+      setTitle(parsed.title || "");
+      setObjectives(parsed.objectives.length > 0 ? parsed.objectives : [""]);
+      const importedSections: ContentFormSection[] = parsed.contentSections.map((s: any) => ({
+        heading: s.heading,
+        body: s.body,
+        examples: "",
+      }));
+      setSections(importedSections.length > 0 ? importedSections : [emptySection()]);
+      // The section editor doesn't yet support per-section video, so the
+      // first video found in the document becomes the lesson's one video
+      // field. Any additional videos are dropped, flagged as a warning
+      // rather than silently lost.
+      const firstVideo = parsed.contentSections.find((s: any) => s.video_url)?.video_url;
+      if (firstVideo) setVideoUrl(firstVideo);
+      const extraVideoCount = parsed.contentSections.filter((s: any) => s.video_url).length - (firstVideo ? 1 : 0);
+
+      const importedQuestions: QuizQuestion[] = parsed.questions.map((q: any) => ({
+        question: q.question,
+        optionA: q.option_a,
+        optionB: q.option_b,
+        optionC: q.option_c,
+        optionD: q.option_d,
+        correctAnswer: q.correct_answer,
+      }));
+      setQuestions(importedQuestions.length > 0 ? importedQuestions : [emptyQuestion()]);
+
+      const warnings = [...parsed.warnings];
+      if (extraVideoCount > 0) {
+        warnings.push(`Found ${extraVideoCount} additional video${extraVideoCount > 1 ? "s" : ""} in other sections, only the first was kept. Add the rest manually if needed.`);
+      }
+      setImportWarnings(warnings);
+      toast({ title: "Document imported", description: "Review the details below, then continue through each step before saving." });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      toast({ title: "Couldn't import that file", description: msg, variant: "destructive" });
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const handleCreateLesson = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,7 +206,7 @@ function CreateLessonModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto" onClick={onClose}>
-      <Card className="rounded-3xl border-2 w-full max-w-lg shadow-2xl my-4" onClick={e => e.stopPropagation()}>
+      <Card className="rounded-3xl border-2 w-full max-w-lg shadow-2xl my-auto" onClick={e => e.stopPropagation()}>
         <CardContent className="p-8 space-y-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -163,6 +222,32 @@ function CreateLessonModal({ onClose }: { onClose: () => void }) {
 
           {step === "details" && (
             <form onSubmit={e => { e.preventDefault(); setStep("content"); }} className="space-y-4">
+              <div className="rounded-2xl border-2 border-dashed p-4 text-center space-y-2">
+                <input
+                  type="file"
+                  id="lesson-import-input"
+                  accept=".docx,.pdf,.txt"
+                  className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handleFileImport(f); e.target.value = ""; }}
+                  data-testid="input-lesson-import"
+                />
+                <label htmlFor="lesson-import-input">
+                  <Button type="button" variant="outline" disabled={importing} className="rounded-2xl" asChild={false}
+                    onClick={() => document.getElementById("lesson-import-input")?.click()}>
+                    {importing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                    {importing ? "Reading document..." : "Upload a lesson document (.docx, .pdf, .txt)"}
+                  </Button>
+                </label>
+                <p className="text-xs text-muted-foreground">Fills in the fields below automatically. Review everything before saving, nothing is published until you finish all three steps.</p>
+              </div>
+              {importWarnings.length > 0 && (
+                <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 p-3 space-y-1">
+                  <p className="text-xs font-bold text-amber-800 dark:text-amber-200 flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Check these before saving</p>
+                  {importWarnings.map((w, i) => (
+                    <p key={i} className="text-xs text-amber-700 dark:text-amber-300">{w}</p>
+                  ))}
+                </div>
+              )}
               <MetaFields
                 title={title} setTitle={setTitle}
                 instructor={instructor} setInstructor={setInstructor}
@@ -324,7 +409,7 @@ function EditLessonModal({ lesson, onClose }: { lesson: LessonPlan; onClose: () 
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto" onClick={onClose}>
-      <Card className="rounded-3xl border-2 w-full max-w-lg shadow-2xl my-4" onClick={e => e.stopPropagation()}>
+      <Card className="rounded-3xl border-2 w-full max-w-lg shadow-2xl my-auto" onClick={e => e.stopPropagation()}>
         <CardContent className="p-8 space-y-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">

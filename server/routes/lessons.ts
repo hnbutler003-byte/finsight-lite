@@ -6,6 +6,7 @@ import { z } from "zod";
 import { captureError } from "../sentry";
 import multer from "multer";
 import crypto from "crypto";
+import { parseLessonDocument } from "../lessonImport";
 import {
   ObjectStorageService,
   objectStorageClient,
@@ -78,6 +79,34 @@ function checkAdminFileIntegrity(buf: Buffer, mime: string): boolean {
     return buf[0] === 0x50 && buf[1] === 0x4b;
   return true;
 }
+
+const contentDiagramSchema = z.union([
+  z.object({ kind: z.literal("bars"), items: z.array(z.object({ label: z.string(), value: z.number(), display: z.string().optional() })), note: z.string().optional() }),
+  z.object({ kind: z.literal("steps"), items: z.array(z.object({ label: z.string(), detail: z.string().optional() })), note: z.string().optional() }),
+  z.object({ kind: z.literal("compare"), left: z.object({ title: z.string(), points: z.array(z.string()) }), right: z.object({ title: z.string(), points: z.array(z.string()) }), note: z.string().optional() }),
+]);
+const contentSectionSchema = (videoUrlValidator: z.ZodTypeAny) => z.object({
+  type: z.enum(["text", "video", "diagram"]).optional(),
+  heading: z.string(),
+  body: z.string(),
+  examples: z.array(z.string()).optional(),
+  video_url: videoUrlValidator,
+  diagram: contentDiagramSchema.optional(),
+});
+
+const lessonImportUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [".docx", ".pdf", ".txt"];
+    const ext = "." + (file.originalname.split(".").pop() || "").toLowerCase();
+    if (allowed.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only .docx, .pdf, and .txt files are supported"));
+    }
+  },
+});
 
 const videoUpload = multer({
   storage: multer.memoryStorage(),
@@ -488,6 +517,32 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
     }
   });
 
+  // Free, non-AI lesson import: parses a .docx/.pdf/.txt into a draft the
+  // admin reviews and edits before it's saved via the existing create-lesson
+  // route below. This endpoint never writes to the database itself.
+  const handleLessonImportUpload = (req: any, res: any, next: any) => {
+    lessonImportUpload.single("file")(req, res, (err: any) => {
+      if (err) {
+        const status = err?.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+        return res.status(status).json({ message: err.message || "File upload failed" });
+      }
+      next();
+    });
+  };
+  app.post("/api/org-admin/lessons/import", isOrgAdmin, handleLessonImportUpload, async (req: any, res) => {
+    try {
+      const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+      if (!admin) return res.status(401).json({ message: "Not found" });
+      const file = req.file;
+      if (!file) return res.status(400).json({ message: "No file uploaded" });
+
+      const parsed = await parseLessonDocument(file.buffer, file.originalname);
+      res.json(parsed);
+    } catch (e: any) {
+      res.status(400).json({ message: e.message || "Couldn't read that file. Please check it's a valid .docx, .pdf, or .txt file." });
+    }
+  });
+
   app.post("/api/org-admin/lessons", isOrgAdmin, async (req: any, res) => {
     try {
       const admin = await storage.getOrgAdminById(req.session.orgAdminId);
@@ -501,7 +556,7 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
         duration: z.string().optional(),
         videoUrl: ytUrlOpt,
         objectives: z.array(z.string()).default([]),
-        contentSections: z.array(z.object({ heading: z.string(), body: z.string(), examples: z.array(z.string()).optional() })).default([]),
+        contentSections: z.array(contentSectionSchema(ytUrlOpt)).default([]),
       }).parse(req.body);
 
       const lesson = await createLessonPlan({
@@ -610,7 +665,7 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
         duration: z.string().optional().nullable(),
         videoUrl: ytUrlNull,
         objectives: z.array(z.string()).default([]),
-        contentSections: z.array(z.object({ heading: z.string(), body: z.string(), examples: z.array(z.string()).optional() })).default([]),
+        contentSections: z.array(contentSectionSchema(ytUrlNull)).default([]),
         questions: z.array(z.object({
           question: z.string().min(1),
           optionA: z.string().min(1),

@@ -1,0 +1,450 @@
+diff --git a/client/src/pages/OrgLessons.tsx b/client/src/pages/OrgLessons.tsx
+index 3b49b7f..daad023 100644
+--- a/client/src/pages/OrgLessons.tsx
++++ b/client/src/pages/OrgLessons.tsx
+@@ -75,6 +75,62 @@ function CreateLessonModal({ onClose }: { onClose: () => void }) {
+   const [objectives, setObjectives] = useState<string[]>([""]);
+   const [sections, setSections] = useState<ContentFormSection[]>([emptySection()]);
+   const [questions, setQuestions] = useState<QuizQuestion[]>([emptyQuestion()]);
++  const [importing, setImporting] = useState(false);
++  const [importWarnings, setImportWarnings] = useState<string[]>([]);
++
++  const handleFileImport = async (file: File) => {
++    setImporting(true);
++    setImportWarnings([]);
++    try {
++      const formData = new FormData();
++      formData.append("file", file);
++      const res = await fetch("/api/org-admin/lessons/import", {
++        method: "POST",
++        credentials: "include",
++        body: formData,
++      });
++      if (!res.ok) throw new Error((await res.json()).message);
++      const parsed = await res.json();
++
++      setTitle(parsed.title || "");
++      setObjectives(parsed.objectives.length > 0 ? parsed.objectives : [""]);
++      const importedSections: ContentFormSection[] = parsed.contentSections.map((s: any) => ({
++        heading: s.heading,
++        body: s.body,
++        examples: "",
++      }));
++      setSections(importedSections.length > 0 ? importedSections : [emptySection()]);
++      // The section editor doesn't yet support per-section video, so the
++      // first video found in the document becomes the lesson's one video
++      // field. Any additional videos are dropped, flagged as a warning
++      // rather than silently lost.
++      const firstVideo = parsed.contentSections.find((s: any) => s.video_url)?.video_url;
++      if (firstVideo) setVideoUrl(firstVideo);
++      const extraVideoCount = parsed.contentSections.filter((s: any) => s.video_url).length - (firstVideo ? 1 : 0);
++
++      const importedQuestions: QuizQuestion[] = parsed.questions.map((q: any) => ({
++        question: q.question,
++        optionA: q.option_a,
++        optionB: q.option_b,
++        optionC: q.option_c,
++        optionD: q.option_d,
++        correctAnswer: q.correct_answer,
++      }));
++      setQuestions(importedQuestions.length > 0 ? importedQuestions : [emptyQuestion()]);
++
++      const warnings = [...parsed.warnings];
++      if (extraVideoCount > 0) {
++        warnings.push(`Found ${extraVideoCount} additional video${extraVideoCount > 1 ? "s" : ""} in other sections, only the first was kept. Add the rest manually if needed.`);
++      }
++      setImportWarnings(warnings);
++      toast({ title: "Document imported", description: "Review the details below, then continue through each step before saving." });
++    } catch (e: unknown) {
++      const msg = e instanceof Error ? e.message : "Unknown error";
++      toast({ title: "Couldn't import that file", description: msg, variant: "destructive" });
++    } finally {
++      setImporting(false);
++    }
++  };
+ 
+   const handleCreateLesson = async (e: React.FormEvent) => {
+     e.preventDefault();
+@@ -163,6 +219,32 @@ function CreateLessonModal({ onClose }: { onClose: () => void }) {
+ 
+           {step === "details" && (
+             <form onSubmit={e => { e.preventDefault(); setStep("content"); }} className="space-y-4">
++              <div className="rounded-2xl border-2 border-dashed p-4 text-center space-y-2">
++                <input
++                  type="file"
++                  id="lesson-import-input"
++                  accept=".docx,.pdf,.txt"
++                  className="hidden"
++                  onChange={e => { const f = e.target.files?.[0]; if (f) handleFileImport(f); e.target.value = ""; }}
++                  data-testid="input-lesson-import"
++                />
++                <label htmlFor="lesson-import-input">
++                  <Button type="button" variant="outline" disabled={importing} className="rounded-2xl" asChild={false}
++                    onClick={() => document.getElementById("lesson-import-input")?.click()}>
++                    {importing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
++                    {importing ? "Reading document..." : "Upload a lesson document (.docx, .pdf, .txt)"}
++                  </Button>
++                </label>
++                <p className="text-xs text-muted-foreground">Fills in the fields below automatically. Review everything before saving, nothing is published until you finish all three steps.</p>
++              </div>
++              {importWarnings.length > 0 && (
++                <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 p-3 space-y-1">
++                  <p className="text-xs font-bold text-amber-800 dark:text-amber-200 flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Check these before saving</p>
++                  {importWarnings.map((w, i) => (
++                    <p key={i} className="text-xs text-amber-700 dark:text-amber-300">{w}</p>
++                  ))}
++                </div>
++              )}
+               <MetaFields
+                 title={title} setTitle={setTitle}
+                 instructor={instructor} setInstructor={setInstructor}
+diff --git a/package.json b/package.json
+index c5219bb..e1d890f 100644
+--- a/package.json
++++ b/package.json
+@@ -88,6 +88,7 @@
+     "lucide-react": "^0.453.0",
+     "memoizee": "^0.4.17",
+     "memorystore": "^1.6.7",
++    "mammoth": "^1.12.0",
+     "multer": "^2.0.2",
+     "next-themes": "^0.4.6",
+     "openai": "^6.16.0",
+diff --git a/server/lessonImport.ts b/server/lessonImport.ts
+new file mode 100644
+index 0000000..451839e
+--- /dev/null
++++ b/server/lessonImport.ts
+@@ -0,0 +1,243 @@
++// Free, deterministic lesson import parser. No AI calls, no per-upload cost.
++//
++// Supports two input formats:
++//   .docx — parsed via mammoth.js, which reads Word's actual Heading 1/2
++//           styles, this is reliable because docx carries real semantic
++//           structure.
++//   .pdf  — parsed via pdf-parse (text extraction only). PDFs do not carry
++//           semantic heading tags, so section detection here is heuristic
++//           (short lines in isolation, title-case, no trailing punctuation)
++//           and will be less reliable than docx. A PDF with no detectable
++//           structure still imports successfully, just as a single text
++//           section instead of several, it never fails outright.
++//
++// Expected document shape (by convention, documented for admins/teachers):
++//   Heading 1: the lesson title (optional, falls back to filename)
++//   Heading 2: one per content section
++//   A line that is just a YouTube URL directly under a Heading 2 becomes
++//     that section's video instead of a text block.
++//   A Heading 2 literally named "Objectives" or "Learning Objectives":
++//     each following line becomes one objective.
++//   A Heading 2 literally named "Quiz" or "Quiz Questions": everything
++//     after it is parsed as questions, not as a content section, using:
++//       Q: question text
++//       A) option one
++//       B) option two
++//       C) option three
++//       D) option four
++//       ANSWER: A
++//     one blank line between questions.
++
++import mammoth from "mammoth";
++
++export type ParsedQuestion = {
++  question: string;
++  option_a: string;
++  option_b: string;
++  option_c: string;
++  option_d: string;
++  correct_answer: "A" | "B" | "C" | "D";
++};
++
++export type ParsedContentSection = {
++  heading: string;
++  body: string;
++  video_url?: string;
++};
++
++export type ParsedLesson = {
++  title: string;
++  objectives: string[];
++  contentSections: ParsedContentSection[];
++  questions: ParsedQuestion[];
++  warnings: string[];
++};
++
++const YOUTUBE_RE = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+/i;
++const OBJECTIVES_HEADING_RE = /^(learning )?objectives$/i;
++const QUIZ_HEADING_RE = /^quiz( questions)?$/i;
++
++// ─── Step 1: get a list of {level, text} blocks from either file type ─────────
++
++type Block = { level: "h1" | "h2" | "p"; text: string };
++
++async function blocksFromDocx(buffer: Buffer): Promise<Block[]> {
++  const result = await mammoth.convertToHtml(
++    { buffer },
++    { styleMap: ["p[style-name='Heading 1'] => h1:fresh", "p[style-name='Heading 2'] => h2:fresh"] }
++  );
++  const html = result.value;
++  const blocks: Block[] = [];
++  const tagRe = /<(h1|h2|p)>([\s\S]*?)<\/\1>/gi;
++  let match: RegExpExecArray | null;
++  while ((match = tagRe.exec(html)) !== null) {
++    const level = match[1].toLowerCase() as "h1" | "h2" | "p";
++    const text = match[2].replace(/<[^>]+>/g, "").trim();
++    if (text) blocks.push({ level, text });
++  }
++  return blocks;
++}
++
++// PDFs carry no semantic tags, so this is a heuristic: a short, standalone
++// line (under ~70 chars, no ending punctuation, not a bullet) is treated as
++// a heading. Everything else is a paragraph. This will misfire on unusually
++// formatted documents; that's an accepted, documented limitation, not a bug.
++const QUIZ_LINE_RE = /^(Q:|A\)|B\)|C\)|D\)|ANSWER:)/i;
++const PDF_ARTIFACT_RE = /^--\s*\d+\s*of\s*\d+\s*--$|^page\s+\d+$/i;
++
++function blocksFromPlainText(text: string): Block[] {
++  const lines = text
++    .split(/\r?\n/)
++    .map((l) => l.trim())
++    .filter((l) => l.length > 0 && !PDF_ARTIFACT_RE.test(l));
++  const blocks: Block[] = [];
++  let sawFirstHeading = false;
++  for (const line of lines) {
++    // Quiz-format lines are never headings, regardless of length or punctuation,
++    // this is checked before the generic heuristic below.
++    const looksLikeHeading =
++      !QUIZ_LINE_RE.test(line) &&
++      line.length > 0 &&
++      line.length <= 70 &&
++      !/[.,:;!]$/.test(line) &&
++      !/^[-•*]/.test(line) &&
++      !YOUTUBE_RE.test(line);
++    if (looksLikeHeading) {
++      blocks.push({ level: sawFirstHeading ? "h2" : "h1", text: line });
++      sawFirstHeading = true;
++    } else {
++      blocks.push({ level: "p", text: line });
++    }
++  }
++  return blocks;
++}
++
++async function blocksFromPdf(buffer: Buffer): Promise<Block[]> {
++  const { PDFParse } = await import("pdf-parse");
++  const parser = new PDFParse({ data: buffer });
++  try {
++    const result = await parser.getText();
++    return blocksFromPlainText(result.text);
++  } finally {
++    await parser.destroy();
++  }
++}
++
++// ─── Step 2: parse the "Q: / A) / ANSWER:" quiz block ──────────────────────
++
++function parseQuizText(text: string, warnings: string[]): ParsedQuestion[] {
++  const questions: ParsedQuestion[] = [];
++  const chunks = text.split(/\n\s*\n/).map((c) => c.trim()).filter(Boolean);
++  for (const chunk of chunks) {
++    const qMatch = chunk.match(/^Q:\s*(.+)$/im);
++    const aMatch = chunk.match(/^A\)\s*(.+)$/im);
++    const bMatch = chunk.match(/^B\)\s*(.+)$/im);
++    const cMatch = chunk.match(/^C\)\s*(.+)$/im);
++    const dMatch = chunk.match(/^D\)\s*(.+)$/im);
++    const ansMatch = chunk.match(/^ANSWER:\s*([ABCD])/im);
++    if (qMatch && aMatch && bMatch && cMatch && dMatch && ansMatch) {
++      questions.push({
++        question: qMatch[1].trim(),
++        option_a: aMatch[1].trim(),
++        option_b: bMatch[1].trim(),
++        option_c: cMatch[1].trim(),
++        option_d: dMatch[1].trim(),
++        correct_answer: ansMatch[1].toUpperCase() as "A" | "B" | "C" | "D",
++      });
++    } else if (chunk.length > 0) {
++      warnings.push(`Couldn't parse a quiz question, expected "Q:", "A)" through "D)", and "ANSWER:": "${chunk.slice(0, 60)}..."`);
++    }
++  }
++  return questions;
++}
++
++// ─── Step 3: walk the blocks and assemble the lesson ───────────────────────
++
++export function assembleLesson(blocks: Block[], fallbackTitle: string): ParsedLesson {
++  const warnings: string[] = [];
++  let title = fallbackTitle;
++  const objectives: string[] = [];
++  const contentSections: ParsedContentSection[] = [];
++  let questions: ParsedQuestion[] = [];
++
++  let i = 0;
++  if (blocks[0]?.level === "h1") {
++    title = blocks[0].text;
++    i = 1;
++  }
++
++  let currentHeading: string | null = null;
++  let currentMode: "content" | "objectives" | "quiz" = "content";
++  let currentBodyLines: string[] = [];
++  let currentVideoUrl: string | undefined;
++  let quizTextLines: string[] = [];
++
++  function flushSection() {
++    if (currentHeading === null) return;
++    if (currentMode === "objectives") {
++      objectives.push(...currentBodyLines.filter(Boolean));
++    } else if (currentMode === "quiz") {
++      questions = parseQuizText(quizTextLines.join("\n"), warnings);
++    } else {
++      const body = currentBodyLines.filter(Boolean).join("\n\n");
++      if (body || currentVideoUrl) {
++        contentSections.push({ heading: currentHeading, body, ...(currentVideoUrl ? { video_url: currentVideoUrl } : {}) });
++      }
++    }
++    currentBodyLines = [];
++    currentVideoUrl = undefined;
++    quizTextLines = [];
++  }
++
++  for (; i < blocks.length; i++) {
++    const block = blocks[i];
++    if (block.level === "h1" || block.level === "h2") {
++      flushSection();
++      currentHeading = block.text;
++      currentMode = OBJECTIVES_HEADING_RE.test(block.text)
++        ? "objectives"
++        : QUIZ_HEADING_RE.test(block.text)
++        ? "quiz"
++        : "content";
++    } else {
++      if (currentHeading === null) {
++        // Text before any heading: treat as an untitled intro section.
++        currentHeading = "Introduction";
++        currentMode = "content";
++      }
++      if (currentMode === "quiz") {
++        quizTextLines.push(block.text);
++      } else if (currentMode === "content" && YOUTUBE_RE.test(block.text) && !currentVideoUrl) {
++        currentVideoUrl = block.text;
++      } else {
++        currentBodyLines.push(block.text);
++      }
++    }
++  }
++  flushSection();
++
++  if (contentSections.length === 0) {
++    warnings.push("No content sections were detected. The document may not use headings the parser could recognize; review and add sections manually.");
++  }
++  if (objectives.length === 0) {
++    warnings.push('No "Objectives" section was found. Add learning objectives manually before publishing.');
++  }
++
++  return { title, objectives, contentSections, questions, warnings };
++}
++
++export async function parseLessonDocument(buffer: Buffer, filename: string): Promise<ParsedLesson> {
++  const ext = filename.toLowerCase().split(".").pop();
++  const fallbackTitle = filename.replace(/\.(docx|pdf|txt)$/i, "");
++  let blocks: Block[];
++  if (ext === "docx") {
++    blocks = await blocksFromDocx(buffer);
++  } else if (ext === "pdf") {
++    blocks = await blocksFromPdf(buffer);
++  } else if (ext === "txt") {
++    blocks = blocksFromPlainText(buffer.toString("utf-8"));
++  } else {
++    throw new Error(`Unsupported file type: .${ext}. Please upload a .docx, .pdf, or .txt file.`);
++  }
++  return assembleLesson(blocks, fallbackTitle);
++}
+diff --git a/server/routes/lessons.ts b/server/routes/lessons.ts
+index f5f22f4..11ebe19 100644
+--- a/server/routes/lessons.ts
++++ b/server/routes/lessons.ts
+@@ -6,6 +6,7 @@ import { z } from "zod";
+ import { captureError } from "../sentry";
+ import multer from "multer";
+ import crypto from "crypto";
++import { parseLessonDocument } from "../lessonImport";
+ import {
+   ObjectStorageService,
+   objectStorageClient,
+@@ -79,6 +80,34 @@ function checkAdminFileIntegrity(buf: Buffer, mime: string): boolean {
+   return true;
+ }
+ 
++const contentDiagramSchema = z.union([
++  z.object({ kind: z.literal("bars"), items: z.array(z.object({ label: z.string(), value: z.number(), display: z.string().optional() })), note: z.string().optional() }),
++  z.object({ kind: z.literal("steps"), items: z.array(z.object({ label: z.string(), detail: z.string().optional() })), note: z.string().optional() }),
++  z.object({ kind: z.literal("compare"), left: z.object({ title: z.string(), points: z.array(z.string()) }), right: z.object({ title: z.string(), points: z.array(z.string()) }), note: z.string().optional() }),
++]);
++const contentSectionSchema = (videoUrlValidator: z.ZodTypeAny) => z.object({
++  type: z.enum(["text", "video", "diagram"]).optional(),
++  heading: z.string(),
++  body: z.string(),
++  examples: z.array(z.string()).optional(),
++  video_url: videoUrlValidator,
++  diagram: contentDiagramSchema.optional(),
++});
++
++const lessonImportUpload = multer({
++  storage: multer.memoryStorage(),
++  limits: { fileSize: 10 * 1024 * 1024 },
++  fileFilter: (_req, file, cb) => {
++    const allowed = [".docx", ".pdf", ".txt"];
++    const ext = "." + (file.originalname.split(".").pop() || "").toLowerCase();
++    if (allowed.includes(ext)) {
++      cb(null, true);
++    } else {
++      cb(new Error("Only .docx, .pdf, and .txt files are supported"));
++    }
++  },
++});
++
+ const videoUpload = multer({
+   storage: multer.memoryStorage(),
+   limits: { fileSize: ADMIN_UPLOAD_MAX_VIDEO },
+@@ -488,6 +517,23 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
+     }
+   });
+ 
++  // Free, non-AI lesson import: parses a .docx/.pdf/.txt into a draft the
++  // admin reviews and edits before it's saved via the existing create-lesson
++  // route below. This endpoint never writes to the database itself.
++  app.post("/api/org-admin/lessons/import", isOrgAdmin, lessonImportUpload.single("file"), async (req: any, res) => {
++    try {
++      const admin = await storage.getOrgAdminById(req.session.orgAdminId);
++      if (!admin) return res.status(401).json({ message: "Not found" });
++      const file = req.file;
++      if (!file) return res.status(400).json({ message: "No file uploaded" });
++
++      const parsed = await parseLessonDocument(file.buffer, file.originalname);
++      res.json(parsed);
++    } catch (e: any) {
++      res.status(400).json({ message: e.message || "Couldn't read that file. Please check it's a valid .docx, .pdf, or .txt file." });
++    }
++  });
++
+   app.post("/api/org-admin/lessons", isOrgAdmin, async (req: any, res) => {
+     try {
+       const admin = await storage.getOrgAdminById(req.session.orgAdminId);
+@@ -501,7 +547,7 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
+         duration: z.string().optional(),
+         videoUrl: ytUrlOpt,
+         objectives: z.array(z.string()).default([]),
+-        contentSections: z.array(z.object({ heading: z.string(), body: z.string(), examples: z.array(z.string()).optional() })).default([]),
++        contentSections: z.array(contentSectionSchema(ytUrlOpt)).default([]),
+       }).parse(req.body);
+ 
+       const lesson = await createLessonPlan({
+@@ -610,7 +656,7 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
+         duration: z.string().optional().nullable(),
+         videoUrl: ytUrlNull,
+         objectives: z.array(z.string()).default([]),
+-        contentSections: z.array(z.object({ heading: z.string(), body: z.string(), examples: z.array(z.string()).optional() })).default([]),
++        contentSections: z.array(contentSectionSchema(ytUrlNull)).default([]),
+         questions: z.array(z.object({
+           question: z.string().min(1),
+           optionA: z.string().min(1),
