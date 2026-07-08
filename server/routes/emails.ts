@@ -75,6 +75,9 @@ export async function registerEmailRoutes(app: Express): Promise<void> {
     try {
       const ident = emailIdentity(req);
       if (!ident) return res.status(401).json({ message: "Not authenticated" });
+      if (req.session?.demoOrgReadOnly) {
+        return res.status(403).json({ message: "This is a read-only demo. Changes are disabled.", code: "DEMO_READ_ONLY" });
+      }
       const body = z.object({
         email: z.string().email().optional(),
         weeklyDigest: z.boolean().optional(),
@@ -275,7 +278,7 @@ export async function registerEmailRoutes(app: Express): Promise<void> {
     }
   });
 
-  app.get("/api/org/admin/email-stats", async (req: any, res) => {
+  app.get("/api/org/admin/email-stats", isOrgAdmin, async (req: any, res) => {
     if (!req.session?.orgAdminId) return res.status(401).json({ message: "Org admin not authenticated" });
     const orgId = req.session.orgId as string | undefined;
     if (!orgId) return res.status(400).json({ message: "No org" });
@@ -296,7 +299,7 @@ export async function registerEmailRoutes(app: Express): Promise<void> {
     res.json({ totals, recent });
   });
 
-  app.post("/api/org/admin/weekly-digest/run-now", async (req: any, res) => {
+  app.post("/api/org/admin/weekly-digest/run-now", isOrgAdmin, async (req: any, res) => {
     if (!req.session?.orgAdminId) return res.status(401).json({ message: "Not authenticated" });
     const admin = await storage.getOrgAdminById(req.session.orgAdminId);
     if (!admin?.orgId) return res.status(403).json({ message: "Admin has no org" });

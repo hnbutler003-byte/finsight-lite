@@ -1491,6 +1491,9 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
 
   // === ORG ADMIN: EMAIL TEST (TEMPORARY, remove after confirmation) ===
   app.get("/api/org/email-test", isOrgAdmin, async (req: any, res) => {
+    if (req.session?.demoOrgReadOnly) {
+      return res.status(403).json({ message: "This is a read-only demo. Changes are disabled.", code: "DEMO_READ_ONLY" });
+    }
     const admin = await storage.getOrgAdminById(req.session.orgAdminId);
     if (!admin) return res.status(401).json({ message: "Unauthorized" });
     if (!admin.email) return res.status(400).json({ message: "No email address on this admin account" });

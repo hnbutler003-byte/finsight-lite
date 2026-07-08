@@ -17,6 +17,186 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { generateTeacherCertificatesZip } from "@/lib/teacherCertificates";
 import { generateImpactSummaryPdf } from "@/lib/impactSummary";
+import {
+  type QuizQuestion,
+  type ContentFormSection,
+  emptyQuestion,
+  emptySection,
+  buildContentSections,
+  QuizEditor,
+  ContentSectionEditor,
+  MetaFields,
+} from "@/components/lesson-editor";
+
+function TeacherCreateLessonModal({ classId, onClose }: { classId: number; onClose: () => void }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [step, setStep] = useState<"details" | "content" | "quiz">("details");
+  const [loading, setLoading] = useState(false);
+  const [lessonId, setLessonId] = useState<string | null>(null);
+
+  const [title, setTitle] = useState("");
+  const [instructor, setInstructor] = useState("");
+  const [subject, setSubject] = useState("Financial Literacy");
+  const [gradeLevel, setGradeLevel] = useState("");
+  const [topic, setTopic] = useState("");
+  const [duration, setDuration] = useState("45 minutes");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [objectives, setObjectives] = useState<string[]>([""]);
+  const [sections, setSections] = useState<ContentFormSection[]>([emptySection()]);
+  const [questions, setQuestions] = useState<QuizQuestion[]>([emptyQuestion()]);
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: [`/api/teacher/classes/${classId}/my-lessons`] });
+
+  const handleCreateLesson = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/teacher/classes/${classId}/lessons`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          title,
+          instructor: instructor || undefined,
+          subject: subject || undefined,
+          gradeLevel: gradeLevel || undefined,
+          topic: topic || undefined,
+          duration: duration || undefined,
+          videoUrl: videoUrl || undefined,
+          objectives: objectives.map(o => o.trim()).filter(Boolean),
+          contentSections: buildContentSections(sections),
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json()).message);
+      const lesson = await res.json();
+      setLessonId(lesson.id);
+      setStep("quiz");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveQuestions = async () => {
+    if (!lessonId) return;
+    setLoading(true);
+    try {
+      const validQuestions = questions.filter(q => q.question && q.optionA && q.optionB && q.optionC && q.optionD);
+      const results = await Promise.all(validQuestions.map(async (q, i) => {
+        const res = await fetch(`/api/teacher/lessons/${lessonId}/questions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ ...q, orderIndex: i }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ message: "Unknown error" }));
+          throw new Error(`Question ${i + 1}: ${err.message}`);
+        }
+        return res.json();
+      }));
+      invalidate();
+      toast({ title: "Lesson created!", description: `Saved as a draft with ${results.length} quiz question${results.length !== 1 ? "s" : ""}. Publish it when you are ready.` });
+      onClose();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      toast({ title: "Error saving questions", description: msg, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSkipQuestions = () => {
+    invalidate();
+    toast({ title: "Lesson created!", description: "Saved as a draft. You can publish it when you are ready." });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto" onClick={onClose}>
+      <Card className="rounded-3xl border-2 w-full max-w-lg shadow-2xl my-4" onClick={e => e.stopPropagation()}>
+        <CardContent className="p-8 space-y-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+              <Plus className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <h2 className="font-bold text-xl">Create Class Lesson</h2>
+              <p className="text-xs text-muted-foreground">
+                {step === "details" ? "Step 1 of 3: Lesson details" : step === "content" ? "Step 2 of 3: Content sections" : "Step 3 of 3: Quiz questions (optional)"}
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground bg-muted/50 rounded-xl px-3 py-2">
+            This lesson will only be visible to students in this class once you publish it.
+          </p>
+
+          {step === "details" && (
+            <form onSubmit={e => { e.preventDefault(); setStep("content"); }} className="space-y-4">
+              <MetaFields
+                title={title} setTitle={setTitle}
+                instructor={instructor} setInstructor={setInstructor}
+                subject={subject} setSubject={setSubject}
+                gradeLevel={gradeLevel} setGradeLevel={setGradeLevel}
+                topic={topic} setTopic={setTopic}
+                duration={duration} setDuration={setDuration}
+                videoUrl={videoUrl} setVideoUrl={setVideoUrl}
+                objectives={objectives} setObjectives={setObjectives}
+              />
+              <div className="flex gap-3 pt-2">
+                <Button type="button" variant="outline" onClick={onClose} className="flex-1 rounded-2xl">Cancel</Button>
+                <Button type="submit" disabled={!title} className="flex-1 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700" data-testid="button-teacher-lesson-next-content">
+                  Next: Content →
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {step === "content" && (
+            <div className="space-y-4">
+              <ContentSectionEditor sections={sections} setSections={setSections} />
+              <div className="flex gap-3 pt-2">
+                <Button type="button" variant="outline" onClick={() => setStep("details")} className="flex-1 rounded-2xl text-xs">← Back</Button>
+                <Button
+                  type="button"
+                  disabled={loading}
+                  onClick={handleCreateLesson}
+                  className="flex-1 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+                  data-testid="button-teacher-create-lesson-confirm"
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Next: Quiz →"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === "quiz" && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">Add multiple-choice quiz questions. Students will be scored on completion.</p>
+              <QuizEditor questions={questions} setQuestions={setQuestions} />
+              <Button type="button" variant="outline" onClick={() => setQuestions(qs => [...qs, emptyQuestion()])}
+                className="w-full rounded-2xl border-dashed" data-testid="button-teacher-add-question">
+                <Plus className="w-4 h-4 mr-2" /> Add Another Question
+              </Button>
+              <div className="flex gap-3 pt-2">
+                <Button type="button" variant="outline" onClick={handleSkipQuestions} className="flex-1 rounded-2xl text-xs" data-testid="button-teacher-skip-questions">
+                  Skip for Now
+                </Button>
+                <Button type="button" disabled={loading} onClick={handleSaveQuestions}
+                  className="flex-1 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+                  data-testid="button-teacher-save-questions">
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Lesson"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 const AVATAR_MAP: Record<string, string> = {
   lion: "🦁", dolphin: "🐬", parrot: "🦜", turtle: "🐢",
@@ -268,6 +448,7 @@ export default function TeacherClassDetail() {
   const [activeTab, setActiveTab] = useState("students");
   const [showChallengeForm, setShowChallengeForm] = useState(false);
   const [showNotifForm, setShowNotifForm] = useState(false);
+  const [showCreateLesson, setShowCreateLesson] = useState(false);
   const [copied, setCopied] = useState(false);
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -318,6 +499,43 @@ export default function TeacherClassDetail() {
     queryKey: [`/api/teacher/classes/${classId}/lessons`],
     queryFn: () => fetch(`/api/teacher/classes/${classId}/lessons`, { credentials: "include" }).then(r => r.json()),
     enabled: !!teacher && activeTab === "lessons" && !!cls?.envId,
+  });
+
+  const { data: myLessons = [], isLoading: myLessonsLoading } = useQuery<any[]>({
+    queryKey: [`/api/teacher/classes/${classId}/my-lessons`],
+    queryFn: () => fetch(`/api/teacher/classes/${classId}/my-lessons`, { credentials: "include" }).then(r => r.json()),
+    enabled: !!teacher && activeTab === "lessons" && !!cls?.envId,
+  });
+
+  const togglePublishLesson = useMutation({
+    mutationFn: async ({ id, isPublished }: { id: string; isPublished: boolean }) => {
+      const res = await fetch(`/api/teacher/lessons/${id}/publish`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ isPublished }),
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.message || "Failed"); }
+      return res.json();
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [`/api/teacher/classes/${classId}/my-lessons`] });
+      toast({ title: vars.isPublished ? "Lesson published" : "Lesson unpublished", description: vars.isPublished ? "Students in this class can now see it." : "It is now hidden from students." });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const deleteLesson = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/teacher/lessons/${id}`, { method: "DELETE", credentials: "include" });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.message || "Failed"); }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [`/api/teacher/classes/${classId}/my-lessons`] });
+      toast({ title: "Lesson deleted" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const { data: insightsData, isLoading: insightsLoading } = useQuery<{
@@ -682,7 +900,92 @@ export default function TeacherClassDetail() {
           )}
 
           {activeTab === "lessons" && (
-            <div className="space-y-4">
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                      <GraduationCap className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h2 className="font-bold">My Class Lessons</h2>
+                      <p className="text-xs text-muted-foreground">Lessons and quizzes you create here are only visible to students in this class.</p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => setShowCreateLesson(true)}
+                    className="rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 gap-2"
+                    data-testid="button-create-class-lesson"
+                  >
+                    <Plus className="w-4 h-4" /> Create Lesson
+                  </Button>
+                </div>
+                {myLessonsLoading ? (
+                  <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>
+                ) : myLessons.length === 0 ? (
+                  <Card className="console-card border-dashed">
+                    <CardContent className="p-8 text-center">
+                      <BookOpen className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
+                      <p className="font-bold">No class lessons yet</p>
+                      <p className="text-sm text-muted-foreground mt-1">Create your first lesson with an optional quiz. It stays as a draft until you publish it.</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-3">
+                    {myLessons.map((lesson: any) => (
+                      <Card key={lesson.id} className="console-card" data-testid={`my-lesson-card-${lesson.id}`}>
+                        <CardContent className="p-4 flex items-center gap-4 flex-wrap">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white shadow shrink-0">
+                            <BookMarked className="w-6 h-6" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-bold truncate">{lesson.title}</h3>
+                              {lesson.subject && (
+                                <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-medium">{lesson.subject}</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
+                              {lesson.grade_level && <span>Grade {lesson.grade_level}</span>}
+                              {lesson.duration && <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{lesson.duration}</span>}
+                              <span className="text-muted-foreground/60">{lesson.objectives?.length ?? 0} objectives · {lesson.content_sections?.length ?? 0} sections</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {lesson.is_published ? (
+                              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-1 rounded-xl" data-testid={`status-lesson-${lesson.id}`}>Published</span>
+                            ) : (
+                              <span className="text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 px-2 py-1 rounded-xl" data-testid={`status-lesson-${lesson.id}`}>Draft</span>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="rounded-2xl border-2 text-xs"
+                              disabled={togglePublishLesson.isPending}
+                              onClick={() => togglePublishLesson.mutate({ id: lesson.id, isPublished: !lesson.is_published })}
+                              data-testid={`button-toggle-publish-${lesson.id}`}
+                            >
+                              {togglePublishLesson.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : lesson.is_published ? "Unpublish" : "Publish"}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="rounded-2xl border-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                              disabled={deleteLesson.isPending}
+                              onClick={() => { if (window.confirm(`Delete "${lesson.title}"? This cannot be undone.`)) deleteLesson.mutate(lesson.id); }}
+                              data-testid={`button-delete-lesson-${lesson.id}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-2xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
                   <BookMarked className="w-5 h-5 text-teal-600" />
@@ -729,6 +1032,11 @@ export default function TeacherClassDetail() {
                     </Card>
                   ))}
                 </div>
+              )}
+              </div>
+
+              {showCreateLesson && (
+                <TeacherCreateLessonModal classId={classId} onClose={() => setShowCreateLesson(false)} />
               )}
             </div>
           )}

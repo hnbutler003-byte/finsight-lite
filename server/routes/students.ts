@@ -25,6 +25,12 @@ import {
   upsertLeaderboardSnapshot,
   trackEvent,
   getPublishedLessonsByEnv,
+  getLessonsByClass,
+  getLessonWithQuestions,
+  createLessonPlan,
+  createLessonQuizQuestion,
+  toggleLessonPublish,
+  deleteLessonPlan,
   supabase,
 } from "../supabase";
 import { isTeacher } from "./auth";
@@ -1258,6 +1264,149 @@ Rules:
     if (!cls.envId) return res.json([]);
     const lessons = await getPublishedLessonsByEnv(cls.envId);
     res.json(lessons);
+  });
+
+  // === TEACHER CLASS LESSON CREATION ===
+  // Teacher-created lessons are scoped to one class: env_id stays null and
+  // class_id + created_by_teacher_id are always forced server-side, so they can
+  // never appear env-wide or org-wide.
+
+  const teacherOwnsLesson = async (req: any): Promise<{ lesson: Awaited<ReturnType<typeof getLessonWithQuestions>>; error?: { status: number; message: string } }> => {
+    const lesson = await getLessonWithQuestions(req.params.lessonId);
+    if (!lesson) return { lesson: null, error: { status: 404, message: "Lesson not found" } };
+    if (lesson.created_by_teacher_id !== req.session.teacherId || lesson.class_id == null) {
+      return { lesson: null, error: { status: 403, message: "Access denied: lesson was not created by you" } };
+    }
+    return { lesson };
+  };
+
+  app.get("/api/teacher/classes/:id/my-lessons", isTeacher, async (req: any, res) => {
+    const id = parseInt(req.params.id);
+    const cls = await storage.getClassById(id);
+    if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+    const lessons = await getLessonsByClass(id);
+    res.json(lessons);
+  });
+
+  app.post("/api/teacher/classes/:id/lessons", isTeacher, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const cls = await storage.getClassById(id);
+      if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+      if (!cls.envId) return res.status(400).json({ message: "This class is not linked to an organization yet, so lessons cannot be created for it." });
+      const env = await getOrgEnvironmentById(cls.envId);
+      if (!env) return res.status(400).json({ message: "The organization environment linked to this class could not be found." });
+
+      const YT_RE = /^https?:\/\/(www\.)?(youtube\.com\/(watch\?|shorts\/|embed\/|live\/)|youtu\.be\/)/i;
+      const body = z.object({
+        title: z.string().min(1),
+        instructor: z.string().optional(),
+        subject: z.string().optional(),
+        gradeLevel: z.string().optional(),
+        topic: z.string().optional(),
+        duration: z.string().optional(),
+        videoUrl: z.string().refine(u => YT_RE.test(u), { message: "Please enter a valid YouTube link." }).optional(),
+        objectives: z.array(z.string()).default([]),
+        contentSections: z.array(z.object({ heading: z.string(), body: z.string(), examples: z.array(z.string()).optional() })).default([]),
+      }).parse(req.body);
+
+      const lesson = await createLessonPlan({
+        org_id: env.org_id,
+        env_id: null,
+        class_id: id,
+        created_by_teacher_id: req.session.teacherId,
+        title: body.title,
+        instructor: body.instructor ?? null,
+        subject: body.subject ?? null,
+        grade_level: body.gradeLevel ?? null,
+        topic: body.topic ?? null,
+        duration: body.duration ?? null,
+        video_url: body.videoUrl || null,
+        objectives: body.objectives,
+        content_sections: body.contentSections,
+        is_published: false,
+      });
+      if (!lesson) return res.status(500).json({ message: "Failed to create lesson" });
+      await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "teacher.lesson.create", targetType: "lesson", targetId: lesson.id, meta: { classId: id, title: body.title }, req });
+      res.json(lesson);
+    } catch (e: any) {
+      if (e instanceof z.ZodError) {
+        return res.status(400).json({ message: e.errors[0]?.message ?? "Validation error" });
+      }
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
+    }
+  });
+
+  app.post("/api/teacher/lessons/:lessonId/questions", isTeacher, async (req: any, res) => {
+    try {
+      const { error } = await teacherOwnsLesson(req);
+      if (error) return res.status(error.status).json({ message: error.message });
+      const body = z.object({
+        question: z.string().min(1),
+        optionA: z.string().min(1),
+        optionB: z.string().min(1),
+        optionC: z.string().min(1),
+        optionD: z.string().min(1),
+        correctAnswer: z.enum(["A", "B", "C", "D"]),
+        orderIndex: z.number().default(0),
+      }).parse(req.body);
+
+      const q = await createLessonQuizQuestion({
+        lesson_id: req.params.lessonId,
+        question: body.question,
+        option_a: body.optionA,
+        option_b: body.optionB,
+        option_c: body.optionC,
+        option_d: body.optionD,
+        correct_answer: body.correctAnswer,
+        order_index: body.orderIndex,
+      });
+      if (!q) return res.status(500).json({ message: "Failed to create question" });
+      res.json(q);
+    } catch (e: any) {
+      if (e instanceof z.ZodError) {
+        return res.status(400).json({ message: e.errors[0]?.message ?? "Validation error" });
+      }
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
+    }
+  });
+
+  app.patch("/api/teacher/lessons/:lessonId/publish", isTeacher, async (req: any, res) => {
+    try {
+      const { error } = await teacherOwnsLesson(req);
+      if (error) return res.status(error.status).json({ message: error.message });
+      const { isPublished } = z.object({ isPublished: z.boolean() }).parse(req.body);
+      const lesson = await toggleLessonPublish(req.params.lessonId, isPublished);
+      if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+      await audit({ actorType: "teacher", actorId: req.session.teacherId, action: isPublished ? "teacher.lesson.publish" : "teacher.lesson.unpublish", targetType: "lesson", targetId: req.params.lessonId, req });
+      res.json(lesson);
+    } catch (e: any) {
+      if (e instanceof z.ZodError) {
+        return res.status(400).json({ message: e.errors[0]?.message ?? "Validation error" });
+      }
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
+    }
+  });
+
+  app.delete("/api/teacher/lessons/:lessonId", isTeacher, async (req: any, res) => {
+    try {
+      const { error } = await teacherOwnsLesson(req);
+      if (error) return res.status(error.status).json({ message: error.message });
+      const ok = await deleteLessonPlan(req.params.lessonId);
+      if (!ok) return res.status(500).json({ message: "Failed to delete lesson" });
+      await audit({ actorType: "teacher", actorId: req.session.teacherId, action: "teacher.lesson.delete", targetType: "lesson", targetId: req.params.lessonId, req });
+      res.json({ success: true });
+    } catch (e: any) {
+      const status = (e?.message as string)?.startsWith("[Supabase]") ? 500 : 400;
+      if (status >= 500) captureError(e, { route: req.path });
+      res.status(status).json({ message: e.message });
+    }
   });
 
   app.get("/api/teacher/classes/:id/report.csv", isTeacher, async (req: any, res) => {

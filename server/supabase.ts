@@ -67,10 +67,20 @@ export type OrgStudent = {
   joined_at: string;
 };
 
+// Reusable lesson content block types. "type" defaults to "text" when absent so
+// all existing sections keep working unchanged.
+export type ContentDiagram =
+  | { kind: "bars"; items: { label: string; value: number; display?: string }[]; note?: string }
+  | { kind: "steps"; items: { label: string; detail?: string }[]; note?: string }
+  | { kind: "compare"; left: { title: string; points: string[] }; right: { title: string; points: string[] }; note?: string };
+
 export type ContentSection = {
+  type?: "text" | "video" | "diagram";
   heading: string;
   body: string;
   examples?: string[];
+  video_url?: string;
+  diagram?: ContentDiagram;
 };
 
 export type LessonPlan = {
@@ -88,6 +98,10 @@ export type LessonPlan = {
   content_sections: ContentSection[];
   is_published: boolean;
   created_at: string;
+  // Teacher class scoping: when class_id is set the lesson is visible ONLY to
+  // students enrolled in that class (never env-wide or org-wide).
+  created_by_teacher_id?: number | null;
+  class_id?: number | null;
 };
 
 export type LessonQuizQuestion = {
@@ -224,6 +238,10 @@ ALTER TABLE organizations ADD COLUMN IF NOT EXISTS plan text NOT NULL DEFAULT 's
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS student_limit integer NOT NULL DEFAULT 500;
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS display_label text;
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active';
+
+-- Teacher class-scoped lessons (class_id refers to the classes table in the app DB)
+ALTER TABLE lesson_plans ADD COLUMN IF NOT EXISTS created_by_teacher_id integer;
+ALTER TABLE lesson_plans ADD COLUMN IF NOT EXISTS class_id integer;
 `;
 
 async function applyBrandingColumnsViaPg(): Promise<boolean> {
@@ -249,6 +267,8 @@ async function applyBrandingColumnsViaPg(): Promise<boolean> {
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS student_limit integer NOT NULL DEFAULT 500;
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS display_label text;
         ALTER TABLE organizations ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active';
+        ALTER TABLE lesson_plans ADD COLUMN IF NOT EXISTS created_by_teacher_id integer;
+        ALTER TABLE lesson_plans ADD COLUMN IF NOT EXISTS class_id integer;
       `);
       return true;
     } finally {
@@ -282,6 +302,16 @@ export async function initSupabaseTables(): Promise<void> {
         console.log("[Supabase] ✓ Applied org status column.");
       } else {
         console.warn("[Supabase] ⚠ Missing org status column - run ALTER TABLE organizations ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active'; in Supabase SQL editor.");
+      }
+    }
+    // Sentinel for teacher class-scoped lesson columns (class_id is the newest lesson_plans column)
+    const lessonScopeProbe = await supabase.from("lesson_plans").select("class_id").limit(1);
+    if (lessonScopeProbe.error && (lessonScopeProbe.error.code === "42703" || lessonScopeProbe.error.message?.includes("class_id"))) {
+      const applied = await applyBrandingColumnsViaPg();
+      if (applied) {
+        console.log("[Supabase] ✓ Applied lesson_plans class scope columns.");
+      } else {
+        console.warn("[Supabase] ⚠ Missing lesson_plans class scope columns - run ALTER TABLE lesson_plans ADD COLUMN IF NOT EXISTS created_by_teacher_id integer; ALTER TABLE lesson_plans ADD COLUMN IF NOT EXISTS class_id integer; in Supabase SQL editor.");
       }
     }
   } else if (
@@ -536,6 +566,7 @@ export async function getLessonsByOrg(orgId: string): Promise<LessonPlan[]> {
     .from("lesson_plans")
     .select("*")
     .eq("org_id", orgId)
+    .is("class_id", null)
     .order("created_at", { ascending: false });
   if (error) { console.error("[Supabase] getLessonsByOrg:", error.message); return []; }
   return (data ?? []).map(normalizeLessonPlan);
@@ -543,7 +574,7 @@ export async function getLessonsByOrg(orgId: string): Promise<LessonPlan[]> {
 
 export async function getPublishedLessons(orgId?: string): Promise<LessonPlan[]> {
   if (!supabase) return [];
-  let q = supabase.from("lesson_plans").select("*").eq("is_published", true).order("created_at", { ascending: false });
+  let q = supabase.from("lesson_plans").select("*").eq("is_published", true).is("class_id", null).order("created_at", { ascending: false });
   if (orgId) q = q.eq("org_id", orgId);
   const { data, error } = await q;
   if (error) { console.error("[Supabase] getPublishedLessons:", error.message); return []; }
@@ -557,8 +588,32 @@ export async function getPublishedLessonsByEnv(envId: string): Promise<LessonPla
     .select("*")
     .eq("is_published", true)
     .eq("env_id", envId)
+    .is("class_id", null)
     .order("created_at", { ascending: false });
   if (error) { console.error("[Supabase] getPublishedLessonsByEnv:", error.message); return []; }
+  return (data ?? []).map(normalizeLessonPlan);
+}
+
+export async function getLessonsByClass(classId: number): Promise<LessonPlan[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("lesson_plans")
+    .select("*")
+    .eq("class_id", classId)
+    .order("created_at", { ascending: false });
+  if (error) { console.error("[Supabase] getLessonsByClass:", error.message); return []; }
+  return (data ?? []).map(normalizeLessonPlan);
+}
+
+export async function getPublishedLessonsByClass(classId: number): Promise<LessonPlan[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("lesson_plans")
+    .select("*")
+    .eq("is_published", true)
+    .eq("class_id", classId)
+    .order("created_at", { ascending: false });
+  if (error) { console.error("[Supabase] getPublishedLessonsByClass:", error.message); return []; }
   return (data ?? []).map(normalizeLessonPlan);
 }
 
@@ -1028,6 +1083,7 @@ export const STATIC_LESSONS_DATA: Array<{
       "Explain why starting to invest young gives a major advantage.",
     ],
     content_sections: [
+      { type: "video", heading: "Watch: Saving and Investing", body: "This short Khan Academy video explains the difference between saving and investing, and why both matter for building wealth.", video_url: "https://www.youtube.com/watch?v=CBJ3_A5SMsc" },
       { heading: "Saving vs Investing: Key Difference", body: "Saving means keeping money safe (usually in a bank) for short-term goals or emergencies, growing slowly with low interest. Investing means putting money into assets (like stocks or real estate) with the expectation of earning a larger return over time. Investing involves more risk than saving, but it also offers much higher potential growth. For long-term goals (5+ years), investing is typically far more powerful than saving alone.", examples: ["Savings account: ~1-3% interest per year", "Stock market: historical ~7-10% average return per year", "Real estate: long-term appreciation"] },
       { heading: "Types of Investments", body: "Stocks are shares of ownership in a company: when the company grows, your share is worth more. Bonds are loans you give to governments or companies, which pay you back with fixed interest. Mutual funds pool money from many investors to buy a diversified mix of stocks and bonds, reducing risk. Exchange-Traded Funds (ETFs) work similarly to mutual funds but are traded on stock exchanges like individual stocks.", examples: ["Stocks: owning a piece of a company", "Government bonds: lending to the government", "Mutual funds: pooled diversified investing", "ETFs: low-cost index investing"] },
       { heading: "Why Starting Young Is a Superpower", body: "The earlier you start investing, the more time your money has to grow. A 15-year-old who invests $100/month until age 65 will accumulate far more than a 35-year-old investing $500/month for the same period, because of compound growth. Time in the market matters more than the amount you invest. Even small amounts invested in your teens can become significant wealth by adulthood.", examples: ["$100/month from age 15 = massive wealth at 65", "Starting 10 years earlier doubles final wealth", "Use FinSight's Investment Simulator to explore this"] },
@@ -1049,8 +1105,15 @@ export const STATIC_LESSONS_DATA: Array<{
       "Use diversification as a strategy to manage risk.",
     ],
     content_sections: [
+      { type: "video", heading: "Watch: What Is Risk and Return?", body: "This short Khan Academy video introduces how risk and reward are connected in every investment decision.", video_url: "https://www.youtube.com/watch?v=7mo167ohvJw" },
       { heading: "What Is Investment Risk?", body: "Investment risk is the possibility that an investment will lose value or not perform as expected. Every investment carries some risk, even keeping money in cash carries the risk of inflation (money losing purchasing power over time). Risk cannot be completely eliminated, but it can be managed. Understanding and accepting risk is an essential part of becoming a smart investor.", examples: ["Stock price falling after you buy", "A company going bankrupt", "Inflation reducing purchasing power", "Currency value changing"] },
       { heading: "The Risk-Return Tradeoff", body: "In investing, there is a fundamental rule: higher potential return comes with higher risk, and lower risk comes with lower return. A savings account is very safe (low risk) but earns very little interest (low return). Stocks of a new startup company could double in value (high return) but could also become worthless (high risk). Understanding this tradeoff helps you choose investments that match your goals and how much risk you can comfortably handle.", examples: ["Low risk => Low return: savings account, government bonds", "Medium risk => Medium return: blue-chip stocks, ETFs", "High risk => High return: startup stocks, crypto"] },
+      { type: "diagram", heading: "The Risk Ladder", body: "Each step up the ladder offers a higher potential return, but also a bigger chance of losing money. Smart investors know which step matches their goals.", diagram: { kind: "steps", items: [
+        { label: "Savings account", detail: "Very safe, but earns the least. Your money grows slowly." },
+        { label: "Government bonds", detail: "Low risk. The government pays you back with steady interest." },
+        { label: "Blue-chip stocks and ETFs", detail: "Medium risk. Prices move up and down, but big established companies tend to grow over time." },
+        { label: "Startup stocks and crypto", detail: "High risk. Could multiply in value or become worthless." },
+      ], note: "Higher steps = higher potential return AND higher risk." } },
       { heading: "Diversification: Don't Put All Your Eggs in One Basket", body: "Diversification means spreading your money across different types of investments so that if one performs badly, others may compensate. If you invest all your money in one company and it fails, you lose everything. But if you invest across 20 companies in different industries, one failure won't destroy your portfolio. Mutual funds and ETFs are already diversified by design, one of the reasons they're recommended for beginner investors.", examples: ["Mix stocks, bonds, and savings", "Invest in different industries", "Use ETFs for instant diversification", "Never put all money in one investment"] },
     ],
     questions: [
@@ -1070,8 +1133,15 @@ export const STATIC_LESSONS_DATA: Array<{
       "Articulate why compound interest is called the eighth wonder of the world.",
     ],
     content_sections: [
+      { type: "video", heading: "Watch: Compound Interest Introduction", body: "This short Khan Academy video shows how compound interest makes your money grow on top of the growth it already earned.", video_url: "https://www.youtube.com/watch?v=Rm6UdfRs3gw" },
       { heading: "Simple Interest vs Compound Interest", body: "Simple interest is calculated only on your original amount (principal). If you invest $1,000 at 10% simple interest, you earn $100 every year, forever. Compound interest is interest calculated on both your original investment AND all the interest you've already earned. In year 1, you earn $100. In year 2, you earn 10% of $1,100 = $110. In year 3, you earn 10% of $1,210 = $121. The interest keeps growing because your base keeps growing.", examples: ["Simple: $1,000 x 10% = $100/year always", "Compound Year 1: $1,000 => $1,100", "Compound Year 2: $1,100 => $1,210", "Compound Year 10: $1,000 => $2,594"] },
       { heading: "The Eighth Wonder of the World", body: "Albert Einstein is said to have called compound interest 'the eighth wonder of the world: he who understands it, earns it; he who doesn't, pays it.' The key insight is that compound growth is exponential, not linear. Early years show slow growth, but later years show explosive acceleration. A $1,000 investment at 8% annual return becomes $2,159 after 10 years, $4,661 after 20 years, and $10,063 after 30 years, without adding any extra money.", examples: ["$1,000 at 8%: $2,159 after 10 years", "$1,000 at 8%: $4,661 after 20 years", "$1,000 at 8%: $10,063 after 30 years"] },
+      { type: "diagram", heading: "Watch $1,000 Grow at 8% Per Year", body: "The same $1,000, never topped up, keeps accelerating. Notice how the last 10 years add more than the first 20 combined. That is compounding at work.", diagram: { kind: "bars", items: [
+        { label: "Start", value: 1000, display: "$1,000" },
+        { label: "After 10 years", value: 2159, display: "$2,159" },
+        { label: "After 20 years", value: 4661, display: "$4,661" },
+        { label: "After 30 years", value: 10063, display: "$10,063" },
+      ], note: "8% average annual return, no extra deposits. Growth gets faster because interest earns interest." } },
       { heading: "Start Early: Time Is Your Greatest Asset", body: "Two friends: Maya starts investing $50/month at age 15 and stops at age 25 (10 years, $6,000 invested). Jordan starts at age 25 and invests $50/month until age 65 (40 years, $24,000 invested). At age 65, assuming 8% return, Maya has more money than Jordan, despite investing 4x less! This is the power of starting early. Every year you delay costs you enormously in future wealth.", examples: ["Maya (start age 15): $6,000 invested => larger final amount", "Jordan (start age 25): $24,000 invested => smaller final amount", "Time beats money invested"] },
     ],
     questions: [
@@ -1086,7 +1156,7 @@ export const STATIC_LESSONS_DATA: Array<{
   {
     grade_level: "static-cbdc-1", topic: "sand-dollar", title: "What Is the Sand Dollar?",
     instructor: "Learn what the Sand Dollar is, who issues it, and why it is different from physical cash.",
-    duration: "10 min", video_url: null,
+    duration: "10 min", video_url: "https://www.youtube.com/watch?v=q8mX_ZprJTw",
     objectives: [
       "Define what a Central Bank Digital Currency (CBDC) is.",
       "Explain who issues the Sand Dollar and what guarantees its value.",
@@ -1107,7 +1177,7 @@ export const STATIC_LESSONS_DATA: Array<{
   {
     grade_level: "static-cbdc-2", topic: "sand-dollar", title: "Why the Sand Dollar Exists",
     instructor: "Discover the financial inclusion problem the Sand Dollar was designed to solve for Bahamians on remote islands.",
-    duration: "10 min", video_url: null,
+    duration: "10 min", video_url: "https://www.youtube.com/watch?v=oFdiTFsknA8",
     objectives: [
       "Explain what 'financial inclusion' means and why it matters.",
       "Describe the geographic challenge that motivated the creation of the Sand Dollar.",
@@ -1128,7 +1198,7 @@ export const STATIC_LESSONS_DATA: Array<{
   {
     grade_level: "static-cbdc-3", topic: "sand-dollar", title: "Using Your Sand Dollar Wallet",
     instructor: "Learn how to set up a Sand Dollar wallet, the two account tiers, and how to pay using QR codes.",
-    duration: "12 min", video_url: null,
+    duration: "12 min", video_url: "https://www.youtube.com/watch?v=uTcBmx0NPuQ",
     objectives: [
       "Describe the two tiers of Sand Dollar wallet accounts and their limits.",
       "Explain how QR code payments work in practice.",
@@ -1158,6 +1228,10 @@ export const STATIC_LESSONS_DATA: Array<{
     content_sections: [
       { heading: "What They Have in Common", body: "Both the Sand Dollar and cryptocurrencies like Bitcoin exist entirely in digital form. Neither is printed on paper or minted as a coin. Both can be sent from one person to another using a smartphone, and both use digital ledgers to record transactions.\n\nBecause they share these surface-level features, many people assume they are the same thing. They are not. The differences between them are actually more important than the similarities.", examples: ["Both are digital: no physical coins or notes", "Both use digital ledgers to record transfers", "Both can be sent using a smartphone"] },
       { heading: "Key Differences: Who Issues It and What It Is Worth", body: "The most important difference is who is responsible for the currency and what backs its value.\n\nThe Sand Dollar is issued by the Central Bank of The Bahamas, a government institution. It is always worth exactly B$1.00. Its value is stable because the government guarantees it, the same way physical cash is guaranteed.\n\nBitcoin is issued by no one. It is a decentralized system controlled by a global network of computers, with no government or institution behind it. Its price changes every second based on supply and demand. Bitcoin has lost more than 50% of its value in a matter of weeks before, and it has also gained 200% in months. This unpredictability is called volatility.", examples: ["Sand Dollar: issued by Central Bank, always = B$1.00", "Bitcoin: no issuer, price changes every second", "Sand Dollar: stable. Bitcoin: highly volatile"] },
+      { type: "diagram", heading: "Sand Dollar vs Bitcoin at a Glance", body: "Side by side, the two kinds of digital money could not be more different.", diagram: { kind: "compare",
+        left: { title: "Sand Dollar (CBDC)", points: ["Issued by the Central Bank of The Bahamas", "Always worth exactly B$1.00", "Legal tender: must be accepted", "Made for everyday spending"] },
+        right: { title: "Bitcoin (Cryptocurrency)", points: ["No issuer: run by a global computer network", "Price changes every second", "Not legal tender: acceptance is optional", "Mostly used as a speculative investment"] },
+        note: "Both are digital, but who stands behind them and what they are worth is completely different." } },
       { heading: "Legal Status and Purpose", body: "The Sand Dollar is legal tender in The Bahamas. This means businesses and individuals are required by law to accept it as payment. It is designed specifically for everyday transactions: paying for groceries, settling bills, sending money to family.\n\nBitcoin and most other cryptocurrencies are not legal tender in The Bahamas. Businesses can choose whether to accept them, but they are under no obligation to do so. Cryptocurrencies are primarily used as speculative investments: people buy them hoping the price will rise, not to pay for groceries.\n\nThe Central Bank of The Bahamas has clearly stated that the Sand Dollar complements the physical dollar. It is not a replacement, and it is not a cryptocurrency. It is simply Bahamian money in a new digital format.", examples: ["Sand Dollar: legal tender, must be accepted", "Bitcoin: not legal tender, acceptance is optional", "Sand Dollar purpose: everyday spending. Crypto purpose: speculation"] },
     ],
     questions: [
@@ -1298,6 +1372,9 @@ export async function seedStaticModules(): Promise<void> {
 
 // ─── In-memory fallbacks (used when Supabase tables don't exist yet) ────────────
 
+// Note: static lesson video_url is always served from code (this map), never from
+// the DB column. DB-only edits to lesson_plans.video_url for static lessons will
+// not surface in the API; edit STATIC_LESSONS_DATA and restart instead.
 const STATIC_VIDEO_URLS: Record<string, string | null> = Object.fromEntries(
   STATIC_LESSONS_DATA.map(l => [l.grade_level, l.video_url])
 );

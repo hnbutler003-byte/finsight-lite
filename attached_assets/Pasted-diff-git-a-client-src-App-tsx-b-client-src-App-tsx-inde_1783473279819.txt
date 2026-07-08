@@ -1,0 +1,2297 @@
+diff --git a/client/src/App.tsx b/client/src/App.tsx
+index f7ccc5e..0222053 100644
+--- a/client/src/App.tsx
++++ b/client/src/App.tsx
+@@ -15,11 +15,7 @@ import SavingsGoals from "@/pages/SavingsGoals";
+ import InvestmentSimulator from "@/pages/InvestmentSimulator";
+ import MoneyGames from "@/pages/MoneyGames";
+ import MoneyGuide from "@/pages/MoneyGuide";
+-import MoneyLab from "@/pages/MoneyLab";
+-import MoneyLabUpload from "@/pages/MoneyLabUpload";
+-import MoneyLabPlay from "@/pages/MoneyLabPlay";
+-import MoneyLabTutor from "@/pages/MoneyLabTutor";
+-import MoneyLabLeaderboard from "@/pages/MoneyLabLeaderboard";
++import Leaderboard from "@/pages/MoneyLabLeaderboard";
+ import TeacherLogin from "@/pages/TeacherLogin";
+ import TeacherRegister from "@/pages/TeacherRegister";
+ import TeacherDashboard from "@/pages/TeacherDashboard";
+@@ -212,11 +208,7 @@ function Router() {
+       <Route path="/invest" component={InvestmentSimulator} />
+       <Route path="/games" component={MoneyGames} />
+       <Route path="/guide" component={MoneyGuide} />
+-      <Route path="/moneylab" component={MoneyLab} />
+-      <Route path="/moneylab/upload" component={MoneyLabUpload} />
+-      <Route path="/moneylab/play" component={MoneyLabPlay} />
+-      <Route path="/moneylab/tutor" component={MoneyLabTutor} />
+-      <Route path="/moneylab/leaderboard" component={MoneyLabLeaderboard} />
++      <Route path="/leaderboard" component={Leaderboard} />
+       <Route path="/lessons" component={Lessons} />
+       <Route path="/settings" component={Settings} />
+       <Route path="/transactions">{() => <Redirect to="/" />}</Route>
+diff --git a/client/src/components/GuidedTour.tsx b/client/src/components/GuidedTour.tsx
+index 72f3f11..b3b6279 100644
+--- a/client/src/components/GuidedTour.tsx
++++ b/client/src/components/GuidedTour.tsx
+@@ -38,8 +38,8 @@ const TOUR_STEPS = [
+   },
+   {
+     icon: GraduationCap,
+-    title: "MoneyLab Exams",
+-    description: "Test what you've learned with real exams, earn XP, and climb the leaderboard. Show what you know!",
++    title: "Leaderboard",
++    description: "Earn XP from lessons, quizzes, and games, then see how you stack up. Climb the leaderboard!",
+     color: "from-pink-500 to-rose-500",
+   },
+   {
+diff --git a/client/src/components/layout/Sidebar.tsx b/client/src/components/layout/Sidebar.tsx
+index 5006dbd..ac7e403 100644
+--- a/client/src/components/layout/Sidebar.tsx
++++ b/client/src/components/layout/Sidebar.tsx
+@@ -12,7 +12,7 @@ import {
+   Sparkles,
+   Gamepad2,
+   Bot,
+-  FlaskConical,
++  Trophy,
+   UsersRound,
+   X,
+   Loader2,
+@@ -52,7 +52,6 @@ const NAV_GROUPS = [
+     items: [
+       { label: "Investment Simulator", href: "/invest", icon: GraduationCap },
+       { label: "Lessons", href: "/lessons", icon: BookMarked },
+-      { label: "MoneyLab", href: "/moneylab", icon: FlaskConical },
+     ],
+   },
+   {
+@@ -60,6 +59,7 @@ const NAV_GROUPS = [
+     items: [
+       { label: "Money Games", href: "/games", icon: Gamepad2 },
+       { label: "Money Guide", href: "/guide", icon: Bot },
++      { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
+     ],
+   },
+ ];
+diff --git a/client/src/pages/DemoAccess.tsx b/client/src/pages/DemoAccess.tsx
+index 2c9e482..44ef047 100644
+--- a/client/src/pages/DemoAccess.tsx
++++ b/client/src/pages/DemoAccess.tsx
+@@ -22,7 +22,6 @@ const FEATURE_LIST = [
+   "6 interactive financial literacy modules",
+   "7 money games with real-time scoring",
+   "Investment simulator with BSD currency",
+-  "MoneyLab exam-style quiz platform",
+   "AI Money Guide chatbot",
+   "Teacher dashboard with class management",
+   "Leaderboards and XP reward system",
+diff --git a/client/src/pages/Lessons.tsx b/client/src/pages/Lessons.tsx
+index 0d714a0..ae86cba 100644
+--- a/client/src/pages/Lessons.tsx
++++ b/client/src/pages/Lessons.tsx
+@@ -1126,11 +1126,11 @@ export default function Lessons() {
+                     </div>
+                     <div className="flex-1 text-left">
+                       <p className="font-bold text-sm text-teal-800 dark:text-teal-200">Need help with this topic?</p>
+-                      <p className="text-xs text-teal-700 dark:text-teal-300 mt-0.5">Your AI Tutor can explain <span className="font-bold">{selectedLesson.title}</span> in simple steps.</p>
++                      <p className="text-xs text-teal-700 dark:text-teal-300 mt-0.5">Money Guide can explain <span className="font-bold">{selectedLesson.title}</span> in simple steps.</p>
+                     </div>
+-                    <Link href={`/moneylab/tutor?q=${encodeURIComponent(selectedLesson.title)}`}>
++                    <Link href={`/guide?q=${encodeURIComponent(selectedLesson.title)}`}>
+                       <Button size="sm" className="rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-bold shrink-0" data-testid="button-ask-ai-tutor">
+-                        Ask AI Tutor
++                        Ask Money Guide
+                       </Button>
+                     </Link>
+                   </CardContent>
+diff --git a/client/src/pages/MoneyGuide.tsx b/client/src/pages/MoneyGuide.tsx
+index 24a92c5..e01554b 100644
+--- a/client/src/pages/MoneyGuide.tsx
++++ b/client/src/pages/MoneyGuide.tsx
+@@ -2,6 +2,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
+ import { Button } from "@/components/ui/button";
+ import { useState, useRef, useEffect } from "react";
+ import { useAuth } from "@/hooks/use-auth";
++import { useSearch } from "wouter";
+ import {
+   Send, Loader2, Sparkles, Lightbulb, Target, PiggyBank,
+   TrendingUp, HelpCircle, RotateCcw, Bot, User as UserIcon
+@@ -28,6 +29,8 @@ export default function MoneyGuide() {
+   const [isStreaming, setIsStreaming] = useState(false);
+   const messagesEndRef = useRef<HTMLDivElement>(null);
+   const inputRef = useRef<HTMLInputElement>(null);
++  const search = useSearch();
++  const explainTriggeredRef = useRef(false);
+ 
+   const scrollToBottom = () => {
+     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+@@ -37,6 +40,80 @@ export default function MoneyGuide() {
+     scrollToBottom();
+   }, [messages]);
+ 
++  // Auto-triggered when a student lands here from a low quiz score
++  // (see Lessons.tsx: /guide?q=<lesson title>). Uses the dedicated
++  // explain endpoint, which has its own tuned prompt and response
++  // caching, rather than the general chat endpoint.
++  const explainTopic = async (topic: string) => {
++    const userMessage: ChatMessage = { role: "user", content: `Can you explain: ${topic}?` };
++    const assistantMessage: ChatMessage = { role: "assistant", content: "" };
++    setMessages([userMessage, assistantMessage]);
++    setIsStreaming(true);
++
++    try {
++      const response = await fetch("/api/moneylab/tutor/explain", {
++        method: "POST",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({ questionText: topic, options: null, correctAnswer: null, subject: null }),
++        credentials: "include",
++      });
++
++      if (!response.ok) {
++        let friendly = "Oops! I had a little hiccup. Try asking me again! 🤔";
++        try {
++          const data = await response.json();
++          if (data?.message) friendly = data.message;
++        } catch {}
++        setMessages([userMessage, { role: "assistant", content: friendly }]);
++        return;
++      }
++
++      const reader = response.body?.getReader();
++      const decoder = new TextDecoder();
++      let fullContent = "";
++      let buffer = "";
++
++      if (reader) {
++        while (true) {
++          const { done, value } = await reader.read();
++          if (done) break;
++          buffer += decoder.decode(value, { stream: true });
++          const parts = buffer.split("\n\n");
++          buffer = parts.pop() || "";
++          for (const part of parts) {
++            const lines = part.split("\n");
++            for (const line of lines) {
++              if (line.startsWith("data: ")) {
++                try {
++                  const data = JSON.parse(line.slice(6));
++                  if (data.content) {
++                    fullContent += data.content;
++                    setMessages([userMessage, { role: "assistant", content: fullContent }]);
++                  }
++                } catch (e) {
++                  if (!(e instanceof SyntaxError)) throw e;
++                }
++              }
++            }
++          }
++        }
++      }
++    } catch (e) {
++      setMessages([userMessage, { role: "assistant", content: "Oops! I had a little hiccup. Try asking me again! 🤔" }]);
++    } finally {
++      setIsStreaming(false);
++    }
++  };
++
++  useEffect(() => {
++    if (explainTriggeredRef.current) return;
++    const topic = new URLSearchParams(search).get("q");
++    if (topic) {
++      explainTriggeredRef.current = true;
++      explainTopic(topic);
++    }
++  }, [search]);
++
+   const sendMessage = async (content: string) => {
+     if (!content.trim() || isStreaming) return;
+ 
+@@ -266,7 +343,7 @@ export default function MoneyGuide() {
+             </Button>
+           </form>
+           <p className="text-center text-xs text-muted-foreground mt-2 font-medium">
+-            Money Guide gives educational info only, not real financial advice!
++            Money Guide is powered by Claude AI and gives educational info only, not real financial advice. Always double-check with your teacher!
+           </p>
+         </div>
+         </div>
+diff --git a/client/src/pages/MoneyLab.tsx b/client/src/pages/MoneyLab.tsx
+deleted file mode 100644
+index 3ad74eb..0000000
+--- a/client/src/pages/MoneyLab.tsx
++++ /dev/null
+@@ -1,176 +0,0 @@
+-import { Sidebar } from "@/components/layout/Sidebar";
+-import { Card, CardContent } from "@/components/ui/card";
+-import { useAuth } from "@/hooks/use-auth";
+-import { useQuery } from "@tanstack/react-query";
+-import { Link } from "wouter";
+-import {
+-  Upload, Gamepad2, GraduationCap, Trophy, Flame, Star, Zap, Award,
+-  BookOpen, Target, Sparkles, ChevronRight
+-} from "lucide-react";
+-
+-const BADGE_INFO: Record<string, { label: string; Icon: typeof Star; color: string }> = {
+-  first_game: { label: "First Steps", Icon: Star, color: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" },
+-  ten_games: { label: "Game Veteran", Icon: Gamepad2, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
+-  perfect_score: { label: "Perfect Score", Icon: Target, color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300" },
+-  streak_3: { label: "On Fire", Icon: Flame, color: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300" },
+-  streak_7: { label: "Week Warrior", Icon: Flame, color: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300" },
+-  level_5: { label: "Rising Star", Icon: Star, color: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300" },
+-  level_10: { label: "Money Master", Icon: Trophy, color: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
+-  xp_500: { label: "XP Hunter", Icon: Zap, color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300" },
+-  xp_1000: { label: "XP Legend", Icon: Trophy, color: "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300" },
+-  challenge_win: { label: "Challenge Champion", Icon: Award, color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300" },
+-  speed_demon: { label: "Speed Demon", Icon: Zap, color: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300" },
+-};
+-
+-const SECTIONS = [
+-  {
+-    label: "Upload Past Paper",
+-    href: "/moneylab/upload",
+-    icon: Upload,
+-    color: "from-blue-500 to-cyan-500",
+-    shadow: "shadow-blue-300/50 dark:shadow-blue-900/50",
+-    desc: "Upload PDF or images of exam papers",
+-    bg: "bg-blue-50 dark:bg-blue-950/20",
+-  },
+-  {
+-    label: "Play Exam Game",
+-    href: "/moneylab/play",
+-    icon: Gamepad2,
+-    color: "from-green-500 to-emerald-500",
+-    shadow: "shadow-green-300/50 dark:shadow-green-900/50",
+-    desc: "Quiz, Timed & Challenge modes",
+-    bg: "bg-green-50 dark:bg-green-950/20",
+-  },
+-  {
+-    label: "AI Tutor",
+-    href: "/moneylab/tutor",
+-    icon: GraduationCap,
+-    color: "from-violet-500 to-purple-500",
+-    shadow: "shadow-violet-300/50 dark:shadow-violet-900/50",
+-    desc: "Get AI explanations for questions",
+-    bg: "bg-violet-50 dark:bg-violet-950/20",
+-  },
+-  {
+-    label: "Leaderboards",
+-    href: "/moneylab/leaderboard",
+-    icon: Trophy,
+-    color: "from-amber-500 to-orange-500",
+-    shadow: "shadow-amber-300/50 dark:shadow-amber-900/50",
+-    desc: "See who's on top!",
+-    bg: "bg-amber-50 dark:bg-amber-950/20",
+-  },
+-];
+-
+-export default function MoneyLab() {
+-  const { user } = useAuth();
+-
+-  const { data: xpData } = useQuery<{
+-    xp: { totalXp: number; level: number; currentStreak: number; longestStreak: number };
+-    badges: { badgeId: string }[];
+-    totalGames: number;
+-  }>({
+-    queryKey: ["/api/moneylab/xp"],
+-  });
+-
+-  const xp = xpData?.xp;
+-  const badges = xpData?.badges || [];
+-  const xpProgress = xp ? (xp.totalXp % 100) : 0;
+-
+-  return (
+-    <div className="flex min-h-screen caribbean-bg">
+-      <Sidebar />
+-      <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+-        <div className="max-w-5xl mx-auto space-y-8">
+-          <div className="text-center space-y-3">
+-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 flex items-center justify-center mx-auto shadow-xl shadow-teal-300/50 dark:shadow-teal-900/50">
+-              <span className="text-4xl">🧪</span>
+-            </div>
+-            <h1 className="font-display text-3xl lg:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500" data-testid="text-moneylab-title">
+-              MoneyLab
+-            </h1>
+-            <p className="text-white/75 max-w-md mx-auto">
+-              Upload past exam papers, play quiz games, and become a commerce champion!
+-            </p>
+-          </div>
+-
+-          {xp && (
+-            <Card className="glass-card rounded-glass overflow-hidden">
+-              <CardContent className="p-6">
+-                <div className="flex flex-wrap items-center gap-6">
+-                  <div className="flex items-center gap-3">
+-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+-                      {xp.level}
+-                    </div>
+-                    <div>
+-                      <p className="text-sm font-bold text-muted-foreground">Level {xp.level}</p>
+-                      <span className="xp-pill">{xp.totalXp} XP</span>
+-                    </div>
+-                  </div>
+-
+-                  <div className="flex-1 min-w-[200px]">
+-                    <div className="flex justify-between text-xs font-semibold text-muted-foreground mb-1">
+-                      <span>Progress to Level {xp.level + 1}</span>
+-                      <span>{xpProgress}/100 XP</span>
+-                    </div>
+-                    <div className="xp-bar-track">
+-                      <div
+-                        className="xp-bar-fill"
+-                        style={{ width: `${xpProgress}%` }}
+-                        data-testid="xp-progress-bar"
+-                      />
+-                    </div>
+-                  </div>
+-
+-                  <div className="flex items-center gap-4">
+-                    <span className="streak-badge">
+-                      <Flame className="w-4 h-4" />
+-                      {xp.currentStreak} day{xp.currentStreak !== 1 ? "s" : ""}
+-                    </span>
+-                    <div className="flex items-center gap-1.5 text-blue-500">
+-                      <Gamepad2 className="w-5 h-5" />
+-                      <span className="font-bold">{xpData?.totalGames || 0} games</span>
+-                    </div>
+-                  </div>
+-                </div>
+-
+-                {badges.length > 0 && (
+-                  <div className="mt-4 flex flex-wrap gap-2">
+-                    {badges.map((b) => {
+-                      const info = BADGE_INFO[b.badgeId];
+-                      if (!info) return null;
+-                      const BadgeIcon = info.Icon;
+-                      return (
+-                        <span key={b.badgeId} className={`badge-coral flex items-center gap-1`} data-testid={`badge-${b.badgeId}`}>
+-                          <BadgeIcon className="w-3.5 h-3.5 flex-shrink-0" /> {info.label}
+-                        </span>
+-                      );
+-                    })}
+-                  </div>
+-                )}
+-              </CardContent>
+-            </Card>
+-          )}
+-
+-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+-            {SECTIONS.map((s) => (
+-              <Link key={s.href} href={s.href}>
+-                <Card className={`glass-card rounded-glass transition-all hover:scale-[1.02] hover:shadow-lg cursor-pointer`} data-testid={`card-${s.label.toLowerCase().replace(/\s+/g, "-")}`}>
+-                  <CardContent className="p-6 flex items-center gap-4">
+-                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${s.color} flex items-center justify-center text-white shadow-lg ${s.shadow} shrink-0`}>
+-                      <s.icon className="w-7 h-7" />
+-                    </div>
+-                    <div className="flex-1">
+-                      <h3 className="font-display font-bold text-lg">{s.label}</h3>
+-                      <p className="text-sm text-muted-foreground">{s.desc}</p>
+-                    </div>
+-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+-                  </CardContent>
+-                </Card>
+-              </Link>
+-            ))}
+-          </div>
+-        </div>
+-      </main>
+-    </div>
+-  );
+-}
+diff --git a/client/src/pages/MoneyLabLeaderboard.tsx b/client/src/pages/MoneyLabLeaderboard.tsx
+index 66d26d9..544a445 100644
+--- a/client/src/pages/MoneyLabLeaderboard.tsx
++++ b/client/src/pages/MoneyLabLeaderboard.tsx
+@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
+ import { useState } from "react";
+ import { useQuery } from "@tanstack/react-query";
+ import { Link } from "wouter";
+-import { ArrowLeft, Trophy, Medal, Crown, Loader2 } from "lucide-react";
++import { Trophy, Medal, Crown, Loader2 } from "lucide-react";
+ 
+ const AVATAR_EMOJIS: Record<string, string> = {
+   lion: "🦁", dolphin: "🐬", parrot: "🦜", turtle: "🐢",
+@@ -49,17 +49,12 @@ export default function MoneyLabLeaderboard() {
+       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+         <div className="max-w-2xl mx-auto space-y-6">
+           <div className="flex items-center gap-3">
+-            <Link href="/moneylab">
+-              <Button variant="outline" size="icon" className="rounded-2xl border-2" data-testid="button-back">
+-                <ArrowLeft className="w-4 h-4" />
+-              </Button>
+-            </Link>
+             <div className="flex-1">
+               <h1 className="font-display text-2xl font-bold flex items-center gap-2" data-testid="text-leaderboard-title">
+                 <Trophy className="w-6 h-6 text-amber-500" />
+                 Leaderboard
+               </h1>
+-              <p className="text-sm text-muted-foreground">Top MoneyLab players</p>
++              <p className="text-sm text-muted-foreground">Top players across lessons, quizzes, and games</p>
+             </div>
+           </div>
+ 
+@@ -92,7 +87,7 @@ export default function MoneyLabLeaderboard() {
+                 <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-30" />
+                 <p className="text-lg font-bold">No games played yet</p>
+                 <p className="text-muted-foreground mt-1">Be the first to get on the leaderboard!</p>
+-                <Link href="/moneylab/play">
++                <Link href="/games">
+                   <Button className="mt-4 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 font-bold" data-testid="button-play-now">
+                     Play Now
+                   </Button>
+diff --git a/client/src/pages/MoneyLabPlay.tsx b/client/src/pages/MoneyLabPlay.tsx
+deleted file mode 100644
+index bcfc2aa..0000000
+--- a/client/src/pages/MoneyLabPlay.tsx
++++ /dev/null
+@@ -1,420 +0,0 @@
+-import { Sidebar } from "@/components/layout/Sidebar";
+-import { Card, CardContent } from "@/components/ui/card";
+-import { Button } from "@/components/ui/button";
+-import { useState, useEffect, useCallback } from "react";
+-import { useQuery, useMutation } from "@tanstack/react-query";
+-import { Link } from "wouter";
+-import {
+-  ArrowLeft, Gamepad2, Clock, Zap, Play, CheckCircle2, XCircle,
+-  Trophy, Flame, Star, Award, Loader2, ChevronRight, Timer
+-} from "lucide-react";
+-import { apiRequest } from "@/lib/queryClient";
+-
+-type GameMode = "quiz" | "timed" | "challenge";
+-type GameState = "select" | "mode" | "playing" | "results";
+-
+-interface Question {
+-  id: number;
+-  questionText: string;
+-  options: string[];
+-  correctAnswer: string;
+-  subject: string | null;
+-  difficulty: string | null;
+-}
+-
+-const MODE_INFO = {
+-  quiz: { label: "Quiz Mode", icon: Gamepad2, color: "from-green-500 to-emerald-500", desc: "No time pressure. Learn at your pace.", emoji: "📝" },
+-  timed: { label: "Timed Exam", icon: Clock, color: "from-blue-500 to-cyan-500", desc: "30 seconds per question. Beat the clock!", emoji: "⏱️" },
+-  challenge: { label: "Challenge Mode", icon: Zap, color: "from-orange-500 to-red-500", desc: "Streak scoring + speed bonus. Go fast!", emoji: "🔥" },
+-};
+-
+-export default function MoneyLabPlay() {
+-  const [gameState, setGameState] = useState<GameState>("select");
+-  const [selectedPaperId, setSelectedPaperId] = useState<number | null>(null);
+-  const [mode, setMode] = useState<GameMode>("quiz");
+-  const [questions, setQuestions] = useState<Question[]>([]);
+-  const [currentIndex, setCurrentIndex] = useState(0);
+-  const [score, setScore] = useState(0);
+-  const [correctCount, setCorrectCount] = useState(0);
+-  const [answers, setAnswers] = useState<(string | null)[]>([]);
+-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+-  const [showResult, setShowResult] = useState(false);
+-  const [timer, setTimer] = useState(30);
+-  const [streak, setStreak] = useState(0);
+-  const [startTime, setStartTime] = useState(Date.now());
+-  const [gameResults, setGameResults] = useState<any>(null);
+-
+-  const { data: papers, isLoading: papersLoading } = useQuery<any[]>({
+-    queryKey: ["/api/moneylab/papers"],
+-  });
+-
+-  const submitMutation = useMutation({
+-    mutationFn: async (data: any) => {
+-      const res = await apiRequest("POST", "/api/moneylab/games/submit", data);
+-      return res.json();
+-    },
+-  });
+-
+-  // Timer for timed & challenge modes
+-  useEffect(() => {
+-    if (gameState !== "playing" || mode === "quiz" || showResult) return;
+-    if (timer <= 0) {
+-      handleAnswer(null);
+-      return;
+-    }
+-    const interval = setInterval(() => setTimer((t) => t - 1), 1000);
+-    return () => clearInterval(interval);
+-  }, [gameState, mode, timer, showResult]);
+-
+-  const startGame = async (paperId: number, selectedMode: GameMode) => {
+-    try {
+-      const res = await fetch(`/api/moneylab/papers/${paperId}`, { credentials: "include" });
+-      const data = await res.json();
+-      if (data.questions?.length > 0) {
+-        const shuffled = [...data.questions].sort(() => Math.random() - 0.5);
+-        setQuestions(shuffled.slice(0, 20));
+-        setMode(selectedMode);
+-        setCurrentIndex(0);
+-        setScore(0);
+-        setCorrectCount(0);
+-        setAnswers([]);
+-        setSelectedAnswer(null);
+-        setShowResult(false);
+-        setStreak(0);
+-        setTimer(selectedMode === "challenge" ? 15 : 30);
+-        setStartTime(Date.now());
+-        setGameState("playing");
+-      }
+-    } catch (e) {
+-      console.error("Failed to load questions:", e);
+-    }
+-  };
+-
+-  const handleAnswer = useCallback((answer: string | null) => {
+-    if (showResult) return;
+-    setSelectedAnswer(answer);
+-    setShowResult(true);
+-
+-    const q = questions[currentIndex];
+-    const isCorrect = answer === q.correctAnswer;
+-
+-    let pts = 0;
+-    if (isCorrect) {
+-      pts = 10;
+-      if (mode === "challenge") {
+-        pts += streak * 5 + Math.max(0, timer);
+-      } else if (mode === "timed") {
+-        pts += Math.max(0, timer);
+-      }
+-      setScore((s) => s + pts);
+-      setCorrectCount((c) => c + 1);
+-      setStreak((s) => s + 1);
+-    } else {
+-      setStreak(0);
+-    }
+-
+-    setAnswers((prev) => [...prev, answer]);
+-
+-    setTimeout(() => {
+-      if (currentIndex < questions.length - 1) {
+-        setCurrentIndex((i) => i + 1);
+-        setSelectedAnswer(null);
+-        setShowResult(false);
+-        setTimer(mode === "challenge" ? 15 : 30);
+-      } else {
+-        finishGame(pts, isCorrect);
+-      }
+-    }, 1500);
+-  }, [showResult, questions, currentIndex, mode, streak, timer]);
+-
+-  const finishGame = async (lastCorrectPts: number, lastWasCorrect: boolean) => {
+-    const finalCorrect = correctCount + (lastWasCorrect ? 1 : 0);
+-    const finalScore = score + lastCorrectPts;
+-    const timeSpent = Math.round((Date.now() - startTime) / 1000);
+-
+-    const result = await submitMutation.mutateAsync({
+-      paperId: selectedPaperId,
+-      mode,
+-      score: finalScore,
+-      totalQuestions: questions.length,
+-      correctAnswers: finalCorrect,
+-      timeSpent,
+-    });
+-
+-    setGameResults({ ...result, finalScore, finalCorrect, totalQ: questions.length });
+-    setGameState("results");
+-  };
+-
+-  const currentQuestion = questions[currentIndex];
+-
+-  return (
+-    <div className="flex min-h-screen caribbean-bg">
+-      <Sidebar />
+-      <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+-        <div className="max-w-3xl mx-auto">
+-          {gameState === "select" && (
+-            <div className="space-y-6">
+-              <div className="flex items-center gap-3">
+-                <Link href="/moneylab">
+-                  <Button variant="outline" size="icon" className="rounded-2xl border-2" data-testid="button-back">
+-                    <ArrowLeft className="w-4 h-4" />
+-                  </Button>
+-                </Link>
+-                <div>
+-                  <h1 className="font-display text-2xl font-bold" data-testid="text-play-title">Play Exam Game</h1>
+-                  <p className="text-sm text-muted-foreground">Choose a paper to play</p>
+-                </div>
+-              </div>
+-
+-              {papersLoading ? (
+-                <div className="text-center py-12"><Loader2 className="w-8 h-8 animate-spin mx-auto text-muted-foreground" /></div>
+-              ) : !papers?.length ? (
+-                <Card className="rounded-3xl border-2 border-dashed">
+-                  <CardContent className="p-8 text-center">
+-                    <p className="text-lg font-bold">No papers available yet</p>
+-                    <p className="text-muted-foreground mt-1">Upload a past paper first to start playing!</p>
+-                    <Link href="/moneylab/upload">
+-                      <Button className="mt-4 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500" data-testid="button-go-upload">
+-                        Upload Paper
+-                      </Button>
+-                    </Link>
+-                  </CardContent>
+-                </Card>
+-              ) : (
+-                <div className="space-y-3">
+-                  {papers.map((paper: any) => (
+-                    <Card
+-                      key={paper.id}
+-                      className="rounded-2xl border-2 hover:border-teal-200 dark:hover:border-teal-800 cursor-pointer transition-all hover:scale-[1.01]"
+-                      onClick={() => { setSelectedPaperId(paper.id); setGameState("mode"); }}
+-                      data-testid={`paper-select-${paper.id}`}
+-                    >
+-                      <CardContent className="p-4 flex items-center gap-4">
+-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white font-bold shadow-md text-lg shrink-0">
+-                          {paper.questionCount}
+-                        </div>
+-                        <div className="flex-1 min-w-0">
+-                          <p className="font-bold break-words">{paper.title}</p>
+-                          <p className="text-sm text-muted-foreground">{paper.subject} · {paper.questionCount} questions</p>
+-                        </div>
+-                        <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
+-                      </CardContent>
+-                    </Card>
+-                  ))}
+-                </div>
+-              )}
+-            </div>
+-          )}
+-
+-          {gameState === "mode" && (
+-            <div className="space-y-6">
+-              <div className="flex items-center gap-3">
+-                <Button variant="outline" size="icon" className="rounded-2xl border-2" onClick={() => setGameState("select")} data-testid="button-back-mode">
+-                  <ArrowLeft className="w-4 h-4" />
+-                </Button>
+-                <div>
+-                  <h1 className="font-display text-2xl font-bold">Choose Game Mode</h1>
+-                  <p className="text-sm text-muted-foreground">How do you want to play?</p>
+-                </div>
+-              </div>
+-
+-              <div className="grid gap-4">
+-                {(Object.entries(MODE_INFO) as [GameMode, typeof MODE_INFO.quiz][]).map(([key, info]) => (
+-                  <Card
+-                    key={key}
+-                    className="rounded-2xl border-2 hover:border-teal-200 dark:hover:border-teal-800 cursor-pointer transition-all hover:scale-[1.02]"
+-                    onClick={() => startGame(selectedPaperId!, key)}
+-                    data-testid={`mode-${key}`}
+-                  >
+-                    <CardContent className="p-6 flex items-center gap-4">
+-                      <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${info.color} flex items-center justify-center text-3xl shadow-lg`}>
+-                        {info.emoji}
+-                      </div>
+-                      <div className="flex-1">
+-                        <h3 className="font-display font-bold text-lg">{info.label}</h3>
+-                        <p className="text-sm text-muted-foreground">{info.desc}</p>
+-                      </div>
+-                      <Play className="w-6 h-6 text-muted-foreground" />
+-                    </CardContent>
+-                  </Card>
+-                ))}
+-              </div>
+-            </div>
+-          )}
+-
+-          {gameState === "playing" && currentQuestion && (
+-            <div className="space-y-6">
+-              <div className="flex flex-wrap items-center justify-between gap-2">
+-                <div className="flex items-center gap-2 sm:gap-3">
+-                  <span className="text-sm font-bold text-muted-foreground whitespace-nowrap">
+-                    Q{currentIndex + 1}/{questions.length}
+-                  </span>
+-                  <div className="h-2 w-20 sm:w-32 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+-                    <div
+-                      className="h-full bg-gradient-to-r from-teal-400 to-cyan-500 rounded-full transition-all"
+-                      style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+-                    />
+-                  </div>
+-                </div>
+-                <div className="flex items-center gap-3 sm:gap-4">
+-                  {mode !== "quiz" && (
+-                    <div className={`flex items-center gap-1.5 font-bold ${timer <= 5 ? "text-red-500 animate-pulse" : "text-blue-500"}`}>
+-                      <Timer className="w-4 h-4" />
+-                      {timer}s
+-                    </div>
+-                  )}
+-                  {mode === "challenge" && streak > 0 && (
+-                    <div className="flex items-center gap-1 text-orange-500 font-bold">
+-                      <Flame className="w-4 h-4" />
+-                      {streak}x
+-                    </div>
+-                  )}
+-                  <div className="flex items-center gap-1 text-amber-500 font-bold">
+-                    <Star className="w-4 h-4" />
+-                    {score}
+-                  </div>
+-                </div>
+-              </div>
+-
+-              <Card className="glass-card rounded-glass">
+-                <CardContent className="p-6 lg:p-8">
+-                  <div className="mb-2 flex gap-2">
+-                    {currentQuestion.subject && (
+-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300">
+-                        {currentQuestion.subject}
+-                      </span>
+-                    )}
+-                    {currentQuestion.difficulty && (
+-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+-                        currentQuestion.difficulty === "easy" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" :
+-                        currentQuestion.difficulty === "hard" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" :
+-                        "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+-                      }`}>
+-                        {currentQuestion.difficulty}
+-                      </span>
+-                    )}
+-                  </div>
+-                  <h2 className="text-lg font-bold leading-relaxed" data-testid="text-question">
+-                    {currentQuestion.questionText}
+-                  </h2>
+-                </CardContent>
+-              </Card>
+-
+-              <div className="grid gap-3">
+-                {currentQuestion.options.map((opt, i) => {
+-                  const letter = String.fromCharCode(65 + i);
+-                  const isSelected = selectedAnswer === opt;
+-                  const isCorrect = opt === currentQuestion.correctAnswer;
+-                  let borderClass = "border-gray-200 dark:border-gray-700 hover:border-teal-400 hover:scale-[1.01]";
+-                  if (showResult) {
+-                    if (isCorrect) borderClass = "border-green-500 bg-green-50 dark:bg-green-950/30 scale-[1.01]";
+-                    else if (isSelected && !isCorrect) borderClass = "border-red-500 bg-red-50 dark:bg-red-950/30";
+-                    else borderClass = "border-gray-200 dark:border-gray-700 opacity-60";
+-                  }
+-
+-                  return (
+-                    <button
+-                      key={i}
+-                      onClick={() => !showResult && handleAnswer(opt)}
+-                      disabled={showResult}
+-                      className={`w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center gap-3 ${borderClass}`}
+-                      data-testid={`option-${i}`}
+-                    >
+-                      <span className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm ${
+-                        showResult && isCorrect ? "bg-green-500 text-white" :
+-                        showResult && isSelected ? "bg-red-500 text-white" :
+-                        "bg-gray-100 dark:bg-gray-800"
+-                      }`}>
+-                        {showResult && isCorrect ? <CheckCircle2 className="w-4 h-4" /> :
+-                         showResult && isSelected ? <XCircle className="w-4 h-4" /> : letter}
+-                      </span>
+-                      <span className="font-medium text-sm min-w-0 break-words">{opt}</span>
+-                    </button>
+-                  );
+-                })}
+-              </div>
+-            </div>
+-          )}
+-
+-          {gameState === "results" && gameResults && (
+-            <div className="space-y-6 text-center animate-bounce-in">
+-              <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto shadow-xl text-5xl">
+-                {gameResults.finalCorrect >= gameResults.totalQ * 0.8 ? "🏆" :
+-                 gameResults.finalCorrect >= gameResults.totalQ * 0.5 ? "⭐" : "💪"}
+-              </div>
+-              <h1 className="font-display text-3xl font-bold">Game Over!</h1>
+-
+-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+-                <Card className="glass-card rounded-glass">
+-                  <CardContent className="p-4 text-center">
+-                    <p className="text-2xl font-bold text-amber-600">{gameResults.finalScore}</p>
+-                    <p className="text-xs font-bold text-muted-foreground">Score</p>
+-                  </CardContent>
+-                </Card>
+-                <Card className="glass-card rounded-glass">
+-                  <CardContent className="p-4 text-center">
+-                    <p className="text-2xl font-bold text-green-600">{gameResults.finalCorrect}/{gameResults.totalQ}</p>
+-                    <p className="text-xs font-bold text-muted-foreground">Correct</p>
+-                  </CardContent>
+-                </Card>
+-                <Card className="glass-card rounded-glass">
+-                  <CardContent className="p-4 text-center">
+-                    <span className="xp-pill text-lg">+{gameResults.xpEarned} XP</span>
+-                    <p className="text-xs font-bold text-muted-foreground mt-1">XP Earned</p>
+-                  </CardContent>
+-                </Card>
+-                <Card className="glass-card rounded-glass">
+-                  <CardContent className="p-4 text-center">
+-                    <p className="text-2xl font-bold text-blue-600">Lv.{gameResults.level}</p>
+-                    <p className="text-xs font-bold text-muted-foreground">Level</p>
+-                  </CardContent>
+-                </Card>
+-              </div>
+-
+-              {gameResults.streak > 0 && (
+-                <div className="flex items-center justify-center gap-2 text-orange-500 font-bold">
+-                  <Flame className="w-5 h-5" />
+-                  {gameResults.streak} day streak!
+-                </div>
+-              )}
+-
+-              {gameResults.newBadges?.length > 0 && (
+-                <Card className="glass-card-coral rounded-glass">
+-                  <CardContent className="p-4">
+-                    <p className="font-bold mb-2 flex items-center justify-center gap-1 text-foreground">
+-                      <Award className="w-4 h-4 text-orange-500" /> New Badge{gameResults.newBadges.length > 1 ? "s" : ""}!
+-                    </p>
+-                    <div className="flex flex-wrap justify-center gap-2">
+-                      {gameResults.newBadges.map((id: string) => (
+-                        <span key={id} className="badge-coral">
+-                          {id.replace(/_/g, " ")}
+-                        </span>
+-                      ))}
+-                    </div>
+-                  </CardContent>
+-                </Card>
+-              )}
+-
+-              <div className="flex gap-3 justify-center">
+-                <Button
+-                  onClick={() => setGameState("select")}
+-                  variant="outline"
+-                  className="rounded-2xl border-2 font-bold"
+-                  data-testid="button-play-again"
+-                >
+-                  Play Again
+-                </Button>
+-                <Link href="/moneylab/leaderboard">
+-                  <Button className="rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 font-bold" data-testid="button-leaderboard">
+-                    <Trophy className="w-4 h-4 mr-2" />
+-                    Leaderboard
+-                  </Button>
+-                </Link>
+-              </div>
+-            </div>
+-          )}
+-        </div>
+-      </main>
+-    </div>
+-  );
+-}
+diff --git a/client/src/pages/MoneyLabTutor.tsx b/client/src/pages/MoneyLabTutor.tsx
+deleted file mode 100644
+index 56b01a3..0000000
+--- a/client/src/pages/MoneyLabTutor.tsx
++++ /dev/null
+@@ -1,366 +0,0 @@
+-import { Sidebar } from "@/components/layout/Sidebar";
+-import { Card, CardContent } from "@/components/ui/card";
+-import { Button } from "@/components/ui/button";
+-import { useState, useEffect } from "react";
+-import { useQuery } from "@tanstack/react-query";
+-import { Link, useSearch } from "wouter";
+-import {
+-  ArrowLeft, GraduationCap, Loader2, BookOpen, Sparkles, ChevronRight, Info, Search, Send
+-} from "lucide-react";
+-
+-export default function MoneyLabTutor() {
+-  const [selectedPaperId, setSelectedPaperId] = useState<number | null>(null);
+-  const [selectedQuestion, setSelectedQuestion] = useState<any>(null);
+-  const [explanation, setExplanation] = useState("");
+-  const [isExplaining, setIsExplaining] = useState(false);
+-  const [freeQuestion, setFreeQuestion] = useState("");
+-  const search = useSearch();
+-  useEffect(() => {
+-    if (search) {
+-      const topic = new URLSearchParams(search).get("q");
+-      if (topic) setFreeQuestion(topic);
+-    }
+-  }, [search]);
+-
+-  const { data: papers, isLoading: papersLoading } = useQuery<any[]>({
+-    queryKey: ["/api/moneylab/papers"],
+-  });
+-
+-  const { data: paperData } = useQuery<{ paper: any; questions: any[] }>({
+-    queryKey: ["/api/moneylab/papers", selectedPaperId],
+-    enabled: !!selectedPaperId,
+-  });
+-
+-  const explainQuestion = async (question: any) => {
+-    setSelectedQuestion(question);
+-    setExplanation("");
+-    setIsExplaining(true);
+-
+-    try {
+-      const response = await fetch("/api/moneylab/tutor/explain", {
+-        method: "POST",
+-        headers: { "Content-Type": "application/json" },
+-        body: JSON.stringify({
+-          questionText: question.questionText,
+-          options: question.options,
+-          correctAnswer: question.correctAnswer,
+-          subject: question.subject,
+-        }),
+-        credentials: "include",
+-      });
+-
+-      if (!response.ok) {
+-        let friendly = "Oops! Could not get an explanation right now. Try again!";
+-        try {
+-          const data = await response.json();
+-          if (data?.message) friendly = data.message;
+-        } catch {}
+-        setExplanation(friendly);
+-        return;
+-      }
+-
+-      const reader = response.body?.getReader();
+-      const decoder = new TextDecoder();
+-      let fullContent = "";
+-      let buffer = "";
+-
+-      if (reader) {
+-        while (true) {
+-          const { done, value } = await reader.read();
+-          if (done) break;
+-          buffer += decoder.decode(value, { stream: true });
+-          const parts = buffer.split("\n\n");
+-          buffer = parts.pop() || "";
+-          for (const part of parts) {
+-            const lines = part.split("\n");
+-            for (const line of lines) {
+-              if (line.startsWith("data: ")) {
+-                try {
+-                  const data = JSON.parse(line.slice(6));
+-                  if (data.content) {
+-                    fullContent += data.content;
+-                    setExplanation(fullContent);
+-                  }
+-                } catch (e) {
+-                  if (!(e instanceof SyntaxError)) throw e;
+-                }
+-              }
+-            }
+-          }
+-        }
+-      }
+-    } catch (e) {
+-      setExplanation("Oops! Could not get an explanation right now. Try again!");
+-    } finally {
+-      setIsExplaining(false);
+-    }
+-  };
+-
+-  return (
+-    <div className="flex min-h-screen caribbean-bg">
+-      <Sidebar />
+-      <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+-        <div className="max-w-3xl mx-auto space-y-6">
+-          <div className="flex items-center gap-3">
+-            <Link href="/moneylab">
+-              <Button variant="outline" size="icon" className="rounded-2xl border-2" data-testid="button-back">
+-                <ArrowLeft className="w-4 h-4" />
+-              </Button>
+-            </Link>
+-            <div>
+-              <h1 className="font-display text-2xl font-bold" data-testid="text-tutor-title">AI Tutor</h1>
+-              <p className="text-sm text-muted-foreground">Get simple explanations for any question</p>
+-            </div>
+-          </div>
+-
+-          <Card className="glass-card rounded-glass">
+-            <CardContent className="p-6 space-y-3">
+-              <div className="flex items-center gap-2">
+-                <Search className="w-5 h-5 text-violet-500" />
+-                <h2 className="font-display font-bold text-lg">Ask Any Question</h2>
+-              </div>
+-              <p className="text-sm text-muted-foreground">Type or paste any question and the AI Tutor will explain it for you</p>
+-              <form
+-                onSubmit={(e) => {
+-                  e.preventDefault();
+-                  if (!freeQuestion.trim() || isExplaining) return;
+-                  const q = {
+-                    questionText: freeQuestion.trim(),
+-                    options: null,
+-                    correctAnswer: null,
+-                    subject: null,
+-                  };
+-                  setSelectedPaperId(null);
+-                  explainQuestion(q);
+-                  setFreeQuestion("");
+-                }}
+-                className="flex gap-3"
+-              >
+-                <textarea
+-                  value={freeQuestion}
+-                  onChange={(e) => setFreeQuestion(e.target.value)}
+-                  placeholder="e.g. What is the difference between a balance sheet and an income statement?"
+-                  disabled={isExplaining}
+-                  rows={2}
+-                  className="flex-1 rounded-2xl border-2 border-violet-200 dark:border-violet-700 bg-card px-4 py-3 text-sm font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 disabled:opacity-50 resize-none"
+-                  data-testid="input-free-question"
+-                  onKeyDown={(e) => {
+-                    if (e.key === "Enter" && !e.shiftKey) {
+-                      e.preventDefault();
+-                      e.currentTarget.form?.requestSubmit();
+-                    }
+-                  }}
+-                />
+-                <Button
+-                  type="submit"
+-                  disabled={!freeQuestion.trim() || isExplaining}
+-                  className="rounded-2xl px-5 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 shadow-lg self-end"
+-                  data-testid="button-ask"
+-                >
+-                  {isExplaining ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+-                </Button>
+-              </form>
+-            </CardContent>
+-          </Card>
+-
+-          {selectedQuestion && !selectedPaperId ? (
+-            <div className="space-y-4">
+-              <Card className="glass-card rounded-glass">
+-                <CardContent className="p-6">
+-                  <h3 className="font-bold text-lg text-foreground break-words">{selectedQuestion.questionText}</h3>
+-                  {selectedQuestion.options && (
+-                    <div className="space-y-1.5 mt-3">
+-                      {selectedQuestion.options.map((opt: string, i: number) => (
+-                        <div key={i} className={`flex items-start gap-2 text-sm break-words ${opt === selectedQuestion.correctAnswer ? "font-bold text-green-600" : "text-muted-foreground"}`}>
+-                          <span className="font-mono text-xs">{String.fromCharCode(65 + i)}.</span>
+-                          {opt}
+-                          {opt === selectedQuestion.correctAnswer && " ✓"}
+-                        </div>
+-                      ))}
+-                    </div>
+-                  )}
+-                </CardContent>
+-              </Card>
+-
+-              <Card className="glass-card-teal rounded-glass">
+-                <CardContent className="p-6">
+-                  <div className="flex items-center gap-2 mb-3">
+-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center">
+-                      <GraduationCap className="w-4 h-4 text-white" />
+-                    </div>
+-                    <h3 className="font-bold flex items-center gap-1 text-teal-800 dark:text-teal-200">
+-                      AI Tutor Explanation
+-                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+-                    </h3>
+-                  </div>
+-                  {isExplaining && !explanation ? (
+-                    <div className="flex items-center gap-2 text-muted-foreground">
+-                      <Loader2 className="w-4 h-4 animate-spin" />
+-                      <span className="text-sm font-medium">Thinking...</span>
+-                    </div>
+-                  ) : (
+-                    <div className="text-sm leading-relaxed whitespace-pre-wrap break-words text-foreground">{explanation}</div>
+-                  )}
+-                </CardContent>
+-              </Card>
+-
+-              <div className="rounded-2xl border-2 border-amber-200 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-950/20 p-4" data-testid="disclaimer-tutor-free">
+-                <div className="flex items-start gap-3">
+-                  <Info className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+-                  <div className="space-y-1.5">
+-                    <p className="text-sm font-bold text-amber-800 dark:text-amber-300">Where does this explanation come from?</p>
+-                    <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+-                      The AI Tutor is powered by <span className="font-bold">OpenAI's GPT-4o</span>, a large language model. 
+-                      It generates explanations based on the question text and its general knowledge. 
+-                      The AI does <span className="font-bold">not</span> pull from any official textbook, syllabus, or exam board database.
+-                      Explanations <span className="font-bold">may contain errors</span>. Always verify with your teacher or official study materials.
+-                    </p>
+-                  </div>
+-                </div>
+-              </div>
+-            </div>
+-          ) : !selectedPaperId ? (
+-            <div className="space-y-3">
+-              <div className="flex items-center gap-3 text-muted-foreground">
+-                <div className="flex-1 h-px bg-border" />
+-                <span className="text-xs font-bold uppercase tracking-wider">Or pick from uploaded papers</span>
+-                <div className="flex-1 h-px bg-border" />
+-              </div>
+-              {papersLoading ? (
+-                <div className="text-center py-8"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>
+-              ) : !papers?.length ? (
+-                <Card className="glass-card rounded-glass">
+-                  <CardContent className="p-8 text-center text-muted-foreground">
+-                    No papers available. Upload one first!
+-                  </CardContent>
+-                </Card>
+-              ) : (
+-                papers.map((paper: any) => (
+-                  <Card
+-                    key={paper.id}
+-                    className="rounded-2xl border-2 cursor-pointer hover:border-violet-200 dark:hover:border-violet-800 transition-all"
+-                    onClick={() => setSelectedPaperId(paper.id)}
+-                    data-testid={`tutor-paper-${paper.id}`}
+-                  >
+-                    <CardContent className="p-4 flex items-center gap-3">
+-                      <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
+-                        <BookOpen className="w-5 h-5 text-violet-500" />
+-                      </div>
+-                      <div className="flex-1 min-w-0">
+-                        <p className="font-bold text-sm break-words">{paper.title}</p>
+-                        <p className="text-xs text-muted-foreground">{paper.subject} · {paper.questionCount} questions</p>
+-                      </div>
+-                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+-                    </CardContent>
+-                  </Card>
+-                ))
+-              )}
+-            </div>
+-          ) : !selectedQuestion ? (
+-            <div className="space-y-3">
+-              <div className="flex items-center gap-2">
+-                <Button variant="outline" size="sm" onClick={() => { setSelectedPaperId(null); }} className="rounded-2xl border-2 text-xs font-bold">
+-                  <ArrowLeft className="w-3 h-3 mr-1" /> Back to Papers
+-                </Button>
+-              </div>
+-              <h2 className="font-bold text-lg">Select a question to explain</h2>
+-              {!paperData?.questions?.length ? (
+-                <div className="text-center py-8"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>
+-              ) : (
+-                paperData.questions.map((q: any, i: number) => (
+-                  <Card
+-                    key={q.id}
+-                    className="rounded-2xl border-2 cursor-pointer hover:border-violet-200 dark:hover:border-violet-800 transition-all"
+-                    onClick={() => explainQuestion(q)}
+-                    data-testid={`tutor-question-${q.id}`}
+-                  >
+-                    <CardContent className="p-4">
+-                      <div className="flex items-start gap-3">
+-                        <span className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-xs font-bold text-violet-600 shrink-0 mt-0.5">
+-                          {i + 1}
+-                        </span>
+-                        <div className="min-w-0">
+-                          <p className="font-medium text-sm break-words">{q.questionText}</p>
+-                          <p className="text-xs text-muted-foreground mt-1 break-words">
+-                            {q.options.join(" · ")}
+-                          </p>
+-                        </div>
+-                      </div>
+-                    </CardContent>
+-                  </Card>
+-                ))
+-              )}
+-            </div>
+-          ) : (
+-            <div className="space-y-4">
+-              <Button
+-                variant="outline"
+-                size="sm"
+-                onClick={() => { setSelectedQuestion(null); setExplanation(""); }}
+-                className="rounded-2xl border-2 text-xs font-bold"
+-              >
+-                <ArrowLeft className="w-3 h-3 mr-1" /> Back to Questions
+-              </Button>
+-
+-              <Card className="glass-card rounded-glass">
+-                <CardContent className="p-6">
+-                  <h3 className="font-bold text-lg mb-2 break-words">{selectedQuestion.questionText}</h3>
+-                  <div className="space-y-1.5 mb-3">
+-                    {selectedQuestion.options.map((opt: string, i: number) => (
+-                      <div key={i} className={`flex items-start gap-2 text-sm break-words ${opt === selectedQuestion.correctAnswer ? "font-bold text-green-600" : "text-muted-foreground"}`}>
+-                        <span className="font-mono text-xs">{String.fromCharCode(65 + i)}.</span>
+-                        {opt}
+-                        {opt === selectedQuestion.correctAnswer && " ✓"}
+-                      </div>
+-                    ))}
+-                  </div>
+-                </CardContent>
+-              </Card>
+-
+-              <Card className="glass-card-teal rounded-glass">
+-                <CardContent className="p-6">
+-                  <div className="flex items-center gap-2 mb-3">
+-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center">
+-                      <GraduationCap className="w-4 h-4 text-white" />
+-                    </div>
+-                    <h3 className="font-bold flex items-center gap-1 text-teal-800 dark:text-teal-200">
+-                      AI Tutor Explanation
+-                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+-                    </h3>
+-                  </div>
+-                  {isExplaining && !explanation ? (
+-                    <div className="flex items-center gap-2 text-muted-foreground">
+-                      <Loader2 className="w-4 h-4 animate-spin" />
+-                      <span className="text-sm font-medium">Thinking...</span>
+-                    </div>
+-                  ) : (
+-                    <div className="text-sm leading-relaxed whitespace-pre-wrap break-words text-foreground">{explanation}</div>
+-                  )}
+-                </CardContent>
+-              </Card>
+-
+-              <div className="rounded-2xl border-2 border-amber-200 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-950/20 p-4" data-testid="disclaimer-tutor">
+-                <div className="flex items-start gap-3">
+-                  <Info className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+-                  <div className="space-y-1.5">
+-                    <p className="text-sm font-bold text-amber-800 dark:text-amber-300">Where does this explanation come from?</p>
+-                    <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+-                      The AI Tutor is powered by <span className="font-bold">OpenAI's GPT-4o</span>, a large language model. 
+-                      It generates explanations based on the question text, answer choices, and its general knowledge of the subject matter. 
+-                      The AI does <span className="font-bold">not</span> pull from any official textbook, syllabus, or exam board database.
+-                    </p>
+-                    <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+-                      While explanations are designed to be helpful and educational, they <span className="font-bold">may contain errors or inaccuracies</span>. 
+-                      Always verify important information with your teacher, textbook, or official study materials. 
+-                      This tool is meant to <span className="font-bold">supplement</span> your learning, not replace your teacher or curriculum.
+-                    </p>
+-                  </div>
+-                </div>
+-              </div>
+-            </div>
+-          )}
+-        </div>
+-      </main>
+-    </div>
+-  );
+-}
+diff --git a/client/src/pages/MoneyLabUpload.tsx b/client/src/pages/MoneyLabUpload.tsx
+deleted file mode 100644
+index d737894..0000000
+--- a/client/src/pages/MoneyLabUpload.tsx
++++ /dev/null
+@@ -1,291 +0,0 @@
+-import { Sidebar } from "@/components/layout/Sidebar";
+-import { Card, CardContent } from "@/components/ui/card";
+-import { Button } from "@/components/ui/button";
+-import { useState, useRef, useEffect } from "react";
+-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+-import { Link } from "wouter";
+-import {
+-  Upload, FileText, Image, Loader2, CheckCircle2, XCircle, Trash2,
+-  ArrowLeft, BookOpen, ChevronDown
+-} from "lucide-react";
+-import { apiRequest } from "@/lib/queryClient";
+-
+-const SUBJECTS = [
+-  "Accounting", "Commerce", "Economics", "Business Studies",
+-  "Mathematics", "General Knowledge", "Social Studies", "Other"
+-];
+-
+-export default function MoneyLabUpload() {
+-  const queryClient = useQueryClient();
+-  const fileInputRef = useRef<HTMLInputElement>(null);
+-  const [title, setTitle] = useState("");
+-  const [subject, setSubject] = useState("Commerce");
+-  const [dragActive, setDragActive] = useState(false);
+-
+-  const { data: papers, isLoading } = useQuery<any[]>({
+-    queryKey: ["/api/moneylab/papers"],
+-  });
+-
+-  // Persist the active job id so a refresh / navigation away doesn't lose
+-  // the live status surface; the user can come back and still see the
+-  // current queued/processing/done/failed state.
+-  const JOB_KEY = "moneylab.activeJobId";
+-  const [activeJobId, setActiveJobIdState] = useState<number | null>(() => {
+-    if (typeof window === "undefined") return null;
+-    const v = window.localStorage.getItem(JOB_KEY);
+-    return v ? Number(v) || null : null;
+-  });
+-  const setActiveJobId = (v: number | null) => {
+-    setActiveJobIdState(v);
+-    if (typeof window !== "undefined") {
+-      if (v == null) window.localStorage.removeItem(JOB_KEY);
+-      else window.localStorage.setItem(JOB_KEY, String(v));
+-    }
+-  };
+-
+-  const uploadMutation = useMutation({
+-    mutationFn: async (file: File) => {
+-      const formData = new FormData();
+-      formData.append("file", file);
+-      formData.append("title", title || file.name.replace(/\.[^/.]+$/, ""));
+-      formData.append("subject", subject);
+-
+-      const res = await fetch("/api/moneylab/upload", {
+-        method: "POST",
+-        body: formData,
+-        credentials: "include",
+-      });
+-      if (!res.ok) throw new Error(await res.text());
+-      return res.json() as Promise<{ paper: any; jobId?: number }>;
+-    },
+-    onSuccess: (data) => {
+-      queryClient.invalidateQueries({ queryKey: ["/api/moneylab/papers"] });
+-      setTitle("");
+-      if (fileInputRef.current) fileInputRef.current.value = "";
+-      if (data?.jobId) setActiveJobId(data.jobId);
+-    },
+-  });
+-
+-  // Poll the job until it leaves the active states; refresh the papers list when done.
+-  const { data: jobStatus } = useQuery<{
+-    id: number;
+-    status: "queued" | "processing" | "completed" | "failed";
+-    attempts: number;
+-    maxAttempts: number;
+-    lastError: string | null;
+-  }>({
+-    queryKey: ["/api/jobs", activeJobId],
+-    queryFn: () => fetch(`/api/jobs/${activeJobId}`, { credentials: "include" }).then((r) => r.json()),
+-    enabled: activeJobId !== null,
+-    refetchInterval: (q) => {
+-      const s = (q.state.data as any)?.status;
+-      if (s === "completed" || s === "failed") return false;
+-      return 2000;
+-    },
+-  });
+-
+-  useEffect(() => {
+-    if (jobStatus?.status === "completed" || jobStatus?.status === "failed") {
+-      queryClient.invalidateQueries({ queryKey: ["/api/moneylab/papers"] });
+-      const t = setTimeout(() => setActiveJobId(null), 4000);
+-      return () => clearTimeout(t);
+-    }
+-  }, [jobStatus?.status, queryClient]);
+-
+-  const deleteMutation = useMutation({
+-    mutationFn: async (id: number) => {
+-      await apiRequest("DELETE", `/api/moneylab/papers/${id}`);
+-    },
+-    onSuccess: () => {
+-      queryClient.invalidateQueries({ queryKey: ["/api/moneylab/papers"] });
+-    },
+-  });
+-
+-  const handleFile = (file: File) => {
+-    const ext = file.name.split(".").pop()?.toLowerCase();
+-    if (!["pdf", "jpg", "jpeg", "png"].includes(ext || "")) {
+-      alert("Only PDF, JPG, and PNG files are supported.");
+-      return;
+-    }
+-    uploadMutation.mutate(file);
+-  };
+-
+-  const handleDrop = (e: React.DragEvent) => {
+-    e.preventDefault();
+-    setDragActive(false);
+-    if (e.dataTransfer.files?.[0]) handleFile(e.dataTransfer.files[0]);
+-  };
+-
+-  return (
+-    <div className="flex min-h-screen bg-background">
+-      <Sidebar />
+-      <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+-        <div className="max-w-3xl mx-auto space-y-6">
+-          <div className="flex items-center gap-3">
+-            <Link href="/moneylab">
+-              <Button variant="outline" size="icon" className="rounded-2xl border-2" data-testid="button-back">
+-                <ArrowLeft className="w-4 h-4" />
+-              </Button>
+-            </Link>
+-            <div>
+-              <h1 className="font-display text-2xl font-bold" data-testid="text-upload-title">Upload Past Paper</h1>
+-              <p className="text-sm text-muted-foreground">Upload exam papers to generate quiz games</p>
+-            </div>
+-          </div>
+-
+-          <Card className="glass-card rounded-glass">
+-            <CardContent className="p-6 space-y-4">
+-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+-                <div>
+-                  <label className="text-sm font-bold text-muted-foreground mb-1 block">Paper Title (optional)</label>
+-                  <input
+-                    type="text"
+-                    value={title}
+-                    onChange={(e) => setTitle(e.target.value)}
+-                    placeholder="e.g. BGCSE Commerce 2024"
+-                    className="w-full rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-card px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-400"
+-                    data-testid="input-paper-title"
+-                  />
+-                </div>
+-                <div>
+-                  <label className="text-sm font-bold text-muted-foreground mb-1 block">Subject</label>
+-                  <select
+-                    value={subject}
+-                    onChange={(e) => setSubject(e.target.value)}
+-                    className="w-full rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-card px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-400 appearance-none"
+-                    data-testid="select-subject"
+-                  >
+-                    {SUBJECTS.map((s) => (
+-                      <option key={s} value={s}>{s}</option>
+-                    ))}
+-                  </select>
+-                </div>
+-              </div>
+-
+-              <div
+-                onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+-                onDragLeave={() => setDragActive(false)}
+-                onDrop={handleDrop}
+-                onClick={() => fileInputRef.current?.click()}
+-                className={`border-3 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all ${
+-                  dragActive
+-                    ? "border-teal-500 bg-teal-50 dark:bg-teal-950/30 scale-[1.02]"
+-                    : "border-gray-300 dark:border-gray-700 hover:border-teal-400 hover:bg-teal-50/50 dark:hover:bg-teal-950/10"
+-                }`}
+-                data-testid="dropzone"
+-              >
+-                <input
+-                  ref={fileInputRef}
+-                  type="file"
+-                  accept=".pdf,.jpg,.jpeg,.png"
+-                  onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+-                  className="hidden"
+-                  data-testid="input-file"
+-                />
+-                {uploadMutation.isPending ? (
+-                  <div className="flex flex-col items-center gap-3">
+-                    <Loader2 className="w-12 h-12 text-teal-500 animate-spin" />
+-                    <p className="font-bold text-teal-600">Uploading...</p>
+-                  </div>
+-                ) : activeJobId && jobStatus && jobStatus.status !== "completed" && jobStatus.status !== "failed" ? (
+-                  <div className="flex flex-col items-center gap-3" data-testid="status-job-active">
+-                    <Loader2 className="w-12 h-12 text-amber-500 animate-spin" />
+-                    <p className="font-bold text-amber-600 capitalize">{jobStatus.status}: extracting questions...</p>
+-                    <p className="text-sm text-muted-foreground">
+-                      Attempt {jobStatus.attempts} of {jobStatus.maxAttempts}. This runs in the background. You can stay here or come back later.
+-                    </p>
+-                  </div>
+-                ) : activeJobId && jobStatus?.status === "failed" ? (
+-                  <div className="flex flex-col items-center gap-3" data-testid="status-job-failed">
+-                    <XCircle className="w-12 h-12 text-red-500" />
+-                    <p className="font-bold text-red-600">Extraction failed</p>
+-                    {jobStatus.lastError && (
+-                      <p className="text-xs text-muted-foreground max-w-md break-words">{jobStatus.lastError}</p>
+-                    )}
+-                  </div>
+-                ) : activeJobId && jobStatus?.status === "completed" ? (
+-                  <div className="flex flex-col items-center gap-3" data-testid="status-job-completed">
+-                    <CheckCircle2 className="w-12 h-12 text-green-500" />
+-                    <p className="font-bold text-green-600">Done! Questions extracted.</p>
+-                  </div>
+-                ) : (
+-                  <div className="flex flex-col items-center gap-3">
+-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+-                      <Upload className="w-8 h-8 text-white" />
+-                    </div>
+-                    <p className="font-bold text-lg">Drop your exam paper here</p>
+-                    <p className="text-sm text-muted-foreground">or click to browse · PDF, JPG, PNG (max 10MB)</p>
+-                    <div className="flex gap-3 mt-2">
+-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-50 text-red-600 text-xs font-bold dark:bg-red-950/30">
+-                        <FileText className="w-3 h-3" /> PDF
+-                      </span>
+-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold dark:bg-blue-950/30">
+-                        <Image className="w-3 h-3" /> JPG
+-                      </span>
+-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-50 text-green-600 text-xs font-bold dark:bg-green-950/30">
+-                        <Image className="w-3 h-3" /> PNG
+-                      </span>
+-                    </div>
+-                  </div>
+-                )}
+-              </div>
+-            </CardContent>
+-          </Card>
+-
+-          <div className="space-y-3">
+-            <h2 className="font-display text-lg font-bold flex items-center gap-2">
+-              <BookOpen className="w-5 h-5 text-teal-500" />
+-              Your Uploaded Papers
+-            </h2>
+-
+-            {isLoading ? (
+-              <div className="text-center py-8">
+-                <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+-              </div>
+-            ) : !papers?.length ? (
+-              <Card className="glass-card rounded-glass">
+-                <CardContent className="p-8 text-center text-muted-foreground">
+-                  <p className="font-medium">No papers uploaded yet</p>
+-                  <p className="text-sm mt-1">Upload your first exam paper to get started!</p>
+-                </CardContent>
+-              </Card>
+-            ) : (
+-              <div className="space-y-2">
+-                {papers.map((paper: any) => (
+-                  <Card key={paper.id} className="rounded-2xl border-2 hover:border-teal-200 dark:hover:border-teal-800 transition-all" data-testid={`paper-${paper.id}`}>
+-                    <CardContent className="p-4 flex items-center gap-4">
+-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+-                        paper.status === "completed" ? "bg-green-100 dark:bg-green-900/30" :
+-                        paper.status === "failed" ? "bg-red-100 dark:bg-red-900/30" :
+-                        "bg-amber-100 dark:bg-amber-900/30"
+-                      }`}>
+-                        {paper.status === "completed" ? <CheckCircle2 className="w-5 h-5 text-green-500" /> :
+-                         paper.status === "failed" ? <XCircle className="w-5 h-5 text-red-500" /> :
+-                         <Loader2 className="w-5 h-5 text-amber-500 animate-spin" />}
+-                      </div>
+-                      <div className="flex-1 min-w-0">
+-                        <p className="font-bold text-sm truncate">{paper.title}</p>
+-                        <p className="text-xs text-muted-foreground">
+-                          {paper.subject} · {paper.questionCount || 0} questions · {paper.fileType?.toUpperCase()}
+-                        </p>
+-                      </div>
+-                      <Button
+-                        variant="ghost"
+-                        size="icon"
+-                        onClick={() => deleteMutation.mutate(paper.id)}
+-                        className="text-red-400 hover:text-red-600 shrink-0"
+-                        data-testid={`button-delete-paper-${paper.id}`}
+-                      >
+-                        <Trash2 className="w-4 h-4" />
+-                      </Button>
+-                    </CardContent>
+-                  </Card>
+-                ))}
+-              </div>
+-            )}
+-          </div>
+-        </div>
+-      </main>
+-    </div>
+-  );
+-}
+diff --git a/client/src/pages/TeacherDashboard.tsx b/client/src/pages/TeacherDashboard.tsx
+index 9ab320a..064f70e 100644
+--- a/client/src/pages/TeacherDashboard.tsx
++++ b/client/src/pages/TeacherDashboard.tsx
+@@ -7,7 +7,7 @@ import { Link, useLocation } from "wouter";
+ import { useState, useEffect } from "react";
+ import {
+   Users, BookOpen, Plus, Copy, Check, Loader2, Trophy,
+-  ArrowRight, Sparkles, X, CheckCircle2, Circle, BookMarked, FlaskConical,
++  ArrowRight, Sparkles, X, CheckCircle2, Circle, BookMarked,
+ } from "lucide-react";
+ import { useToast } from "@/hooks/use-toast";
+ 
+@@ -151,16 +151,6 @@ function QuickLinksWidget({ onLessonsClick }: { onLessonsClick: () => void }) {
+       onClick: onLessonsClick,
+       testId: "lessons",
+     },
+-    {
+-      href: "/moneylab/upload",
+-      label: "MoneyLab Upload",
+-      description: "AI quiz generator for exam papers",
+-      icon: FlaskConical,
+-      iconBg: "bg-emerald-100 dark:bg-emerald-900/30",
+-      iconColor: "text-emerald-600 dark:text-emerald-400",
+-      onClick: undefined as (() => void) | undefined,
+-      testId: "moneylab-upload",
+-    },
+   ];
+ 
+   return (
+diff --git a/docs/org-guide.md b/docs/org-guide.md
+index a1035b5..a5f5d6d 100644
+--- a/docs/org-guide.md
++++ b/docs/org-guide.md
+@@ -26,7 +26,7 @@ The dashboard is your home base. It shows:
+ 
+ **Monthly AI summary** (when available): a plain-language overview of this month's activity, generated automatically.
+ 
+-**AI usage today**: tokens consumed for MoneyLab, MoneyGuide AI, and AI Insights versus the daily org limit. Limits reset at midnight UTC.
++**AI usage today**: tokens consumed for Money Guide and AI Insights versus the daily org limit. Limits reset at midnight UTC.
+ 
+ **Email stats**: sent, opened, bounced, and failed counts for all platform emails.
+ 
+diff --git a/docs/teacher-guide.md b/docs/teacher-guide.md
+index cbcdd4c..0567494 100644
+--- a/docs/teacher-guide.md
++++ b/docs/teacher-guide.md
+@@ -139,7 +139,7 @@ The dashboard provides a whole-organisation overview:
+ - **Student join code**: the org-level code students use to join the organisation. A copy button is next to the code.
+ - **Getting started checklist**: four onboarding steps — create your admin account (already complete), enrol at least one student, publish your first lesson, and set up your branding. A "Need help?" link leads to the Org Admin Help Center.
+ - **AI summary card** (when available): a monthly plain-language summary generated by the platform.
+-- **AI Usage Today**: shows how many AI tokens (MoneyLab, MoneyGuide AI, and AI Insights) have been used today versus the org's daily limit for each service.
++- **AI Usage Today**: shows how many AI tokens (Money Guide and AI Insights) have been used today versus the org's daily limit for each service.
+ - **Email deliverability stats**: sent, opened, bounced, and failed counts for emails dispatched by the platform.
+ - **Top Money Games by session**: a bar-chart breakdown of which games students played most.
+ - **All Students table**: lists every student with their display name, join date, total XP, and lessons completed. Supports searching by name.
+@@ -202,13 +202,13 @@ Each student starts with a virtual balance of 10,000 in their chosen currency. T
+ 
+ The three market tabs are Learn, Market, and Portfolio. The Learn tab contains structured investment modules. The Market tab shows all available stocks and bonds. The Portfolio tab shows current holdings, gain/loss, and a trade history.
+ 
+-### 3.4 MoneyLab
++### 3.4 Leaderboard
+ 
+-Students upload an exam paper (PDF, CSV, or Excel). The platform uses AI to extract questions and generate a quiz. Students can then play the quiz and request AI explanations for any question they got wrong. Explanation quality depends on the clarity of the uploaded document.
++A platform-wide leaderboard at `/leaderboard`, ranking students by total score earned across lessons, quizzes, and Money Games. Includes an all-time and a weekly view.
+ 
+ ### 3.5 Money Guide AI
+ 
+-A conversational chatbot at `/money-guide` that answers questions about money, saving, and investing. Responses are guided toward Caribbean-relevant financial literacy topics. This feature counts against the org's daily AI quota.
++A conversational chatbot at `/guide` that answers questions about money, saving, and investing, and also explains specific lesson topics in depth (a student lands here automatically, with the topic pre-filled, after scoring low on a lesson quiz). Responses are guided toward Caribbean-relevant financial literacy topics and powered by Claude. This feature counts against the org's daily AI quota.
+ 
+ ### 3.6 Money Games
+ 
+diff --git a/scripts/part9-drop-moneylab-tables.sql b/scripts/part9-drop-moneylab-tables.sql
+new file mode 100644
+index 0000000..b98a058
+--- /dev/null
++++ b/scripts/part9-drop-moneylab-tables.sql
+@@ -0,0 +1,25 @@
++-- Part 9: Remove MoneyLab exam-paper feature (Claude-authored, for Replit Agent to review and run against live Supabase)
++--
++-- Scope check before running: game_sessions and its leaderboard/analytics usage are
++-- NOT part of this removal and must keep working. This script only touches the
++-- paper_id column (which becomes an orphaned foreign key once exam_papers is
++-- dropped) and the two tables exclusive to the exam-paper-to-quiz feature.
++--
++-- Order matters: drop the dependent column first, then the child table, then the parent table.
++
++ALTER TABLE game_sessions DROP COLUMN IF EXISTS paper_id;
++
++DROP TABLE IF EXISTS extracted_questions;
++
++DROP TABLE IF EXISTS exam_papers;
++
++-- After running, regenerate the drizzle snapshot/journal (drizzle-kit generate)
++-- so migrations/meta stays in sync with this hand-applied change, matching how
++-- prior live schema changes (e.g. the org_id ALTER TABLE fix) were reconciled.
++
++-- Also clean up the "moneylab" entry from any existing org's features_enabled
++-- array (a per-org toggle shown on the platform admin dashboard). New orgs
++-- won't get this default anymore, but existing rows need a direct update.
++UPDATE organizations
++SET features_enabled = array_remove(features_enabled, 'moneylab')
++WHERE 'moneylab' = ANY(features_enabled);
+diff --git a/server/jobHandlers.ts b/server/jobHandlers.ts
+index 8ee1bd1..e3d4d1b 100644
+--- a/server/jobHandlers.ts
++++ b/server/jobHandlers.ts
+@@ -1,9 +1,8 @@
+ import { registerJobHandler, enqueueJob, type JobPayloads } from "./jobs";
+ import { storage } from "./storage";
+-import { openai } from "./replit_integrations/chat/routes";
+ import { objectStorageClient } from "./replit_integrations/object_storage";
+ import { db } from "./db";
+-import { aiUsageEvents, emailContacts, extractedQuestions, gameSessions, transactions, userXp, userLearningProgress, userBadges, learningModules, teachers, users } from "@shared/schema";
++import { aiUsageEvents, emailContacts, gameSessions, transactions, userXp, userLearningProgress, userBadges, learningModules, teachers, users } from "@shared/schema";
+ import { and, eq, gte, lt, sql, inArray, lte } from "drizzle-orm";
+ import { sendEmail, escapeHtml, appBaseUrl } from "./email";
+ 
+@@ -84,137 +83,6 @@ export function registerJobHandlers() {
+     return { deletedRows, cutoffDate: cutoff.toISOString() };
+   });
+ 
+-  // === Paper extraction (MoneyLab upload) ===
+-  registerJobHandler("extract-paper", async (job) => {
+-    const { paperId, fileB64, ext, subject } = job.payload;
+-    try {
+-      return await runExtractPaper(paperId, fileB64, ext, subject, job.attempts >= job.maxAttempts);
+-    } catch (err) {
+-      // On the *terminal* attempt, sync paper status so the UI doesn't show
+-      // it stuck at 'processing' forever.
+-      if (job.attempts >= job.maxAttempts) {
+-        try {
+-          await storage.updateExamPaper(paperId, { status: "failed" });
+-        } catch { /* ignore */ }
+-      }
+-      throw err;
+-    }
+-  });
+-
+-  async function runExtractPaper(
+-    paperId: number,
+-    fileB64: string,
+-    ext: string,
+-    subject: string,
+-    _isFinalAttempt: boolean,
+-  ) {
+-    // Idempotency: if a previous attempt partially inserted questions and then
+-    // crashed before completion, wipe them so a retry doesn't double-insert.
+-    await db.delete(extractedQuestions).where(eq(extractedQuestions.paperId, paperId));
+-
+-    const buffer = Buffer.from(fileB64, "base64");
+-    let extractedText = "";
+-
+-    if (ext === ".pdf") {
+-      const pdfMod = (await import("pdf-parse")) as unknown as {
+-        default?: (b: Buffer) => Promise<{ text: string }>;
+-      } & ((b: Buffer) => Promise<{ text: string }>);
+-      const pdfParse = pdfMod.default ?? pdfMod;
+-      const pdfData = await pdfParse(buffer);
+-      extractedText = pdfData.text.slice(0, 30000);
+-    } else {
+-      const mimeType = ext === ".png" ? "image/png" : "image/jpeg";
+-      const visionResponse = await openai.chat.completions.create({
+-        model: "gpt-4o",
+-        messages: [
+-          {
+-            role: "user",
+-            content: [
+-              { type: "text", text: "Extract all the text from this exam paper image. Include all questions, answer choices, and any other relevant text exactly as written." },
+-              { type: "image_url", image_url: { url: `data:${mimeType};base64,${buffer.toString("base64")}` } },
+-            ],
+-          },
+-        ],
+-        max_completion_tokens: 4096,
+-      });
+-      extractedText = visionResponse.choices[0]?.message?.content || "";
+-    }
+-
+-    if (!extractedText.trim()) {
+-      // Throw so the worker records this as a failed job (not a successful
+-      // one with ok:false). The outer try/catch will sync exam_papers status.
+-      throw new Error("No text could be extracted from the uploaded file");
+-    }
+-
+-    const extractionResponse = await openai.chat.completions.create({
+-      model: "gpt-4o",
+-      messages: [
+-        {
+-          role: "system",
+-          content: `You are an exam question extractor. Extract multiple choice questions from exam paper text.
+-Return ONLY valid JSON in this exact format:
+-{
+-  "subject": "detected subject name",
+-  "questions": [
+-    {
+-      "question": "The question text",
+-      "options": ["Option A", "Option B", "Option C", "Option D"],
+-      "answer": "The correct answer text (must match one of the options exactly)",
+-      "difficulty": "easy" | "medium" | "hard"
+-    }
+-  ]
+-}
+-Rules:
+-- Extract ALL questions found in the text
+-- Each question MUST have exactly 4 options
+-- If the correct answer is not obvious, use your best judgment based on the subject matter
+-- Detect the subject from context (Accounting, Commerce, Economics, Business Studies, etc.)
+-- If a question is not multiple choice, convert it into a reasonable MCQ format
+-- difficulty: easy = basic recall, medium = application, hard = analysis/evaluation`,
+-        },
+-        { role: "user", content: extractedText },
+-      ],
+-      max_completion_tokens: 4096,
+-      temperature: 0.3,
+-      response_format: { type: "json_object" },
+-    });
+-
+-    const parsed = JSON.parse(extractionResponse.choices[0]?.message?.content || "{}") as {
+-      subject?: string;
+-      questions?: Array<{
+-        question?: string;
+-        options?: string[];
+-        answer?: string;
+-        difficulty?: "easy" | "medium" | "hard";
+-      }>;
+-    };
+-    const questions = parsed.questions ?? [];
+-    const detectedSubject = parsed.subject ?? subject;
+-
+-    for (let i = 0; i < questions.length; i++) {
+-      const q = questions[i];
+-      if (q.question && Array.isArray(q.options) && q.options.length >= 2 && q.answer) {
+-        await storage.createExtractedQuestion({
+-          paperId,
+-          questionText: q.question,
+-          options: q.options.slice(0, 4),
+-          correctAnswer: q.answer,
+-          subject: detectedSubject,
+-          difficulty: q.difficulty ?? "medium",
+-          order: i + 1,
+-        });
+-      }
+-    }
+-
+-    await storage.updateExamPaper(paperId, {
+-      status: "completed",
+-      subject: detectedSubject,
+-      questionCount: questions.length,
+-    });
+-
+-    return { paperId, questionCount: questions.length, subject: detectedSubject };
+-  }
+-
+   // === Admin CSV export: writes to private object storage ===
+   registerJobHandler("admin-csv-export", async (job) => {
+     const { type } = job.payload;
+diff --git a/server/routes/ai.ts b/server/routes/ai.ts
+index 7d98b34..ba9ab86 100644
+--- a/server/routes/ai.ts
++++ b/server/routes/ai.ts
+@@ -2,8 +2,6 @@ import { Express } from "express";
+ import { storage } from "../storage";
+ import { isAuthenticated } from "../replit_integrations/auth";
+ import { z } from "zod";
+-import multer from "multer";
+-import path from "path";
+ import { enqueueJob, listRecentJobs } from "../jobs";
+ import {
+   reserveQuota,
+@@ -29,20 +27,6 @@ import fs from "fs";
+ import * as nodePath from "path";
+ import Anthropic from "@anthropic-ai/sdk";
+ 
+-const examUpload = multer({
+-  storage: multer.memoryStorage(),
+-  limits: { fileSize: 10 * 1024 * 1024 },
+-  fileFilter: (_req, file, cb) => {
+-    const allowed = [".pdf", ".jpg", ".jpeg", ".png"];
+-    const ext = path.extname(file.originalname).toLowerCase();
+-    if (allowed.includes(ext)) {
+-      cb(null, true);
+-    } else {
+-      cb(new Error("Only PDF, JPG, and PNG files are supported"));
+-    }
+-  },
+-});
+-
+ const GUIDE_MODEL = "claude-sonnet-4-6";
+ let _guideClient: Anthropic | null = null;
+ function getGuideClient(): Anthropic {
+@@ -161,209 +145,7 @@ export async function registerAiRoutes(app: Express): Promise<void> {
+     }
+   });
+ 
+-  // === MONEYLAB ROUTES ===
+-  app.post("/api/moneylab/upload", isAuthenticated, examUpload.single("file"), async (req, res) => {
+-    try {
+-      const userId = (req.user as any).id;
+-      const file = req.file;
+-      if (!file) {
+-        return res.status(400).json({ message: "No file uploaded" });
+-      }
+-
+-      const title = req.body.title || file.originalname.replace(/\.[^/.]+$/, "");
+-      const subject = req.body.subject || "General";
+-      const ext = path.extname(file.originalname).toLowerCase();
+-
+-      const paper = await storage.createExamPaper({
+-        userId,
+-        title,
+-        subject,
+-        fileName: file.originalname,
+-        fileType: ext.replace(".", ""),
+-      });
+-
+-      const job = await enqueueJob({
+-        kind: "extract-paper",
+-        ownerId: userId,
+-        payload: {
+-          paperId: paper.id,
+-          fileB64: file.buffer.toString("base64"),
+-          ext,
+-          subject,
+-        },
+-      });
+-
+-      res.json({ paper, jobId: job.id, message: "Processing..." });
+-    } catch (err: any) {
+-      res.status(500).json({ message: err.message });
+-    }
+-  });
+-
+-  app.get("/api/moneylab/papers", isAuthenticated, async (req, res) => {
+-    try {
+-      const userId = (req.user as any).id;
+-      const papers = await storage.getExamPapers(userId);
+-      res.json(papers);
+-    } catch (err: any) {
+-      res.status(500).json({ message: err.message });
+-    }
+-  });
+-
+-  // SECURITY: admin-only. Exposes all students' papers; must not be accessible to students.
+-  app.get("/api/moneylab/papers/all", isAdmin, async (req, res) => {
+-    try {
+-      const { examPapers } = await import("@shared/schema");
+-      const { db } = await import("../db");
+-      const { eq, desc } = await import("drizzle-orm");
+-      const rawLimit = Number(req.query.limit);
+-      const rawOffset = Number(req.query.offset);
+-      const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(Math.floor(rawLimit), 200) : 50;
+-      const offset = Number.isFinite(rawOffset) && rawOffset >= 0 ? Math.floor(rawOffset) : 0;
+-      const allPapers = await db.select().from(examPapers).where(eq(examPapers.status, "completed")).orderBy(desc(examPapers.createdAt)).limit(limit).offset(offset);
+-      res.json(allPapers);
+-    } catch (err: any) {
+-      res.status(500).json({ message: err.message });
+-    }
+-  });
+-
+-  // SECURITY: ownership enforced. Students may only fetch their own paper.
+-  app.get("/api/moneylab/papers/:id", isAuthenticated, async (req, res) => {
+-    try {
+-      const userId = (req.user as any).id;
+-      const paper = await storage.getExamPaper(parseInt(req.params.id));
+-      if (!paper) return res.status(404).json({ message: "Paper not found" });
+-      if (paper.userId !== userId) return res.status(403).json({ message: "Forbidden" });
+-      const questions = await storage.getQuestionsByPaper(paper.id);
+-      res.json({ paper, questions });
+-    } catch (err: any) {
+-      res.status(500).json({ message: err.message });
+-    }
+-  });
+-
+-  app.delete("/api/moneylab/papers/:id", isAuthenticated, async (req, res) => {
+-    try {
+-      const userId = (req.user as any).id;
+-      await storage.deleteExamPaper(parseInt(req.params.id), userId);
+-      res.json({ success: true });
+-    } catch (err: any) {
+-      res.status(500).json({ message: err.message });
+-    }
+-  });
+-
+-  app.post("/api/moneylab/games/submit", isAuthenticated, async (req, res) => {
+-    try {
+-      const userId = (req.user as any).id;
+-      const { paperId, mode, score, totalQuestions, correctAnswers, timeSpent } = req.body;
+-
+-      if (!mode || score === undefined || !totalQuestions || correctAnswers === undefined) {
+-        return res.status(400).json({ message: "Missing required game data" });
+-      }
+-
+-      const baseXp = correctAnswers * 10;
+-      const modeBonus = mode === "challenge" ? 1.5 : mode === "timed" ? 1.25 : 1;
+-      const accuracyBonus = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 20) : 0;
+-      const xpEarned = Math.round(baseXp * modeBonus + accuracyBonus);
+-
+-      const session = await storage.createGameSession({
+-        userId,
+-        paperId: paperId || null,
+-        mode,
+-        score,
+-        totalQuestions,
+-        correctAnswers,
+-        timeSpent: timeSpent || null,
+-        xpEarned,
+-      });
+-
+-      const currentXp = await storage.getUserXp(userId);
+-      const newTotalXp = currentXp.totalXp + xpEarned;
+-      const newLevel = Math.floor(newTotalXp / 100) + 1;
+-
+-      const now = new Date();
+-      const lastPlayed = currentXp.lastPlayedAt ? new Date(currentXp.lastPlayedAt) : null;
+-      let newStreak = currentXp.currentStreak;
+-      if (lastPlayed) {
+-        const todayStr = now.toISOString().slice(0, 10);
+-        const lastStr = lastPlayed.toISOString().slice(0, 10);
+-        if (todayStr === lastStr) {
+-          newStreak = currentXp.currentStreak;
+-        } else {
+-          const lastDate = new Date(lastStr);
+-          const todayDate = new Date(todayStr);
+-          const diffDays = Math.round((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+-          if (diffDays === 1) {
+-            newStreak = currentXp.currentStreak + 1;
+-          } else {
+-            newStreak = 1;
+-          }
+-        }
+-      } else {
+-        newStreak = 1;
+-      }
+-      const longestStreak = Math.max(currentXp.longestStreak, newStreak);
+-
+-      await storage.updateUserXp(userId, {
+-        totalXp: newTotalXp,
+-        level: newLevel,
+-        currentStreak: newStreak,
+-        longestStreak,
+-        lastPlayedAt: now,
+-      });
+-
+-      const { cacheInvalidate } = await import("../cache");
+-      cacheInvalidate("moneylab:leaderboard:");
+-
+-      const earnedBadges: string[] = [];
+-      const allSessions = await storage.getGameSessions(userId);
+-      const existingBadges = await storage.getUserBadges(userId);
+-      const hasBadge = (id: string) => existingBadges.some(b => b.badgeId === id);
+-
+-      const badgeChecks = [
+-        { id: "first_game", condition: allSessions.length >= 1, label: "First Steps" },
+-        { id: "ten_games", condition: allSessions.length >= 10, label: "Game Veteran" },
+-        { id: "perfect_score", condition: correctAnswers === totalQuestions && totalQuestions >= 5, label: "Perfect Score" },
+-        { id: "streak_3", condition: newStreak >= 3, label: "On Fire" },
+-        { id: "streak_7", condition: newStreak >= 7, label: "Week Warrior" },
+-        { id: "level_5", condition: newLevel >= 5, label: "Rising Star" },
+-        { id: "level_10", condition: newLevel >= 10, label: "Money Master" },
+-        { id: "xp_500", condition: newTotalXp >= 500, label: "XP Hunter" },
+-        { id: "xp_1000", condition: newTotalXp >= 1000, label: "XP Legend" },
+-        { id: "challenge_win", condition: mode === "challenge" && correctAnswers >= totalQuestions * 0.8, label: "Challenge Champion" },
+-        { id: "speed_demon", condition: mode === "timed" && timeSpent && timeSpent < totalQuestions * 10, label: "Speed Demon" },
+-      ];
+-
+-      for (const check of badgeChecks) {
+-        if (check.condition && !hasBadge(check.id)) {
+-          await storage.addUserBadge({ userId, badgeId: check.id });
+-          earnedBadges.push(check.id);
+-        }
+-      }
+-
+-      res.json({
+-        session,
+-        xpEarned,
+-        totalXp: newTotalXp,
+-        level: newLevel,
+-        streak: newStreak,
+-        newBadges: earnedBadges,
+-      });
+-    } catch (err: any) {
+-      res.status(500).json({ message: err.message });
+-    }
+-  });
+-
+-  app.get("/api/moneylab/xp", isAuthenticated, async (req, res) => {
+-    try {
+-      const userId = (req.user as any).id;
+-      const xp = await storage.getUserXp(userId);
+-      const badges = await storage.getUserBadges(userId);
+-      const sessions = await storage.getGameSessions(userId);
+-      res.json({ xp, badges, totalGames: sessions.length });
+-    } catch (err: any) {
+-      res.status(500).json({ message: err.message });
+-    }
+-  });
+-
++  // === SHARED LEADERBOARD (used platform-wide, not exam-paper-exclusive) ===
+   app.get("/api/moneylab/leaderboard", isAuthenticated, async (req, res) => {
+     try {
+       const period = (req.query.period as string) || "all";
+@@ -520,16 +302,6 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
+     }
+   });
+ 
+-  app.get("/api/moneylab/history", isAuthenticated, async (req, res) => {
+-    try {
+-      const userId = (req.user as any).id;
+-      const sessions = await storage.getGameSessions(userId);
+-      res.json(sessions);
+-    } catch (err: any) {
+-      res.status(500).json({ message: err.message });
+-    }
+-  });
+-
+   // Money Guide AI Chat
+   app.post("/api/guide/chat", isAuthenticated, async (req, res) => {
+     try {
+@@ -847,7 +619,7 @@ KEY ADMIN FEATURES YOU CAN HELP WITH:
+ 
+ 5. LEARNING & LESSON MANAGEMENT
+    - Lessons and modules are managed via Supabase-backed content tables. Static content seeds automatically on startup.
+-   - The MoneyLab feature lets students upload exam papers and get AI-generated quizzes and explanations.
++   - Money Guide is the AI chat assistant students use for money questions and lesson explanations.
+ 
+ 6. ANALYTICS & REPORTS
+    - The Reports tab provides exportable summaries of student activity, AI usage, and org-level engagement.
+diff --git a/server/routes/auth.ts b/server/routes/auth.ts
+index 6a01dc6..4436851 100644
+--- a/server/routes/auth.ts
++++ b/server/routes/auth.ts
+@@ -571,7 +571,7 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
+         display_name:     body.orgName,
+         theme_color:      "#7c3aed",
+         join_code,
+-        features_enabled: ["money_games", "investment_sim", "money_guide", "moneylab"],
++        features_enabled: ["money_games", "investment_sim", "money_guide"],
+       });
+       if (!env) return res.status(500).json({ message: "Failed to create organization environment." });
+ 
+diff --git a/server/routes/orgs.ts b/server/routes/orgs.ts
+index 7200a21..2f014ee 100644
+--- a/server/routes/orgs.ts
++++ b/server/routes/orgs.ts
+@@ -648,7 +648,7 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
+         slug: z.string().min(1).regex(/^[a-z0-9-]+$/),
+         display_name: z.string().min(1),
+         theme_color: z.string().optional(),
+-        features_enabled: z.array(z.string()).default(["money_games", "investment_sim", "money_guide", "moneylab"]),
++        features_enabled: z.array(z.string()).default(["money_games", "investment_sim", "money_guide"]),
+       }).parse(req.body);
+       const env = await createOrgEnvironment({ org_id: req.params.id, ...body, custom_logo_url: undefined });
+       if (!env) return res.status(500).json({ message: "Failed to create environment" });
+diff --git a/server/storage.ts b/server/storage.ts
+index 290f89e..41f51a7 100644
+--- a/server/storage.ts
++++ b/server/storage.ts
+@@ -1,7 +1,7 @@
+ import { 
+   users, categories, transactions, budgets, linkedCards, documentUploads, savingsGoals, billReminders,
+   simulatedStocks, portfolioHoldings, portfolioTransactions, learningModules, userLearningProgress, userVirtualBalance,
+-  examPapers, extractedQuestions, gameSessions, userXp, userBadges,
++  gameSessions, userXp, userBadges,
+   schools, sponsors,
+   teachers, classes, classEnrollments, challenges, classNotifications, studentFeedback,
+   deletionLog, emailContacts,
+@@ -32,8 +32,6 @@ import {
+   type UserVirtualBalance,
+   type DashboardStats,
+   type Conversation, type Message,
+-  type ExamPaper, type InsertExamPaper,
+-  type ExtractedQuestion, type InsertExtractedQuestion,
+   type GameSession, type InsertGameSession,
+   type UserXp,
+   type UserBadge, type InsertUserBadge,
+@@ -109,15 +107,7 @@ export interface IStorage extends IAuthStorage {
+   seedMarketData(): Promise<void>;
+   seedLearningModules(): Promise<void>;
+ 
+-  // MoneyLab
+-  createExamPaper(paper: InsertExamPaper): Promise<ExamPaper>;
+-  updateExamPaper(id: number, data: Partial<ExamPaper>): Promise<ExamPaper>;
+-  getExamPapers(userId: string): Promise<ExamPaper[]>;
+-  getExamPaper(id: number): Promise<ExamPaper | undefined>;
+-  deleteExamPaper(id: number, userId: string): Promise<void>;
+-  createExtractedQuestion(question: InsertExtractedQuestion): Promise<ExtractedQuestion>;
+-  getQuestionsByPaper(paperId: number): Promise<ExtractedQuestion[]>;
+-  getAllQuestions(filters?: { subject?: string }): Promise<(ExtractedQuestion & { paper?: ExamPaper })[]>;
++  // Shared game/quiz scoring (used platform-wide, not exam-paper-exclusive)
+   createGameSession(session: InsertGameSession): Promise<GameSession>;
+   getGameSessions(userId: string): Promise<GameSession[]>;
+   getLeaderboard(filters?: { subject?: string; period?: string; limit?: number }): Promise<{ userId: string; userName: string; avatar: string; totalScore: number; gamesPlayed: number }[]>;
+@@ -651,51 +641,7 @@ export class DatabaseStorage implements IStorage {
+     ]);
+   }
+ 
+-  // === MONEYLAB ===
+-
+-  async createExamPaper(paper: InsertExamPaper): Promise<ExamPaper> {
+-    const [created] = await db.insert(examPapers).values(paper).returning();
+-    return created;
+-  }
+-
+-  async updateExamPaper(id: number, data: Partial<ExamPaper>): Promise<ExamPaper> {
+-    const [updated] = await db.update(examPapers).set(data).where(eq(examPapers.id, id)).returning();
+-    return updated;
+-  }
+-
+-  async getExamPapers(userId: string): Promise<ExamPaper[]> {
+-    return await db.select().from(examPapers).where(eq(examPapers.userId, userId)).orderBy(desc(examPapers.createdAt));
+-  }
+-
+-  async getExamPaper(id: number): Promise<ExamPaper | undefined> {
+-    const [paper] = await db.select().from(examPapers).where(eq(examPapers.id, id));
+-    return paper;
+-  }
+-
+-  async deleteExamPaper(id: number, userId: string): Promise<void> {
+-    await db.delete(examPapers).where(and(eq(examPapers.id, id), eq(examPapers.userId, userId)));
+-  }
+-
+-  async createExtractedQuestion(question: InsertExtractedQuestion): Promise<ExtractedQuestion> {
+-    const [created] = await db.insert(extractedQuestions).values(question).returning();
+-    return created;
+-  }
+-
+-  async getQuestionsByPaper(paperId: number): Promise<ExtractedQuestion[]> {
+-    return await db.select().from(extractedQuestions).where(eq(extractedQuestions.paperId, paperId)).orderBy(extractedQuestions.order);
+-  }
+-
+-  async getAllQuestions(filters?: { subject?: string }): Promise<(ExtractedQuestion & { paper?: ExamPaper })[]> {
+-    let conditions = [];
+-    if (filters?.subject) {
+-      conditions.push(eq(extractedQuestions.subject, filters.subject));
+-    }
+-    const results = await db.select({ question: extractedQuestions, paper: examPapers })
+-      .from(extractedQuestions)
+-      .innerJoin(examPapers, eq(extractedQuestions.paperId, examPapers.id))
+-      .where(conditions.length > 0 ? and(...conditions) : undefined);
+-    return results.map(r => ({ ...r.question, paper: r.paper }));
+-  }
++  // === SHARED GAME/QUIZ SCORING (platform-wide, not exam-paper-exclusive) ===
+ 
+   async createGameSession(session: InsertGameSession): Promise<GameSession> {
+     const [created] = await db.insert(gameSessions).values(session).returning();
+@@ -1140,7 +1086,6 @@ export class DatabaseStorage implements IStorage {
+     await db.transaction(async (tx) => {
+       await tx.delete(studentFeedback).where(eq(studentFeedback.studentId, userId));
+       await tx.delete(classEnrollments).where(eq(classEnrollments.studentId, userId));
+-      await tx.delete(examPapers).where(eq(examPapers.userId, userId));
+       await tx.delete(gameSessions).where(eq(gameSessions.userId, userId));
+       await tx.delete(userXp).where(eq(userXp.userId, userId));
+       await tx.delete(userBadges).where(eq(userBadges.userId, userId));
+diff --git a/server/supabase.ts b/server/supabase.ts
+index bb462e5..5e7d7c7 100644
+--- a/server/supabase.ts
++++ b/server/supabase.ts
+@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS org_environments (
+   display_name text NOT NULL,
+   theme_color text DEFAULT '#7c3aed',
+   custom_logo_url text,
+-  features_enabled text[] DEFAULT ARRAY['money_games','investment_sim','money_guide','moneylab'],
++  features_enabled text[] DEFAULT ARRAY['money_games','investment_sim','money_guide'],
+   join_code text UNIQUE,
+   created_at timestamptz NOT NULL DEFAULT now()
+ );
+diff --git a/shared/schema.ts b/shared/schema.ts
+index 1011a6d..cd5c89d 100644
+--- a/shared/schema.ts
++++ b/shared/schema.ts
+@@ -282,38 +282,13 @@ export const insertOrgAdminSchema = createInsertSchema(orgAdmins).omit({ id: tru
+ export type OrgAdmin = typeof orgAdmins.$inferSelect;
+ export type InsertOrgAdmin = z.infer<typeof insertOrgAdminSchema>;
+ 
+-// === MONEYLAB TABLES ===
+-
+-export const examPapers = pgTable("exam_papers", {
+-  id: serial("id").primaryKey(),
+-  userId: varchar("user_id").notNull().references(() => users.id),
+-  title: text("title").notNull(),
+-  subject: text("subject").notNull(),
+-  fileName: text("file_name").notNull(),
+-  fileType: text("file_type").notNull(),
+-  status: text("status", { enum: ["processing", "completed", "failed"] }).default("processing").notNull(),
+-  questionCount: integer("question_count").default(0),
+-  createdAt: timestamp("created_at").defaultNow(),
+-}, (t) => ({
+-  statusCreatedIdx: index("idx_exam_papers_status_created").on(t.status, t.createdAt),
+-  userIdx: index("idx_exam_papers_user").on(t.userId),
+-}));
+-
+-export const extractedQuestions = pgTable("extracted_questions", {
+-  id: serial("id").primaryKey(),
+-  paperId: integer("paper_id").notNull().references(() => examPapers.id, { onDelete: "cascade" }),
+-  questionText: text("question_text").notNull(),
+-  options: text("options").array().notNull(),
+-  correctAnswer: text("correct_answer").notNull(),
+-  subject: text("subject"),
+-  difficulty: text("difficulty", { enum: ["easy", "medium", "hard"] }).default("medium"),
+-  order: integer("order").default(0),
+-});
++// === SHARED GAME/QUIZ SCORING TABLE ===
++// Used platform-wide: lesson quizzes, Money Games, and leaderboard rollups.
++// Not exclusive to any one feature, do not remove or gate behind a single feature flag.
+ 
+ export const gameSessions = pgTable("game_sessions", {
+   id: serial("id").primaryKey(),
+   userId: varchar("user_id").notNull().references(() => users.id),
+-  paperId: integer("paper_id").references(() => examPapers.id),
+   mode: text("mode", { enum: ["quiz", "timed", "challenge"] }).notNull(),
+   score: integer("score").notNull(),
+   totalQuestions: integer("total_questions").notNull(),
+@@ -534,18 +509,8 @@ export const userVirtualBalanceRelations = relations(userVirtualBalance, ({ one
+   user: one(users, { fields: [userVirtualBalance.userId], references: [users.id] }),
+ }));
+ 
+-export const examPapersRelations = relations(examPapers, ({ one, many }) => ({
+-  user: one(users, { fields: [examPapers.userId], references: [users.id] }),
+-  questions: many(extractedQuestions),
+-}));
+-
+-export const extractedQuestionsRelations = relations(extractedQuestions, ({ one }) => ({
+-  paper: one(examPapers, { fields: [extractedQuestions.paperId], references: [examPapers.id] }),
+-}));
+-
+ export const gameSessionsRelations = relations(gameSessions, ({ one }) => ({
+   user: one(users, { fields: [gameSessions.userId], references: [users.id] }),
+-  paper: one(examPapers, { fields: [gameSessions.paperId], references: [examPapers.id] }),
+ }));
+ 
+ export const userXpRelations = relations(userXp, ({ one }) => ({
+@@ -596,7 +561,6 @@ export const usersRelations = relations(users, ({ many, one }) => ({
+   portfolioTransactions: many(portfolioTransactions),
+   learningProgress: many(userLearningProgress),
+   virtualBalance: one(userVirtualBalance),
+-  examPapers: many(examPapers),
+   gameSessions: many(gameSessions),
+   xp: one(userXp),
+   badges: many(userBadges),
+@@ -625,8 +589,6 @@ export const insertClassSchema = createInsertSchema(classes).omit({ id: true, cr
+ export const insertClassEnrollmentSchema = createInsertSchema(classEnrollments).omit({ id: true, joinedAt: true });
+ export const insertChallengeSchema = createInsertSchema(challenges).omit({ id: true, createdAt: true });
+ export const insertClassNotificationSchema = createInsertSchema(classNotifications).omit({ id: true, createdAt: true });
+-export const insertExamPaperSchema = createInsertSchema(examPapers).omit({ id: true, createdAt: true, questionCount: true, status: true });
+-export const insertExtractedQuestionSchema = createInsertSchema(extractedQuestions).omit({ id: true });
+ export const insertGameSessionSchema = createInsertSchema(gameSessions).omit({ id: true, completedAt: true });
+ export const insertUserXpSchema = createInsertSchema(userXp).omit({ id: true });
+ export const insertUserBadgeSchema = createInsertSchema(userBadges).omit({ id: true, earnedAt: true });
+@@ -660,13 +622,9 @@ export type InsertSimulatedStock = z.infer<typeof insertSimulatedStockSchema>;
+ export type InsertPortfolioHolding = z.infer<typeof insertPortfolioHoldingSchema>;
+ export type InsertPortfolioTransaction = z.infer<typeof insertPortfolioTransactionSchema>;
+ export type InsertLearningModule = z.infer<typeof insertLearningModuleSchema>;
+-export type ExamPaper = typeof examPapers.$inferSelect;
+-export type ExtractedQuestion = typeof extractedQuestions.$inferSelect;
+ export type GameSession = typeof gameSessions.$inferSelect;
+ export type UserXp = typeof userXp.$inferSelect;
+ export type UserBadge = typeof userBadges.$inferSelect;
+-export type InsertExamPaper = z.infer<typeof insertExamPaperSchema>;
+-export type InsertExtractedQuestion = z.infer<typeof insertExtractedQuestionSchema>;
+ export type InsertGameSession = z.infer<typeof insertGameSessionSchema>;
+ export type InsertUserBadge = z.infer<typeof insertUserBadgeSchema>;
+ export type School = typeof schools.$inferSelect;

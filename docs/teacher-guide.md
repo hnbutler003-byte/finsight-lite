@@ -123,7 +123,19 @@ Below those cards is a student table showing each student's net worth (virtual b
 
 #### Lessons Tab
 
-Displays lesson plans that your school's Org Admin has published and assigned to the environment your class belongs to. Each lesson card shows the title, a short description, and published/draft status. You can preview the lesson content but cannot edit or delete lessons from this view. Lesson management belongs to the Org Admin.
+The Lessons tab appears when your class is linked to a school organisation. It has two sections: My Class Lessons and Org Lesson Plans.
+
+**My Class Lessons** lets you create your own lessons and quizzes for this class. Click "Create Lesson" to open a three-step wizard:
+
+1. **Lesson details**: title (required), instructor, grade level, subject, duration, topic, an optional YouTube video link, and learning objectives (one per line).
+2. **Content sections**: add one or more sections, each with a heading, an explanation, and optional comma-separated examples.
+3. **Quiz questions (optional)**: add multiple-choice questions with four options and mark the correct answer by clicking the letter. You can skip this step and the lesson still saves.
+
+New lessons are saved as **drafts**. Students cannot see a lesson until you click **Publish** on its card. You can Unpublish a lesson at any time to hide it again, or delete it with the trash button (this cannot be undone).
+
+**Scope**: lessons you create here are visible only to students enrolled in this class. They never appear for other classes, other teachers, the wider school environment, or in the Org Admin's lesson list. Published class lessons show up for your students in their Lessons area alongside org lessons, and completing the quiz earns them XP the same way.
+
+**Org Lesson Plans** displays lesson plans that your school's Org Admin has published and assigned to the environment your class belongs to. Each lesson card shows the title, subject, instructor, grade, duration, and counts of objectives and sections. You can preview these but cannot edit or delete them. Org lesson management belongs to the Org Admin.
 
 ---
 

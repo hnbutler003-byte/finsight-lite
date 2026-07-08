@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useOrgAuth } from "@/hooks/use-org-auth";
 import { FinsightLiteLogo } from "@/components/FinsightLiteLogo";
 import {
-  LayoutDashboard, Users, BookOpen, LogOut, Building2, Menu, X, ChevronRight, Award, GraduationCap, HelpCircle
+  LayoutDashboard, Users, BookOpen, LogOut, Building2, Menu, X, ChevronRight, Award, GraduationCap, HelpCircle, Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -59,6 +59,14 @@ export function OrgSidebar() {
           <div className="px-2">
             <p className="font-bold text-sm">{admin.firstName} {admin.lastName}</p>
             <p className="text-xs text-blue-100 truncate">{admin.envName}</p>
+            {admin.demoReadOnly && (
+              <span
+                className="inline-flex items-center gap-1 mt-1.5 text-[11px] font-semibold bg-amber-400/20 text-amber-300 border border-amber-400/40 rounded-full px-2 py-0.5"
+                data-testid="badge-demo-readonly"
+              >
+                <Eye className="w-3 h-3" /> Read-only demo
+              </span>
+            )}
           </div>
           <button
             onClick={() => logout()}

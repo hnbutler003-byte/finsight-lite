@@ -107,3 +107,28 @@ Try a hard refresh in the browser (Ctrl+Shift+R or Cmd+Shift+R). The logo is cac
 
 **Students are not appearing in the bulk import.**
 Open the preview step and check the error column. Common issues: missing first name, duplicate email, invalid class code. Fix the spreadsheet and re-upload.
+
+---
+
+## 8. Public Demo (`/demo`)
+
+Anyone can try the Org Admin portal without an account. The public demo page at `/demo` has three views: Teacher, Student, and Org Admin. Clicking "Enter as Org Admin" opens the portal for a pre-loaded demonstration organisation with realistic students, AI usage, lessons, and certificate branding.
+
+The demo session is strictly read-only: every page is browsable, but any attempt to change something (saving branding, creating a lesson, updating quotas) is blocked with a "read-only demo" message. A "Read-only demo" badge appears in the sidebar so you always know you are in the demo.
+
+Use the Sign Out button in the sidebar to leave the demo.
+
+---
+
+## 9. Navigation Quick Reference
+
+| Page | URL |
+| --- | --- |
+| Public demo (Teacher, Student, and Org Admin views) | `/demo` |
+| Org admin registration | `/org/register` |
+| Org admin login | `/org/login` |
+| Dashboard | `/org/dashboard` |
+| Students | `/org/students` |
+| Teachers | `/org/teachers` |
+| Lessons | `/org/lessons` |
+| Certificate branding | `/org/branding` |

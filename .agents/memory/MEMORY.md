@@ -1,10 +1,7 @@
 - [Supabase lesson_plans schema drift](supabase-lesson-schema.md) — new columns in LessonPlan type must be manually ALTERed in live DB + NOTIFY pgrst to reload schema cache.
 - [Supabase write-function error handling](supabase-write-error-pattern.md) — throw `[Supabase] ...` on DB error; route catch blocks use that prefix to return 500 vs 400 + captureError.
-- [Supabase org schema migrations](supabase-org-schema-migrations.md) — live table drifted from code; startup probe uses `display_label` as sentinel for all org migrations.
+- [Supabase org schema migrations](supabase-org-schema-migrations.md) — 6 columns were missing from live organizations table; startup probe uses `display_label` as sentinel for all org migrations.
 - [deleteUserAllData transaction](delete-user-transaction.md) — must be wrapped in db.transaction(); conversations table has no userId so AI chat history is NOT deleted on purge (known gap).
-- [GitHub push workflow](github-push-workflow.md) — main agent can't commit; platform auto-commits on mark_task_complete even if validation fails, then push github main + verify via ls-remote.
-- [Vite ?raw imports](vite-raw-imports.md) — add client/src/env.d.ts with `/// <reference types="vite/client" />` to enable TS support for ?raw string imports.
-- [AI gateway supported models](ai-gateway-models.md) — Replit Anthropic gateway only accepts claude-sonnet-4-6; other ids 400; build SDK with apiKey+baseURL from AI_INTEGRATIONS_*.
-- [executeSql vs app DB](executesql-vs-app-db.md) — executeSql hits Replit built-in PG, app uses Supabase; seed/verify via app endpoints (demo login, no password), not executeSql.
-- [Screenshot auth verification](screenshot-auth-verification.md) — temp dev-only GET login route + session.save() + top-level redirect + DOM driver; iframes capture blank.
-- [AI error sanitation contract](ai-error-sanitation.md) — all AI catches use the shared helper; Sentry alerts key off ai_failure tag; SSE clients must handle data.error; 403/429 quota messages pass through verbatim.
+- [GitHub push workflow](github-push-workflow.md) — main agent can't commit; platform auto-commits on mark_task_complete even when validation FAILS, then push github main + verify via git ls-remote.
+- [Org read cache invalidation](org-cache-invalidation.md) — updateOrganization does not invalidate the 5-min getOrganization cache; every write site must invalidate manually.
+- [Public demo guard audit](public-demo-guard-audit.md) — read-only demo guard lives in isOrgAdmin; routes doing raw session checks or side-effect GETs bypass it, grep session.orgAdminId when adding entry points.

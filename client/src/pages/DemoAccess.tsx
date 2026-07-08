@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   GraduationCap, Users, BookOpen, Trophy,
-  School, ArrowRight, Sparkles, CheckCircle, Star, Zap, ShieldCheck, Flame, X
+  School, ArrowRight, Sparkles, CheckCircle, Star, Zap, ShieldCheck, Flame, X,
+  Building2, BarChart3, Award, Eye
 } from "lucide-react";
 import { FinsightLiteLogo } from "@/components/FinsightLiteLogo";
 
@@ -72,6 +73,12 @@ export default function DemoAccess() {
     onError: () => toast({ title: "Login failed", description: "Please try again.", variant: "destructive" }),
   });
 
+  const loginOrgAdmin = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/demo/login/org-admin").then(r => r.json()),
+    onSuccess: () => { window.location.href = "/org/dashboard"; },
+    onError: () => toast({ title: "Login failed", description: "Please try again.", variant: "destructive" }),
+  });
+
   const handleStudentLogin = (studentId: string) => {
     setLoadingId(studentId);
     loginStudent.mutate(studentId);
@@ -114,7 +121,7 @@ export default function DemoAccess() {
           <span className="block text-violet-300 text-3xl sm:text-4xl mt-1">for Schools and Organizations</span>
         </h1>
         <p className="text-violet-200 text-lg max-w-xl mx-auto">
-          Try the full platform instantly. No registration, no credit card needed. Experience both the Teacher Dashboard and Student view with pre-loaded demo data.
+          Try the full platform instantly. No registration, no credit card needed. Experience the Teacher Dashboard, Student view, and Org Admin portal with pre-loaded demo data.
         </p>
       </section>
 
@@ -137,7 +144,7 @@ export default function DemoAccess() {
               <div className="text-sm">
                 <p className="font-bold text-foreground mb-1">Welcome to the Finsight Lite demo</p>
                 <p className="text-foreground/70 leading-relaxed">
-                  This demo has two sides. Choose <span className="font-semibold text-foreground">Enter as Teacher</span> below to explore the classroom dashboard with students, challenges, and a leaderboard. Or pick a <span className="font-semibold text-foreground">Student</span> to see the learner experience with money tools, lessons, and rewards. New here? Start with the Teacher view.
+                  This demo has three sides. Choose <span className="font-semibold text-foreground">Enter as Teacher</span> below to explore the classroom dashboard with students, challenges, and a leaderboard. Pick a <span className="font-semibold text-foreground">Student</span> to see the learner experience with money tools, lessons, and rewards. Or open the <span className="font-semibold text-foreground">Org Admin View</span> for school-wide oversight, AI usage, and certificate branding. New here? Start with the Teacher view.
                 </p>
               </div>
             </div>
@@ -319,6 +326,83 @@ export default function DemoAccess() {
                     </button>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Org Admin Card (full width, third view) */}
+            <Card className="lg:col-span-2 rounded-glass shadow-2xl border-2 border-violet-400/60 bg-gradient-to-br from-violet-800 via-indigo-900 to-slate-900 text-white">
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row md:items-center gap-6">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-5">
+                      <Badge className="bg-violet-400/20 text-violet-200 border-violet-400/40 font-bold tracking-widest text-xs px-3 py-1">
+                        <Building2 className="w-3 h-3 mr-1.5" /> SPONSOR &amp; ADMIN ACCESS
+                      </Badge>
+                      <Badge className="bg-white/10 text-violet-100 border-white/20 text-xs px-2.5 py-1">
+                        <Eye className="w-3 h-3 mr-1" /> Read-only
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-16 h-16 bg-violet-600 rounded-2xl flex items-center justify-center shadow-xl shrink-0 ring-4 ring-violet-400/30">
+                        <Building2 className="w-8 h-8 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-white font-bold text-2xl">Org Admin View</h2>
+                        <p className="text-violet-200 text-sm">School-wide oversight for administrators and sponsors</p>
+                      </div>
+                    </div>
+
+                    <p className="text-violet-200/90 text-sm leading-relaxed mb-4">
+                      See the whole programme at a glance: every student's progress, AI usage against quotas, lesson publishing, and how your logo appears on student certificates. Everything here is view-only, so browse freely.
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
+                      {[
+                        "Dashboard with org-wide stats and student table",
+                        "AI usage today and this month, with quotas",
+                        "Certificate branding with live logo preview",
+                        "Lesson plans in draft and published states",
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-start gap-1.5">
+                          <CheckCircle className="w-3 h-3 text-emerald-400 mt-0.5 shrink-0" />
+                          <span className="text-violet-100/80">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="md:w-72 shrink-0 space-y-3">
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      {[
+                        { icon: BarChart3, label: "Dashboard" },
+                        { icon: Award, label: "Branding" },
+                        { icon: BookOpen, label: "Lessons" },
+                      ].map((f, i) => {
+                        const Icon = f.icon;
+                        return (
+                          <div key={i} className="bg-white/10 rounded-lg p-2 border border-white/20">
+                            <Icon className="w-4 h-4 text-violet-300 mx-auto mb-1" />
+                            <p className="text-violet-100 text-xs font-medium">{f.label}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <Button
+                      onClick={() => loginOrgAdmin.mutate()}
+                      disabled={loginOrgAdmin.isPending}
+                      className="w-full bg-violet-400 hover:bg-violet-300 text-violet-950 font-bold py-3 text-base shadow-lg"
+                      data-testid="button-demo-org-admin-login"
+                    >
+                      {loginOrgAdmin.isPending ? (
+                        <><div className="w-4 h-4 border-2 border-violet-950 border-t-transparent rounded-full animate-spin mr-2" /> Entering...</>
+                      ) : (
+                        <>Enter as Org Admin <ArrowRight className="w-4 h-4 ml-1" /></>
+                      )}
+                    </Button>
+                    <p className="text-violet-300/70 text-xs text-center">No sign-up needed. This view is read-only.</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>

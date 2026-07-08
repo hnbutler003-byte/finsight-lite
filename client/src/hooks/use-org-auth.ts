@@ -14,6 +14,7 @@ export type OrgAdminUser = {
   orgName: string;
   envName: string;
   createdAt: string;
+  demoReadOnly?: boolean;
 };
 
 async function fetchOrgAdmin(): Promise<OrgAdminUser | null> {

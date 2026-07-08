@@ -46,6 +46,15 @@ const ORG_PENDING_ALLOWED = ["/api/org/auth/me", "/api/org-admin/overview"];
 export const isOrgAdmin = async (req: any, res: any, next: any) => {
   if (!req.session?.orgAdminId) return res.status(401).json({ message: "Org admin not authenticated" });
 
+  // Public read-only demo sessions (started from /demo) may look at everything
+  // but change nothing: block every non-GET request behind this middleware.
+  if (req.session.demoOrgReadOnly && req.method !== "GET") {
+    return res.status(403).json({
+      message: "This is a read-only demo. Changes are disabled.",
+      code: "DEMO_READ_ONLY",
+    });
+  }
+
   // Server-side status gate: block pending/rejected orgs from all data endpoints
   const reqPath: string = req.path ?? "";
   if (!ORG_PENDING_ALLOWED.some(p => reqPath === p || reqPath.startsWith(p))) {
@@ -323,7 +332,7 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
         firstName, lastName, email: email.toLowerCase(), passwordHash,
         orgId: env.org_id, envId: env.id, role: "admin",
       });
-      (req as any).session.orgAdminId = admin.id; (req as any).session.orgId = admin.orgId;
+      (req as any).session.orgAdminId = admin.id; delete (req as any).session.demoOrgReadOnly; (req as any).session.orgId = admin.orgId;
       await audit({
         actorType: "org_admin", actorId: String(admin.id), actorEmail: admin.email,
         action: "org_admin.account.created",
@@ -384,7 +393,7 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
           });
         }
 
-        (req as any).session.orgAdminId = admin.id;
+        (req as any).session.orgAdminId = admin.id; delete (req as any).session.demoOrgReadOnly;
         (req as any).session.orgId = admin.orgId;
         const { passwordHash: _p, ...safe } = admin;
         const org = await getOrganization(admin.orgId);
@@ -399,7 +408,7 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
       if (!admin.passwordHash) return res.status(401).json({ message: "This account uses Google sign-in. Please use the 'Sign in with Google' button." });
       const valid = await bcrypt.compare(password, admin.passwordHash);
       if (!valid) return res.status(401).json({ message: "Invalid email or password" });
-      (req as any).session.orgAdminId = admin.id; (req as any).session.orgId = admin.orgId;
+      (req as any).session.orgAdminId = admin.id; delete (req as any).session.demoOrgReadOnly; (req as any).session.orgId = admin.orgId;
       const { passwordHash: _, ...safe } = admin;
       const org = await getOrganization(admin.orgId);
       const envs = await getOrgEnvironments(admin.orgId);
@@ -412,6 +421,7 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
 
   app.post("/api/org/auth/logout", (req, res) => {
     delete (req as any).session.orgAdminId;
+    delete (req as any).session.demoOrgReadOnly;
     res.json({ ok: true });
   });
 
@@ -422,7 +432,12 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
     const org = await getOrganization(admin.orgId);
     const envs = await getOrgEnvironments(admin.orgId);
     const env = envs.find(e => e.id === admin.envId);
-    res.json({ ...safe, orgName: org?.name ?? "", envName: env?.display_name ?? "" });
+    res.json({
+      ...safe,
+      orgName: org?.name ?? "",
+      envName: env?.display_name ?? "",
+      demoReadOnly: !!req.session.demoOrgReadOnly,
+    });
   });
 
   app.post("/api/org/auth/google", async (req, res) => {
@@ -450,7 +465,7 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
         }
       }
 
-      (req as any).session.orgAdminId = admin.id; (req as any).session.orgId = admin.orgId;
+      (req as any).session.orgAdminId = admin.id; delete (req as any).session.demoOrgReadOnly; (req as any).session.orgId = admin.orgId;
       const { passwordHash: _, ...safe } = admin;
       const envs = await getOrgEnvironments(admin.orgId);
       const env = envs.find(e => e.id === admin.envId);
@@ -493,7 +508,7 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
             message: "This Google account is already registered with a different organization. Please sign in from that organization's portal instead.",
           });
         }
-        (req as any).session.orgAdminId = existing.id; (req as any).session.orgId = existing.orgId;
+        (req as any).session.orgAdminId = existing.id; delete (req as any).session.demoOrgReadOnly; (req as any).session.orgId = existing.orgId;
         const { passwordHash: _, ...safe } = existing;
         return res.json({ ...safe, orgName: org.name, envName: env.display_name });
       }
@@ -507,7 +522,7 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
         envId: env.id,
         role: "admin",
       });
-      (req as any).session.orgAdminId = admin.id; (req as any).session.orgId = admin.orgId;
+      (req as any).session.orgAdminId = admin.id; delete (req as any).session.demoOrgReadOnly; (req as any).session.orgId = admin.orgId;
       await audit({
         actorType: "org_admin", actorId: String(admin.id), actorEmail: admin.email,
         action: "org_admin.account.created",
@@ -586,7 +601,7 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
         role:         "admin",
       });
 
-      (req as any).session.orgAdminId = admin.id;
+      (req as any).session.orgAdminId = admin.id; delete (req as any).session.demoOrgReadOnly;
       (req as any).session.orgId      = admin.orgId;
 
       await audit({
@@ -658,6 +673,63 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
     }
   });
 
+  // ─── Public demo: Org Admin view ─────────────────────────────────────────────
+  // SECURITY: this only ever logs into the designated demo organisation
+  // (display_label = "demo-test-org") using a dedicated password-less demo
+  // account, and the session is flagged read-only so isOrgAdmin rejects every
+  // non-GET request. It can never reach a real organisation.
+  app.post("/api/demo/login/org-admin", async (req: any, res) => {
+    try {
+      const orgs = await getOrganizations();
+      const org = orgs.find((o: any) => o.display_label === "demo-test-org");
+      if (!org) return res.status(404).json({ message: "The demo organization is not configured yet." });
+
+      const envs = await getOrgEnvironments(org.id);
+      if (envs.length === 0) {
+        return res.status(500).json({ message: "The demo organization has no environment configured." });
+      }
+      const env = envs[0];
+
+      const { ensureDemoOrgData } = await import("../demoOrgData");
+      await ensureDemoOrgData(org.id, env.id);
+
+      const DEMO_ORG_ADMIN_EMAIL = "demo.viewer@finsightlite.com";
+      let admin = await storage.getOrgAdminByEmail(DEMO_ORG_ADMIN_EMAIL);
+      if (!admin) {
+        admin = await storage.createOrgAdmin({
+          firstName: "Demo",
+          lastName: "Admin",
+          email: DEMO_ORG_ADMIN_EMAIL,
+          passwordHash: null, // password login impossible; only this endpoint creates the session
+          orgId: org.id,
+          envId: env.id,
+          role: "admin",
+        });
+      }
+      if (admin.orgId !== org.id) {
+        return res.status(500).json({ message: "The demo admin account is misconfigured." });
+      }
+
+      req.session.orgAdminId = admin.id;
+      req.session.orgId = admin.orgId;
+      req.session.demoOrgReadOnly = true;
+
+      await audit({
+        actorType: "org_admin", actorId: String(admin.id), actorEmail: admin.email,
+        action: "demo.org_admin.login",
+        targetType: "organization", targetId: org.id,
+        orgId: org.id,
+        meta: { via: "public-demo", readOnly: true },
+        req,
+      });
+
+      res.json({ ok: true, redirect: "/org/dashboard" });
+    } catch (e: any) {
+      captureError(e, { route: "/api/demo/login/org-admin" });
+      res.status(500).json({ message: "Could not start the demo org admin session. Please try again in a moment." });
+    }
+  });
+
   // ─── Admin: Preview/impersonation start ──────────────────────────────────────
   // Allows the founder admin to preview the experience as a demo-org actor.
   // Only works for the designated test organisation (display_label = "demo-test-org").
@@ -709,6 +781,7 @@ export async function registerAuthDomainRoutes(app: Express): Promise<void> {
         if (admin.orgId !== demoOrgId) return res.status(403).json(FORBIDDEN);
         actorName = `${admin.firstName} ${admin.lastName ?? ""}`.trim();
         req.session.orgAdminId = String(admin.id);
+        delete req.session.demoOrgReadOnly;
         req.session.orgId = admin.orgId;
       }
 

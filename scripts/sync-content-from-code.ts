@@ -31,8 +31,8 @@ async function main() {
     const planRes = await pool.query(
       `UPDATE lesson_plans
          SET title = $1, duration = $2, objectives = $3, content_sections = $4::jsonb,
-             instructor = $5, topic = $6
-       WHERE org_id = $7 AND subject = 'static' AND grade_level = $8
+             instructor = $5, topic = $6, video_url = $7
+       WHERE org_id = $8 AND subject = 'static' AND grade_level = $9
        RETURNING id`,
       [
         lesson.title,
@@ -41,6 +41,7 @@ async function main() {
         JSON.stringify(lesson.content_sections),
         lesson.instructor,
         lesson.topic,
+        lesson.video_url ?? null,
         STATIC_ORG_ID,
         lesson.grade_level,
       ]

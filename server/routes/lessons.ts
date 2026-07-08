@@ -27,6 +27,7 @@ import {
   getGameContent,
   getPublishedLessons,
   getPublishedLessonsByEnv,
+  getPublishedLessonsByClass,
   type LessonPlan,
 } from "../supabase";
 import { isAdmin, isOrgAdmin, ADMIN_EMAIL } from "./auth";
@@ -102,9 +103,12 @@ async function getStudentAccessibleLessons(userId: string): Promise<LessonPlan[]
     .map(e => e.class.envId)
     .filter((envId): envId is string => !!envId);
 
+  const classIds = studentClasses.map(e => e.class.id);
+
   const lessonFetches: Promise<LessonPlan[]>[] = [
     ...directOrgIds.map(id => getPublishedLessons(id)),
     ...linkedEnvIds.map(envId => getPublishedLessonsByEnv(envId)),
+    ...classIds.map(classId => getPublishedLessonsByClass(classId)),
   ];
 
   const results = await Promise.all(lessonFetches);
@@ -114,6 +118,13 @@ async function getStudentAccessibleLessons(userId: string): Promise<LessonPlan[]
 }
 
 async function studentHasLessonAccess(userId: string, lesson: LessonPlan): Promise<boolean> {
+  // Class-scoped lessons (created by a teacher) are ONLY visible to students
+  // enrolled in that exact class. Org or env membership never grants access.
+  if (lesson.class_id != null) {
+    const studentClasses = await storage.getStudentClasses(userId);
+    return studentClasses.some(e => e.class.id === lesson.class_id);
+  }
+
   const directOrgIds = await getStudentOrgIds(userId);
   if (directOrgIds.includes(lesson.org_id)) return true;
 
