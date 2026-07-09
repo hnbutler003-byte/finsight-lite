@@ -1,0 +1,69 @@
+Fix a Railway build failure caused by a corepack signature verification bug.
+
+BACKGROUND
+The build failed at the install step with:
+Error: Cannot find matching keyid: {"signatures":[...],"keys":[...]}
+    at verifySignature ... corepack.cjs
+    at fetchLatestStableVersion ...
+
+This is NOT a lockfile problem and NOT a code problem. It happens because 
+the install command is "corepack pnpm install --frozen-lockfile" without a 
+pinned package manager version. Without a pin, corepack tries to resolve 
+"latest stable pnpm" from the npm registry and verify its signature. That 
+verification is failing because corepack's embedded signing keys are out 
+of date relative to a key npm has since rotated in. This is a known 
+corepack issue, not something wrong with this codebase.
+
+FIX
+
+1. Check package.json for a "packageManager" field. If it's missing, or 
+   present but not pinned to an exact version, add or update it to pin the 
+   exact pnpm version already being installed via Nix in this build 
+   (confirm the exact version from the Nixpacks build log, it was 
+   pnpm-10.0.0 as of the last failed build, but verify current rather than 
+   assuming):
+
+   "packageManager": "pnpm@10.0.0"
+
+   Pinning this means corepack uses the specified version directly instead 
+   of hitting the network to resolve "latest" and running signature 
+   verification, which is what's failing.
+
+2. Confirm this field is valid JSON and doesn't break any existing 
+   package.json structure.
+
+3. Test locally in Replit if possible: run pnpm install and confirm no 
+   corepack errors.
+
+4. Commit package.json (only, unless the lockfile also needs regenerating 
+   for an unrelated reason, do not touch pnpm-lock.yaml as part of this fix 
+   unless it's actually out of sync).
+
+5. Push to the GitHub remote.
+
+6. Verify the push landed: compare the full 40-character SHA of local HEAD 
+   against the GitHub remote HEAD.
+
+7. Watch the Railway deploy log for this specific build. Confirm the 
+   "corepack pnpm install --frozen-lockfile" step completes without a 
+   "Cannot find matching keyid" error, and confirm the build proceeds 
+   through "pnpm run build" and starts "node dist/index.cjs" successfully.
+
+IF PINNING THE VERSION DOES NOT RESOLVE IT
+As a fallback, this can also be fixed by setting an environment variable 
+in Railway to skip corepack's signature verification entirely:
+COREPACK_INTEGRITY_KEYS=0
+Only use this fallback if the packageManager pin alone does not fix the 
+build, pinning the version is the cleaner fix and should be tried first.
+
+STANDING REQUIREMENTS (apply throughout)
+- No em dashes anywhere, including commit messages and code comments
+- This is a backend/infra/config fix with no UI change, skip the light/dark 
+  mode verification requirement
+- Do not touch teacher-guide.md or org-guide.md, no teacher-facing or 
+  org-admin-facing UI is affected
+- Do not modify pnpm-lock.yaml as part of this fix unless it is genuinely 
+  out of sync, this is a separate, already-known issue with its own fix
+
+Report back with: the exact pnpm version pinned, confirmation the local/remote 
+SHA match, and the final Railway deploy status.
