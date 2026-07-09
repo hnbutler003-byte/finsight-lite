@@ -1,0 +1,146 @@
+Add the remaining two lesson diagrams, building on the diagram registry pattern
+already established with bank-account-steps.
+
+BACKGROUND
+The lesson diagram registry pattern (diagramKey on content sections, mapped to
+React components in client/src/components/lesson-diagrams/) should already be
+working from a previous prompt, with bank-account-steps live in the Opening a Bank
+Account in the Bahamas lesson. Do not rebuild that pattern, extend it. If the
+registry or diagramKey rendering is not actually working when you check, stop and
+flag this rather than proceeding, the rest of this prompt assumes it works.
+
+PART 1: BUILD TWO MORE DIAGRAM COMPONENTS
+
+Add both to client/src/components/lesson-diagrams/ and register them in the same
+index/registry file used by bank-account-steps:
+{
+  "payslip-breakdown": PayslipBreakdownDiagram,
+  "chequing-vs-savings": ChequingVsSavingsDiagram,
+}
+
+Both follow the same design system rules as bank-account-steps: Baloo 2 for
+headings (font-display), Nunito for body (font-sans), .glass-card with
+--radius-glass (28px), CSS tokens only, no hardcoded hex values. Coral stays
+reserved for gamification only, do not use it here. Every colored text element
+needs an explicit dark: pair per the contrast rules in index.css. No em dashes
+anywhere in code, comments, or rendered text.
+
+1. PayslipBreakdownDiagram
+A single .glass-card styled like a simplified payslip: "Weekly payslip" as a
+font-display heading, then three rows separated by thin dividers: Gross pay
+(B$400.00), NIB deduction (-B$15.60, shown in a subtly tinted amber/warning-toned
+row with proper dark: pairing, not coral), then Net pay (B$384.40) in a
+teal/accent tinted row with a "what actually lands in your account" subtitle.
+Include a small muted caption below: "Sample amounts for illustration, actual NIB
+rates can change." Use realistic Bahamian dollar formatting (B$) consistent with
+the rest of the app.
+
+2. ChequingVsSavingsDiagram
+Two side-by-side cards (stack vertically on mobile, per existing responsive
+patterns) inside one wrapping .glass-card or as two adjacent .glass-card elements.
+Left card (violet-tinted header): "Chequing account" with bullet points: built for
+everyday spending, frequent deposits and withdrawals, often comes with a debit
+card, little to no interest earned, use for allowance/wages/bills. Right card
+(amber-tinted header): "Savings account" with bullet points: built to hold money
+over time, limited withdrawals before fees, usually no debit card, earns a small
+amount of interest, use for savings goals/emergencies.
+
+PART 2: WIRE CHEQUING-VS-SAVINGS INTO LESSON 1
+
+Apply diagramKey "chequing-vs-savings" to the "Chequing vs. Savings, What's the
+Difference?" content section (Section 1) in the already-existing Opening a Bank
+Account in the Bahamas lesson, so that lesson now has two diagrams: this one after
+Section 1, and bank-account-steps after Section 2 (already in place).
+
+PART 3: CREATE LESSON 2 WITH PAYSLIP-BREAKDOWN WIRED IN
+
+Create the second Real Life Ready lesson if it does not yet exist, applying
+diagramKey "payslip-breakdown" to the "Gross Pay vs. Net Pay" section:
+
+Title: Understanding Your Payslip and NIB
+Instructor: Finsight Lite Team
+Grade Level: 9-12
+Subject: Financial Literacy
+Duration: 15 minutes
+Topic: Payroll and Government Deductions
+
+Learning Objectives:
+- Read and understand the basic parts of a Bahamian payslip
+- Understand what NIB (National Insurance Board) is and why contributions are
+  deducted
+- Know what NIB contributions eventually provide
+- Understand the difference between gross pay and net pay
+
+Content Section 1 Heading: Gross Pay vs. Net Pay
+Content Section 1 Body: Gross pay is the full amount you earned before anything is
+taken out. Net pay, sometimes called take-home pay, is what actually lands in your
+account after deductions. The biggest deduction most working people in the Bahamas
+will see on a payslip is NIB. If you've never seen a payslip before, the gap
+between gross and net pay can be surprising, understanding it now means it won't
+catch you off guard at your first job.
+[diagramKey: payslip-breakdown applies after this section]
+
+Content Section 2 Heading: What Is NIB?
+Content Section 2 Body: NIB, the National Insurance Board, is the Bahamas'
+national social security programme. Almost every employed person in the Bahamas
+contributes to NIB, and it's automatically deducted from your paycheck, similar to
+how other countries have their own national insurance or social security systems.
+NIB contributions fund benefits that support people through major life events:
+sickness benefit, maternity benefit, retirement pension, and support for family
+members if a worker passes away or is injured on the job. It's not a savings
+account you can withdraw from anytime, it's a shared national system that pays out
+when specific, defined situations happen.
+
+Content Section 3 Heading: Why This Matters Even Before Your First Job
+Content Section 3 Body: Understanding NIB before you're actually holding a
+payslip means you won't be confused or worried the first time you see a chunk of
+your pay missing. It also matters long-term: NIB contributions are what eventually
+qualify someone for a retirement pension, so a consistent work history with NIB
+contributions isn't just a deduction today, it's building toward something later.
+
+Quiz Questions:
+1. What is the difference between gross pay and net pay?
+A) There is no difference, they mean the same thing
+B) Gross pay is before deductions, net pay is what you actually receive
+C) Gross pay is only for adults, net pay is for students
+D) Net pay is always higher than gross pay
+Correct: B
+
+2. What does NIB stand for?
+A) National Investment Bank
+B) National Insurance Board
+C) Nassau Income Bureau
+D) National Interest Balance
+Correct: B
+
+3. Which of these is something NIB contributions can eventually provide?
+A) A free car
+B) A retirement pension
+C) Free tuition at any school
+D) A guaranteed loan
+Correct: B
+
+4. Why is NIB deducted automatically from a paycheck?
+A) It's optional but most people forget to opt out
+B) It's a mandatory national social security contribution
+C) It's a penalty for late tax filing
+D) It only applies to business owners
+Correct: B
+
+STANDING REQUIREMENTS (apply throughout)
+- No em dashes anywhere, including code comments, UI copy, and lesson content
+- Any new database write must throw a clear, catchable error on failure, never
+  silently return null/undefined/false
+- Both new diagram components must be verified in both light and dark mode, check
+  text contrast, background tints, and border visibility in both, per the contrast
+  rules in index.css
+- Add a subtle fade-in or pop-in entrance treatment on both diagrams as they
+  scroll into view, consistent with the existing bank-account-steps diagram and
+  the "animations are default-on" standing rule
+- Production-ready, not demo-ware
+- Update teacher-guide.md and org-guide.md to reflect that the Real Life Ready
+  module now has two published lessons
+
+Report back with: confirmation both diagrams render correctly in both light and
+dark mode, confirmation Lesson 1 now shows two diagrams in the right places, and
+confirmation Lesson 2 was created successfully with its diagram in place.
