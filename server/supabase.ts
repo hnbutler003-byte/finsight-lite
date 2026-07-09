@@ -945,7 +945,9 @@ const STATIC_MODULES_DATA = [
   { id: "investing", title: "Investing Fundamentals", subtitle: "Grow Your Money", objective: "Students will understand what investing is, how risk relates to return, and how compound interest makes money grow exponentially over time.", display_order: 2 },
   { id: "investing-2", title: "Investing Fundamentals II", subtitle: "Go Deeper", objective: "Students will go deeper into investing: the difference between growth and dividend stocks, why diversification protects a portfolio, what index funds are, and how to read what a stock price move actually means.", display_order: 3 },
   { id: "sand-dollar", title: "The Sand Dollar", subtitle: "Digital Money in The Bahamas", objective: "Students will understand what the Sand Dollar is, why the Central Bank of The Bahamas created it, how to use a digital wallet, and how a government-issued digital currency differs from cryptocurrency.", display_order: 4, territories: ["BSD"] },
-  { id: "real-life", title: "Real Life Ready", subtitle: "Practical Money Skills", objective: "Students will learn practical money skills for real life: opening a bank account, reading a payslip and understanding NIB, spotting scams, and taking their first steps toward real investment accounts.", display_order: 5 },
+  { id: "jamdex", title: "JAM-DEX", subtitle: "Jamaica's Digital Dollar", objective: "Students will understand what JAM-DEX is, how a JAM-DEX wallet works, why the Bank of Jamaica created a digital dollar, and why a new form of money takes time to be adopted even when it is well designed and government backed.", display_order: 5, territories: ["JMD"] },
+  { id: "real-life", title: "Real Life Ready", subtitle: "Practical Money Skills", objective: "Students will learn practical money skills for real life: opening a bank account, reading a payslip and understanding NIB, spotting scams, and taking their first steps toward real investment accounts.", display_order: 6 },
+  { id: "real-life-2", title: "Real Life Ready II", subtitle: "Loans, Credit & Mortgages", objective: "Students will understand how loans and interest actually work, what a credit report tracks and how the Bahamian credit bureau system operates, what a mortgage and down payment are, and why early loan payments are mostly interest.", display_order: 7, territories: ["BSD"] },
 ];
 
 export const STATIC_LESSONS_DATA: Array<{
@@ -1364,7 +1366,7 @@ export const STATIC_LESSONS_DATA: Array<{
     ],
   },
   {
-    grade_level: "static-real-2-jm", topic: "real-life", title: "Understanding JAM-DEX, Jamaica's Digital Dollar",
+    grade_level: "static-real-2-jm", topic: "jamdex", title: "Understanding JAM-DEX, Jamaica's Digital Dollar",
     territories: ["JMD"],
     instructor: "Discover Jamaica's digital dollar, how a JAM-DEX wallet works, and why new money takes time to catch on.",
     duration: "15 min", video_url: "https://www.youtube.com/watch?v=XQIe6ewEflw",
@@ -1518,6 +1520,98 @@ export const STATIC_LESSONS_DATA: Array<{
       { order_index: 1, question: "What feature in the Investment Simulator helps explain why a stock's price moved?", option_a: "There is no such feature", option_b: "An AI explanation that appears in the buy dialog when a price has moved", option_c: "A phone call with a financial advisor", option_d: "A monthly newsletter", correct_answer: "B" },
       { order_index: 2, question: "Is a single day's price movement usually a good reason to make a big investment decision on its own?", option_a: "Yes, always act immediately on any price change", option_b: "No, it's usually more useful to look at trends over weeks or months", option_c: "Only if the price goes down", option_d: "Only if the price goes up", correct_answer: "B" },
       { order_index: 3, question: "Does a falling stock price definitely mean a company is in trouble?", option_a: "Yes, always", option_b: "Not necessarily, it reflects changing investor expectations, not a fixed fact", option_c: "Only on Mondays", option_d: "Yes, but only for companies outside the Caribbean", correct_answer: "B" },
+    ],
+  },
+  {
+    grade_level: "static-real2-1", topic: "real-life-2", title: "How Loans Actually Work",
+    territories: ["BSD"],
+    instructor: "Learn what a loan really is, why lenders charge interest, and how the length of a loan changes its total cost.",
+    duration: "12 min", video_url: null,
+    objectives: [
+      "Understand what a loan actually is and why lenders charge interest.",
+      "Understand the difference between principal and interest.",
+      "Understand how loan term length affects total cost.",
+      "Recognize that borrowing money is never free, even when it feels convenient.",
+    ],
+    content_sections: [
+      { heading: "Borrowing Is Renting Money", body: "A loan is money a lender gives you now, on the agreement that you pay it back later, plus extra. That extra is interest, and it's essentially the price of borrowing, the same way rent is the price of using someone else's apartment instead of owning it.\n\nLenders charge interest because they're taking a risk (you might not pay it back) and because they could have done something else with that money instead. Interest is how they get compensated for both." },
+      { heading: "Principal vs. Interest", body: "Principal is the actual amount you borrowed. Interest is the extra cost added on top. When you make a loan payment, part of it goes toward principal (actually paying down what you owe) and part goes toward interest (the lender's fee for lending it to you).\n\nEarly on in most loans, a bigger share of each payment goes toward interest rather than principal. This surprises a lot of people the first time they see it, which is exactly what the amortization lesson later in this module breaks down in detail." },
+      { heading: "Why the Length of a Loan Matters", body: "A longer loan term usually means lower monthly payments, which can feel more manageable. But it also means paying interest for a longer stretch of time, so the total amount you pay back over the life of the loan is often significantly higher.\n\nThere's a real tradeoff here: a shorter term costs more per month but less overall, a longer term costs less per month but more overall. Neither is automatically wrong, it depends on what someone can actually afford month to month." },
+    ],
+    questions: [
+      { order_index: 0, question: "What is interest, in simple terms?", option_a: "A penalty for having bad credit", option_b: "The price of borrowing money", option_c: "A government tax on loans", option_d: "Money the bank gives you for free", correct_answer: "B" },
+      { order_index: 1, question: "What is the difference between principal and interest?", option_a: "There is no difference", option_b: "Principal is the amount borrowed, interest is the extra cost of borrowing it", option_c: "Principal only applies to mortgages", option_d: "Interest is always higher than the principal", correct_answer: "B" },
+      { order_index: 2, question: "Why do lenders charge interest?", option_a: "It's required by law with no other reason", option_b: "To compensate for risk and the opportunity cost of lending the money", option_c: "Only to make the loan process take longer", option_d: "Interest doesn't actually benefit the lender", correct_answer: "B" },
+      { order_index: 3, question: "What's the tradeoff between a shorter and longer loan term?", option_a: "There is no tradeoff, longer is always better", option_b: "Shorter costs more per month but less overall, longer costs less per month but more overall", option_c: "Loan term length has no effect on total cost", option_d: "Longer terms always have lower interest rates", correct_answer: "B" },
+    ],
+  },
+  {
+    grade_level: "static-real2-2", topic: "real-life-2", title: "Understanding Credit and Your Credit Report",
+    territories: ["BSD"],
+    instructor: "Discover the Bahamas' credit bureau system, what a credit report tracks, and how to build a healthy credit history.",
+    duration: "12 min", video_url: null,
+    objectives: [
+      "Understand what a credit report and credit score actually are.",
+      "Know that the Bahamas has its own credit bureau system, established in 2018.",
+      "Understand what actions build or hurt a credit history.",
+      "Know that Bahamians are entitled to one free credit report per year.",
+    ],
+    content_sections: [
+      { heading: "The Bahamas Has Its Own Credit Bureau", body: "Many people don't realize the Bahamas has a real, official credit bureau system. It was established under the Credit Reporting Act of 2018, and it's operated by a licensed company called CRIF Information Services Bahamas. Banks, credit unions, and other lenders report information to it.\n\nThis system is genuinely newer than a lot of adults realize, since regular credit reporting only started rolling out around 2018 to 2021. That means understanding it now puts you ahead of where a lot of people currently are." },
+      { heading: "What a Credit Report Actually Tracks", body: "A credit report is a record of your borrowing history, loans, credit cards, and how reliably you've paid them back. Lenders use it, along with a credit score calculated from it, to decide whether to approve you for a future loan and what interest rate to offer.\n\nMissed or late payments hurt your credit history. Consistently paying on time builds it. This is one of the reasons understanding loans and interest before taking one out matters, your repayment behavior on any loan follows you into future borrowing decisions." },
+      { heading: "You're Entitled to Check Yours", body: "Under the Credit Reporting Act, Bahamians are entitled to one free credit report per year. Worth knowing: the free version shows your credit history but does not include your actual credit score, that's a separate detail some services charge for.\n\nChecking your own credit report periodically, once you're old enough to have one, is a genuinely healthy habit, it lets you catch errors or unfamiliar activity early rather than being surprised by it when you actually need a loan." },
+    ],
+    questions: [
+      { order_index: 0, question: "What organization operates the Bahamas' credit bureau?", option_a: "The Central Bank of The Bahamas directly", option_b: "CRIF Information Services Bahamas", option_c: "NIB", option_d: "BISX", correct_answer: "B" },
+      { order_index: 1, question: "When was the Bahamas' credit reporting system established?", option_a: "It has existed since the 1960s", option_b: "Under the Credit Reporting Act of 2018", option_c: "It doesn't exist yet", option_d: "It was established in 2005", correct_answer: "B" },
+      { order_index: 2, question: "What does a credit report track?", option_a: "Your school grades", option_b: "Your borrowing history and repayment reliability", option_c: "Your social media activity", option_d: "Your family's income", correct_answer: "B" },
+      { order_index: 3, question: "Are Bahamians entitled to a free credit report?", option_a: "No, it always costs money", option_b: "Yes, one free credit report per year, though it doesn't include the credit score", option_c: "Yes, but only for people over 65", option_d: "Only banks can request credit reports, individuals cannot", correct_answer: "B" },
+    ],
+  },
+  {
+    grade_level: "static-real2-3", topic: "real-life-2", title: "Mortgages Explained",
+    territories: ["BSD"],
+    instructor: "Understand what a mortgage is, how down payments work, and the path the Bahamas Mortgage Corporation offers first-time buyers.",
+    duration: "12 min", video_url: null,
+    objectives: [
+      "Understand what a mortgage is and how it differs from other loans.",
+      "Know roughly what a down payment is and why it matters.",
+      "Understand why a mortgage is usually the largest financial commitment someone makes.",
+      "Know that the Bahamas Mortgage Corporation offers a path specifically for first-time Bahamian buyers.",
+    ],
+    content_sections: [
+      { heading: "What a Mortgage Actually Is", body: "A mortgage is a loan specifically for buying property, usually a home. It works like other loans, principal plus interest, paid back over time, but mortgages are typically much larger amounts and much longer terms than something like a car loan.\n\nIn the Bahamas, mortgage terms for citizens and permanent residents can run up to 25 to 30 years, with interest rates generally in the 5 to 8 percent range, though the exact rate depends on the lender and the borrower's financial profile." },
+      { heading: "The Down Payment", body: "A down payment is the portion of the home's price you pay upfront, in cash, before the mortgage covers the rest. For Bahamian citizens and permanent residents, some banks offer financing with a down payment as low as 5 percent, though requirements vary by lender and by borrower.\n\nA bigger down payment usually means a smaller loan, which means less interest paid over time. It's one of the clearest examples of how saving in advance directly reduces what something costs you in the long run." },
+      { heading: "A Real Path for First-Time Bahamian Buyers", body: "The Bahamas Mortgage Corporation is a government entity that offers mortgages specifically aimed at first-time Bahamian buyers, often with more competitive rates and lower down payment requirements than a typical commercial bank.\n\nA mortgage is usually the single largest financial commitment most people ever make, often bigger than everything else combined. That's exactly why understanding the basics now, long before it's an actual decision, is worth the time." },
+    ],
+    questions: [
+      { order_index: 0, question: "What is a mortgage?", option_a: "A type of savings account", option_b: "A loan specifically for buying property", option_c: "A government tax on homes", option_d: "A type of insurance", correct_answer: "B" },
+      { order_index: 1, question: "What is a down payment?", option_a: "A monthly fee charged by the bank", option_b: "The portion of a home's price paid upfront in cash before the mortgage covers the rest", option_c: "The total interest paid over the life of the loan", option_d: "A penalty for paying off a loan early", correct_answer: "B" },
+      { order_index: 2, question: "What does a bigger down payment generally lead to?", option_a: "A larger loan and more interest paid overall", option_b: "A smaller loan and less interest paid over time", option_c: "No difference to the loan at all", option_d: "A shorter approval process only", correct_answer: "B" },
+      { order_index: 3, question: "What is the Bahamas Mortgage Corporation?", option_a: "A private international bank", option_b: "A government entity offering mortgages aimed at first-time Bahamian buyers", option_c: "A credit bureau", option_d: "An insurance company", correct_answer: "B" },
+    ],
+  },
+  {
+    grade_level: "static-real2-4", topic: "real-life-2", title: "Amortization, Why Your Early Payments Are Mostly Interest",
+    territories: ["BSD"],
+    instructor: "See why early loan payments barely touch the principal and how paying extra early can save real money.",
+    duration: "12 min", video_url: null,
+    objectives: [
+      "Understand what amortization means.",
+      "Understand why early loan payments are weighted toward interest, not principal.",
+      "Know how to use the Loan Payment Calculator to see this in action.",
+      "Understand how extra payments toward principal can reduce total interest paid.",
+    ],
+    content_sections: [
+      { heading: "The Same Payment, Different Split", body: "Amortization is the process of paying off a loan through regular, fixed payments over time, where each payment is split between principal and interest. Here's the part that surprises most people: that split isn't even, it changes every single payment.\n\nEarly in a loan, most of your payment goes toward interest, with only a small amount actually reducing what you owe. Over time, that flips, later payments put more toward principal and less toward interest, even though the total payment amount stays the same." },
+      { heading: "Why It Works This Way", body: "Interest is calculated on your remaining balance. Early on, your balance is at its highest, so the interest portion of each payment is also at its highest. As you pay down the principal, the balance shrinks, so future interest charges shrink too, leaving more of each payment to attack the principal.\n\nThis is exactly why paying off a loan early, even partially, can save real money, an extra payment made early in a loan reduces the balance while interest is at its most expensive, which has a bigger effect than the same extra payment made later." },
+      { heading: "Try It Yourself", body: "Use the Loan Payment Calculator to actually see this. Enter a loan amount, an interest rate, and a term, and watch how the chart shows interest dominating early payments and principal taking over later ones.\n\nTry changing the term length and watch what happens to total interest paid. A shorter term looks scarier on the monthly payment, but the amortization chart will show you exactly why it can save a large amount of money overall." },
+    ],
+    questions: [
+      { order_index: 0, question: "What does amortization mean?", option_a: "A type of interest rate", option_b: "Paying off a loan through regular payments split between principal and interest", option_c: "A penalty for missing a payment", option_d: "The total price of a home", correct_answer: "B" },
+      { order_index: 1, question: "Why are early loan payments weighted more toward interest?", option_a: "Lenders intentionally front-load fees", option_b: "Interest is calculated on the remaining balance, which is highest early in the loan", option_c: "Early payments don't count toward the loan at all", option_d: "It's random and has no pattern", correct_answer: "B" },
+      { order_index: 2, question: "What happens to the interest-versus-principal split as a loan progresses?", option_a: "It stays exactly the same the whole time", option_b: "More of each payment goes toward principal and less toward interest over time", option_c: "More of each payment goes toward interest the longer the loan goes", option_d: "The split only changes if you refinance", correct_answer: "B" },
+      { order_index: 3, question: "Why can an extra payment made early in a loan save more money than the same extra payment made later?", option_a: "It doesn't, timing makes no difference", option_b: "It reduces the balance while interest is at its most expensive, having a bigger effect", option_c: "Extra payments are only allowed in the first year", option_d: "Banks charge a fee for early extra payments", correct_answer: "B" },
     ],
   },
 ];

@@ -1,0 +1,300 @@
+# Real Life Ready II — Module Content (Bahamas Only)
+LOANS, CREDIT & MORTGAGES | Sequel module to Real Life Ready, same relationship as Investing Fundamentals to Investing Fundamentals II. Bahamas-scoped only for now.
+
+Icon suggestion: distinct from Landmark (used by base Real Life Ready), consider HandCoins or FileText. Color: a deeper/richer shade in the same emerald family as the base module, signaling progression rather than an unrelated topic.
+
+All claims below verified via web search per standing content-verification rule before inclusion.
+
+---
+
+## LESSON 1: How Loans Actually Work
+
+**Instructor:** Finsight Lite Team
+**Grade Level:** 9-12
+**Subject:** Financial Literacy
+**Duration:** 12 minutes
+**Topic:** Borrowing Basics
+
+**Learning Objectives:**
+- Understand what a loan actually is and why lenders charge interest
+- Understand the difference between principal and interest
+- Understand how loan term length affects total cost
+- Recognize that borrowing money is never free, even when it feels convenient
+
+**Content Section 1 Heading:** Borrowing Is Renting Money
+
+**Content Section 1 Body Paragraph 1:** A loan is money a lender gives you now, on the agreement that you pay it back later, plus extra. That extra is interest, and it's essentially the price of borrowing, the same way rent is the price of using someone else's apartment instead of owning it.
+
+**Content Section 1 Body Paragraph 2:** Lenders charge interest because they're taking a risk (you might not pay it back) and because they could have done something else with that money instead. Interest is how they get compensated for both.
+
+**Content Section 2 Heading:** Principal vs. Interest
+
+**Content Section 2 Body Paragraph 1:** Principal is the actual amount you borrowed. Interest is the extra cost added on top. When you make a loan payment, part of it goes toward principal (actually paying down what you owe) and part goes toward interest (the lender's fee for lending it to you).
+
+**Content Section 2 Body Paragraph 2:** Early on in most loans, a bigger share of each payment goes toward interest rather than principal. This surprises a lot of people the first time they see it, which is exactly what the amortization lesson later in this module breaks down in detail.
+
+**Content Section 3 Heading:** Why the Length of a Loan Matters
+
+**Content Section 3 Body Paragraph 1:** A longer loan term usually means lower monthly payments, which can feel more manageable. But it also means paying interest for a longer stretch of time, so the total amount you pay back over the life of the loan is often significantly higher.
+
+**Content Section 3 Body Paragraph 2:** There's a real tradeoff here: a shorter term costs more per month but less overall, a longer term costs less per month but more overall. Neither is automatically wrong, it depends on what someone can actually afford month to month.
+
+**Quiz Questions:**
+
+1. What is interest, in simple terms?
+A) A penalty for having bad credit
+B) The price of borrowing money
+C) A government tax on loans
+D) Money the bank gives you for free
+Correct: B
+
+2. What is the difference between principal and interest?
+A) There is no difference
+B) Principal is the amount borrowed, interest is the extra cost of borrowing it
+C) Principal only applies to mortgages
+D) Interest is always higher than the principal
+Correct: B
+
+3. Why do lenders charge interest?
+A) It's required by law with no other reason
+B) To compensate for risk and the opportunity cost of lending the money
+C) Only to make the loan process take longer
+D) Interest doesn't actually benefit the lender
+Correct: B
+
+4. What's the tradeoff between a shorter and longer loan term?
+A) There is no tradeoff, longer is always better
+B) Shorter costs more per month but less overall, longer costs less per month but more overall
+C) Loan term length has no effect on total cost
+D) Longer terms always have lower interest rates
+Correct: B
+
+**YouTube Video:** None recommended, this concept is foundational and better explained in the student's own reading pace than tied to a specific video.
+
+---
+
+## LESSON 2: Understanding Credit and Your Credit Report
+
+**Instructor:** Finsight Lite Team
+**Grade Level:** 9-12
+**Subject:** Financial Literacy
+**Duration:** 12 minutes
+**Topic:** Credit Systems in the Bahamas
+
+**Learning Objectives:**
+- Understand what a credit report and credit score actually are
+- Know that the Bahamas has its own credit bureau system, established in 2018
+- Understand what actions build or hurt a credit history
+- Know that Bahamians are entitled to one free credit report per year
+
+**Content Section 1 Heading:** The Bahamas Has Its Own Credit Bureau
+
+**Content Section 1 Body Paragraph 1:** Many people don't realize the Bahamas has a real, official credit bureau system. It was established under the Credit Reporting Act of 2018, and it's operated by a licensed company called CRIF Information Services Bahamas. Banks, credit unions, and other lenders report information to it.
+
+**Content Section 1 Body Paragraph 2:** This system is genuinely newer than a lot of adults realize, since regular credit reporting only started rolling out around 2018 to 2021. That means understanding it now puts you ahead of where a lot of people currently are.
+
+**Content Section 2 Heading:** What a Credit Report Actually Tracks
+
+**Content Section 2 Body Paragraph 1:** A credit report is a record of your borrowing history, loans, credit cards, and how reliably you've paid them back. Lenders use it, along with a credit score calculated from it, to decide whether to approve you for a future loan and what interest rate to offer.
+
+**Content Section 2 Body Paragraph 2:** Missed or late payments hurt your credit history. Consistently paying on time builds it. This is one of the reasons understanding loans and interest before taking one out matters, your repayment behavior on any loan follows you into future borrowing decisions.
+
+**Content Section 3 Heading:** You're Entitled to Check Yours
+
+**Content Section 3 Body Paragraph 1:** Under the Credit Reporting Act, Bahamians are entitled to one free credit report per year. Worth knowing: the free version shows your credit history but does not include your actual credit score, that's a separate detail some services charge for.
+
+**Content Section 3 Body Paragraph 2:** Checking your own credit report periodically, once you're old enough to have one, is a genuinely healthy habit, it lets you catch errors or unfamiliar activity early rather than being surprised by it when you actually need a loan.
+
+**Quiz Questions:**
+
+1. What organization operates the Bahamas' credit bureau?
+A) The Central Bank of The Bahamas directly
+B) CRIF Information Services Bahamas
+C) NIB
+D) BISX
+Correct: B
+
+2. When was the Bahamas' credit reporting system established?
+A) It has existed since the 1960s
+B) Under the Credit Reporting Act of 2018
+C) It doesn't exist yet
+D) It was established in 2005
+Correct: B
+
+3. What does a credit report track?
+A) Your school grades
+B) Your borrowing history and repayment reliability
+C) Your social media activity
+D) Your family's income
+Correct: B
+
+4. Are Bahamians entitled to a free credit report?
+A) No, it always costs money
+B) Yes, one free credit report per year, though it doesn't include the credit score
+C) Yes, but only for people over 65
+D) Only banks can request credit reports, individuals cannot
+Correct: B
+
+**YouTube Video:** None recommended, this is a newer and fairly specific system best explained precisely in writing rather than risking an outdated or generic third-party video.
+
+---
+
+## LESSON 3: Mortgages Explained
+
+**Instructor:** Finsight Lite Team
+**Grade Level:** 9-12
+**Subject:** Financial Literacy
+**Duration:** 12 minutes
+**Topic:** Home Financing
+
+**Learning Objectives:**
+- Understand what a mortgage is and how it differs from other loans
+- Know roughly what a down payment is and why it matters
+- Understand why a mortgage is usually the largest financial commitment someone makes
+- Know that the Bahamas Mortgage Corporation offers a path specifically for first-time Bahamian buyers
+
+**Content Section 1 Heading:** What a Mortgage Actually Is
+
+**Content Section 1 Body Paragraph 1:** A mortgage is a loan specifically for buying property, usually a home. It works like other loans, principal plus interest, paid back over time, but mortgages are typically much larger amounts and much longer terms than something like a car loan.
+
+**Content Section 1 Body Paragraph 2:** In the Bahamas, mortgage terms for citizens and permanent residents can run up to 25 to 30 years, with interest rates generally in the 5 to 8 percent range, though the exact rate depends on the lender and the borrower's financial profile.
+
+**Content Section 2 Heading:** The Down Payment
+
+**Content Section 2 Body Paragraph 1:** A down payment is the portion of the home's price you pay upfront, in cash, before the mortgage covers the rest. For Bahamian citizens and permanent residents, some banks offer financing with a down payment as low as 5 percent, though requirements vary by lender and by borrower.
+
+**Content Section 2 Body Paragraph 2:** A bigger down payment usually means a smaller loan, which means less interest paid over time. It's one of the clearest examples of how saving in advance directly reduces what something costs you in the long run.
+
+**Content Section 3 Heading:** A Real Path for First-Time Bahamian Buyers
+
+**Content Section 3 Body Paragraph 1:** The Bahamas Mortgage Corporation is a government entity that offers mortgages specifically aimed at first-time Bahamian buyers, often with more competitive rates and lower down payment requirements than a typical commercial bank.
+
+**Content Section 3 Body Paragraph 2:** A mortgage is usually the single largest financial commitment most people ever make, often bigger than everything else combined. That's exactly why understanding the basics now, long before it's an actual decision, is worth the time.
+
+**Quiz Questions:**
+
+1. What is a mortgage?
+A) A type of savings account
+B) A loan specifically for buying property
+C) A government tax on homes
+D) A type of insurance
+Correct: B
+
+2. What is a down payment?
+A) A monthly fee charged by the bank
+B) The portion of a home's price paid upfront in cash before the mortgage covers the rest
+C) The total interest paid over the life of the loan
+D) A penalty for paying off a loan early
+Correct: B
+
+3. What does a bigger down payment generally lead to?
+A) A larger loan and more interest paid overall
+B) A smaller loan and less interest paid over time
+C) No difference to the loan at all
+D) A shorter approval process only
+Correct: B
+
+4. What is the Bahamas Mortgage Corporation?
+A) A private international bank
+B) A government entity offering mortgages aimed at first-time Bahamian buyers
+C) A credit bureau
+D) An insurance company
+Correct: B
+
+**YouTube Video:** None recommended, mortgage terms and rates shift over time, written content that can be kept current is safer than a video that could go stale quickly.
+
+---
+
+## LESSON 4: Amortization, Why Your Early Payments Are Mostly Interest
+
+**Instructor:** Finsight Lite Team
+**Grade Level:** 9-12
+**Subject:** Financial Literacy
+**Duration:** 12 minutes
+**Topic:** Loan Repayment Mechanics
+
+**Learning Objectives:**
+- Understand what amortization means
+- Understand why early loan payments are weighted toward interest, not principal
+- Know how to use the Loan Payment Calculator to see this in action
+- Understand how extra payments toward principal can reduce total interest paid
+
+**Content Section 1 Heading:** The Same Payment, Different Split
+
+**Content Section 1 Body Paragraph 1:** Amortization is the process of paying off a loan through regular, fixed payments over time, where each payment is split between principal and interest. Here's the part that surprises most people: that split isn't even, it changes every single payment.
+
+**Content Section 1 Body Paragraph 2:** Early in a loan, most of your payment goes toward interest, with only a small amount actually reducing what you owe. Over time, that flips, later payments put more toward principal and less toward interest, even though the total payment amount stays the same.
+
+**Content Section 2 Heading:** Why It Works This Way
+
+**Content Section 2 Body Paragraph 1:** Interest is calculated on your remaining balance. Early on, your balance is at its highest, so the interest portion of each payment is also at its highest. As you pay down the principal, the balance shrinks, so future interest charges shrink too, leaving more of each payment to attack the principal.
+
+**Content Section 2 Body Paragraph 2:** This is exactly why paying off a loan early, even partially, can save real money, an extra payment made early in a loan reduces the balance while interest is at its most expensive, which has a bigger effect than the same extra payment made later.
+
+**Content Section 3 Heading:** Try It Yourself
+
+**Content Section 3 Body Paragraph 1:** Use the Loan Payment Calculator to actually see this. Enter a loan amount, an interest rate, and a term, and watch how the chart shows interest dominating early payments and principal taking over later ones.
+
+**Content Section 3 Body Paragraph 2:** Try changing the term length and watch what happens to total interest paid. A shorter term looks scarier on the monthly payment, but the amortization chart will show you exactly why it can save a large amount of money overall.
+
+**Quiz Questions:**
+
+1. What does amortization mean?
+A) A type of interest rate
+B) Paying off a loan through regular payments split between principal and interest
+C) A penalty for missing a payment
+D) The total price of a home
+Correct: B
+
+2. Why are early loan payments weighted more toward interest?
+A) Lenders intentionally front-load fees
+B) Interest is calculated on the remaining balance, which is highest early in the loan
+C) Early payments don't count toward the loan at all
+D) It's random and has no pattern
+Correct: B
+
+3. What happens to the interest-versus-principal split as a loan progresses?
+A) It stays exactly the same the whole time
+B) More of each payment goes toward principal and less toward interest over time
+C) More of each payment goes toward interest the longer the loan goes
+D) The split only changes if you refinance
+Correct: B
+
+4. Why can an extra payment made early in a loan save more money than the same extra payment made later?
+A) It doesn't, timing makes no difference
+B) It reduces the balance while interest is at its most expensive, having a bigger effect
+C) Extra payments are only allowed in the first year
+D) Banks charge a fee for early extra payments
+Correct: B
+
+**YouTube Video:** None recommended, this lesson is built specifically around the in-app calculator tool, a video would be redundant with the interactive tool the student already has.
+
+---
+
+## TOOL SPEC: Loan Payment Calculator
+
+Same interaction pattern as the existing compounding interest calculator (Save per week / years / growth chart), running the concept in reverse.
+
+**Inputs:**
+- Loan amount (slider or input, e.g. B$1,000 to B$500,000)
+- Interest rate (slider, e.g. 3% to 12%, defaulting to a realistic Bahamian mortgage rate around 6-7%)
+- Loan term in years (slider, e.g. 1 to 30 years)
+
+**Outputs:**
+- Monthly payment amount, calculated using the standard amortization formula
+- A stacked bar or area chart across the loan term showing, for each year (or a reasonable sampling interval), how much of that year's payments went to interest versus principal, visually showing the interest-heavy start and principal-heavy end
+- Total interest paid over the life of the loan, total amount paid overall, shown as summary cards matching the existing compounding calculator's "You put in / Interest earned / Total value" card pattern
+
+**Design requirements:**
+- Same visual system as the compounding calculator: matches existing chart card styling, violet/teal/amber palette, dark mode support, Baloo 2 for numbers and headers
+- Should feel like a sibling tool to the compounding calculator, not a separate, differently-styled feature
+
+---
+
+## Notes for Building
+
+- This module is Bahamas-only for now, given the credit bureau and mortgage content is specifically verified for Bahamian institutions and law. Revisit expansion to other territories only after equivalent verification is done for each one
+- All specific figures (down payment percentages, interest rate ranges, loan terms, the Credit Reporting Act 2018, CRIF Bahamas, Bahamas Mortgage Corporation) were verified via web search before inclusion, per the standing content-verification rule
+- No em dashes used anywhere in this content
+- Follows the paragraph-break standing rule throughout
+- The Loan Payment Calculator is a new tool, not yet built, this is a spec for a future Replit prompt, not existing functionality
