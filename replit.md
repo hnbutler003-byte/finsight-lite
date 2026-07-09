@@ -70,6 +70,7 @@ Preferred communication style: Simple, everyday language.
 *   Teacher login uses `bcryptjs` hashing; student login is passwordless.
 *   Legacy logo URLs (`/uploads/logos/*`) are 308 redirected to `/public-objects/logos/*`.
 *   Seed functions only insert missing rows and never update existing ones, so editing seeded content in code (static lessons, learning modules, market data) does NOT update the live DB. Run `npx tsx scripts/sync-content-from-code.ts` after such edits to resync.
+*   **Lesson content bold rule:** in lesson body text, wrap the key term(s) being defined in a section in `**double asterisks**` on first mention (rendered as bold by `BodyParagraphs` in `client/src/components/LessonBlocks.tsx`). Restraint matters: one or two bolded terms per section, only the actual term being defined, not every important-sounding word. Applies to all territories and modules.
 *   **Contrast rule (light & dark mode):** `caribbean-bg` is always dark: use `text-white`. `glass-card`/`glass-card-teal`/`glass-card-coral` adapt between light and dark: always use `text-foreground` (semantic token) inside them. Never hardcode `text-gray-800`, `text-teal-900`, `text-blue-900`, etc.: they vanish in dark mode. Tinted labels must always pair a dark variant: `text-teal-800 dark:text-teal-200`. Coloured badges must include both `bg-X-100 text-X-700` and `dark:bg-X-900/40 dark:text-X-300`. Full rules are in the comment block at the top of `client/src/index.css`.
 
 ## Pointers

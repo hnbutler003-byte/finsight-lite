@@ -6,6 +6,19 @@ import type { ContentSection, ContentDiagram } from "@shared/schema";
 
 export type { ContentSection, ContentDiagram };
 
+// Inline markdown bold: renders **term** segments as <strong>. Anything not
+// wrapped in double asterisks passes through unchanged as plain text.
+function renderInlineBold(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  if (parts.length === 1) return text;
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      return <strong key={i} className="font-bold">{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
+
 // Lesson body text uses blank lines as paragraph breaks. Render each paragraph
 // in its own <p> tag so multi-topic sections read naturally.
 export function BodyParagraphs({ body, index, pClassName, wrapperClassName }: {
@@ -18,7 +31,7 @@ export function BodyParagraphs({ body, index, pClassName, wrapperClassName }: {
   return (
     <div className={wrapperClassName ?? "space-y-3 mb-3"} data-testid={`section-body-${index}`}>
       {paragraphs.map((p, i) => (
-        <p key={i} className={pClassName ?? "text-foreground text-sm leading-relaxed"}>{p}</p>
+        <p key={i} className={pClassName ?? "text-foreground text-sm leading-relaxed"}>{renderInlineBold(p)}</p>
       ))}
     </div>
   );

@@ -1,0 +1,118 @@
+Add bold key-term formatting to lesson content, retrofitting what's already live and
+verifying the renderer actually supports it.
+
+============================================================
+PART 1: AUDIT FIRST
+============================================================
+
+Before changing any content, confirm two things about the lesson content
+renderer:
+
+1. Does it parse inline markdown bold (**text**) in content section body text, or
+   does it render body text as plain text? If it's plain text only, add support
+   for basic inline markdown bold before proceeding, otherwise the edits below
+   will show literal asterisks on screen instead of bold text.
+
+2. Separately, confirm the paragraph-break rendering fix from the earlier prompt
+   is actually working correctly in production right now (each paragraph
+   rendering as its own visual block with spacing, not one unbroken wall of
+   text). If it's not working, fix that too as part of this same prompt, since
+   both are the same category of problem, formatting present in the source data
+   not being respected by the renderer.
+
+Report what you find for both before proceeding to Part 2.
+
+============================================================
+PART 2: STANDING RULE
+============================================================
+
+In lesson content body text, bold the key term(s) being defined on first mention
+within a section, to act as a scannable visual anchor for the reader. Bold only
+the actual term being defined, not supporting language or every important
+sounding word, restraint matters here, one or two bolded terms per section is
+usually right, not five. This applies to all lesson content across every
+territory and module going forward, not just the lessons updated below.
+
+============================================================
+PART 3: RETROFIT ALREADY-LIVE LESSONS
+============================================================
+
+Update the body text of the following lessons to add bold key terms exactly as
+specified. Do not change anything else, wording, structure, quiz questions, or
+diagram placements stay exactly as they currently are, only add the bold
+markdown around the specified terms in the specified paragraphs.
+
+--- Opening a Bank Account in the Bahamas ---
+Content Section 1, Paragraph 1: bold "chequing account" on first mention.
+Content Section 1, Paragraph 2: bold "savings account" on first mention.
+
+--- Understanding Your Payslip and NIB ---
+Content Section 1, Paragraph 1: bold "Gross pay" and "Net pay" on first mention.
+Content Section 2, Paragraph 1: bold "NIB" on first mention (the very first word
+of the paragraph, where it's introduced as "NIB, the National Insurance Board").
+
+--- Educational Investment Accounts (CFAL & RF) ---
+This lesson's current content should already have "CFAL Education Plan" and "RF
+Education Investment Account (EIA)" bolded from the prior correction. Verify this
+is the case, if not, add the bold formatting to those two terms on first mention
+in Content Section 2.
+
+--- Opening a Bank Account in Jamaica ---
+Content Section 1, Paragraph 1: bold "chequing account" on first mention.
+Content Section 1, Paragraph 2: bold "savings account" on first mention.
+Content Section 2, Paragraph 3: bold "TRN" on first mention (where it says "many
+Jamaican banks also ask for a TRN").
+
+--- Understanding JAM-DEX, Jamaica's Digital Dollar (now its own module) ---
+Content Section 1, Paragraph 1: bold "legal tender" and "central bank digital
+currency" on first mention.
+
+--- Opening a Bank Account in Trinidad and Tobago ---
+Content Section 1, Paragraph 1: bold "chequing account" on first mention.
+Content Section 1, Paragraph 2: bold "savings account" on first mention.
+Content Section 2, Paragraph 1: bold "credit union" or "credit unions" on first
+mention (where it says "credit unions are a genuinely common and popular
+alternative").
+
+--- Know Your Money, Trinidad and Tobago's Currency ---
+Content Section 1, Paragraph 1: bold "Feel, Look, Tilt, and Check" since this is
+the core named framework the lesson teaches, not a single term but treat it as
+one bolded anchor phrase.
+
+============================================================
+PART 4: AVOIDING SCAMS AND FINANCIAL FRAUD
+============================================================
+
+This lesson predates this conversation and its exact current wording was not
+independently re-verified as part of this content pass. Read its actual current
+content directly from the database, then apply the same standing rule from Part
+2 to it: identify the one or two key terms genuinely being defined or introduced
+in each section (for example, if the lesson discusses phishing, urgency tactics,
+or specific scam types by name, those are likely candidates) and bold them on
+first mention. Use judgment based on the actual existing text rather than
+guessing at content you'd need to invent, if no clear single term stands out in a
+given section, it is fine to leave that section without added bold formatting
+rather than forcing one in.
+
+============================================================
+STANDING REQUIREMENTS (apply throughout)
+============================================================
+
+- No em dashes anywhere, including code comments, UI copy, and lesson content
+- Verify the bold formatting actually renders correctly in both light and dark
+  mode, bolded text still needs to meet contrast requirements in both
+- Production-ready, not demo-ware
+
+============================================================
+GIT
+============================================================
+
+Commit this work with a clear commit message describing the bold key-term
+formatting pass and any renderer fixes made in Part 1. Push to the GitHub
+remote. Verify the push landed by comparing the full 40-character SHA of local
+HEAD against the GitHub remote HEAD.
+
+Report back with: what Part 1's audit found (renderer support for bold and for
+paragraph breaks), confirmation of which lessons were updated, what was found
+and changed in the Avoiding Scams lesson, and confirmation the push landed with
+matching SHAs.
