@@ -1,0 +1,145 @@
+# Real Life Ready — Jamaica Content
+Practical Money Skills | Jamaica-localized lessons for the Real Life Ready module, same format as the Bahamas lessons, shown to students in the Jamaica (JMD) territory.
+
+---
+
+## LESSON: Opening a Bank Account in Jamaica
+
+**Instructor:** Finsight Lite Team
+**Grade Level:** 7-12
+**Subject:** Financial Literacy
+**Duration:** 15 minutes
+**Topic:** Banking Basics
+
+**Learning Objectives:**
+- Understand the difference between a chequing account and a savings account
+- Know what documents and information are needed to open an account in Jamaica
+- Understand why a parent or guardian is required for anyone under 18
+- Recognize the TRN as a Jamaica-specific requirement most students haven't heard of yet
+
+**Content Section 1 Heading:** Chequing vs. Savings, What's the Difference?
+
+**Content Section 1 Body:**
+A chequing account is built for everyday spending, money moves in and out often, and it usually comes with a debit card for regular purchases. A savings account is built to hold money you're not touching often. It usually earns a small amount of interest, the bank paying you for keeping your money there, but withdrawals are more limited before fees kick in. Most major banks in Jamaica, including NCB (National Commercial Bank), JN Bank, Scotiabank Jamaica, JMMB, and Sagicor Bank Jamaica, offer both types. A common approach: use a chequing account for spending money and a savings account for money you're setting aside for a goal.
+
+**Content Section 2 Heading:** What You Actually Need to Open One
+
+**Content Section 2 Body:**
+Since most students on Finsight Lite are under 18, a parent or guardian is required to be involved, most Jamaican banks require the minor to be added to an account alongside an adult, rather than opening a fully independent account. You'll typically need: a valid photo ID or a notarized copy of a birth certificate for the minor, proof of the parent or guardian's address (a recent utility bill or bank statement), and in many cases a letter from the parent or guardian authorizing the account. One thing that's different from some other territories: many Jamaican banks also ask for a **TRN (Taxpayer Registration Number)**. If your family doesn't already have one, it's worth asking about this before your bank visit so it doesn't hold things up.
+
+**Content Section 3 Heading:** A Real Example: Junior Savings Accounts
+
+**Content Section 3 Body:**
+Some Jamaican banks have built accounts specifically for young people. Scotiabank Jamaica, for example, offers a Primary Savings Junior Account for children under 18, which comes with its own debit card and lets a parent set up automatic regular transfers into it. This is a good example of what to actually ask about when your family visits a bank, some accounts are built generically for anyone, and some are built specifically with a student's needs in mind.
+
+**Quiz Questions:**
+
+1. What is the main purpose of a chequing account?
+A) To earn the highest possible interest rate
+B) Everyday spending and frequent transactions
+C) To store money for offshore investing
+D) To apply for a loan
+Correct: B
+
+2. Why is a parent or guardian required for anyone under 18 opening an account in Jamaica?
+A) It's optional but recommended
+B) Most banks require the minor to be added to an account alongside an adult
+C) Banks don't allow anyone under 21 to have any account at all
+D) It's only required for savings accounts, not chequing
+Correct: B
+
+3. What does TRN stand for, and why does it matter for opening an account in Jamaica?
+A) Total Recorded Numbers, used only for loans
+B) Taxpayer Registration Number, often required by Jamaican banks
+C) Transfer Reference Number, only used for wire transfers
+D) Teller Reference Name, an internal bank code
+Correct: B
+
+4. What is one feature of Scotiabank Jamaica's Primary Savings Junior Account?
+A) It has no debit card at all
+B) It's only available to people over 25
+C) It comes with its own debit card and allows automatic transfers
+D) It requires a $10,000 minimum deposit
+Correct: C
+
+**YouTube Video:** None recommended for this lesson. Search did not surface a video genuinely framed around a parent and teen opening an account together in Jamaica, most available content is aimed at adults or non-residents. Text-only for now, revisit if a better-fit video surfaces later.
+
+---
+
+## LESSON: Understanding JAM-DEX, Jamaica's Digital Dollar
+
+**Instructor:** Finsight Lite Team
+**Grade Level:** 9-12
+**Subject:** Financial Literacy
+**Duration:** 15 minutes
+**Topic:** Digital Currency in Jamaica
+
+**Learning Objectives:**
+- Understand what JAM-DEX is and how it differs from a regular bank account
+- Know how to open and use a JAM-DEX wallet
+- Understand why a new form of money doesn't automatically get used by everyone right away
+- Recognize JAM-DEX as a real, legal-tender example of digital money, not a cryptocurrency
+
+**Content Section 1 Heading:** What Is JAM-DEX?
+
+**Content Section 1 Body:**
+JAM-DEX is Jamaica's own digital dollar, created and backed by the Bank of Jamaica (BOJ). It's worth exactly the same as a regular Jamaican dollar, one JAM-DEX dollar equals one physical Jamaican dollar, and it's legal tender, meaning it's an officially recognized form of money, not something separate or unofficial. This makes Jamaica one of only a handful of countries in the world with a fully launched central bank digital currency, often shortened to CBDC. It's important not to confuse JAM-DEX with cryptocurrency like Bitcoin. Cryptocurrency isn't issued or backed by any government, its value can swing wildly, and no central bank stands behind it. JAM-DEX is the opposite: it's issued directly by Jamaica's central bank, its value never moves against the regular Jamaican dollar, and BOJ stands behind it the same way it stands behind physical cash.
+
+**Content Section 2 Heading:** How It Actually Works
+
+**Content Section 2 Body:**
+To use JAM-DEX, you need a digital wallet, available through banks and wallet providers like NCB's Lynk and JN Bank's JN Pay. A wallet can either be linked to an existing bank account, or opened independently with basic information like name, address, and date of birth. Once it's set up, you can add money by transferring from a bank account or depositing cash at a participating branch or smart ATM. To pay someone, you scan a QR code or enter their wallet ID and send the amount, similar to how many mobile payment apps work elsewhere in the world, except this one is actual government-issued money rather than a private company's payment system.
+
+**Content Section 3 Heading:** Why Hasn't Everyone Adopted It?
+
+**Content Section 3 Body:**
+Here's the honest part of the story: even though JAM-DEX launched back in 2021, most people in Jamaica still aren't using it day to day, and it's worth understanding why, because it teaches something bigger than just this one currency. As of 2026, JAM-DEX still makes up a very small share of all the money moving through Jamaica's economy, even though the amount being used has grown quickly. The core problem is what's sometimes called a chicken-and-egg situation: many stores don't accept JAM-DEX yet because their card machines haven't been upgraded to take it, and many people don't bother using JAM-DEX because there aren't enough places to actually spend it. Each side is waiting on the other. The Bank of Jamaica has publicly pushed banks to move faster on upgrading their systems, even offering to cover part of the cost, but the rollout has still taken longer than planners originally expected. This is a useful real-world lesson: a new form of money can be well-designed and government-backed and still take years to catch on, because it isn't just about the technology working, it's about enough people and enough businesses deciding to actually use it at the same time.
+
+**Quiz Questions:**
+
+1. What backs the value of JAM-DEX?
+A) Nothing, its value is determined entirely by trading
+B) The Bank of Jamaica, and it's worth the same as a regular Jamaican dollar
+C) A private technology company
+D) Gold reserves held overseas
+Correct: B
+
+2. How is JAM-DEX different from a cryptocurrency like Bitcoin?
+A) There is no real difference, they work the same way
+B) JAM-DEX is issued and backed by Jamaica's central bank, cryptocurrency is not
+C) Cryptocurrency is legal tender and JAM-DEX is not
+D) JAM-DEX can only be used outside of Jamaica
+Correct: B
+
+3. How do you typically pay someone using JAM-DEX?
+A) By mailing physical cash
+B) By scanning a QR code or entering their wallet ID
+C) Only in person at a Bank of Jamaica branch
+D) It cannot be used for payments, only savings
+Correct: B
+
+4. What is the main reason JAM-DEX adoption has been slower than expected?
+A) It is illegal to use in most of Jamaica
+B) A chicken-and-egg problem, where merchants and customers are each waiting on the other
+C) Nobody in Jamaica owns a smartphone
+D) The Bank of Jamaica discontinued the program
+Correct: B
+
+5. What's a broader lesson JAM-DEX's slow adoption can teach about new forms of money?
+A) Government-backed currency always gets adopted instantly
+B) A new form of money needs enough people and businesses using it together, not just good technology
+C) Digital currency never works and should be avoided
+D) Only cryptocurrencies face adoption challenges
+Correct: B
+
+**YouTube Video:** "Central Bank Digital Currency: JAMDEX" featuring Bank of Jamaica Deputy Governor Natalie Haynes, courtesy of PBC Jamaica: https://www.youtube.com/watch?v=XQIe6ewEflw
+Note: this video is from 2022 and covers the fundamentals of what JAM-DEX is and how it works well, but predates the more recent adoption struggles covered in Content Section 3. The written content above carries the "why hasn't everyone adopted it" angle, the video is best used for the foundational explanation, not the adoption story. For anything more current, the Bank of Jamaica's official YouTube channel is worth checking before publishing: https://www.youtube.com/channel/UCZkm1rSxVMhynjN8gdwWqYw
+
+---
+
+## Notes for Publishing
+
+- Both lessons follow the same org-admin lesson creation format as the Bahamas lessons (Title, Instructor, Grade Level, Subject, Duration, Topic, Objectives, Content sections, Quiz, optional Video)
+- These are territory-specific and should only appear for students in the Jamaica (JMD) environment, consistent with how Investment Simulator content is already localized per territory
+- The TRN detail in Lesson 1 and the adoption-struggle framing in Lesson 2 are the two most Jamaica-specific, non-generic pieces of content here, worth double-checking these stay accurate over time since banking requirements and JAM-DEX adoption status will keep shifting
+- No em dashes used anywhere in this content, consistent with standing style rules
