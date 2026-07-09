@@ -1,4 +1,5 @@
 import { useVideoEmbed } from "@/hooks/use-video-embed";
+import { LessonDiagramSlot } from "@/components/lesson-diagrams";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Play, AlertTriangle, BookOpen, BarChart3, CheckCircle2, ChevronRight, ListChecks } from "lucide-react";
 import type { ContentSection, ContentDiagram } from "@shared/schema";
@@ -127,12 +128,23 @@ export function SectionDiagram({ diagram, index }: { diagram: ContentDiagram; in
 }
 
 export function LessonContentBlock({ section, index }: { section: ContentSection; index: number }) {
+  // Custom-coded diagram rendered as a sibling AFTER this section's card, so
+  // it sits between this section and the next in the lesson flow (the parent
+  // space-y wrapper handles spacing). Unknown keys render nothing.
+  const diagramSlot = <LessonDiagramSlot diagramKey={section.diagramKey} index={index} />;
+
   if (section.type === "video" && section.video_url) {
-    return <SectionVideoBlock section={section} index={index} />;
+    return (
+      <>
+        <SectionVideoBlock section={section} index={index} />
+        {diagramSlot}
+      </>
+    );
   }
 
   const isDiagram = section.type === "diagram" && !!section.diagram;
   return (
+    <>
     <Card className="glass-card rounded-glass border-0">
       <CardContent className="p-6">
         <h2 className="font-display font-bold text-lg flex items-center gap-2 mb-3">
@@ -163,5 +175,7 @@ export function LessonContentBlock({ section, index }: { section: ContentSection
         )}
       </CardContent>
     </Card>
+    {diagramSlot}
+    </>
   );
 }

@@ -1,0 +1,281 @@
+# Real Life Ready — Module Content
+Practical Money Skills | New fourth core module, sitting alongside Budgeting Basics, Saving Smart, and Investing Fundamentals
+
+Icon: Landmark (lucide-react) | Color: emerald | Format below matches the Org Admin Lessons editor exactly: Title, Instructor, Grade Level, Subject, Duration, Topic, Learning Objectives, Content sections, Quiz questions.
+
+---
+
+## LESSON 1: Opening a Bank Account in the Bahamas
+
+**Instructor:** Finsight Lite Team
+**Grade Level:** 7-12
+**Subject:** Financial Literacy
+**Duration:** 15 minutes
+**Topic:** Banking Basics
+
+**Learning Objectives:**
+- Understand the difference between a chequing account and a savings account
+- Know what documents and information are needed to open an account in the Bahamas
+- Understand why a parent or guardian is usually required for anyone under 18
+- Recognize the ongoing costs (fees, minimum balances) that come with having an account
+
+**Content Section 1 Heading:** Chequing vs. Savings, What's the Difference?
+
+**Content Section 1 Body:**
+A chequing account (sometimes called a current account) is built for everyday spending. Money moves in and out often, you might get a debit card with it, and some chequing accounts let you write cheques or pay bills directly. A savings account is built to hold money you're not touching often. It usually earns a small amount of interest, which is the bank paying you for keeping your money there, but many savings accounts limit how many withdrawals you can make each month before a fee kicks in.
+
+Most banks in the Bahamas, including Scotiabank, RBC, CIBC FirstCaribbean, Fidelity Bank, and Bank of The Bahamas, offer both. A common approach: use a chequing account for spending money and a savings account for money you're setting aside for a goal.
+
+**Content Section 2 Heading:** What You Actually Need to Open One
+
+**Content Section 2 Body:**
+Since most students on Finsight Lite are under 18, banks in the Bahamas typically require a parent or guardian to open the account with you, either as a joint account holder or as a co-signer. You'll usually need: a valid form of ID (a school ID, birth certificate, or passport), proof of address (a utility bill in a parent's name works), and a parent or guardian present with their own ID. Some banks also ask for an initial deposit to open the account, which varies by bank and account type, so it's worth calling ahead or checking the bank's website before showing up.
+
+**Content Section 3 Heading:** The Costs Nobody Mentions Upfront
+
+**Content Section 3 Body:**
+Having a bank account isn't free. Watch for: monthly maintenance fees (charged just for having the account open), minimum balance requirements (some accounts charge a fee if your balance drops below a set amount), and ATM fees (using an ATM outside your bank's network usually costs extra). None of this means you shouldn't open an account, a bank account is a foundational money tool, it just means reading the fee schedule before you sign up saves you from surprises later.
+
+**Quiz Questions:**
+
+1. What is the main purpose of a chequing account?
+A) To earn the highest possible interest rate
+B) Everyday spending and frequent transactions
+C) To store money for offshore investing
+D) To apply for a loan
+Correct: B
+
+2. Why do most people under 18 need a parent or guardian to open a bank account in the Bahamas?
+A) It's not actually required, it's just a suggestion
+B) Banks only allow accounts for people over 21
+C) Banks typically require a joint account holder or co-signer for minors
+D) Students aren't allowed to have bank accounts at all
+Correct: C
+
+3. Which of these is a real cost that can come with having a bank account?
+A) A monthly maintenance fee
+B) A tax on your name
+C) A fee for being under 18
+D) A charge for closing the account on your birthday
+Correct: A
+
+4. What's one piece of ID or documentation you might need to open an account?
+A) A copy of someone else's bank statement
+B) Proof of address, like a utility bill
+C) A university diploma
+D) A passport from a different country
+Correct: B
+
+**YouTube Video:** Recommend linking a current explainer from an official Bahamian bank's own YouTube channel (Scotiabank Bahamas has published account-opening walkthroughs) rather than a third-party video, since bank procedures and requirements change and an official source stays accurate longer. Confirm the specific video is still current before publishing, banks update these periodically.
+
+---
+
+## LESSON 2: Understanding Your Payslip and NIB
+
+**Instructor:** Finsight Lite Team
+**Grade Level:** 9-12
+**Subject:** Financial Literacy
+**Duration:** 15 minutes
+**Topic:** Payroll and Government Deductions
+
+**Learning Objectives:**
+- Read and understand the basic parts of a Bahamian payslip
+- Understand what NIB (National Insurance Board) is and why contributions are deducted
+- Know what NIB contributions eventually provide
+- Understand the difference between gross pay and net pay
+
+**Content Section 1 Heading:** Gross Pay vs. Net Pay
+
+**Content Section 1 Body:**
+Gross pay is the full amount you earned before anything is taken out. Net pay, sometimes called take-home pay, is what actually lands in your account after deductions. The biggest deduction most working people in the Bahamas will see on a payslip is NIB. If you've never seen a payslip before, the gap between gross and net pay can be surprising, understanding it now means it won't catch you off guard at your first job.
+
+**Content Section 2 Heading:** What Is NIB?
+
+**Content Section 2 Body:**
+NIB, the National Insurance Board, is the Bahamas' national social security programme. Almost every employed person in the Bahamas contributes to NIB, and it's automatically deducted from your paycheck, similar to how other countries have their own national insurance or social security systems. NIB contributions fund benefits that support people through major life events: sickness benefit, maternity benefit, retirement pension, and support for family members if a worker passes away or is injured on the job. It's not a savings account you can withdraw from anytime, it's a shared national system that pays out when specific, defined situations happen.
+
+**Content Section 3 Heading:** Why This Matters Even Before Your First Job
+
+**Content Section 3 Body:**
+Understanding NIB before you're actually holding a payslip means you won't be confused or worried the first time you see a chunk of your pay missing. It also matters long-term: NIB contributions are what eventually qualify someone for a retirement pension, so a consistent work history with NIB contributions isn't just a deduction today, it's building toward something later.
+
+**Quiz Questions:**
+
+1. What is the difference between gross pay and net pay?
+A) There is no difference, they mean the same thing
+B) Gross pay is before deductions, net pay is what you actually receive
+C) Gross pay is only for adults, net pay is for students
+D) Net pay is always higher than gross pay
+Correct: B
+
+2. What does NIB stand for?
+A) National Investment Bank
+B) National Insurance Board
+C) Nassau Income Bureau
+D) National Interest Balance
+Correct: B
+
+3. Which of these is something NIB contributions can eventually provide?
+A) A free car
+B) A retirement pension
+C) Free tuition at any school
+D) A guaranteed loan
+Correct: B
+
+4. Why is NIB deducted automatically from a paycheck?
+A) It's optional but most people forget to opt out
+B) It's a mandatory national social security contribution
+C) It's a penalty for late tax filing
+D) It only applies to business owners
+Correct: B
+
+**YouTube Video:** Link a current video from NIB's own official YouTube channel (search "National Insurance Board Bahamas" on YouTube to find their verified channel). NIB publishes their own explainer content directly, which is both more accurate and more trustworthy for students than a third-party summary. Confirm the specific video covers general contributions/benefits rather than a narrow policy update before publishing, since some of their uploads are announcement-specific rather than educational.
+
+---
+
+## LESSON 3: Avoiding Scams and Financial Fraud
+
+**Instructor:** Finsight Lite Team
+**Grade Level:** 7-12
+**Subject:** Financial Literacy
+**Duration:** 15 minutes
+**Topic:** Consumer Protection and Fraud Awareness
+
+**Learning Objectives:**
+- Recognize common scam patterns that target people in the Caribbean specifically
+- Understand why urgency and secrecy are red flags in any money-related message
+- Know what to do if you suspect a scam
+- Understand that no legitimate bank or government agency asks for full account passwords or PINs
+
+**Content Section 1 Heading:** The Pattern Behind Most Scams
+
+**Content Section 1 Body:**
+Scams look different on the surface, a fake prize, a fake job offer, a message pretending to be from a bank, but almost all of them share the same underlying pattern: they create urgency ("act now or lose access"), they ask you to act alone or keep it secret, and they ask for something a legitimate organization would never actually need, like a full password, a PIN, or a one-time verification code. Learning to spot that pattern matters more than memorizing every specific scam, because new scams appear constantly, but the underlying trick usually stays the same.
+
+**Content Section 2 Heading:** Scams to Know About in the Caribbean
+
+**Content Section 2 Body:**
+Some scam types show up often in this region specifically: fake job offers that ask you to pay a fee upfront before you can "start," messages pretending to be from a bank asking you to "verify your account" by clicking a link and entering your login details, prize or lottery scams claiming you've won something you never entered, and romance or friendship scams that build trust over time before asking for money. Mobile money and remittance scams are also increasingly common, where someone pretends to be a family member urgently needing money sent through a transfer app.
+
+**Content Section 3 Heading:** What to Actually Do
+
+**Content Section 3 Body:**
+If a message creates pressure to act immediately, that's the moment to slow down, not speed up. Never share a password, PIN, or one-time verification code with anyone, including someone claiming to be from your bank, no legitimate bank will ever ask for it. If a message claims to be from your bank, don't click a link in the message, contact the bank directly using the number on their official website or the back of your card instead. If you're ever unsure, tell a parent, guardian, or teacher before taking any action, a second set of eyes is one of the best protections against a scam that's designed to make you feel like you have to act alone.
+
+**Quiz Questions:**
+
+1. What's a common warning sign that a message might be a scam?
+A) It asks you to take your time and think it over
+B) It creates urgency and pressure to act immediately
+C) It comes from a phone number you recognize
+D) It's written very formally
+Correct: B
+
+2. What should you do if you get a message claiming to be from your bank asking you to "verify your account" through a link?
+A) Click the link right away to fix the problem
+B) Reply with your account password to confirm your identity
+C) Contact the bank directly using their official number, not the link
+D) Ignore it completely and delete your bank account
+Correct: C
+
+3. Would a legitimate bank ever ask you for your full password or a one-time verification code?
+A) Yes, they need it to verify who you are
+B) No, this is never a legitimate request
+C) Only if you call them first
+D) Only for savings accounts, not chequing
+Correct: B
+
+4. What is one type of scam that has become more common through mobile money and transfer apps?
+A) Someone pretending to be a family member urgently needing money sent
+B) A bank offering you a lower interest rate
+C) A teacher assigning too much homework
+D) A store having a legitimate sale
+Correct: A
+
+5. If you're ever unsure whether something is a scam, what's the best first step?
+A) Handle it completely on your own and stay quiet about it
+B) Tell a parent, guardian, or teacher before doing anything
+C) Send money first, ask questions later
+D) Share the message with as many friends as possible
+Correct: B
+
+**YouTube Video:** Recommend sourcing a current fraud-awareness video from the Royal Bahamas Police Force's official channel or the Central Bank of The Bahamas, if either has published consumer-facing content, since a law enforcement or regulator source carries more authority on this topic than a general finance creator. Verify content is current and age-appropriate before publishing, since some fraud-awareness content is aimed at adults dealing with mortgage or investment fraud rather than scams more likely to target a teenager.
+
+---
+
+## LESSON 4: Educational Investment Accounts (CFAL & RF)
+
+**Instructor:** Finsight Lite Team
+**Grade Level:** 9-12
+**Subject:** Financial Literacy
+**Duration:** 15 minutes
+**Topic:** Real-World Investment Accounts
+
+**Learning Objectives:**
+- Understand what a custodial or educational investment account is
+- Know how these accounts differ from the Finsight Lite Investment Simulator
+- Understand generally how a teen could open one with a parent or guardian
+- Recognize CFAL and RF as real Bahamian firms offering these kinds of accounts
+
+**Content Section 1 Heading:** Practice vs. the Real Thing
+
+**Content Section 1 Body:**
+The Investment Simulator in Finsight Lite uses real BISX prices, so buying and selling feels realistic, but it's built entirely with virtual money. That's intentional, it's a safe place to practice and make mistakes without any real financial consequence. A custodial or educational investment account is the real-world next step: an actual brokerage account where real money is invested, but because the account holder is a minor, a parent or guardian legally holds or co-manages it until the student turns 18.
+
+**Content Section 2 Heading:** What CFAL and RF Offer
+
+**Content Section 2 Body:**
+CFAL (Colina Financial Advisors Limited) and RF Bahamas are two real investment firms based in the Bahamas. CFAL runs a Junior Investor program aimed specifically at young people, designed to introduce students to real investing with structure and coaching built in, rather than just opening a brokerage account with no guidance. RF Bahamas similarly offers investment services that families can use to start younger investors on a real, structured path. These are the kind of accounts a student who's completed the Investing Fundamentals module and the Investment Simulator might realistically graduate toward, with a parent involved every step of the way.
+
+**Content Section 3 Heading:** What Actually Happens When You Open One
+
+**Content Section 3 Body:**
+Generally, opening one of these accounts involves a parent or guardian meeting with the firm (either in person or through a scheduled call), providing identification for both the parent and the student, and deciding on a starting investment amount together. The account is typically held in the student's name but controlled by the parent or guardian as custodian until the student is legally an adult. This isn't something a student does alone, it's a family decision and a family process, which is exactly why understanding what these accounts are before that conversation happens is useful.
+
+**Quiz Questions:**
+
+1. What is the main difference between the Finsight Lite Investment Simulator and a custodial investment account?
+A) The simulator only works on weekends
+B) The simulator uses virtual money, a custodial account uses real money
+C) There is no real difference
+D) Custodial accounts don't use real companies
+Correct: B
+
+2. Why does a minor typically need a parent or guardian involved to open a real investment account?
+A) It's not actually required, it's just tradition
+B) Banks require it only for savings accounts, not investments
+C) A parent or guardian legally holds or co-manages the account until the student is an adult
+D) Students aren't allowed to know their own account balance
+Correct: C
+
+3. What is CFAL's Junior Investor program designed to do?
+A) Replace school entirely with investing lessons
+B) Introduce young people to real investing with structure and coaching
+C) Give away free stocks to anyone who signs up
+D) Only allow investing in companies outside the Bahamas
+Correct: B
+
+4. Which two firms are mentioned as real Bahamian investment firms offering these kinds of accounts?
+A) Scotiabank and RBC
+B) CFAL and RF
+C) BISX and NIB
+D) Fidelity and CIBC
+Correct: B
+
+5. What's typically the first step in actually opening one of these accounts?
+A) The student handles everything alone online
+B) A parent or guardian meets with the firm and provides ID for both
+C) The student must already have $10,000 saved
+D) The account is opened automatically at birth
+Correct: B
+
+**YouTube Video:** None recommended for this lesson. This content should stay accurate to CFAL and RF's actual current programs and requirements, which can change, so a written lesson kept up to date is safer than a video that could go stale or reference outdated program details. If CFAL or RF ever publish their own official explainer content as part of the partnership conversation, that would be a strong candidate to add later.
+
+---
+
+## Notes for Publishing
+
+- All four lessons follow the org-admin lesson creation format exactly (Title, Instructor, Grade Level, Subject, Duration, Topic, Objectives, Content sections, optional Quiz)
+- Suggested publish order: Lesson 1 (Bank Accounts) first as it's the most immediately useful and least sensitive, then Lesson 3 (Scams) given its protective value, then Lesson 2 (NIB) and Lesson 4 (CFAL/RF) in either order
+- Once published, remember the standing rule: any teacher or org-admin-facing guide content should be updated to reference the new Real Life Ready module in teacher-guide.md and org-guide.md
+- No em dashes used anywhere in this content, consistent with standing style rules

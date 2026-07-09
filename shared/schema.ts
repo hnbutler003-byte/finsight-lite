@@ -144,6 +144,10 @@ export type ContentSection = {
   examples?: string[];
   video_url?: string;
   diagram?: ContentDiagram;
+  // Optional key of a custom-coded diagram component (see
+  // client/src/components/lesson-diagrams). Rendered after this section's
+  // card. Unknown keys render nothing; the lesson page never crashes.
+  diagramKey?: string;
 };
 
 export const learningModules = pgTable("learning_modules", {

@@ -8,5 +8,5 @@
 - [executeSql vs app DB](executesql-vs-app-db.md) — the executeSql tool queries Replit's built-in Postgres, but the app uses Supabase; data seeded via executeSql is invisible to the app.
 - [AI error sanitation](ai-error-sanitation.md) — how AI provider failures must be surfaced to users and Sentry.
 - [AI gateway models](ai-gateway-models.md) — which Anthropic models the Replit AI gateway accepts and how to construct the SDK client.
-- [Screenshot auth verification](screenshot-auth-verification.md) — temp dev-login route + nix-store headless chromium recipe for light/dark shots of authenticated views; remove after and prove with grep.
+- [Screenshot auth verification](screenshot-auth-verification.md) — temp dev-login route + nix headless chromium recipe for light/dark authed shots; remove after, prove with grep.
 - [Org logo storage](org-logo-storage.md) — org logos live in a public Supabase Storage bucket, never Replit object storage; the Replit sidecar does not exist on Railway prod.

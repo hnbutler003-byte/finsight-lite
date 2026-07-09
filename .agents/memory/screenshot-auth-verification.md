@@ -17,3 +17,5 @@ The screenshot tool cannot log in (POST-only demo endpoints) and captures too ea
 **Why:** the Playwright testing subagent can be hard-blocked by an unrelated earlier blocker (e.g. Google OAuth), and iframe-based capture renders blank because the screenshot tool captures before the embedded SPA paints. Top-level redirect works reliably.
 
 **How to apply:** whenever light/dark or authenticated-view visual verification is needed and runTest is unavailable. Always delete the temp route and driver afterward and confirm with grep.
+7. IntersectionObserver reveal animations (opacity-0 until intersecting, then an animation class) never fire in headless captures even when the element is inside a tall window: the element occupies space but stays invisible. Temp-gate the reveal on a sessionStorage flag set by the dev-login route (render with no animation class when the flag is set) to verify the actual content, then remove the gate with the rest of the temp code.
+8. Listing /nix/store with a pipe can exceed the 2-min bash timeout on a cold cache; redirect `ls /nix/store > /tmp/f` first (took ~1 min for 700k entries), then grep the file.

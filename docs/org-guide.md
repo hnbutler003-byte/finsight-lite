@@ -69,6 +69,8 @@ A draft lesson is only visible to org admins. A published lesson is visible to t
 
 **Previewing a lesson**: click the preview icon on any lesson card. The preview renders exactly as students will see it, using the student-facing design.
 
+**Built-in lesson diagrams**: some of FinSight's built-in core lessons (for example, in the Real Life Ready module) include embedded visual diagrams such as a payslip breakdown or an account opening flow. These diagrams are part of the built-in content only. They cannot be added to org lesson plans, and the lesson preview does not render them.
+
 **Editing**: click the edit icon on any lesson card to update any field. Changes to published lessons are visible immediately.
 
 **Deleting**: click the delete icon and confirm. Deletion is permanent.

@@ -12,6 +12,7 @@ import {
   TrendingUp, Wallet, Lightbulb, ShoppingCart, BarChart3,
   Layers, ChevronDown, ChevronUp, Play, Lock, Download, Video,
   Globe, Smartphone, Shield, AlertTriangle,
+  Landmark, Receipt, ShieldAlert, LineChart,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { jsPDF } from "jspdf";
@@ -134,6 +135,12 @@ const MODULE_VISUAL_CONFIG: Record<string, StaticModuleVisual> = {
     lessonIcon: (id) => id === "static-cbdc-2" ? <Globe className="w-5 h-5" /> : id === "static-cbdc-3" ? <KeyRound className="w-5 h-5" /> : id === "static-cbdc-4" ? <Shield className="w-5 h-5" /> : <Smartphone className="w-5 h-5" />,
     colorFrom: "from-blue-500", colorTo: "to-indigo-600",
     textColor: "text-blue-600 dark:text-blue-400", labelOnDark: "text-blue-300", bgMuted: "bg-blue-500/10", borderColor: "border-blue-500/30",
+  },
+  "real-life": {
+    icon: <Landmark className="w-6 h-6" />,
+    lessonIcon: (id) => id === "static-real-2" ? <Receipt className="w-5 h-5" /> : id === "static-real-3" ? <ShieldAlert className="w-5 h-5" /> : id === "static-real-4" ? <LineChart className="w-5 h-5" /> : <Landmark className="w-5 h-5" />,
+    colorFrom: "from-emerald-500", colorTo: "to-green-600",
+    textColor: "text-emerald-600 dark:text-emerald-400", labelOnDark: "text-emerald-300", bgMuted: "bg-emerald-500/10", borderColor: "border-emerald-500/30",
   },
 };
 

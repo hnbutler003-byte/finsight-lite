@@ -1,0 +1,112 @@
+Add support for embedded visual diagrams inside lesson content, and build the first three diagrams for the Real Life Ready module.
+
+BACKGROUND
+Lesson content currently supports title, instructor, grade level, subject, duration,
+topic, learning objectives, content sections (heading + body), and an optional quiz.
+There is no way to embed a visual diagram inside a lesson's content. Some lessons
+benefit significantly from a visual (a step-by-step process, a side-by-side
+comparison, a breakdown of numbers), and the Real Life Ready module content already
+written needs three of these.
+
+PART 1: SCHEMA AND RENDERING SUPPORT
+
+Add an optional diagram slot to the lesson content section model. Each content
+section should optionally support a diagramKey field (a string identifying which
+diagram component to render, e.g. "bank-account-steps") in addition to its existing
+heading and body. When a content section has a diagramKey set, render the matching
+diagram component between that section's heading/body and the next section, inside
+the same glass-card content flow the lesson viewer already uses.
+
+Do not build a generic diagram upload or drag-and-drop builder in this pass, that is
+a larger feature. For now, diagrams are React components mapped by key, added to the
+codebase directly, the same way icons or other structured UI elements are already
+handled. This keeps scope contained while still solving the actual need: fully
+custom-coded, on-brand, production-quality diagrams rather than pasted images.
+
+Create a new directory for these, e.g. client/src/components/lesson-diagrams/, with
+an index/registry file exporting a map of diagramKey to component, e.g.:
+{
+  "bank-account-steps": BankAccountStepsDiagram,
+  "payslip-breakdown": PayslipBreakdownDiagram,
+  "chequing-vs-savings": ChequingVsSavingsDiagram,
+}
+The lesson viewer looks up the diagramKey in this registry and renders the
+component if found, renders nothing if the key doesn't match (fail gracefully,
+never crash the lesson page over a missing diagram).
+
+PART 2: BUILD THE THREE DIAGRAM COMPONENTS
+
+Each component follows the existing design system exactly: Baloo 2 for headings
+(font-display), Nunito for body (font-sans), .glass-card or .glass-inset for
+containers with --radius-glass (28px), CSS tokens only, no hardcoded hex values.
+Coral stays reserved for gamification only (XP, streaks, badges), do not use it in
+these, since this is educational content, not a game element. Use primary
+(violet), secondary (amber), and accent (teal) instead. Every colored text element
+needs an explicit dark: pair per the contrast rules already documented at the top
+of index.css. No em dashes anywhere in code, comments, or rendered text.
+
+1. BankAccountStepsDiagram
+A vertical 5-step sequence: Choose account type (chequing or savings), Gather your
+documents (ID and proof of address), Bring a parent or guardian (required for under
+18), Visit the bank (complete the application), Make initial deposit (account is
+opened). Each step is a numbered circle (violet background, white number) connected
+by a vertical line to the next, with a title (font-display, semibold) and a short
+subtitle (font-sans, text-muted-foreground) beside it. Wrap the whole thing in a
+single .glass-card.
+
+2. PayslipBreakdownDiagram
+A single .glass-card styled like a simplified payslip: "Weekly payslip" as a
+font-display heading, then three rows separated by thin dividers: Gross pay
+(B$400.00), NIB deduction (-B$15.60, shown in a subtly tinted amber/warning-toned
+row, with proper dark: pairing, not coral), then Net pay (B$384.40) in a teal/accent
+tinted row with a "what actually lands in your account" subtitle. Include a small
+muted caption below: "Sample amounts for illustration, actual NIB rates can
+change." Use realistic Bahamian dollar formatting (B$) consistent with the rest of
+the app.
+
+3. ChequingVsSavingsDiagram
+Two side-by-side cards (stack vertically on mobile, per existing responsive
+patterns) inside one wrapping .glass-card or as two adjacent .glass-card elements.
+Left card (violet-tinted header): "Chequing account" with bullet points: built for
+everyday spending, frequent deposits and withdrawals, often comes with a debit
+card, little to no interest earned, use for allowance/wages/bills. Right card
+(amber-tinted header): "Savings account" with bullet points: built to hold money
+over time, limited withdrawals before fees, usually no debit card, earns a small
+amount of interest, use for savings goals/emergencies.
+
+PART 3: WIRE THE DIAGRAMS INTO THE ACTUAL LESSON CONTENT
+
+Apply diagramKey to the appropriate content sections in the Real Life Ready module
+lessons already drafted:
+- Lesson 1 (Opening a Bank Account in the Bahamas): add "bank-account-steps" after
+  the "What You Actually Need to Open One" section, and "chequing-vs-savings"
+  after the "Chequing vs. Savings" section
+- Lesson 2 (Understanding Your Payslip and NIB): add "payslip-breakdown" after the
+  "Gross Pay vs. Net Pay" section
+
+If these lessons do not yet exist in the database/CMS, create them with the full
+content already specified (title, instructor, grade level, subject, duration,
+topic, objectives, content sections, quiz questions) and apply the diagramKeys as
+part of that same creation step, do not create the lessons without diagrams and
+require a second pass.
+
+STANDING REQUIREMENTS (apply throughout)
+- No em dashes anywhere, including code comments, UI copy, and lesson content
+- Any new database write must throw a clear, catchable error on failure, never
+  silently return null/undefined/false
+- Every new UI element (diagram components, the lesson viewer's diagram slot) must
+  be verified in both light and dark mode, check text contrast, background tints,
+  and border visibility in both, per the contrast rules in index.css
+- All new animations follow the existing keyframe set, a subtle fade-in or pop-in
+  on the diagram as it scrolls into view is appropriate and consistent with the
+  "animations are default-on" standing rule, do not leave it static with no entrance
+  treatment
+- Production-ready, not demo-ware
+- Since this changes teacher-facing and org-admin-facing lesson content, update the
+  relevant section of teacher-guide.md and org-guide.md in this same prompt to
+  mention that lessons can now include embedded diagrams, and that the Real Life
+  Ready module exists with its first two lessons live
+
+Report back with: confirmation the diagram registry pattern works end to end,
+screenshots or descriptions of all three diagrams in both light and dark mode, and
+confirmation the two lessons render correctly with diagrams in place.
