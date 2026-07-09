@@ -1,0 +1,257 @@
+Fix a real structural bug: Real Life Ready is currently showing all 8 lessons to
+every student regardless of territory (confirmed via screenshot, a Trinidad
+student can see "Opening a Bank Account in Jamaica"). This prompt fixes
+territory-scoping and pulls JAM-DEX out into its own standalone module, matching
+the existing Sand Dollar pattern.
+
+============================================================
+PART 1: AUDIT FIRST
+============================================================
+
+Before changing anything, confirm how lessons are currently associated with
+modules and whether any territory/environment field already exists on the lesson
+model. Check whether The Sand Dollar module (Bahamas-only, digital currency) is
+already correctly territory-scoped to only show for Bahamas students, or whether
+it's also incorrectly showing everywhere. Report what you find before proceeding,
+since the fix approach depends on whether territory-scoping infrastructure
+partially exists already or needs to be built from scratch.
+
+============================================================
+PART 2: ADD TERRITORY-SCOPING TO LESSONS
+============================================================
+
+Add a territory scope field to each lesson (or to the module-lesson relationship,
+whichever fits the existing schema better). Each lesson should be one of:
+- Scoped to a specific territory (Bahamas, Jamaica, Trinidad and Tobago,
+  Barbados, Eastern Caribbean), visible only to students in that territory's
+  environment
+- Universal, visible to students in all territories
+
+A student's Lessons tab should only ever render lessons that are either scoped to
+their own territory or marked universal. Never show a lesson scoped to a
+different territory.
+
+============================================================
+PART 3: FIX REAL LIFE READY'S LESSON SET
+============================================================
+
+Real Life Ready currently contains 8 lessons shown to everyone. Reclassify them
+as follows:
+
+Bahamas-scoped (visible only to Bahamas students):
+- Opening a Bank Account in the Bahamas
+- Understanding Your Payslip and NIB
+- Educational Investment Accounts (CFAL & RF)
+
+Jamaica-scoped (visible only to Jamaica students):
+- Opening a Bank Account in Jamaica
+(Understanding JAM-DEX is being removed from this module entirely, see Part 4)
+
+Trinidad and Tobago-scoped (visible only to Trinidad and Tobago students):
+- Opening a Bank Account in Trinidad and Tobago
+- Know Your Money, Trinidad and Tobago's Currency
+
+Universal (visible to all territories, including Barbados and Eastern Caribbean
+which don't have territory-specific Real Life Ready content yet):
+- Avoiding Scams and Financial Fraud
+
+After this change, a Bahamas student should see exactly 4 Real Life Ready
+lessons (3 Bahamas-specific plus the universal scams lesson), a Jamaica student
+should see exactly 2 (1 Jamaica-specific plus the universal scams lesson), and a
+Trinidad and Tobago student should see exactly 3 (2 Trinidad-specific plus the
+universal scams lesson). Barbados and Eastern Caribbean students should see
+exactly 1 (just the universal scams lesson) until territory-specific content is
+built for them later.
+
+Update the module's lesson count and progress tracking to reflect each student's
+actual scoped lesson count, not a fixed 8, this affects the "X/8 lessons
+complete" style display, it needs to show the correct denominator per territory.
+
+============================================================
+PART 4: PULL JAM-DEX INTO ITS OWN STANDALONE MODULE (JAMAICA ONLY)
+============================================================
+
+Remove "Understanding JAM-DEX, Jamaica's Digital Dollar" from Real Life Ready
+entirely. Create a new standalone module for it, following the exact same
+pattern as The Sand Dollar module (Bahamas' digital currency module), scoped to
+Jamaica only.
+
+Module name: "JAM-DEX"
+Subtitle: "JAMAICA'S DIGITAL DOLLAR"
+Icon: Smartphone (lucide-react), matching the category of Sand Dollar's icon
+since both are digital wallet concepts
+Color: a distinct gradient not already in use by another module, suggest a
+green-to-gold gradient as a subtle nod to Jamaica without being a caricature,
+avoid literal flag colors used heavy-handedly
+Territory scope: Jamaica only, this module should not appear at all for students
+in any other territory, same as Sand Dollar only appearing for Bahamas students
+
+This module starts with one lesson, which is smaller than Sand Dollar's current
+four, that's fine, it can grow the same way Sand Dollar likely did. Use the exact
+lesson content already specified below, do not rewrite it:
+
+Title: Understanding JAM-DEX, Jamaica's Digital Dollar
+Instructor: Finsight Lite Team
+Grade Level: 9-12
+Subject: Financial Literacy
+Duration: 15 minutes
+Topic: Digital Currency in Jamaica
+
+Learning Objectives:
+- Understand what JAM-DEX is and how it differs from a regular bank account
+- Know how to open and use a JAM-DEX wallet
+- Understand why a new form of money doesn't automatically get used by everyone
+  right away
+- Recognize JAM-DEX as a real, legal-tender example of digital money, not a
+  cryptocurrency
+
+Content Section 1 Heading: What Is JAM-DEX?
+Content Section 1 Paragraph 1: JAM-DEX is Jamaica's own digital dollar, created
+and backed by the Bank of Jamaica (BOJ). It's worth exactly the same as a regular
+Jamaican dollar, one JAM-DEX dollar equals one physical Jamaican dollar, and it's
+legal tender, meaning it's an officially recognized form of money, not something
+separate or unofficial. This makes Jamaica one of only a handful of countries in
+the world with a fully launched central bank digital currency, often shortened to
+CBDC.
+Content Section 1 Paragraph 2: It's important not to confuse JAM-DEX with
+cryptocurrency like Bitcoin. Cryptocurrency isn't issued or backed by any
+government, its value can swing wildly, and no central bank stands behind it.
+JAM-DEX is the opposite: it's issued directly by Jamaica's central bank, its
+value never moves against the regular Jamaican dollar, and BOJ stands behind it
+the same way it stands behind physical cash.
+
+Content Section 2 Heading: How It Actually Works
+Content Section 2 Paragraph 1: To use JAM-DEX, you need a digital wallet,
+available through banks and wallet providers like NCB's Lynk and JN Bank's JN
+Pay. A wallet can either be linked to an existing bank account, or opened
+independently with basic information like name, address, and date of birth. Once
+it's set up, you can add money by transferring from a bank account or depositing
+cash at a participating branch or smart ATM.
+Content Section 2 Paragraph 2: To pay someone, you scan a QR code or enter their
+wallet ID and send the amount, similar to how many mobile payment apps work
+elsewhere in the world, except this one is actual government-issued money rather
+than a private company's payment system.
+
+Content Section 3 Heading: Why Hasn't Everyone Adopted It?
+Content Section 3 Paragraph 1: Here's the honest part of the story: even though
+JAM-DEX launched back in 2021, most people in Jamaica still aren't using it day
+to day, and it's worth understanding why, because it teaches something bigger
+than just this one currency. As of 2026, JAM-DEX still makes up a very small
+share of all the money moving through Jamaica's economy, even though the amount
+being used has grown quickly.
+Content Section 3 Paragraph 2: The core problem is what's sometimes called a
+chicken-and-egg situation: many stores don't accept JAM-DEX yet because their
+card machines haven't been upgraded to take it, and many people don't bother
+using JAM-DEX because there aren't enough places to actually spend it. Each side
+is waiting on the other.
+Content Section 3 Paragraph 3: The Bank of Jamaica has publicly pushed banks to
+move faster on upgrading their systems, even offering to cover part of the cost,
+but the rollout has still taken longer than planners originally expected.
+Content Section 3 Paragraph 4: This is a useful real-world lesson: a new form of
+money can be well-designed and government-backed and still take years to catch
+on, because it isn't just about the technology working, it's about enough people
+and enough businesses deciding to actually use it at the same time.
+
+Quiz Questions:
+1. What backs the value of JAM-DEX?
+A) Nothing, its value is determined entirely by trading
+B) The Bank of Jamaica, and it's worth the same as a regular Jamaican dollar
+C) A private technology company
+D) Gold reserves held overseas
+Correct: B
+
+2. How is JAM-DEX different from a cryptocurrency like Bitcoin?
+A) There is no real difference, they work the same way
+B) JAM-DEX is issued and backed by Jamaica's central bank, cryptocurrency is not
+C) Cryptocurrency is legal tender and JAM-DEX is not
+D) JAM-DEX can only be used outside of Jamaica
+Correct: B
+
+3. How do you typically pay someone using JAM-DEX?
+A) By mailing physical cash
+B) By scanning a QR code or entering their wallet ID
+C) Only in person at a Bank of Jamaica branch
+D) It cannot be used for payments, only savings
+Correct: B
+
+4. What is the main reason JAM-DEX adoption has been slower than expected?
+A) It is illegal to use in most of Jamaica
+B) A chicken-and-egg problem, where merchants and customers are each waiting on
+   the other
+C) Nobody in Jamaica owns a smartphone
+D) The Bank of Jamaica discontinued the program
+Correct: B
+
+5. What's a broader lesson JAM-DEX's slow adoption can teach about new forms of
+money?
+A) Government-backed currency always gets adopted instantly
+B) A new form of money needs enough people and businesses using it together, not
+   just good technology
+C) Digital currency never works and should be avoided
+D) Only cryptocurrencies face adoption challenges
+Correct: B
+
+YouTube Video: "Central Bank Digital Currency: JAMDEX" featuring Bank of Jamaica
+Deputy Governor Natalie Haynes, courtesy of PBC Jamaica:
+https://www.youtube.com/watch?v=XQIe6ewEflw
+Note: this video is from 2022 and covers fundamentals well but predates the
+adoption struggles covered in Content Section 3, that angle is carried by the
+written content, not the video. Bank of Jamaica's official channel for anything
+more current: https://www.youtube.com/channel/UCZkm1rSxVMhynjN8gdwWqYw
+
+============================================================
+PART 5: VERIFY AGAINST THE SAND DOLLAR PATTERN
+============================================================
+
+Once the JAM-DEX module is built, compare it side by side against The Sand
+Dollar module's card styling, progress bar behavior, lesson list layout, and
+completed/not-completed states. They should feel like siblings, same structural
+pattern, different color and icon, not like two differently-built features that
+happen to cover similar topics.
+
+============================================================
+PART 6: FINAL STATE CHECK
+============================================================
+
+After this prompt, confirm the following is true for a test student in each
+territory:
+- Bahamas student sees: Real Life Ready (4 lessons: bank account, NIB, CFAL/RF,
+  scams) and The Sand Dollar (existing content, unaffected by this prompt)
+- Jamaica student sees: Real Life Ready (2 lessons: bank account, scams) and
+  JAM-DEX (1 lesson, new module)
+- Trinidad and Tobago student sees: Real Life Ready (3 lessons: bank account,
+  know your money, scams), no separate digital currency module since T&T has none
+- Barbados and Eastern Caribbean students see: Real Life Ready (1 lesson: scams
+  only), no separate digital currency module
+
+If any of this is not true after the fix, do not consider this prompt complete.
+
+============================================================
+STANDING REQUIREMENTS (apply throughout)
+============================================================
+
+- No em dashes anywhere, including code comments, UI copy, and lesson content
+- Any database write must throw a clear, catchable error on failure, never
+  silently return null/undefined/false
+- All new/modified UI (the new JAM-DEX module card, any changed Real Life Ready
+  rendering) must be verified in both light and dark mode per the contrast rules
+  in index.css
+- New module card gets the same entrance animation treatment as existing module
+  cards, consistent with the animations-default-on standing rule
+- Production-ready, not demo-ware
+- Lesson content body text keeps the natural paragraph-break formatting already
+  specified, do not compress it back into dense blocks
+
+============================================================
+GIT
+============================================================
+
+Commit this work with a clear commit message describing the territory-scoping
+fix and the JAM-DEX module split. Push to the GitHub remote. Verify the push
+landed by comparing the full 40-character SHA of local HEAD against the GitHub
+remote HEAD, do not consider this done until they match.
+
+Report back with: what the audit in Part 1 found, confirmation of the exact
+lesson count and content each territory now sees (matching Part 6), confirmation
+the JAM-DEX module matches the Sand Dollar pattern, and confirmation the push
+landed with matching SHAs.

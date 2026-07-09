@@ -943,8 +943,9 @@ const STATIC_MODULES_DATA = [
   { id: "budgeting", title: "Budgeting Basics", subtitle: "Plan & Manage Money", objective: "Students will learn how to plan and manage their money by distinguishing needs from wants, building simple budgets, and tracking their spending.", display_order: 0 },
   { id: "saving",    title: "Saving Smart",       subtitle: "Build Your Future",   objective: "Students will understand why saving is essential, how to set meaningful savings goals, and the strategy of paying yourself first to build lasting financial security.", display_order: 1 },
   { id: "investing", title: "Investing Fundamentals", subtitle: "Grow Your Money", objective: "Students will understand what investing is, how risk relates to return, and how compound interest makes money grow exponentially over time.", display_order: 2 },
-  { id: "sand-dollar", title: "The Sand Dollar", subtitle: "Digital Money in The Bahamas", objective: "Students will understand what the Sand Dollar is, why the Central Bank of The Bahamas created it, how to use a digital wallet, and how a government-issued digital currency differs from cryptocurrency.", display_order: 3, territories: ["BSD"] },
-  { id: "real-life", title: "Real Life Ready", subtitle: "Practical Money Skills", objective: "Students will learn practical money skills for real life: opening a bank account, reading a payslip and understanding NIB, spotting scams, and taking their first steps toward real investment accounts.", display_order: 4 },
+  { id: "investing-2", title: "Investing Fundamentals II", subtitle: "Go Deeper", objective: "Students will go deeper into investing: the difference between growth and dividend stocks, why diversification protects a portfolio, what index funds are, and how to read what a stock price move actually means.", display_order: 3 },
+  { id: "sand-dollar", title: "The Sand Dollar", subtitle: "Digital Money in The Bahamas", objective: "Students will understand what the Sand Dollar is, why the Central Bank of The Bahamas created it, how to use a digital wallet, and how a government-issued digital currency differs from cryptocurrency.", display_order: 4, territories: ["BSD"] },
+  { id: "real-life", title: "Real Life Ready", subtitle: "Practical Money Skills", objective: "Students will learn practical money skills for real life: opening a bank account, reading a payslip and understanding NIB, spotting scams, and taking their first steps toward real investment accounts.", display_order: 5 },
 ];
 
 export const STATIC_LESSONS_DATA: Array<{
@@ -1431,6 +1432,94 @@ export const STATIC_LESSONS_DATA: Array<{
       { order_index: 3, question: "Why has T&T's Central Bank chosen not to adopt a digital currency yet?", option_a: "It doesn't have the technology available", option_b: "Concerns about financial stability and risk", option_c: "It's waiting for permission from another country", option_d: "Digital currency is illegal in T&T", correct_answer: "B" },
     ],
   },
+  {
+    grade_level: "static-invest2-1", topic: "investing-2", title: "Growth vs. Dividend Stocks",
+    instructor: "Learn the two ways a stock can make you money and how to check a company's dividend history yourself.",
+    duration: "12 min", video_url: null,
+    objectives: [
+      "Understand the difference between a growth stock and a dividend stock.",
+      "Understand what a dividend actually is and how it gets paid.",
+      "Know how to check whether a real company has a history of paying dividends.",
+      "Recognize that most investors hold a mix of both types, not just one.",
+    ],
+    content_sections: [
+      { heading: "Two Different Ways a Stock Can Make You Money", body: "A stock can grow your money in two different ways. The first is the share price itself going up over time, you bought it at one price, and it's now worth more. Stocks that focus on this are often called growth stocks, usually younger or expanding companies that reinvest their profits back into the business instead of paying shareholders directly, betting that reinvestment grows the company (and the stock price) faster.\n\nThe second way is through dividends. A dividend is a direct cash payment a company makes to its shareholders, usually a small amount per share, paid out regularly (often quarterly). Companies that are more established and generate steady profits are more likely to pay dividends, since they don't need to reinvest every dollar back into rapid growth." },
+      { heading: "Neither One Is \"Better\"", body: "Growth stocks tend to be more volatile, the price can swing more sharply in both directions, since their value is based heavily on future expectations. Dividend-paying stocks tend to be steadier, and even if the share price doesn't move much, you're still earning something regularly just for holding it.\n\nMost real investors don't pick one type exclusively, they hold a mix, some stocks for growth potential, some for steady dividend income. Which mix makes sense depends on your goals and how long you're planning to hold the investment." },
+      { heading: "Try This With Your Own Simulator Holdings", body: "Rather than telling you which specific {EXCHANGE} companies are growth stocks versus dividend stocks, since that can change over time, here's a better exercise: open your Investment Simulator and look up each company you're invested in or considering. Check whether it has a recent dividend history.\n\nA company that regularly pays dividends is signaling something different about its strategy than one that doesn't. Practice identifying which is which using real, current information rather than memorizing a label that might not stay accurate." },
+    ],
+    questions: [
+      { order_index: 0, question: "What is a dividend?", option_a: "A fee charged for owning a stock", option_b: "A direct cash payment a company makes to its shareholders", option_c: "The total value of a stock market", option_d: "A type of loan", correct_answer: "B" },
+      { order_index: 1, question: "What is a growth stock generally focused on?", option_a: "Paying out as much cash as possible to shareholders immediately", option_b: "Reinvesting profits back into the business to grow faster", option_c: "Avoiding the stock market entirely", option_d: "Guaranteeing a fixed return every year", correct_answer: "B" },
+      { order_index: 2, question: "Which type of stock tends to be more volatile?", option_a: "Dividend-paying stocks", option_b: "Growth stocks", option_c: "Neither, they're equally stable", option_d: "Government bonds", correct_answer: "B" },
+      { order_index: 3, question: "Do most real investors pick only one type, growth or dividend?", option_a: "Yes, you must choose one and never mix them", option_b: "No, most investors hold a mix of both", option_c: "Only professional investors are allowed to mix them", option_d: "Dividend stocks are illegal to combine with growth stocks", correct_answer: "B" },
+    ],
+  },
+  {
+    grade_level: "static-invest2-2", topic: "investing-2", title: "Diversification and Building a Portfolio",
+    instructor: "Understand why spreading your money across different investments protects your portfolio from any single company's bad year.",
+    duration: "12 min", video_url: null,
+    objectives: [
+      "Understand what diversification means and why it matters.",
+      "Understand the risk of putting all your money into one stock.",
+      "Know how to look at a portfolio and assess how diversified it actually is.",
+      "Apply diversification thinking to your own Investment Simulator holdings.",
+    ],
+    content_sections: [
+      { heading: "Why \"Don't Put All Your Eggs in One Basket\" Applies to Investing", body: "If you put all your money into a single stock and that company has a bad year, your whole portfolio takes the hit. Diversification means spreading your money across multiple different investments instead, so that one company's bad news doesn't sink everything you have.\n\nThis doesn't eliminate risk entirely, the whole market can still go down at once, but it protects you from one specific company's problems wiping out your entire portfolio." },
+      { heading: "What Diversification Actually Looks Like", body: "{DIVERSIFY_P1}\n\nA well-diversified portfolio doesn't guarantee you'll make money, but it does mean you're not exposed to any single company's failure wiping out everything." },
+      { heading: "Check Your Own Diversification", body: "Open your Investment Simulator portfolio right now. Are you holding just one company, or several? If several, are they in different industries, or all similar?\n\nThere's no single \"correct\" number of holdings, but if everything you own would be affected by the same piece of bad news, that's worth noticing and adjusting." },
+    ],
+    questions: [
+      { order_index: 0, question: "What does diversification mean in investing?", option_a: "Buying only one stock and holding it forever", option_b: "Spreading your money across multiple different investments", option_c: "Only investing in companies from other countries", option_d: "Avoiding the stock market entirely", correct_answer: "B" },
+      { order_index: 1, question: "Why is it risky to put all your money into a single stock?", option_a: "It's not risky at all", option_b: "If that company has a bad year, your entire portfolio takes the hit", option_c: "Single stocks are illegal to purchase", option_d: "Only banks are allowed to hold single stocks", correct_answer: "B" },
+      { order_index: 2, question: "If you own five stocks that are all in the same industry, is that well diversified?", option_a: "Yes, five stocks is always diversified", option_b: "Not necessarily, if the whole industry struggles, all five could be affected at once", option_c: "It's only diversified if all five go up", option_d: "Diversification only applies to bonds, not stocks", correct_answer: "B" },
+      { order_index: 3, question: "Does diversification guarantee you'll make money?", option_a: "Yes, it's a guarantee against ever losing money", option_b: "No, but it reduces the risk of one company's failure wiping out your whole portfolio", option_c: "It guarantees exactly a 10% return", option_d: "It only works for professional investors", correct_answer: "B" },
+    ],
+  },
+  {
+    grade_level: "static-invest2-3", topic: "investing-2", title: "Index Funds vs. Individual Stocks",
+    instructor: "Discover what index funds are and how buying a whole basket of companies compares to picking stocks yourself.",
+    duration: "10 min", video_url: null,
+    objectives: [
+      "Understand what an index fund is at a conceptual level.",
+      "Understand the difference between picking individual stocks and investing in a broad basket of companies at once.",
+      "Recognize why index funds are often recommended for beginner investors.",
+      "Understand this is a global investing concept, not tied to owning individual {EXCHANGE} stocks specifically.",
+    ],
+    content_sections: [
+      { heading: "Picking Stocks vs. Buying the Whole Market", body: "So far, the Investment Simulator has you picking individual companies to invest in. That's one way to invest, but it's not the only way. An index fund is a single investment that automatically holds many different companies at once, instead of picking one or two yourself, you own a small piece of dozens or even hundreds of companies through one purchase.\n\nThe word \"index\" refers to a list of companies grouped together, often by market or category, and the fund simply tracks that whole group rather than betting on any single company." },
+      { heading: "Why This Matters, Even If You're Not Investing in One Yet", body: "Index funds are often recommended for beginner investors because they build in diversification automatically, you're not relying on picking the right individual company, you're spread across many at once by default.\n\nPicking individual stocks, like you're practicing in the simulator, can potentially earn more if you pick well, but it also carries more risk if you pick poorly. Index funds trade some of that upside potential for steadier, more predictable results over time. Neither approach is wrong, they serve different goals and different comfort levels with risk." },
+      { heading: "This Isn't Available in Your Simulator Yet, and That's Okay", body: "Your Investment Simulator focuses on individual {EXCHANGE} stocks specifically, which is genuinely useful for learning how individual companies and stock prices actually work. Index funds are a broader global concept you'll likely encounter later, especially if you open a real investment account as an adult.\n\nUnderstanding the concept now means you won't be starting from zero when it becomes relevant to an actual decision you're making with real money." },
+    ],
+    questions: [
+      { order_index: 0, question: "What is an index fund?", option_a: "A single stock that never changes in price", option_b: "A single investment that automatically holds many different companies at once", option_c: "A type of savings account", option_d: "A loan from a bank", correct_answer: "B" },
+      { order_index: 1, question: "Why are index funds often recommended for beginner investors?", option_a: "They guarantee the highest possible returns", option_b: "They build in diversification automatically", option_c: "They are only available to professional investors", option_d: "They eliminate all investment risk completely", correct_answer: "B" },
+      { order_index: 2, question: "What's a tradeoff of choosing an index fund over picking individual stocks?", option_a: "There is no tradeoff, index funds are strictly better in every way", option_b: "Index funds trade some upside potential for steadier, more predictable results", option_c: "Index funds are illegal in most countries", option_d: "Index funds can only be purchased by banks", correct_answer: "B" },
+      { order_index: 3, question: "Is picking individual stocks, like in your Investment Simulator, a \"wrong\" way to invest?", option_a: "Yes, only index funds are acceptable", option_b: "No, it serves a different goal and comfort level with risk than index investing", option_c: "Yes, individual stocks are always a scam", option_d: "Individual stocks and index funds are exactly the same thing", correct_answer: "B" },
+    ],
+  },
+  {
+    grade_level: "static-invest2-4", topic: "investing-2", title: "Reading What a Stock Price Move Actually Means",
+    instructor: "Understand what a price move really tells you and how to use the simulator's AI explanation before reacting.",
+    duration: "10 min", video_url: null,
+    objectives: [
+      "Understand what it means when a stock price moves up or down.",
+      "Understand that a price move reflects changing investor expectations, not a fixed fact about a company.",
+      "Know how to use the AI explanation feature in the Investment Simulator to understand a real price move.",
+      "Avoid overreacting to a single day's price movement.",
+    ],
+    content_sections: [
+      { heading: "A Price Move Is Investors Changing Their Minds", body: "When you check a stock in your Investment Simulator and see the price moved since yesterday, that movement reflects other investors buying or selling, based on new information or changing expectations about the company's future, not a fixed, objective fact.\n\nA stock price going up doesn't mean the company is definitely doing well, and a price going down doesn't mean it's definitely in trouble. It means enough people currently believe the company's future is worth slightly more or slightly less than they believed yesterday." },
+      { heading: "Use the Tool You Already Have", body: "You've probably noticed that when a stock's price has moved that day in your Investment Simulator, an AI explanation appears in the buy dialog. That feature exists exactly for this purpose, to help you understand the \"why\" behind a price move you're looking at, instead of just seeing a number change with no context.\n\nNext time you see that explanation appear, actually read it before buying or skipping a trade. It's giving you real reasoning to practice with, not just decoration." },
+      { heading: "Don't Overreact to One Day", body: "A single day's price movement, up or down, usually isn't a reason to make a big decision on its own. Prices move constantly for lots of small reasons, and reacting strongly to every single movement is a common mistake even experienced investors have to unlearn.\n\nA more useful habit is looking at the trend over weeks or months, combined with understanding why the company's situation is actually changing, rather than reacting to any one day in isolation." },
+    ],
+    questions: [
+      { order_index: 0, question: "What does it mean when a stock price goes up?", option_a: "The company is guaranteed to be profitable", option_b: "Enough investors currently believe the company's future is worth more than they believed before", option_c: "The government has approved the company for growth", option_d: "The price will only ever go up from here", correct_answer: "B" },
+      { order_index: 1, question: "What feature in the Investment Simulator helps explain why a stock's price moved?", option_a: "There is no such feature", option_b: "An AI explanation that appears in the buy dialog when a price has moved", option_c: "A phone call with a financial advisor", option_d: "A monthly newsletter", correct_answer: "B" },
+      { order_index: 2, question: "Is a single day's price movement usually a good reason to make a big investment decision on its own?", option_a: "Yes, always act immediately on any price change", option_b: "No, it's usually more useful to look at trends over weeks or months", option_c: "Only if the price goes down", option_d: "Only if the price goes up", correct_answer: "B" },
+      { order_index: 3, question: "Does a falling stock price definitely mean a company is in trouble?", option_a: "Yes, always", option_b: "Not necessarily, it reflects changing investor expectations, not a fixed fact", option_c: "Only on Mondays", option_d: "Yes, but only for companies outside the Caribbean", correct_answer: "B" },
+    ],
+  },
 ];
 
 // ─── Regional content seed data ────────────────────────────────────────────────
@@ -1575,6 +1664,32 @@ const STATIC_LESSON_TERRITORIES: Record<string, string[] | undefined> = Object.f
   STATIC_LESSONS_DATA.map(l => [l.grade_level, l.territories])
 );
 
+// ─── Serve-time localization for static lesson text ───────────────────────────
+// Static lesson content may contain {EXCHANGE} and {DIVERSIFY_P1} tokens (used by
+// the Investing Fundamentals II module). They are stored as-is in code and in the
+// DB, and swapped per territory when lessons are served. Unmapped territories
+// (e.g. GYD) and requests without a currency get generic phrasing, so raw tokens
+// never reach the client.
+const EXCHANGE_BY_TERRITORY: Record<string, string> = {
+  BSD: "BISX", JMD: "JSE", BBD: "BSE", TTD: "TTSE", XCD: "ECSE",
+};
+// Chosen to stay grammatical in every {EXCHANGE} slot ("locally listed companies",
+// "individual locally listed stocks").
+const EXCHANGE_GENERIC = "locally listed";
+
+const DIVERSIFY_P1_BY_TERRITORY: Record<string, string> = {
+  BSD: "In the Investment Simulator, you have access to six real BISX-listed companies: CBL, FCL, CAB, DHS, JSJ, and CHB. Holding just one of these means your entire result depends on that single company. Holding a mix across several, especially companies in different industries rather than similar ones, is a more diversified approach.",
+  JMD: "Real companies listed on the JSE, like GraceKennedy (GK) and NCB Financial Group (NCBFG), operate in different industries, food and financial services. Holding a mix across different industries, rather than several companies that all do similar things, is what real diversification looks like.",
+};
+const DIVERSIFY_P1_GENERIC = "Think about it this way: if you held shares in five companies that were all in the same industry, say five different banks, and that entire industry had a bad year, all five would likely struggle at once. That's not real diversification, even though it's technically five different stocks. Real diversification means spreading across different types of business, not just different company names.";
+
+function localizeStaticText(text: string, territory?: string): string {
+  if (!text.includes("{")) return text;
+  const exchange = (territory && EXCHANGE_BY_TERRITORY[territory]) || EXCHANGE_GENERIC;
+  const diversify = (territory && DIVERSIFY_P1_BY_TERRITORY[territory]) || DIVERSIFY_P1_GENERIC;
+  return text.split("{EXCHANGE}").join(exchange).split("{DIVERSIFY_P1}").join(diversify);
+}
+
 const REGIONAL_CONTENT_FALLBACK: Record<string, RegionRecord> = Object.fromEntries(
   REGIONAL_CONTENT_DATA.map(r => [r.region_code, r])
 );
@@ -1625,8 +1740,18 @@ export async function getStaticModulesWithLessons(territory?: string): Promise<S
             description: l.instructor ?? "",
             duration: l.duration ?? null,
             video_url: STATIC_VIDEO_URLS[l.grade_level ?? ""] ?? null,
-            objectives: Array.isArray(l.objectives) ? l.objectives : [],
-            content_sections: Array.isArray(l.content_sections) ? l.content_sections : [],
+            objectives: (Array.isArray(l.objectives) ? l.objectives : []).map((o: unknown) =>
+              typeof o === "string" ? localizeStaticText(o, territory) : o
+            ),
+            content_sections: (Array.isArray(l.content_sections) ? l.content_sections : []).map((s: any) =>
+              s && typeof s === "object"
+                ? {
+                    ...s,
+                    ...(typeof s.heading === "string" ? { heading: localizeStaticText(s.heading, territory) } : {}),
+                    ...(typeof s.body === "string" ? { body: localizeStaticText(s.body, territory) } : {}),
+                  }
+                : s
+            ),
             questions: qByLesson[l.id] ?? [],
           })),
       }))

@@ -13,6 +13,7 @@ import {
   Layers, ChevronDown, ChevronUp, Play, Lock, Download, Video,
   Globe, Smartphone, Shield, AlertTriangle,
   Landmark, Receipt, ShieldAlert, LineChart, Banknote,
+  PieChart, Coins,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { jsPDF } from "jspdf";
@@ -129,6 +130,12 @@ const MODULE_VISUAL_CONFIG: Record<string, StaticModuleVisual> = {
     lessonIcon: (id) => id === "static-invest-2" ? <Layers className="w-5 h-5" /> : id === "static-invest-3" ? <Award className="w-5 h-5" /> : <TrendingUp className="w-5 h-5" />,
     colorFrom: "from-violet-500", colorTo: "to-purple-600",
     textColor: "text-violet-600 dark:text-violet-400", labelOnDark: "text-violet-300", bgMuted: "bg-violet-500/10", borderColor: "border-violet-500/30",
+  },
+  "investing-2": {
+    icon: <PieChart className="w-6 h-6" />,
+    lessonIcon: (id) => id === "static-invest2-1" ? <Coins className="w-5 h-5" /> : id === "static-invest2-3" ? <Layers className="w-5 h-5" /> : id === "static-invest2-4" ? <LineChart className="w-5 h-5" /> : <PieChart className="w-5 h-5" />,
+    colorFrom: "from-violet-600", colorTo: "to-purple-800",
+    textColor: "text-purple-700 dark:text-purple-300", labelOnDark: "text-purple-300", bgMuted: "bg-purple-600/10", borderColor: "border-purple-600/30",
   },
   "sand-dollar": {
     icon: <Smartphone className="w-6 h-6" />,

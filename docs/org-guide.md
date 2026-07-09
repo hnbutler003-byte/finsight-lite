@@ -73,6 +73,8 @@ A draft lesson is only visible to org admins. A published lesson is visible to t
 
 **Built-in lesson territory scoping**: lessons in the built-in Real Life Ready module are territory-specific. Students in a Bahamas environment see the Bahamas bank account, payslip and NIB, and investment accounts lessons; Jamaica environments see the Jamaica bank account and JAM-DEX lessons; Trinidad and Tobago environments see the T&T bank account and Know Your Money lessons. The avoiding scams lesson appears in every territory. This scoping applies only to built-in content; org lesson plans are always shown to your own environment.
 
+**Built-in content localization**: the built-in Investing Fundamentals II module appears in every territory, but its wording adapts to your environment's currency. Stock exchange references (BISX, JSE, BSE, TTSE, ECSE) and the diversification examples match the territory; environments without a mapped exchange see generic phrasing instead.
+
 **Built-in lesson diagrams**: some of FinSight's built-in core lessons (for example, in the Real Life Ready module) include embedded visual diagrams such as a payslip breakdown or an account opening flow. These diagrams are part of the built-in content only. They cannot be added to org lesson plans, and the lesson preview does not render them.
 
 **Editing**: click the edit icon on any lesson card to update any field. Changes to published lessons are visible immediately.
