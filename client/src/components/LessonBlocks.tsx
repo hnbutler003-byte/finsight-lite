@@ -6,6 +6,24 @@ import type { ContentSection, ContentDiagram } from "@shared/schema";
 
 export type { ContentSection, ContentDiagram };
 
+// Lesson body text uses blank lines as paragraph breaks. Render each paragraph
+// in its own <p> tag so multi-topic sections read naturally.
+export function BodyParagraphs({ body, index, pClassName, wrapperClassName }: {
+  body: string;
+  index: number;
+  pClassName?: string;
+  wrapperClassName?: string;
+}) {
+  const paragraphs = body.split(/\r?\n\s*\r?\n/).map(p => p.trim()).filter(Boolean);
+  return (
+    <div className={wrapperClassName ?? "space-y-3 mb-3"} data-testid={`section-body-${index}`}>
+      {paragraphs.map((p, i) => (
+        <p key={i} className={pClassName ?? "text-foreground text-sm leading-relaxed"}>{p}</p>
+      ))}
+    </div>
+  );
+}
+
 export function SectionVideoBlock({ section, index }: { section: ContentSection; index: number }) {
   const { embedUrl, isLoading, isError } = useVideoEmbed(section.video_url ?? "");
 
@@ -19,7 +37,7 @@ export function SectionVideoBlock({ section, index }: { section: ContentSection;
           {section.heading}
         </h2>
         {section.body && (
-          <p className="text-foreground text-sm leading-relaxed mb-3" data-testid={`section-body-${index}`}>{section.body}</p>
+          <BodyParagraphs body={section.body} index={index} />
         )}
         {isLoading && (
           <div className="flex items-center justify-center py-10">
@@ -156,7 +174,7 @@ export function LessonContentBlock({ section, index }: { section: ContentSection
           {section.heading}
         </h2>
         {section.body && (
-          <p className="text-foreground text-sm leading-relaxed mb-3" data-testid={`section-body-${index}`}>{section.body}</p>
+          <BodyParagraphs body={section.body} index={index} />
         )}
         {isDiagram && <SectionDiagram diagram={section.diagram!} index={index} />}
         {section.examples && section.examples.length > 0 && (

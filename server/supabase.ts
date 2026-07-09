@@ -949,7 +949,7 @@ const STATIC_MODULES_DATA = [
 
 export const STATIC_LESSONS_DATA: Array<{
   grade_level: string; topic: string; title: string; instructor: string;
-  duration: string; video_url: string | null; objectives: string[]; content_sections: ContentSection[];
+  duration: string; video_url: string | null; territories?: string[]; objectives: string[]; content_sections: ContentSection[];
   questions: Omit<LessonQuizQuestion, "id" | "lesson_id">[];
 }> = [
   {
@@ -1248,6 +1248,7 @@ export const STATIC_LESSONS_DATA: Array<{
   },
   {
     grade_level: "static-real-1", topic: "real-life", title: "Opening a Bank Account in the Bahamas",
+    territories: ["BSD"],
     instructor: "Learn what you need to open your first bank account in the Bahamas and the costs to watch for.",
     duration: "15 min", video_url: null,
     objectives: [
@@ -1257,9 +1258,9 @@ export const STATIC_LESSONS_DATA: Array<{
       "Recognize the ongoing costs (fees, minimum balances) that come with having an account.",
     ],
     content_sections: [
-      { heading: "Chequing vs. Savings, What's the Difference?", body: "A chequing account (sometimes called a current account) is built for everyday spending. Money moves in and out often, you might get a debit card with it, and some chequing accounts let you write cheques or pay bills directly. A savings account is built to hold money you're not touching often. It usually earns a small amount of interest, which is the bank paying you for keeping your money there, but many savings accounts limit how many withdrawals you can make each month before a fee kicks in. Most banks in the Bahamas, including Scotiabank, RBC, CIBC FirstCaribbean, Fidelity Bank, and Bank of The Bahamas, offer both. A common approach: use a chequing account for spending money and a savings account for money you're setting aside for a goal.", diagramKey: "chequing-vs-savings" },
-      { heading: "What You Actually Need to Open One", body: "Since most students on Finsight Lite are under 18, banks in the Bahamas typically require a parent or guardian to open the account with you, either as a joint account holder or as a co-signer. You'll usually need: a valid form of ID (a school ID, birth certificate, or passport), proof of address (a utility bill in a parent's name works), and a parent or guardian present with their own ID. Some banks also ask for an initial deposit to open the account, which varies by bank and account type, so it's worth calling ahead or checking the bank's website before showing up.", diagramKey: "bank-account-steps" },
-      { heading: "The Costs Nobody Mentions Upfront", body: "Having a bank account isn't free. Watch for: monthly maintenance fees (charged just for having the account open), minimum balance requirements (some accounts charge a fee if your balance drops below a set amount), and ATM fees (using an ATM outside your bank's network usually costs extra). None of this means you shouldn't open an account, a bank account is a foundational money tool, it just means reading the fee schedule before you sign up saves you from surprises later." },
+      { heading: "Chequing vs. Savings, What's the Difference?", body: "A chequing account (sometimes called a current account) is built for everyday spending. Money moves in and out often, you might get a debit card with it, and some chequing accounts let you write cheques or pay bills directly.\n\nA savings account is built to hold money you're not touching often. It usually earns a small amount of interest, which is the bank paying you for keeping your money there, but many savings accounts limit how many withdrawals you can make each month before a fee kicks in. Most banks in the Bahamas, including Scotiabank, RBC, CIBC FirstCaribbean, Fidelity Bank, and Bank of The Bahamas, offer both. A common approach: use a chequing account for spending money and a savings account for money you're setting aside for a goal.", diagramKey: "chequing-vs-savings" },
+      { heading: "What You Actually Need to Open One", body: "Since most students on Finsight Lite are under 18, banks in the Bahamas typically require a parent or guardian to open the account with you, either as a joint account holder or as a co-signer.\n\nYou'll usually need a valid form of ID (a school ID, birth certificate, or passport), proof of address (a utility bill in a parent's name works), and a parent or guardian present with their own ID. Some banks also ask for an initial deposit to open the account, which varies by bank and account type, so it's worth calling ahead or checking the bank's website before showing up.", diagramKey: "bank-account-steps" },
+      { heading: "The Costs Nobody Mentions Upfront", body: "Having a bank account isn't free. Watch for monthly maintenance fees (charged just for having the account open), minimum balance requirements (some accounts charge a fee if your balance drops below a set amount), and ATM fees (using an ATM outside your bank's network usually costs extra).\n\nNone of this means you shouldn't open an account, a bank account is a foundational money tool, it just means reading the fee schedule before you sign up saves you from surprises later." },
     ],
     questions: [
       { order_index: 0, question: "What is the main purpose of a chequing account?", option_a: "To earn the highest possible interest rate", option_b: "Everyday spending and frequent transactions", option_c: "To store money for offshore investing", option_d: "To apply for a loan", correct_answer: "B" },
@@ -1270,6 +1271,7 @@ export const STATIC_LESSONS_DATA: Array<{
   },
   {
     grade_level: "static-real-2", topic: "real-life", title: "Understanding Your Payslip and NIB",
+    territories: ["BSD"],
     instructor: "Learn how to read a payslip and why NIB comes out of every paycheck.",
     duration: "15 min", video_url: null,
     objectives: [
@@ -1279,9 +1281,9 @@ export const STATIC_LESSONS_DATA: Array<{
       "Understand the difference between gross pay and net pay.",
     ],
     content_sections: [
-      { heading: "Gross Pay vs. Net Pay", body: "Gross pay is the full amount you earned before anything is taken out. Net pay, sometimes called take-home pay, is what actually lands in your account after deductions. The biggest deduction most working people in the Bahamas will see on a payslip is NIB. If you've never seen a payslip before, the gap between gross and net pay can be surprising, understanding it now means it won't catch you off guard at your first job.", diagramKey: "payslip-breakdown" },
-      { heading: "What Is NIB?", body: "NIB, the National Insurance Board, is the Bahamas' national social security programme. Almost every employed person in the Bahamas contributes to NIB, and it's automatically deducted from your paycheck, similar to how other countries have their own national insurance or social security systems. NIB contributions fund benefits that support people through major life events: sickness benefit, maternity benefit, retirement pension, and support for family members if a worker passes away or is injured on the job. It's not a savings account you can withdraw from anytime, it's a shared national system that pays out when specific, defined situations happen." },
-      { heading: "Why This Matters Even Before Your First Job", body: "Understanding NIB before you're actually holding a payslip means you won't be confused or worried the first time you see a chunk of your pay missing. It also matters long-term: NIB contributions are what eventually qualify someone for a retirement pension, so a consistent work history with NIB contributions isn't just a deduction today, it's building toward something later." },
+      { heading: "Gross Pay vs. Net Pay", body: "Gross pay is the full amount you earned before anything is taken out. Net pay, sometimes called take-home pay, is what actually lands in your account after deductions.\n\nThe biggest deduction most working people in the Bahamas will see on a payslip is NIB. If you've never seen a payslip before, the gap between gross and net pay can be surprising, understanding it now means it won't catch you off guard at your first job.", diagramKey: "payslip-breakdown" },
+      { heading: "What Is NIB?", body: "NIB, the National Insurance Board, is the Bahamas' national social security programme. Almost every employed person in the Bahamas contributes to NIB, and it's automatically deducted from your paycheck, similar to how other countries have their own national insurance or social security systems.\n\nNIB contributions fund benefits that support people through major life events: sickness benefit, maternity benefit, retirement pension, and support for family members if a worker passes away or is injured on the job. It's not a savings account you can withdraw from anytime, it's a shared national system that pays out when specific, defined situations happen." },
+      { heading: "Why This Matters Even Before Your First Job", body: "Understanding NIB before you're actually holding a payslip means you won't be confused or worried the first time you see a chunk of your pay missing.\n\nIt also matters long-term: NIB contributions are what eventually qualify someone for a retirement pension, so a consistent work history with NIB contributions isn't just a deduction today, it's building toward something later." },
     ],
     questions: [
       { order_index: 0, question: "What is the difference between gross pay and net pay?", option_a: "There is no difference, they mean the same thing", option_b: "Gross pay is before deductions, net pay is what you actually receive", option_c: "Gross pay is only for adults, net pay is for students", option_d: "Net pay is always higher than gross pay", correct_answer: "B" },
@@ -1315,6 +1317,7 @@ export const STATIC_LESSONS_DATA: Array<{
   },
   {
     grade_level: "static-real-4", topic: "real-life", title: "Educational Investment Accounts (CFAL & RF)",
+    territories: ["BSD"],
     instructor: "Discover how real custodial investment accounts with CFAL and RF work for young investors.",
     duration: "15 min", video_url: null,
     objectives: [
@@ -1334,6 +1337,98 @@ export const STATIC_LESSONS_DATA: Array<{
       { order_index: 2, question: "What is CFAL's Junior Investor program designed to do?", option_a: "Replace school entirely with investing lessons", option_b: "Introduce young people to real investing with structure and coaching", option_c: "Give away free stocks to anyone who signs up", option_d: "Only allow investing in companies outside the Bahamas", correct_answer: "B" },
       { order_index: 3, question: "Which two firms are mentioned as real Bahamian investment firms offering these kinds of accounts?", option_a: "Scotiabank and RBC", option_b: "CFAL and RF", option_c: "BISX and NIB", option_d: "Fidelity and CIBC", correct_answer: "B" },
       { order_index: 4, question: "What's typically the first step in actually opening one of these accounts?", option_a: "The student handles everything alone online", option_b: "A parent or guardian meets with the firm and provides ID for both", option_c: "The student must already have $10,000 saved", option_d: "The account is opened automatically at birth", correct_answer: "B" },
+    ],
+  },
+  {
+    grade_level: "static-real-1-jm", topic: "real-life", title: "Opening a Bank Account in Jamaica",
+    territories: ["JMD"],
+    instructor: "Learn what you need to open your first bank account in Jamaica, including the TRN requirement most students haven't heard of yet.",
+    duration: "15 min", video_url: null,
+    objectives: [
+      "Understand the difference between a chequing account and a savings account.",
+      "Know what documents and information are needed to open an account in Jamaica.",
+      "Understand why a parent or guardian is required for anyone under 18.",
+      "Recognize the TRN as a Jamaica-specific requirement most students haven't heard of yet.",
+    ],
+    content_sections: [
+      { heading: "Chequing vs. Savings, What's the Difference?", body: "A chequing account is built for everyday spending, money moves in and out often, and it usually comes with a debit card for regular purchases.\n\nA savings account is built to hold money you're not touching often. It usually earns a small amount of interest, the bank paying you for keeping your money there, but withdrawals are more limited before fees kick in. Most major banks in Jamaica, including NCB (National Commercial Bank), JN Bank, Scotiabank Jamaica, JMMB, and Sagicor Bank Jamaica, offer both types. A common approach: use a chequing account for spending money and a savings account for money you're setting aside for a goal." },
+      { heading: "What You Actually Need to Open One", body: "Since most students on Finsight Lite are under 18, a parent or guardian is required to be involved, most Jamaican banks require the minor to be added to an account alongside an adult, rather than opening a fully independent account.\n\nYou'll typically need a valid photo ID or a notarized copy of a birth certificate for the minor, proof of the parent or guardian's address (a recent utility bill or bank statement), and in many cases a letter from the parent or guardian authorizing the account.\n\nOne thing that's different from some other territories: many Jamaican banks also ask for a TRN (Taxpayer Registration Number). If your family doesn't already have one, it's worth asking about this before your bank visit so it doesn't hold things up." },
+      { heading: "A Real Example: Junior Savings Accounts", body: "Some Jamaican banks have built accounts specifically for young people. Scotiabank Jamaica, for example, offers a Primary Savings Junior Account for children under 18, which comes with its own debit card and lets a parent set up automatic regular transfers into it.\n\nThis is a good example of what to actually ask about when your family visits a bank, some accounts are built generically for anyone, and some are built specifically with a student's needs in mind." },
+    ],
+    questions: [
+      { order_index: 0, question: "What is the main purpose of a chequing account?", option_a: "To earn the highest possible interest rate", option_b: "Everyday spending and frequent transactions", option_c: "To store money for offshore investing", option_d: "To apply for a loan", correct_answer: "B" },
+      { order_index: 1, question: "Why is a parent or guardian required for anyone under 18 opening an account in Jamaica?", option_a: "It's optional but recommended", option_b: "Most banks require the minor to be added to an account alongside an adult", option_c: "Banks don't allow anyone under 21 to have any account at all", option_d: "It's only required for savings accounts, not chequing", correct_answer: "B" },
+      { order_index: 2, question: "What does TRN stand for, and why does it matter for opening an account in Jamaica?", option_a: "Total Recorded Numbers, used only for loans", option_b: "Taxpayer Registration Number, often required by Jamaican banks", option_c: "Transfer Reference Number, only used for wire transfers", option_d: "Teller Reference Name, an internal bank code", correct_answer: "B" },
+      { order_index: 3, question: "What is one feature of Scotiabank Jamaica's Primary Savings Junior Account?", option_a: "It has no debit card at all", option_b: "It's only available to people over 25", option_c: "It comes with its own debit card and allows automatic transfers", option_d: "It requires a $10,000 minimum deposit", correct_answer: "C" },
+    ],
+  },
+  {
+    grade_level: "static-real-2-jm", topic: "real-life", title: "Understanding JAM-DEX, Jamaica's Digital Dollar",
+    territories: ["JMD"],
+    instructor: "Discover Jamaica's digital dollar, how a JAM-DEX wallet works, and why new money takes time to catch on.",
+    duration: "15 min", video_url: "https://www.youtube.com/watch?v=XQIe6ewEflw",
+    objectives: [
+      "Understand what JAM-DEX is and how it differs from a regular bank account.",
+      "Know how to open and use a JAM-DEX wallet.",
+      "Understand why a new form of money doesn't automatically get used by everyone right away.",
+      "Recognize JAM-DEX as a real, legal-tender example of digital money, not a cryptocurrency.",
+    ],
+    content_sections: [
+      { heading: "What Is JAM-DEX?", body: "JAM-DEX is Jamaica's own digital dollar, created and backed by the Bank of Jamaica (BOJ). It's worth exactly the same as a regular Jamaican dollar, one JAM-DEX dollar equals one physical Jamaican dollar, and it's legal tender, meaning it's an officially recognized form of money, not something separate or unofficial. This makes Jamaica one of only a handful of countries in the world with a fully launched central bank digital currency, often shortened to CBDC.\n\nIt's important not to confuse JAM-DEX with cryptocurrency like Bitcoin. Cryptocurrency isn't issued or backed by any government, its value can swing wildly, and no central bank stands behind it. JAM-DEX is the opposite: it's issued directly by Jamaica's central bank, its value never moves against the regular Jamaican dollar, and BOJ stands behind it the same way it stands behind physical cash." },
+      { heading: "How It Actually Works", body: "To use JAM-DEX, you need a digital wallet, available through banks and wallet providers like NCB's Lynk and JN Bank's JN Pay. A wallet can either be linked to an existing bank account, or opened independently with basic information like name, address, and date of birth. Once it's set up, you can add money by transferring from a bank account or depositing cash at a participating branch or smart ATM.\n\nTo pay someone, you scan a QR code or enter their wallet ID and send the amount, similar to how many mobile payment apps work elsewhere in the world, except this one is actual government-issued money rather than a private company's payment system." },
+      { heading: "Why Hasn't Everyone Adopted It?", body: "Here's the honest part of the story: even though JAM-DEX launched back in 2021, most people in Jamaica still aren't using it day to day, and it's worth understanding why, because it teaches something bigger than just this one currency. As of 2026, JAM-DEX still makes up a very small share of all the money moving through Jamaica's economy, even though the amount being used has grown quickly.\n\nThe core problem is what's sometimes called a chicken-and-egg situation: many stores don't accept JAM-DEX yet because their card machines haven't been upgraded to take it, and many people don't bother using JAM-DEX because there aren't enough places to actually spend it. Each side is waiting on the other.\n\nThe Bank of Jamaica has publicly pushed banks to move faster on upgrading their systems, even offering to cover part of the cost, but the rollout has still taken longer than planners originally expected.\n\nThis is a useful real-world lesson: a new form of money can be well-designed and government-backed and still take years to catch on, because it isn't just about the technology working, it's about enough people and enough businesses deciding to actually use it at the same time." },
+    ],
+    questions: [
+      { order_index: 0, question: "What backs the value of JAM-DEX?", option_a: "Nothing, its value is determined entirely by trading", option_b: "The Bank of Jamaica, and it's worth the same as a regular Jamaican dollar", option_c: "A private technology company", option_d: "Gold reserves held overseas", correct_answer: "B" },
+      { order_index: 1, question: "How is JAM-DEX different from a cryptocurrency like Bitcoin?", option_a: "There is no real difference, they work the same way", option_b: "JAM-DEX is issued and backed by Jamaica's central bank, cryptocurrency is not", option_c: "Cryptocurrency is legal tender and JAM-DEX is not", option_d: "JAM-DEX can only be used outside of Jamaica", correct_answer: "B" },
+      { order_index: 2, question: "How do you typically pay someone using JAM-DEX?", option_a: "By mailing physical cash", option_b: "By scanning a QR code or entering their wallet ID", option_c: "Only in person at a Bank of Jamaica branch", option_d: "It cannot be used for payments, only savings", correct_answer: "B" },
+      { order_index: 3, question: "What is the main reason JAM-DEX adoption has been slower than expected?", option_a: "It is illegal to use in most of Jamaica", option_b: "A chicken-and-egg problem, where merchants and customers are each waiting on the other", option_c: "Nobody in Jamaica owns a smartphone", option_d: "The Bank of Jamaica discontinued the program", correct_answer: "B" },
+      { order_index: 4, question: "What's a broader lesson JAM-DEX's slow adoption can teach about new forms of money?", option_a: "Government-backed currency always gets adopted instantly", option_b: "A new form of money needs enough people and businesses using it together, not just good technology", option_c: "Digital currency never works and should be avoided", option_d: "Only cryptocurrencies face adoption challenges", correct_answer: "B" },
+    ],
+  },
+  {
+    grade_level: "static-real-1-tt", topic: "real-life", title: "Opening a Bank Account in Trinidad and Tobago",
+    territories: ["TTD"],
+    instructor: "Learn what you need to open your first account in Trinidad and Tobago, at a bank or a credit union.",
+    duration: "15 min", video_url: null,
+    objectives: [
+      "Understand the difference between a chequing account and a savings account.",
+      "Know what documents and information are needed to open an account in Trinidad and Tobago.",
+      "Understand why a parent or guardian is required for anyone under 18.",
+      "Recognize credit unions as a real, commonly used alternative to commercial banks.",
+    ],
+    content_sections: [
+      { heading: "Chequing vs. Savings, What's the Difference?", body: "A chequing account is built for everyday spending, money moves in and out often, and it usually comes with a debit card for regular purchases.\n\nA savings account is built to hold money you're not touching often. It usually earns a small amount of interest, the bank paying you for keeping your money there, but withdrawals are more limited before fees kick in. Trinidad and Tobago has eight commercial banks, including First Citizens, Republic Bank, RBC, Scotiabank, and CIBC FirstCaribbean, all offering both account types. A common approach: use a chequing account for spending money and a savings account for money you're setting aside for a goal." },
+      { heading: "Banks Aren't Your Only Option", body: "One thing that makes Trinidad and Tobago a bit different: credit unions are a genuinely common and popular alternative to commercial banks here, not just a niche option. Credit unions like RHAND work similarly to a bank savings account, but they're member-owned rather than run for shareholder profit, and they often offer more affordable loans to members, sometimes at lower interest rates than a commercial bank would.\n\nBoth paths serve the same basic purpose, safely growing your savings, so it's worth knowing both exist before deciding where to open your first account." },
+      { heading: "What You Actually Need to Open One", body: "Since most students on Finsight Lite are under 18, a parent or guardian must open the account jointly with you, T&T banks generally don't allow a fully independent account for a minor.\n\nYou'll typically need the minor's birth certificate (or valid ID if available), the parent or guardian's own identification, proof of address (a utility bill usually works), and often a TRN (Taxpayer Registration Number).\n\nOne detail worth knowing ahead of time: most banks require the account to be funded on the same day it's opened, so bring an initial deposit amount with you rather than planning to add money later." },
+    ],
+    questions: [
+      { order_index: 0, question: "What is the main purpose of a chequing account?", option_a: "To earn the highest possible interest rate", option_b: "Everyday spending and frequent transactions", option_c: "To store money for offshore investing", option_d: "To apply for a loan", correct_answer: "B" },
+      { order_index: 1, question: "What is a credit union, and how is it different from a commercial bank?", option_a: "It's exactly the same as a bank, just a different name", option_b: "It's member-owned rather than run for shareholder profit", option_c: "It's only available to government employees", option_d: "It cannot offer savings accounts", correct_answer: "B" },
+      { order_index: 2, question: "Why is a parent or guardian required for anyone under 18 opening an account in Trinidad and Tobago?", option_a: "It's optional but recommended", option_b: "T&T banks generally don't allow a fully independent account for a minor", option_c: "Only applies to chequing accounts, not savings", option_d: "It's only required if you're over 16", correct_answer: "B" },
+      { order_index: 3, question: "What should you bring with you on the day you open a new account?", option_a: "Nothing, you can add money anytime later", option_b: "An initial deposit, since most banks require the account to be funded the same day", option_c: "Only a birth certificate, nothing else", option_d: "A letter from your school principal", correct_answer: "B" },
+    ],
+  },
+  {
+    grade_level: "static-real-2-tt", topic: "real-life", title: "Know Your Money, Trinidad and Tobago's Currency",
+    territories: ["TTD"],
+    instructor: "Learn to check that a T&T banknote is genuine using Feel, Look, Tilt, Check, and why T&T has stayed cautious on digital currency.",
+    duration: "10 min", video_url: "https://www.youtube.com/watch?v=11StNbq5zBk",
+    objectives: [
+      "Know how to check that a T&T banknote is genuine using the Feel, Look, Tilt, Check method.",
+      "Understand why recognizing counterfeit currency is a real, practical skill.",
+      "Recognize the Central Bank of Trinidad and Tobago's Know Your Money campaign as the source of this guidance.",
+      "Understand that Trinidad and Tobago has deliberately taken a cautious approach to digital currency, unlike some other Caribbean territories.",
+    ],
+    content_sections: [
+      { heading: "How to Check a Note Is Genuine", body: "Trinidad and Tobago's banknotes are made of polymer, a plastic-like material, and the Central Bank runs a public education campaign called Know Your Money, teaching a simple four-step method to check if a note is genuine: Feel, Look, Tilt, and Check. The Central Bank is also rolling out updated banknotes over the next year, which makes knowing these security features even more useful right now.\n\nFeel: polymer notes are noticeably smoother than paper, and genuine notes have raised, triangular dots in the bottom corner you can feel with your finger. Look: hold the note up and look for a clear window built into the polymer that you can see through from both the front and back.\n\nTilt: certain printed elements shift or shimmer when you tilt the note at an angle. Check: compare the note against the Central Bank's own reference images if you're ever unsure.\n\nThis isn't just useful trivia, knowing how to spot a fake is a real, practical skill." },
+      { heading: "Why T&T Hasn't Gone Digital (Yet)", body: "Some other Caribbean countries, including the Bahamas and Jamaica, have launched their own digital currencies. Trinidad and Tobago has not, and that's a deliberate choice rather than a delay. The Central Bank of Trinidad and Tobago has studied the idea for years but has stated it will not move forward with a digital currency for now, citing concerns about financial stability and risk.\n\nInstead, T&T's Central Bank has focused its public education efforts on programmes like Know Your Money, teaching people to recognize genuine physical currency, and on modernizing the payment system in other ways.\n\nThis is worth understanding as its own kind of decision: not every country needs to adopt the same technology at the same pace, and being cautious about a major financial change is itself a legitimate approach, not just a country falling behind." },
+    ],
+    questions: [
+      { order_index: 0, question: "What are the four steps in T&T's method for checking if a banknote is genuine?", option_a: "Fold, Smell, Shake, Compare", option_b: "Feel, Look, Tilt, Check", option_c: "Scan, Weigh, Test, Report", option_d: "Read, Sign, Stamp, File", correct_answer: "B" },
+      { order_index: 1, question: "What material are Trinidad and Tobago's banknotes made of?", option_a: "Cotton paper only", option_b: "Polymer, a plastic-like material", option_c: "Metal", option_d: "Recycled cardboard", correct_answer: "B" },
+      { order_index: 2, question: "Has Trinidad and Tobago launched its own digital currency?", option_a: "Yes, it launched before Jamaica and the Bahamas", option_b: "No, the Central Bank has chosen not to move forward with one for now", option_c: "Yes, but only for government use", option_d: "It launched and was later shut down", correct_answer: "B" },
+      { order_index: 3, question: "Why has T&T's Central Bank chosen not to adopt a digital currency yet?", option_a: "It doesn't have the technology available", option_b: "Concerns about financial stability and risk", option_c: "It's waiting for permission from another country", option_d: "Digital currency is illegal in T&T", correct_answer: "B" },
     ],
   },
 ];
@@ -1447,7 +1542,7 @@ export async function seedStaticModules(): Promise<void> {
     let created = 0;
     for (const lesson of STATIC_LESSONS_DATA) {
       if (existingIds.has(lesson.grade_level)) continue;
-      const { questions, video_url: _vid, ...planData } = lesson;
+      const { questions, video_url: _vid, territories: _terr, ...planData } = lesson;
       const plan = await createLessonPlan({
         org_id: STATIC_ORG_ID, env_id: null,
         title: planData.title, instructor: planData.instructor,
@@ -1472,6 +1567,12 @@ export async function seedStaticModules(): Promise<void> {
 // not surface in the API; edit STATIC_LESSONS_DATA and restart instead.
 const STATIC_VIDEO_URLS: Record<string, string | null> = Object.fromEntries(
   STATIC_LESSONS_DATA.map(l => [l.grade_level, l.video_url])
+);
+
+// Per-lesson territory scoping, served from code like STATIC_VIDEO_URLS above.
+// A lesson with no territories entry is visible in every territory.
+const STATIC_LESSON_TERRITORIES: Record<string, string[] | undefined> = Object.fromEntries(
+  STATIC_LESSONS_DATA.map(l => [l.grade_level, l.territories])
 );
 
 const REGIONAL_CONTENT_FALLBACK: Record<string, RegionRecord> = Object.fromEntries(
@@ -1512,6 +1613,10 @@ export async function getStaticModulesWithLessons(territory?: string): Promise<S
         ...mod,
         lessons: (lessons as any[])
           .filter((l: any) => l.topic === mod.id)
+          .filter((l: any) => {
+            const terr = STATIC_LESSON_TERRITORIES[l.grade_level ?? ""];
+            return !territory || !terr || terr.includes(territory);
+          })
           .sort((a: any, b: any) => String(a.grade_level ?? "").localeCompare(String(b.grade_level ?? "")))
           .map((l: any): StaticLessonRow => ({
             id: l.id,

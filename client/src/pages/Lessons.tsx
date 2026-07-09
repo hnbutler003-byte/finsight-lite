@@ -12,7 +12,7 @@ import {
   TrendingUp, Wallet, Lightbulb, ShoppingCart, BarChart3,
   Layers, ChevronDown, ChevronUp, Play, Lock, Download, Video,
   Globe, Smartphone, Shield, AlertTriangle,
-  Landmark, Receipt, ShieldAlert, LineChart,
+  Landmark, Receipt, ShieldAlert, LineChart, Banknote,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { jsPDF } from "jspdf";
@@ -138,7 +138,7 @@ const MODULE_VISUAL_CONFIG: Record<string, StaticModuleVisual> = {
   },
   "real-life": {
     icon: <Landmark className="w-6 h-6" />,
-    lessonIcon: (id) => id === "static-real-2" ? <Receipt className="w-5 h-5" /> : id === "static-real-3" ? <ShieldAlert className="w-5 h-5" /> : id === "static-real-4" ? <LineChart className="w-5 h-5" /> : <Landmark className="w-5 h-5" />,
+    lessonIcon: (id) => id === "static-real-2" ? <Receipt className="w-5 h-5" /> : id === "static-real-3" ? <ShieldAlert className="w-5 h-5" /> : id === "static-real-4" ? <LineChart className="w-5 h-5" /> : id === "static-real-2-jm" ? <Smartphone className="w-5 h-5" /> : id === "static-real-2-tt" ? <Banknote className="w-5 h-5" /> : <Landmark className="w-5 h-5" />,
     colorFrom: "from-emerald-500", colorTo: "to-green-600",
     textColor: "text-emerald-600 dark:text-emerald-400", labelOnDark: "text-emerald-300", bgMuted: "bg-emerald-500/10", borderColor: "border-emerald-500/30",
   },
@@ -364,14 +364,22 @@ function ModuleCard({
   completed: string[];
   onOpenLesson: (lesson: StaticLessonFromAPI, module: StaticModuleUI) => void;
 }) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const doneCount = module.lessons.filter(l => completed.includes(l.static_lesson_id)).length;
   const pct = Math.round((doneCount / module.lessons.length) * 100);
 
   return (
     <div className={`rounded-2xl border ${module.borderColor} bg-card overflow-hidden shadow-sm`} data-testid={`module-card-${module.id}`}>
       {/* Module Header */}
-      <div className={`bg-gradient-to-r ${module.colorFrom} ${module.colorTo} p-5`}>
+      <div
+        className={`bg-gradient-to-r ${module.colorFrom} ${module.colorTo} p-5 cursor-pointer select-none`}
+        onClick={() => setExpanded(x => !x)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(x => !x); } }}
+        data-testid={`module-header-${module.id}`}
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-white flex-shrink-0 shadow-lg">
@@ -383,8 +391,10 @@ function ModuleCard({
             </div>
           </div>
           <button
-            onClick={() => setExpanded(e => !e)}
+            onClick={(e) => { e.stopPropagation(); setExpanded(x => !x); }}
             className="text-white/70 hover:text-white transition-colors mt-1 flex-shrink-0"
+            aria-expanded={expanded}
+            aria-label={expanded ? "Collapse module" : "Expand module"}
             data-testid={`button-expand-module-${module.id}`}
           >
             {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
@@ -406,8 +416,9 @@ function ModuleCard({
         </div>
       </div>
 
-      {expanded && (
-        <div className="p-5 space-y-4">
+      <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+        <div className={`overflow-hidden min-h-0 transition-[visibility] duration-300 ${expanded ? "visible" : "invisible"}`} aria-hidden={!expanded}>
+          <div className="p-5 space-y-4">
           {/* Learning Objective */}
           <div className={`${module.bgMuted} rounded-xl p-4 border ${module.borderColor}`}>
             <div className="flex items-start gap-2.5">
@@ -478,8 +489,9 @@ function ModuleCard({
               {doneCount === 0 ? "Start" : doneCount === module.lessons.length ? "Review" : "Continue"}
             </Button>
           </div>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

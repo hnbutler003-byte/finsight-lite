@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import { VideoField } from "@/components/VideoField";
 import { useVideoEmbed } from "@/hooks/use-video-embed";
 import { QuizCta } from "@/components/QuizCta";
+import { BodyParagraphs } from "@/components/LessonBlocks";
 
 import {
   type QuizQuestion,
@@ -785,7 +786,7 @@ function LessonPreviewModal({ lesson, onClose }: { lesson: LessonPlan; onClose: 
                       </div>
                       {section.heading}
                     </h2>
-                    <p className="text-foreground text-sm leading-relaxed mb-3">{section.body}</p>
+                    {section.body && <BodyParagraphs body={section.body} index={i} />}
                     {section.examples && section.examples.length > 0 && (
                       <div>
                         <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
@@ -1059,7 +1060,7 @@ function LessonCard({ lesson }: { lesson: LessonPlan }) {
               {lesson.content_sections.map((section, i) => (
                 <div key={i}>
                   <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">{section.heading}</p>
-                  <p className="text-sm leading-relaxed">{section.body}</p>
+                  {section.body && <BodyParagraphs body={section.body} index={i} pClassName="text-sm leading-relaxed" wrapperClassName="space-y-2" />}
                   {section.examples && section.examples.length > 0 && (
                     <ul className="mt-2 space-y-1">
                       {section.examples.map((ex, j) => (

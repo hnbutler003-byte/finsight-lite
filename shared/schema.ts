@@ -140,6 +140,10 @@ export type ContentDiagram =
 export type ContentSection = {
   type?: "text" | "video" | "diagram";
   heading: string;
+  // Body text uses blank lines as paragraph breaks: separate distinct sub-topics
+  // with a blank line and the lesson viewer renders each paragraph in its own
+  // <p> tag. Applies to seeded content and lessons written in the Org Admin
+  // Lessons editor alike; never compress multiple ideas into one dense block.
   body: string;
   examples?: string[];
   video_url?: string;

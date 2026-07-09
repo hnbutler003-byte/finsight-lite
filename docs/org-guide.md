@@ -67,7 +67,11 @@ Create and manage lesson plans that appear in the Teacher Portal's Lessons tab a
 
 A draft lesson is only visible to org admins. A published lesson is visible to teachers and students in your environment.
 
+**Writing lesson body text**: separate distinct sub-topics with a blank line. The student lesson viewer renders each blank-line-separated paragraph as its own paragraph, so longer sections stay readable instead of appearing as one dense block.
+
 **Previewing a lesson**: click the preview icon on any lesson card. The preview renders exactly as students will see it, using the student-facing design.
+
+**Built-in lesson territory scoping**: lessons in the built-in Real Life Ready module are territory-specific. Students in a Bahamas environment see the Bahamas bank account, payslip and NIB, and investment accounts lessons; Jamaica environments see the Jamaica bank account and JAM-DEX lessons; Trinidad and Tobago environments see the T&T bank account and Know Your Money lessons. The avoiding scams lesson appears in every territory. This scoping applies only to built-in content; org lesson plans are always shown to your own environment.
 
 **Built-in lesson diagrams**: some of FinSight's built-in core lessons (for example, in the Real Life Ready module) include embedded visual diagrams such as a payslip breakdown or an account opening flow. These diagrams are part of the built-in content only. They cannot be added to org lesson plans, and the lesson preview does not render them.
 
