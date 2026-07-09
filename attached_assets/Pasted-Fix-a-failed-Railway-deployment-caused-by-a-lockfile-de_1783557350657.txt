@@ -1,0 +1,70 @@
+Fix a failed Railway deployment caused by a lockfile/dependency mismatch.
+
+BACKGROUND
+The most recent deploy failed at the install step with:
+ERR_PNPM_OUTDATED_LOCKFILE - Cannot install with "frozen-lockfile" because 
+pnpm-lock.yaml is not up to date with package.json
+
+The lockfile is missing an entry for "mammoth" (and possibly other recently 
+added packages) that exists in package.json. Railway installs with 
+--frozen-lockfile, so any mismatch between package.json and pnpm-lock.yaml 
+blocks the build entirely.
+
+FIX STEPS
+
+1. Regenerate the lockfile so it matches package.json exactly:
+   pnpm install
+
+2. Run the standing package-lock proxy fix and verify it's clean. This 
+   repo uses pnpm, so check pnpm-lock.yaml specifically (not package-lock.json):
+   sed -i 's|http://package-firewall.replit.local/npm|https://registry.npmjs.org|g' pnpm-lock.yaml
+   grep -c "package-firewall.replit.local" pnpm-lock.yaml
+
+   The grep must return 0 before proceeding. If it returns anything else, 
+   the sed command did not fully clean the file, stop and investigate before 
+   committing.
+
+3. Confirm the app still builds locally before pushing:
+   pnpm run build
+
+4. Commit package.json and pnpm-lock.yaml together in the same commit. Do 
+   not commit one without the other, that recreates this exact failure.
+
+5. Push to the GitHub remote.
+
+6. Verify the push actually landed: compare the full 40-character SHA of 
+   local HEAD against the GitHub remote HEAD. Do not rely on Replit's own 
+   deployment verification tools for this, they check the wrong environment. 
+   Confirm against GitHub and Railway directly.
+
+7. Watch the Railway deploy log for this specific build. Confirm the 
+   "pnpm install" step completes without an ERR_PNPM_OUTDATED_LOCKFILE error, 
+   and confirm the build reaches "pnpm run build" and "node dist/index.cjs" 
+   without failing.
+
+SEPARATE, LOWER-PRIORITY FIX (same session, after the above is confirmed working)
+The deploy log also shows this warning, which did not cause the failure but 
+should be resolved so it doesn't cause a future one:
+WARN Unsupported engine: wanted: {"node":"20.x"} (current: {"node":"v22.11.0"})
+
+Check the "engines" field in package.json. Either:
+(a) update engines.node to accurately reflect the Node version this project 
+    actually needs and is being tested against, or
+(b) if 20.x is the correct target, pin the Node version explicitly in the 
+    Nixpacks/Railway build config so it stops resolving to 22.11.0
+
+Confirm which of these is correct given the current codebase before changing 
+it, do not guess.
+
+STANDING REQUIREMENTS (apply throughout)
+- No em dashes anywhere, including commit messages and code comments
+- Any new database write must throw a clear, catchable error on failure, 
+  never silently return null/undefined/false
+- This is a backend/infra fix with no UI change, so the light/dark mode 
+  verification requirement does not apply here, skip it
+- Do not touch teacher-guide.md or org-guide.md, this change has no 
+  teacher-facing or org-admin-facing UI impact
+- All work must be production-ready
+
+Report back with: the grep result from step 2, confirmation the local/remote 
+SHA match from step 6, and the final Railway deploy status.

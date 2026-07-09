@@ -1,5 +1,17 @@
+# Railway/Nixpacks build config.
+# Node is pinned to 20.x to match engines.node in package.json.
+# pnpm is launched through corepack (bundled with Node 20) instead of the
+# nixpkgs pnpm package, whose bundled Node interpreter resolved to 22.11.0
+# and triggered "Unsupported engine" warnings during install.
+
+[variables]
+COREPACK_ENABLE_DOWNLOAD_PROMPT = "0"
+
 [phases.setup]
-nixPkgs = ["nodejs_20", "pnpm"]
+nixPkgs = ["nodejs_20"]
 
 [phases.install]
-cmds = ["pnpm install"]
+cmds = ["corepack pnpm install --frozen-lockfile"]
+
+[phases.build]
+cmds = ["corepack pnpm run build"]
