@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import faLogoUrl from "@assets/The_Financial_Academy_1776381894734.webp";
+import finsightLogoUrl from "@assets/finsight-lite-logo-primary_1782158006266.jpg";
 
 export type FinancialAcademyBranding = {
   logoUrl?: string | null;
@@ -36,11 +36,11 @@ export async function buildFinancialAcademyCertificate(
   completionDate: string,
   branding?: FinancialAcademyBranding,
 ): Promise<jsPDF> {
-  const leftName = branding?.leftName?.trim() || "Lakeisha Deveaux";
-  const leftRole = branding?.leftRole?.trim() || "GENERAL INSTRUCTOR";
-  const rightName = branding?.rightName?.trim() || "Annie Brown";
-  const rightRole = branding?.rightRole?.trim() || "ASSISTANT INSTRUCTOR";
-  const logoSource = branding?.logoUrl?.trim() || faLogoUrl;
+  const leftName = branding?.leftName?.trim() || "";
+  const leftRole = branding?.leftRole?.trim() || "";
+  const rightName = branding?.rightName?.trim() || "";
+  const rightRole = branding?.rightRole?.trim() || "";
+  const logoSource = branding?.logoUrl?.trim() || finsightLogoUrl;
 
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const W = 297;
@@ -109,22 +109,29 @@ export async function buildFinancialAcademyCertificate(
   doc.line(leftX - 35, sigY - 6, leftX + 35, sigY - 6);
   doc.line(rightX - 35, sigY - 6, rightX + 35, sigY - 6);
 
-  doc.setFont("times", "bold");
-  doc.setFontSize(13);
-  doc.setTextColor(30, 30, 30);
-  doc.text(leftName, leftX, sigY, { align: "center" });
-  doc.text(rightName, rightX, sigY, { align: "center" });
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(110, 110, 110);
-  doc.text(leftRole, leftX, sigY + 5, { align: "center" });
-  doc.text(rightRole, rightX, sigY + 5, { align: "center" });
+  const drawSignatureBlock = (x: number, name: string, role: string) => {
+    if (name) {
+      doc.setFont("times", "bold");
+      doc.setFontSize(13);
+      doc.setTextColor(30, 30, 30);
+      doc.text(name, x, sigY, { align: "center" });
+    }
+    // With no name set, show a generic non-fake label under the line instead.
+    const label = role || (name ? "" : "Instructor Signature");
+    if (label) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(110, 110, 110);
+      doc.text(label, x, name ? sigY + 5 : sigY, { align: "center" });
+    }
+  };
+  drawSignatureBlock(leftX, leftName, leftRole);
+  drawSignatureBlock(rightX, rightName, rightRole);
 
   doc.setFont("times", "italic");
   doc.setFontSize(9);
   doc.setTextColor(140, 140, 140);
-  doc.text('The Financial Academy: "Smart Finances, Secure Future."', W / 2, H - 14, { align: "center" });
+  doc.text("FinSight Lite", W / 2, H - 14, { align: "center" });
 
   return doc;
 }
@@ -137,7 +144,7 @@ export async function generateFinancialAcademyCertificate(
 ): Promise<void> {
   const doc = await buildFinancialAcademyCertificate(studentFullName, moduleName, completionDate, branding);
   const safeMod = moduleName.replace(/[^a-z0-9]/gi, "_").slice(0, 40);
-  doc.save(`Financial_Academy_Certificate_${safeMod}.pdf`);
+  doc.save(`Certificate_${safeMod}.pdf`);
 
   try {
     const dataUri = doc.output("datauristring");

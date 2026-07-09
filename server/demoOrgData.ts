@@ -10,9 +10,6 @@ import {
   getLessonsByOrg,
   createLessonPlan,
   createLessonQuizQuestion,
-  getOrganization,
-  updateOrganization,
-  invalidateOrganizationCache,
 } from "./supabase";
 import type { AiKind } from "./aiUsage";
 
@@ -252,23 +249,6 @@ async function ensureDemoLearningProgress(): Promise<void> {
   if (rows.length > 0) await db.insert(userLearningProgress).values(rows);
 }
 
-async function ensureDemoBranding(orgId: string): Promise<void> {
-  const org = await getOrganization(orgId);
-  if (!org) return;
-  const o = org as any;
-  const allEmpty =
-    !o.signature_left_name && !o.signature_left_role &&
-    !o.signature_right_name && !o.signature_right_role;
-  if (!allEmpty) return;
-  await updateOrganization(orgId, {
-    signature_left_name: "Lakeisha Deveaux",
-    signature_left_role: "PROGRAMME DIRECTOR",
-    signature_right_name: "Marcus Rolle",
-    signature_right_role: "HEAD OF FINANCIAL EDUCATION",
-  } as any);
-  await invalidateOrganizationCache(orgId);
-}
-
 /**
  * Ensure the demo org has realistic data for the public read-only demo.
  * Throws on any database failure so callers surface a real error instead of
@@ -279,5 +259,4 @@ export async function ensureDemoOrgData(orgId: string, envId: string): Promise<v
   await ensureDemoAiUsage(orgId, envId);
   await ensureDemoStudentActivity();
   await ensureDemoLearningProgress();
-  await ensureDemoBranding(orgId);
 }

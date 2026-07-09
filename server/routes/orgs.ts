@@ -31,6 +31,7 @@ import { streamPrivateObjectToResponse } from "../jobHandlers";
 import { enqueueJob, listRecentJobs } from "../jobs";
 import { sendEmail, getOrCreateContact, appBaseUrl, escapeHtml } from "../email";
 import { isAdmin, isOrgAdmin, ADMIN_EMAIL } from "./auth";
+import { uploadOrgLogo } from "../logoStorage";
 
 const objectStorage = new ObjectStorageService();
 
@@ -1663,27 +1664,14 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
         const ext = mimeToExt[req.file.mimetype.toLowerCase()] || "png";
         const filename = `${admin.orgId}-${Date.now()}-${crypto.randomBytes(6).toString("hex")}.${ext}`;
 
-        const publicPaths = objectStorage.getPublicObjectSearchPaths();
-        const targetDir = publicPaths[0];
         const objectKey = `logos/${filename}`;
-        const fullPath = `${targetDir.replace(/\/$/, "")}/${objectKey}`;
-        const [, bucketName, ...rest] = fullPath.split("/");
-        const objectName = rest.join("/");
-
-        await objectStorageClient
-          .bucket(bucketName)
-          .file(objectName)
-          .save(req.file.buffer, {
-            contentType: req.file.mimetype,
-            resumable: false,
-            metadata: { cacheControl: "public, max-age=2592000" },
-          });
-
-        const url = `/public-objects/${objectKey}`;
+        const url = await uploadOrgLogo(req.file.buffer, objectKey, req.file.mimetype);
         res.status(201).json({ url });
       } catch (e: any) {
         console.error("Logo upload failed:", e);
-        res.status(500).json({ message: e.message || "Logo upload failed" });
+        captureError(e, { route: req.path, feature: "org_logo_upload" });
+        res.locals.sentryCaptured = true;
+        res.status(500).json({ message: "Upload failed, please try again or contact support." });
       }
     },
   );

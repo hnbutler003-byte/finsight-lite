@@ -1,0 +1,69 @@
+Fix two bugs on the Org Admin > Certificate Branding page (finsightlite.com/org/branding).
+
+BUG 1 — LOGO UPLOAD FAILS
+Uploading a logo returns "Upload failed: PUBLIC_OBJECT_SEARCH_PATHS not set."
+This is a missing environment variable for object storage, not a code defect.
+
+- Locate where PUBLIC_OBJECT_SEARCH_PATHS (and any related object storage 
+  env vars, e.g. PRIVATE_OBJECT_DIR) are read in the codebase to confirm 
+  the exact variable name(s) and expected format
+- Confirm these variables are set correctly in the Replit dev environment
+- Critically: confirm these same variables are set in Railway's production 
+  environment variables, not just in Replit. Railway is the production 
+  host and does not inherit Replit's environment automatically. This is 
+  almost certainly why it fails, since it likely works in the Replit 
+  preview but not in production, or was never set in either
+- After setting the variable(s), test the logo upload end to end in both 
+  environments and confirm the uploaded logo persists and displays 
+  correctly in the Live Certificate Preview
+- Any object storage write must throw a clear, catchable error on failure 
+  with a specific, actionable message, not a raw env var name surfaced to 
+  the org admin. "Upload failed: PUBLIC_OBJECT_SEARCH_PATHS not set" is a 
+  developer-facing error leaking into a user-facing UI, fix the error 
+  handling so a real config failure shows something like "Upload failed, 
+  please try again or contact support" to the user, while the specific 
+  technical error still gets logged server-side (e.g. to Sentry) for 
+  debugging
+
+BUG 2 — WRONG DEFAULT CERTIFICATE BRANDING
+When an org has not uploaded a logo or set signatures, the Live Certificate 
+Preview currently falls back to a fake sample organization: "The Financial 
+Academy" as the org name, with placeholder signatures "Lakeisha Deveaux, 
+Programme Director" and "Marcus Rolle, Head of Financial Education," and 
+the tagline "Smart Finances, Secure Future."
+
+This is wrong. The unbranded default must be Finsight Lite's own branding, 
+not a fake placeholder client, since this is what every org sees before 
+they customize anything.
+
+- Locate the default/fallback certificate template values
+- Replace "The Financial Academy" with "Finsight Lite" as the default 
+  certificate issuer name
+- Replace the default logo with the actual Finsight Lite primary logo 
+  (finsightlitelogoprimary.jpg / the three-bar gradient mark + wordmark)
+- Remove the fake tagline "Smart Finances, Secure Future" entirely, or 
+  replace it with real Finsight Lite messaging if a tagline is desired, 
+  confirm with product copy rather than inventing one
+- Remove the placeholder signature names "Lakeisha Deveaux" and "Marcus 
+  Rolle." Default signature fields should either be blank until the org 
+  fills them in, or show a generic non-fake label like "Instructor 
+  Signature" rather than invented names attached to invented titles
+- Verify the certificate border, gold accent lines, and layout still work 
+  correctly with the corrected default logo and text, in both light and 
+  dark mode for the admin-facing preview panel itself (the certificate 
+  document preview is a fixed white/gold design and does not need dark 
+  mode, but the surrounding Org Admin page chrome does)
+
+STANDING REQUIREMENTS (apply throughout)
+- No em dashes anywhere, including code comments, UI copy, and error messages
+- Any new or modified database/storage write must throw a clear, catchable 
+  error on failure, never fail silently
+- Any UI change (the branding page itself, not the certificate document) 
+  must be verified in both light and dark mode per the contrast rules in 
+  index.css
+- Production-ready, not demo-ware
+
+Report back with: confirmation of which env vars were missing and where 
+they were set, confirmation the upload now works in production (Railway), 
+and a screenshot or description of the corrected default certificate 
+preview.

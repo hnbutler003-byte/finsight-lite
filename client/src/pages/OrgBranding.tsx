@@ -22,10 +22,6 @@ type Branding = {
   allowedEmailDomains: string[];
 };
 
-const DEFAULT_LEFT_NAME = "Lakeisha Deveaux";
-const DEFAULT_LEFT_ROLE = "GENERAL INSTRUCTOR";
-const DEFAULT_RIGHT_NAME = "Annie Brown";
-const DEFAULT_RIGHT_ROLE = "ASSISTANT INSTRUCTOR";
 const MAX_LOGO_BYTES = 5 * 1024 * 1024; // 5 MB
 
 export default function OrgBranding() {
@@ -287,8 +283,8 @@ export default function OrgBranding() {
                 <CardContent className="p-6 space-y-4">
                   <h3 className="font-bold text-lg">Signatures</h3>
                   <p className="text-sm text-muted-foreground">
-                    Two signature blocks appear at the bottom of each certificate. Leave blank to use defaults
-                    ("{DEFAULT_LEFT_NAME}" / "{DEFAULT_RIGHT_NAME}").
+                    Two signature blocks appear at the bottom of each certificate. Leave a name blank to show
+                    a generic "Instructor Signature" label instead.
                   </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -299,7 +295,7 @@ export default function OrgBranding() {
                         <Input
                           value={leftName}
                           onChange={e => { setLeftName(e.target.value); setDirty(true); }}
-                          placeholder={DEFAULT_LEFT_NAME}
+                          placeholder="Full name"
                           maxLength={80}
                           data-testid="input-signature-left-name"
                         />
@@ -309,7 +305,7 @@ export default function OrgBranding() {
                         <Input
                           value={leftRole}
                           onChange={e => { setLeftRole(e.target.value); setDirty(true); }}
-                          placeholder={DEFAULT_LEFT_ROLE}
+                          placeholder="Role or title"
                           maxLength={80}
                           data-testid="input-signature-left-role"
                         />
@@ -323,7 +319,7 @@ export default function OrgBranding() {
                         <Input
                           value={rightName}
                           onChange={e => { setRightName(e.target.value); setDirty(true); }}
-                          placeholder={DEFAULT_RIGHT_NAME}
+                          placeholder="Full name"
                           maxLength={80}
                           data-testid="input-signature-right-name"
                         />
@@ -333,7 +329,7 @@ export default function OrgBranding() {
                         <Input
                           value={rightRole}
                           onChange={e => { setRightRole(e.target.value); setDirty(true); }}
-                          placeholder={DEFAULT_RIGHT_ROLE}
+                          placeholder="Role or title"
                           maxLength={80}
                           data-testid="input-signature-right-role"
                         />
