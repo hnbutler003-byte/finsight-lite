@@ -1,0 +1,724 @@
+Build out the Real Life Ready module across three territories in one pass: add
+diagram support, create/update six lessons (Bahamas, Jamaica, Trinidad and
+Tobago) with properly formatted body text, update guides, then commit and push.
+
+============================================================
+PART 1: DIAGRAM REGISTRY AND THREE DIAGRAM COMPONENTS (BAHAMAS ONLY)
+============================================================
+
+Add an optional diagram slot to the lesson content section model. Each content
+section should optionally support a diagramKey field (a string identifying which
+diagram component to render) in addition to its existing heading and body. When a
+content section has a diagramKey set, render the matching diagram component
+between that section's heading/body and the next section, inside the same
+glass-card content flow the lesson viewer already uses.
+
+Do not build a generic diagram upload or drag-and-drop builder, that is a larger
+feature. Diagrams are React components mapped by key, added to the codebase
+directly. Create client/src/components/lesson-diagrams/ with a registry file:
+{
+  "bank-account-steps": BankAccountStepsDiagram,
+  "payslip-breakdown": PayslipBreakdownDiagram,
+  "chequing-vs-savings": ChequingVsSavingsDiagram,
+}
+The lesson viewer looks up diagramKey in this registry and renders the component
+if found, renders nothing if the key doesn't match (fail gracefully, never crash
+the lesson page over a missing diagram key).
+
+All three components follow the design system exactly: Baloo 2 for headings
+(font-display), Nunito for body (font-sans), .glass-card with --radius-glass
+(28px), CSS tokens only, no hardcoded hex values. Coral stays reserved for
+gamification only (XP, streaks, badges), do not use it in these. Use primary
+(violet), secondary (amber), and accent (teal) instead. Every colored text element
+needs an explicit dark: pair per the contrast rules in index.css. No em dashes
+anywhere in code, comments, or rendered text. Add a subtle fade-in or pop-in
+entrance treatment on each diagram as it scrolls into view.
+
+1. BankAccountStepsDiagram: a vertical 5-step sequence inside one .glass-card:
+Choose account type (chequing or savings), Gather your documents (ID and proof of
+address), Bring a parent or guardian (required for under 18), Visit the bank
+(complete the application), Make initial deposit (account is opened). Each step
+is a numbered circle (violet background, white number) connected by a vertical
+line to the next, with a title (font-display, semibold) and short subtitle
+(font-sans, text-muted-foreground) beside it.
+
+2. PayslipBreakdownDiagram: a single .glass-card styled like a simplified
+payslip. "Weekly payslip" as a font-display heading, then three rows separated by
+thin dividers: Gross pay (B$400.00), NIB deduction (-B$15.60, subtly tinted
+amber/warning-toned row with proper dark: pairing, not coral), then Net pay
+(B$384.40) in a teal/accent tinted row with a "what actually lands in your
+account" subtitle. Include a small muted caption: "Sample amounts for
+illustration, actual NIB rates can change." Use B$ formatting.
+
+3. ChequingVsSavingsDiagram: two side-by-side cards (stack vertically on mobile).
+Left card (violet-tinted header) "Chequing account": built for everyday spending,
+frequent deposits and withdrawals, often comes with a debit card, little to no
+interest earned, use for allowance/wages/bills. Right card (amber-tinted header)
+"Savings account": built to hold money over time, limited withdrawals before
+fees, usually no debit card, earns a small amount of interest, use for savings
+goals/emergencies.
+
+============================================================
+PART 2: STANDING CONTENT FORMATTING RULE
+============================================================
+
+Lesson content body text must always use natural paragraph breaks. When a section
+covers two or more distinct sub-topics, each gets its own paragraph, don't
+compress multiple ideas into one dense block. This applies to all lesson content
+below and to all future territories. If the lesson content renderer currently
+displays body text as one unbroken block regardless of line breaks in the source
+(check this first), fix the renderer to respect paragraph breaks, rendering each
+paragraph in its own <p> tag with standard spacing. This is the actual root fix if
+the renderer ignores source line breaks, not just editing the source text. Add a
+brief note in the lesson content schema/CMS documentation so this formatting
+expectation is visible for future lesson content, written by a prompt or entered
+manually through the Org Admin Lessons editor.
+
+============================================================
+PART 3: BAHAMAS LESSON 1, "Opening a Bank Account in the Bahamas"
+============================================================
+
+Create this lesson if it does not already exist, or update it to match exactly if
+it exists with different (unformatted) content from an earlier version.
+
+Title: Opening a Bank Account in the Bahamas
+Instructor: Finsight Lite Team
+Grade Level: 7-12
+Subject: Financial Literacy
+Duration: 15 minutes
+Topic: Banking Basics
+
+Learning Objectives:
+- Understand the difference between a chequing account and a savings account
+- Know what documents and information are needed to open an account in the Bahamas
+- Understand why a parent or guardian is usually required for anyone under 18
+- Recognize the ongoing costs (fees, minimum balances) that come with having an
+  account
+
+Content Section 1 Heading: Chequing vs. Savings, What's the Difference?
+Content Section 1 Paragraph 1: A chequing account (sometimes called a current
+account) is built for everyday spending. Money moves in and out often, you might
+get a debit card with it, and some chequing accounts let you write cheques or pay
+bills directly.
+Content Section 1 Paragraph 2: A savings account is built to hold money you're
+not touching often. It usually earns a small amount of interest, which is the
+bank paying you for keeping your money there, but many savings accounts limit how
+many withdrawals you can make each month before a fee kicks in. Most banks in the
+Bahamas, including Scotiabank, RBC, CIBC FirstCaribbean, Fidelity Bank, and Bank
+of The Bahamas, offer both. A common approach: use a chequing account for
+spending money and a savings account for money you're setting aside for a goal.
+[diagramKey: chequing-vs-savings applies after this section]
+
+Content Section 2 Heading: What You Actually Need to Open One
+Content Section 2 Paragraph 1: Since most students on Finsight Lite are under 18,
+banks in the Bahamas typically require a parent or guardian to open the account
+with you, either as a joint account holder or as a co-signer.
+Content Section 2 Paragraph 2: You'll usually need a valid form of ID (a school
+ID, birth certificate, or passport), proof of address (a utility bill in a
+parent's name works), and a parent or guardian present with their own ID. Some
+banks also ask for an initial deposit to open the account, which varies by bank
+and account type, so it's worth calling ahead or checking the bank's website
+before showing up.
+[diagramKey: bank-account-steps applies after this section]
+
+Content Section 3 Heading: The Costs Nobody Mentions Upfront
+Content Section 3 Paragraph 1: Having a bank account isn't free. Watch for
+monthly maintenance fees (charged just for having the account open), minimum
+balance requirements (some accounts charge a fee if your balance drops below a
+set amount), and ATM fees (using an ATM outside your bank's network usually costs
+extra).
+Content Section 3 Paragraph 2: None of this means you shouldn't open an account,
+a bank account is a foundational money tool, it just means reading the fee
+schedule before you sign up saves you from surprises later.
+
+Quiz Questions:
+1. What is the main purpose of a chequing account?
+A) To earn the highest possible interest rate
+B) Everyday spending and frequent transactions
+C) To store money for offshore investing
+D) To apply for a loan
+Correct: B
+
+2. Why do most people under 18 need a parent or guardian to open a bank account in
+the Bahamas?
+A) It's not actually required, it's just a suggestion
+B) Banks only allow accounts for people over 21
+C) Banks typically require a joint account holder or co-signer for minors
+D) Students aren't allowed to have bank accounts at all
+Correct: C
+
+3. Which of these is a real cost that can come with having a bank account?
+A) A monthly maintenance fee
+B) A tax on your name
+C) A fee for being under 18
+D) A charge for closing the account on your birthday
+Correct: A
+
+4. What's one piece of ID or documentation you might need to open an account?
+A) A copy of someone else's bank statement
+B) Proof of address, like a utility bill
+C) A university diploma
+D) A passport from a different country
+Correct: B
+
+YouTube Video: None. No good-fit video found, text-only.
+
+============================================================
+PART 4: BAHAMAS LESSON 2, "Understanding Your Payslip and NIB"
+============================================================
+
+Create this lesson if it does not already exist, or update it to match exactly if
+it exists with different (unformatted) content from an earlier version.
+
+Title: Understanding Your Payslip and NIB
+Instructor: Finsight Lite Team
+Grade Level: 9-12
+Subject: Financial Literacy
+Duration: 15 minutes
+Topic: Payroll and Government Deductions
+
+Learning Objectives:
+- Read and understand the basic parts of a Bahamian payslip
+- Understand what NIB (National Insurance Board) is and why contributions are
+  deducted
+- Know what NIB contributions eventually provide
+- Understand the difference between gross pay and net pay
+
+Content Section 1 Heading: Gross Pay vs. Net Pay
+Content Section 1 Paragraph 1: Gross pay is the full amount you earned before
+anything is taken out. Net pay, sometimes called take-home pay, is what actually
+lands in your account after deductions.
+Content Section 1 Paragraph 2: The biggest deduction most working people in the
+Bahamas will see on a payslip is NIB. If you've never seen a payslip before, the
+gap between gross and net pay can be surprising, understanding it now means it
+won't catch you off guard at your first job.
+[diagramKey: payslip-breakdown applies after this section]
+
+Content Section 2 Heading: What Is NIB?
+Content Section 2 Paragraph 1: NIB, the National Insurance Board, is the
+Bahamas' national social security programme. Almost every employed person in the
+Bahamas contributes to NIB, and it's automatically deducted from your paycheck,
+similar to how other countries have their own national insurance or social
+security systems.
+Content Section 2 Paragraph 2: NIB contributions fund benefits that support
+people through major life events: sickness benefit, maternity benefit,
+retirement pension, and support for family members if a worker passes away or is
+injured on the job. It's not a savings account you can withdraw from anytime,
+it's a shared national system that pays out when specific, defined situations
+happen.
+
+Content Section 3 Heading: Why This Matters Even Before Your First Job
+Content Section 3 Paragraph 1: Understanding NIB before you're actually holding a
+payslip means you won't be confused or worried the first time you see a chunk of
+your pay missing.
+Content Section 3 Paragraph 2: It also matters long-term: NIB contributions are
+what eventually qualify someone for a retirement pension, so a consistent work
+history with NIB contributions isn't just a deduction today, it's building toward
+something later.
+
+Quiz Questions:
+1. What is the difference between gross pay and net pay?
+A) There is no difference, they mean the same thing
+B) Gross pay is before deductions, net pay is what you actually receive
+C) Gross pay is only for adults, net pay is for students
+D) Net pay is always higher than gross pay
+Correct: B
+
+2. What does NIB stand for?
+A) National Investment Bank
+B) National Insurance Board
+C) Nassau Income Bureau
+D) National Interest Balance
+Correct: B
+
+3. Which of these is something NIB contributions can eventually provide?
+A) A free car
+B) A retirement pension
+C) Free tuition at any school
+D) A guaranteed loan
+Correct: B
+
+4. Why is NIB deducted automatically from a paycheck?
+A) It's optional but most people forget to opt out
+B) It's a mandatory national social security contribution
+C) It's a penalty for late tax filing
+D) It only applies to business owners
+Correct: B
+
+YouTube Video: Link a current video from NIB's own official YouTube channel
+(search "National Insurance Board Bahamas" to find their verified channel).
+Confirm the specific video covers general contributions/benefits, not a narrow
+policy update, before publishing.
+
+============================================================
+PART 5: JAMAICA LESSON 1, "Opening a Bank Account in Jamaica"
+============================================================
+
+Territory-scoped: only visible to students in the Jamaica (JMD) environment.
+
+Title: Opening a Bank Account in Jamaica
+Instructor: Finsight Lite Team
+Grade Level: 7-12
+Subject: Financial Literacy
+Duration: 15 minutes
+Topic: Banking Basics
+
+Learning Objectives:
+- Understand the difference between a chequing account and a savings account
+- Know what documents and information are needed to open an account in Jamaica
+- Understand why a parent or guardian is required for anyone under 18
+- Recognize the TRN as a Jamaica-specific requirement most students haven't heard
+  of yet
+
+Content Section 1 Heading: Chequing vs. Savings, What's the Difference?
+Content Section 1 Paragraph 1: A chequing account is built for everyday
+spending, money moves in and out often, and it usually comes with a debit card
+for regular purchases.
+Content Section 1 Paragraph 2: A savings account is built to hold money you're
+not touching often. It usually earns a small amount of interest, the bank paying
+you for keeping your money there, but withdrawals are more limited before fees
+kick in. Most major banks in Jamaica, including NCB (National Commercial Bank),
+JN Bank, Scotiabank Jamaica, JMMB, and Sagicor Bank Jamaica, offer both types. A
+common approach: use a chequing account for spending money and a savings account
+for money you're setting aside for a goal.
+
+Content Section 2 Heading: What You Actually Need to Open One
+Content Section 2 Paragraph 1: Since most students on Finsight Lite are under 18,
+a parent or guardian is required to be involved, most Jamaican banks require the
+minor to be added to an account alongside an adult, rather than opening a fully
+independent account.
+Content Section 2 Paragraph 2: You'll typically need a valid photo ID or a
+notarized copy of a birth certificate for the minor, proof of the parent or
+guardian's address (a recent utility bill or bank statement), and in many cases a
+letter from the parent or guardian authorizing the account.
+Content Section 2 Paragraph 3: One thing that's different from some other
+territories: many Jamaican banks also ask for a TRN (Taxpayer Registration
+Number). If your family doesn't already have one, it's worth asking about this
+before your bank visit so it doesn't hold things up.
+
+Content Section 3 Heading: A Real Example: Junior Savings Accounts
+Content Section 3 Paragraph 1: Some Jamaican banks have built accounts
+specifically for young people. Scotiabank Jamaica, for example, offers a Primary
+Savings Junior Account for children under 18, which comes with its own debit card
+and lets a parent set up automatic regular transfers into it.
+Content Section 3 Paragraph 2: This is a good example of what to actually ask
+about when your family visits a bank, some accounts are built generically for
+anyone, and some are built specifically with a student's needs in mind.
+
+Quiz Questions:
+1. What is the main purpose of a chequing account?
+A) To earn the highest possible interest rate
+B) Everyday spending and frequent transactions
+C) To store money for offshore investing
+D) To apply for a loan
+Correct: B
+
+2. Why is a parent or guardian required for anyone under 18 opening an account in
+Jamaica?
+A) It's optional but recommended
+B) Most banks require the minor to be added to an account alongside an adult
+C) Banks don't allow anyone under 21 to have any account at all
+D) It's only required for savings accounts, not chequing
+Correct: B
+
+3. What does TRN stand for, and why does it matter for opening an account in
+Jamaica?
+A) Total Recorded Numbers, used only for loans
+B) Taxpayer Registration Number, often required by Jamaican banks
+C) Transfer Reference Number, only used for wire transfers
+D) Teller Reference Name, an internal bank code
+Correct: B
+
+4. What is one feature of Scotiabank Jamaica's Primary Savings Junior Account?
+A) It has no debit card at all
+B) It's only available to people over 25
+C) It comes with its own debit card and allows automatic transfers
+D) It requires a $10,000 minimum deposit
+Correct: C
+
+YouTube Video: None. No good-fit video found, text-only.
+
+============================================================
+PART 6: JAMAICA LESSON 2, "Understanding JAM-DEX, Jamaica's Digital Dollar"
+============================================================
+
+Territory-scoped: only visible to students in the Jamaica (JMD) environment.
+
+Title: Understanding JAM-DEX, Jamaica's Digital Dollar
+Instructor: Finsight Lite Team
+Grade Level: 9-12
+Subject: Financial Literacy
+Duration: 15 minutes
+Topic: Digital Currency in Jamaica
+
+Learning Objectives:
+- Understand what JAM-DEX is and how it differs from a regular bank account
+- Know how to open and use a JAM-DEX wallet
+- Understand why a new form of money doesn't automatically get used by everyone
+  right away
+- Recognize JAM-DEX as a real, legal-tender example of digital money, not a
+  cryptocurrency
+
+Content Section 1 Heading: What Is JAM-DEX?
+Content Section 1 Paragraph 1: JAM-DEX is Jamaica's own digital dollar, created
+and backed by the Bank of Jamaica (BOJ). It's worth exactly the same as a regular
+Jamaican dollar, one JAM-DEX dollar equals one physical Jamaican dollar, and it's
+legal tender, meaning it's an officially recognized form of money, not something
+separate or unofficial. This makes Jamaica one of only a handful of countries in
+the world with a fully launched central bank digital currency, often shortened to
+CBDC.
+Content Section 1 Paragraph 2: It's important not to confuse JAM-DEX with
+cryptocurrency like Bitcoin. Cryptocurrency isn't issued or backed by any
+government, its value can swing wildly, and no central bank stands behind it.
+JAM-DEX is the opposite: it's issued directly by Jamaica's central bank, its
+value never moves against the regular Jamaican dollar, and BOJ stands behind it
+the same way it stands behind physical cash.
+
+Content Section 2 Heading: How It Actually Works
+Content Section 2 Paragraph 1: To use JAM-DEX, you need a digital wallet,
+available through banks and wallet providers like NCB's Lynk and JN Bank's JN
+Pay. A wallet can either be linked to an existing bank account, or opened
+independently with basic information like name, address, and date of birth. Once
+it's set up, you can add money by transferring from a bank account or depositing
+cash at a participating branch or smart ATM.
+Content Section 2 Paragraph 2: To pay someone, you scan a QR code or enter their
+wallet ID and send the amount, similar to how many mobile payment apps work
+elsewhere in the world, except this one is actual government-issued money rather
+than a private company's payment system.
+
+Content Section 3 Heading: Why Hasn't Everyone Adopted It?
+Content Section 3 Paragraph 1: Here's the honest part of the story: even though
+JAM-DEX launched back in 2021, most people in Jamaica still aren't using it day
+to day, and it's worth understanding why, because it teaches something bigger
+than just this one currency. As of 2026, JAM-DEX still makes up a very small
+share of all the money moving through Jamaica's economy, even though the amount
+being used has grown quickly.
+Content Section 3 Paragraph 2: The core problem is what's sometimes called a
+chicken-and-egg situation: many stores don't accept JAM-DEX yet because their
+card machines haven't been upgraded to take it, and many people don't bother
+using JAM-DEX because there aren't enough places to actually spend it. Each side
+is waiting on the other.
+Content Section 3 Paragraph 3: The Bank of Jamaica has publicly pushed banks to
+move faster on upgrading their systems, even offering to cover part of the cost,
+but the rollout has still taken longer than planners originally expected.
+Content Section 3 Paragraph 4: This is a useful real-world lesson: a new form of
+money can be well-designed and government-backed and still take years to catch
+on, because it isn't just about the technology working, it's about enough people
+and enough businesses deciding to actually use it at the same time.
+
+Quiz Questions:
+1. What backs the value of JAM-DEX?
+A) Nothing, its value is determined entirely by trading
+B) The Bank of Jamaica, and it's worth the same as a regular Jamaican dollar
+C) A private technology company
+D) Gold reserves held overseas
+Correct: B
+
+2. How is JAM-DEX different from a cryptocurrency like Bitcoin?
+A) There is no real difference, they work the same way
+B) JAM-DEX is issued and backed by Jamaica's central bank, cryptocurrency is not
+C) Cryptocurrency is legal tender and JAM-DEX is not
+D) JAM-DEX can only be used outside of Jamaica
+Correct: B
+
+3. How do you typically pay someone using JAM-DEX?
+A) By mailing physical cash
+B) By scanning a QR code or entering their wallet ID
+C) Only in person at a Bank of Jamaica branch
+D) It cannot be used for payments, only savings
+Correct: B
+
+4. What is the main reason JAM-DEX adoption has been slower than expected?
+A) It is illegal to use in most of Jamaica
+B) A chicken-and-egg problem, where merchants and customers are each waiting on
+   the other
+C) Nobody in Jamaica owns a smartphone
+D) The Bank of Jamaica discontinued the program
+Correct: B
+
+5. What's a broader lesson JAM-DEX's slow adoption can teach about new forms of
+money?
+A) Government-backed currency always gets adopted instantly
+B) A new form of money needs enough people and businesses using it together, not
+   just good technology
+C) Digital currency never works and should be avoided
+D) Only cryptocurrencies face adoption challenges
+Correct: B
+
+YouTube Video: "Central Bank Digital Currency: JAMDEX" featuring Bank of Jamaica
+Deputy Governor Natalie Haynes, courtesy of PBC Jamaica:
+https://www.youtube.com/watch?v=XQIe6ewEflw
+Note: this video is from 2022 and covers fundamentals well but predates the
+adoption struggles covered in Content Section 3, that angle is carried by the
+written content, not the video. Bank of Jamaica's official channel for anything
+more current: https://www.youtube.com/channel/UCZkm1rSxVMhynjN8gdwWqYw
+
+============================================================
+PART 7: TRINIDAD LESSON 1, "Opening a Bank Account in Trinidad and Tobago"
+============================================================
+
+Territory-scoped: only visible to students in the Trinidad and Tobago (TTD)
+environment.
+
+Title: Opening a Bank Account in Trinidad and Tobago
+Instructor: Finsight Lite Team
+Grade Level: 7-12
+Subject: Financial Literacy
+Duration: 15 minutes
+Topic: Banking Basics
+
+Learning Objectives:
+- Understand the difference between a chequing account and a savings account
+- Know what documents and information are needed to open an account in Trinidad
+  and Tobago
+- Understand why a parent or guardian is required for anyone under 18
+- Recognize credit unions as a real, commonly used alternative to commercial banks
+
+Content Section 1 Heading: Chequing vs. Savings, What's the Difference?
+Content Section 1 Paragraph 1: A chequing account is built for everyday
+spending, money moves in and out often, and it usually comes with a debit card
+for regular purchases.
+Content Section 1 Paragraph 2: A savings account is built to hold money you're
+not touching often. It usually earns a small amount of interest, the bank paying
+you for keeping your money there, but withdrawals are more limited before fees
+kick in. Trinidad and Tobago has eight commercial banks, including First
+Citizens, Republic Bank, RBC, Scotiabank, and CIBC FirstCaribbean, all offering
+both account types. A common approach: use a chequing account for spending money
+and a savings account for money you're setting aside for a goal.
+
+Content Section 2 Heading: Banks Aren't Your Only Option
+Content Section 2 Paragraph 1: One thing that makes Trinidad and Tobago a bit
+different: credit unions are a genuinely common and popular alternative to
+commercial banks here, not just a niche option. Credit unions like RHAND work
+similarly to a bank savings account, but they're member-owned rather than run for
+shareholder profit, and they often offer more affordable loans to members,
+sometimes at lower interest rates than a commercial bank would.
+Content Section 2 Paragraph 2: Both paths serve the same basic purpose, safely
+growing your savings, so it's worth knowing both exist before deciding where to
+open your first account.
+
+Content Section 3 Heading: What You Actually Need to Open One
+Content Section 3 Paragraph 1: Since most students on Finsight Lite are under
+18, a parent or guardian must open the account jointly with you, T&T banks
+generally don't allow a fully independent account for a minor.
+Content Section 3 Paragraph 2: You'll typically need the minor's birth
+certificate (or valid ID if available), the parent or guardian's own
+identification, proof of address (a utility bill usually works), and often a TRN
+(Taxpayer Registration Number).
+Content Section 3 Paragraph 3: One detail worth knowing ahead of time: most banks
+require the account to be funded on the same day it's opened, so bring an initial
+deposit amount with you rather than planning to add money later.
+
+Quiz Questions:
+1. What is the main purpose of a chequing account?
+A) To earn the highest possible interest rate
+B) Everyday spending and frequent transactions
+C) To store money for offshore investing
+D) To apply for a loan
+Correct: B
+
+2. What is a credit union, and how is it different from a commercial bank?
+A) It's exactly the same as a bank, just a different name
+B) It's member-owned rather than run for shareholder profit
+C) It's only available to government employees
+D) It cannot offer savings accounts
+Correct: B
+
+3. Why is a parent or guardian required for anyone under 18 opening an account in
+Trinidad and Tobago?
+A) It's optional but recommended
+B) T&T banks generally don't allow a fully independent account for a minor
+C) Only applies to chequing accounts, not savings
+D) It's only required if you're over 16
+Correct: B
+
+4. What should you bring with you on the day you open a new account?
+A) Nothing, you can add money anytime later
+B) An initial deposit, since most banks require the account to be funded the same
+   day
+C) Only a birth certificate, nothing else
+D) A letter from your school principal
+Correct: B
+
+YouTube Video: None. No good-fit video found, text-only.
+
+============================================================
+PART 8: TRINIDAD LESSON 2, "Know Your Money, Trinidad and Tobago's Currency"
+============================================================
+
+Territory-scoped: only visible to students in the Trinidad and Tobago (TTD)
+environment.
+
+Title: Know Your Money, Trinidad and Tobago's Currency
+Instructor: Finsight Lite Team
+Grade Level: 7-12
+Subject: Financial Literacy
+Duration: 10 minutes
+Topic: Currency Literacy and Security
+
+Learning Objectives:
+- Know how to check that a T&T banknote is genuine using the Feel, Look, Tilt,
+  Check method
+- Understand why recognizing counterfeit currency is a real, practical skill
+- Recognize the Central Bank of Trinidad and Tobago's Know Your Money campaign as
+  the source of this guidance
+- Understand that Trinidad and Tobago has deliberately taken a cautious approach
+  to digital currency, unlike some other Caribbean territories
+
+Content Section 1 Heading: How to Check a Note Is Genuine
+Content Section 1 Paragraph 1: Trinidad and Tobago's banknotes are made of
+polymer, a plastic-like material, and the Central Bank runs a public education
+campaign called Know Your Money, teaching a simple four-step method to check if a
+note is genuine: Feel, Look, Tilt, and Check. The Central Bank is also rolling out
+updated banknotes over the next year, which makes knowing these security features
+even more useful right now.
+Content Section 1 Paragraph 2: Feel: polymer notes are noticeably smoother than
+paper, and genuine notes have raised, triangular dots in the bottom corner you
+can feel with your finger. Look: hold the note up and look for a clear window
+built into the polymer that you can see through from both the front and back.
+Content Section 1 Paragraph 3: Tilt: certain printed elements shift or shimmer
+when you tilt the note at an angle. Check: compare the note against the Central
+Bank's own reference images if you're ever unsure.
+Content Section 1 Paragraph 4: This isn't just useful trivia, knowing how to spot
+a fake is a real, practical skill.
+
+Content Section 2 Heading: Why T&T Hasn't Gone Digital (Yet)
+Content Section 2 Paragraph 1: Some other Caribbean countries, including the
+Bahamas and Jamaica, have launched their own digital currencies. Trinidad and
+Tobago has not, and that's a deliberate choice rather than a delay. The Central
+Bank of Trinidad and Tobago has studied the idea for years but has stated it will
+not move forward with a digital currency for now, citing concerns about
+financial stability and risk.
+Content Section 2 Paragraph 2: Instead, T&T's Central Bank has focused its
+public education efforts on programmes like Know Your Money, teaching people to
+recognize genuine physical currency, and on modernizing the payment system in
+other ways.
+Content Section 2 Paragraph 3: This is worth understanding as its own kind of
+decision: not every country needs to adopt the same technology at the same pace,
+and being cautious about a major financial change is itself a legitimate
+approach, not just a country falling behind.
+
+Quiz Questions:
+1. What are the four steps in T&T's method for checking if a banknote is genuine?
+A) Fold, Smell, Shake, Compare
+B) Feel, Look, Tilt, Check
+C) Scan, Weigh, Test, Report
+D) Read, Sign, Stamp, File
+Correct: B
+
+2. What material are Trinidad and Tobago's banknotes made of?
+A) Cotton paper only
+B) Polymer, a plastic-like material
+C) Metal
+D) Recycled cardboard
+Correct: B
+
+3. Has Trinidad and Tobago launched its own digital currency?
+A) Yes, it launched before Jamaica and the Bahamas
+B) No, the Central Bank has chosen not to move forward with one for now
+C) Yes, but only for government use
+D) It launched and was later shut down
+Correct: B
+
+4. Why has T&T's Central Bank chosen not to adopt a digital currency yet?
+A) It doesn't have the technology available
+B) Concerns about financial stability and risk
+C) It's waiting for permission from another country
+D) Digital currency is illegal in T&T
+Correct: B
+
+YouTube Video: "Know Your Money - Security Features of Trinidad and Tobago
+Banknotes," official Central Bank of Trinidad and Tobago video covering the
+Feel, Look, Tilt, Check method: https://www.youtube.com/watch?v=11StNbq5zBk
+
+============================================================
+PART 9: TERRITORY SCOPING
+============================================================
+
+Confirm each lesson is only visible to students in its matching territory
+environment (Bahamas lessons to BSD environments, Jamaica lessons to JMD
+environments, Trinidad lessons to TTD environments), consistent with how
+Investment Simulator content is already localized per territory. If the current
+lesson content model does not yet support territory-scoping, flag this clearly
+rather than publishing all six lessons to every territory, that would be
+confusing and incorrect for students. If territory-scoping does not exist yet,
+publish only the Bahamas lessons (with diagrams) for now and stop before Jamaica
+and Trinidad, report back that territory-scoping needs to be built first as a
+separate prompt.
+
+============================================================
+PART 10: GUIDE UPDATES
+============================================================
+
+Update teacher-guide.md and org-guide.md to reflect that the Real Life Ready
+module now exists with six published lessons across three territories (Bahamas,
+Jamaica, Trinidad and Tobago), and that lessons can include embedded diagrams
+(Bahamas lessons specifically).
+
+============================================================
+PART 11: MODULES DEFAULT TO COLLAPSED ON THE LESSONS TAB
+============================================================
+
+On the student-facing Lessons tab (the Core Curriculum view showing module cards
+like Budgeting Basics, Saving Smart, Investing Fundamentals, The Sand Dollar, and
+the new Real Life Ready), each module card currently has an expand/collapse
+chevron. Check the current default state when a student first opens the Lessons
+tab.
+
+If modules currently default to expanded (showing the full lesson list inside
+immediately), change this so every module defaults to collapsed instead, showing
+only the module header, icon, subtitle, progress bar, and percentage complete.
+The student then taps the chevron or the card itself to expand it and see the
+individual lessons inside. This reduces how overwhelming the Lessons tab feels
+when a student first opens it, especially now that there are five modules instead
+of four.
+
+This applies to all modules, not just Real Life Ready, existing modules
+(Budgeting Basics, Saving Smart, Investing Fundamentals, The Sand Dollar) should
+also default to collapsed for consistency, a student shouldn't see one module
+behave differently from another.
+
+Requirements for this change:
+- The collapse/expand interaction should already exist given the chevron is
+  already present, this is a default-state change plus confirming the animation
+  on expand/collapse feels intentional (a smooth height transition, not an
+  abrupt snap), consistent with the animations-default-on standing rule
+- If more than one module can be expanded at once currently, decide whether that
+  should stay as is or whether opening one module should collapse others
+  (accordion-style). Default to allowing multiple modules open at once unless the
+  existing pattern elsewhere in the app clearly favors accordion-style
+  single-open behavior, match whatever the existing pattern is rather than
+  inventing a new one
+- Verify this in both light and dark mode
+- Verify the collapsed state still clearly shows enough information for a
+  student to know what a module is and how far into it they are (icon, title,
+  subtitle, progress bar, percentage) without needing to expand it first
+
+============================================================
+STANDING REQUIREMENTS (apply throughout)
+============================================================
+
+- No em dashes anywhere, including code comments, UI copy, and lesson content
+- Any database write must throw a clear, catchable error on failure, never
+  silently return null/undefined/false
+- All new UI (diagram components, lesson viewer changes) must be verified in both
+  light and dark mode per the contrast rules in index.css
+- All new animations use the existing keyframe set, consistent with the
+  animations-default-on standing rule
+- Production-ready, not demo-ware
+- All dummy/sample data already reflects real Caribbean context (real bank names,
+  realistic amounts), keep it that way, don't introduce generic placeholders
+
+============================================================
+GIT
+============================================================
+
+Commit all of this work with a clear commit message describing the Real Life
+Ready module build-out across three territories. Push to the GitHub remote.
+Verify the push landed by comparing the full 40-character SHA of local HEAD
+against the GitHub remote HEAD, do not consider this done until they match.
+
+Report back with: confirmation of which lessons were created/updated, confirmation
+territory-scoping works correctly (or a clear flag if it needs to be built first),
+confirmation all three diagrams render correctly in both light and dark mode, and
+confirmation the push landed with matching SHAs.
