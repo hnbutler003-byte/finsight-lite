@@ -37,7 +37,7 @@ When you save, the system generates a unique six-character join code. Share this
 
 ### 1.4 Class Detail Page
 
-Click any class card to open the class detail page at `/teacher/classes/:id`. The page header shows the class name, subject, and the join code in a copyable pill. There is also a "Download Report" button that exports a CSV with every student's name, username, XP, level, streak, lessons completed, games played, average score, and badge count.
+Click any class card to open the class detail page at `/teacher/classes/:id`. The page header shows the class name, subject, and the join code in a copyable pill. There is also a "Download Report" button that exports a CSV with every student's name, username, XP, level, streak, lessons completed, games played, average score, badge count, comprehension growth percentage, and simulator engagement tier.
 
 The page has six tabs: Students, Leaderboard, Challenges, Notifications, Analytics, and Lessons.
 
@@ -120,6 +120,25 @@ Below the summary cards, the top three students by XP are shown with their name,
 | Most Active Trader | Student with the highest total trade count |
 
 Below those cards is a student table showing each student's net worth (virtual balance + portfolio value), gain or loss since starting with the default $10,000, gain or loss as a percentage, and total number of trades. Students who have not traded yet are included with their starting balance of 10,000.
+
+**Comprehension Growth** (shown once students have completed any built-in module quiz more than once):
+
+This card reveals whether students are actually retaining what they learn. It compares each student's first quiz attempt on a module against their most recent attempt, then aggregates the change per module for the whole class.
+
+- The top row of tiles shows the class average score delta per module. A green number with a "+" means the class improved from first try to latest. Amber means the class average dropped.
+- The detail table beneath shows each individual student, which module they repeated, their first score, and their most recent score. The latest score is highlighted green (improved) or amber (declined).
+- Data only appears for students who have attempted the same module quiz at least twice. A student must be signed in for their attempts to be recorded.
+
+**Practice to Performance** (shown when at least one student is enrolled):
+
+This card compares quiz scores between students who use the Investment Simulator actively and those who use it less.
+
+| Group | Definition |
+|---|---|
+| 3+ Trades | Students who have placed three or more trades in the simulator |
+| Fewer than 3 | Students who have placed fewer than three trades |
+
+Each group shows the student count and their average quiz score. When active traders score noticeably higher than less active traders, it signals that hands-on simulator practice is reinforcing the lesson content. Use this to encourage students who have not yet explored the simulator.
 
 #### Lessons Tab
 

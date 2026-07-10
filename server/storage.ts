@@ -151,6 +151,8 @@ export interface IStorage extends IAuthStorage {
   getClassInvestmentAnalytics(classId: number): Promise<any>;
   getClassInsightCards(classId: number): Promise<any>;
   getClassImpactSummary(classId: number): Promise<any>;
+  getClassComprehensionGrowth(classId: number): Promise<any>;
+  getClassSimulatorCorrelation(classId: number): Promise<any>;
   getStudentLastActivity(userId: string): Promise<{ lastActivityDate: Date | null; lastCompletedModuleName: string | null; isFirstTime: boolean }>;
 
   // Org Admin
@@ -1526,6 +1528,162 @@ export class DatabaseStorage implements IStorage {
       topStudentName,
       mostCompletedModule,
       leastCompletedModule,
+    };
+  }
+
+  async getClassComprehensionGrowth(classId: number): Promise<any> {
+    const enrollmentRows = await db
+      .select({ enrollment: classEnrollments, student: users })
+      .from(classEnrollments)
+      .innerJoin(users, eq(classEnrollments.studentId, users.id))
+      .where(eq(classEnrollments.classId, classId));
+
+    if (enrollmentRows.length === 0) return { modules: [], students: [] };
+
+    const studentIds = enrollmentRows.map(r => r.enrollment.studentId);
+    const studentNames = new Map(
+      enrollmentRows.map(r => [r.enrollment.studentId, r.student.firstName || r.student.username || r.enrollment.studentId])
+    );
+
+    const sessions = await db.select().from(gameSessions)
+      .where(
+        and(
+          inArray(gameSessions.userId, studentIds),
+          sql`${gameSessions.moduleSlug} IS NOT NULL`,
+          sql`${gameSessions.totalQuestions} > 0`
+        )
+      )
+      .orderBy(asc(gameSessions.completedAt));
+
+    const grouped = new Map<string, typeof sessions>();
+    for (const s of sessions) {
+      const key = `${s.userId}|${s.moduleSlug}`;
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key)!.push(s);
+    }
+
+    const slugToTitle: Record<string, string> = {
+      budgeting: "Budgeting Basics",
+      saving: "Saving Smart",
+      investing1: "Investing Fundamentals",
+      investing2: "Investing Fundamentals II",
+      reallife: "Real Life Ready",
+      reallife2: "Real Life Ready II",
+      sanddollar: "The Sand Dollar",
+      jamdex: "JAM-DEX",
+    };
+    const moduleTitle = (slug: string) =>
+      slugToTitle[slug] ?? slug.charAt(0).toUpperCase() + slug.slice(1);
+
+    const studentRows: Array<{
+      studentId: string; name: string; moduleSlug: string; moduleTitle: string;
+      firstScore: number; lastScore: number; delta: number;
+    }> = [];
+
+    for (const [key, attempts] of Array.from(grouped.entries())) {
+      if (attempts.length < 2) continue;
+      const sepIdx = key.indexOf("|");
+      const userId = key.slice(0, sepIdx);
+      const slug = key.slice(sepIdx + 1);
+      const first = attempts[0];
+      const last = attempts[attempts.length - 1];
+      const firstScore = Math.round((first.correctAnswers / first.totalQuestions) * 100);
+      const lastScore = Math.round((last.correctAnswers / last.totalQuestions) * 100);
+      studentRows.push({
+        studentId: userId,
+        name: studentNames.get(userId) || userId,
+        moduleSlug: slug,
+        moduleTitle: moduleTitle(slug),
+        firstScore,
+        lastScore,
+        delta: lastScore - firstScore,
+      });
+    }
+
+    const moduleMap = new Map<string, number[]>();
+    for (const row of studentRows) {
+      if (!moduleMap.has(row.moduleSlug)) moduleMap.set(row.moduleSlug, []);
+      moduleMap.get(row.moduleSlug)!.push(row.delta);
+    }
+
+    const modules = Array.from(moduleMap.entries())
+      .map(([slug, deltas]) => ({
+        slug,
+        title: moduleTitle(slug),
+        avgDelta: Math.round(deltas.reduce((s, d) => s + d, 0) / deltas.length),
+        studentCount: deltas.length,
+      }))
+      .sort((a, b) => a.title.localeCompare(b.title));
+
+    return { modules, students: studentRows };
+  }
+
+  async getClassSimulatorCorrelation(classId: number): Promise<any> {
+    const enrollmentRows = await db
+      .select({ enrollment: classEnrollments })
+      .from(classEnrollments)
+      .where(eq(classEnrollments.classId, classId));
+
+    if (enrollmentRows.length === 0) {
+      return {
+        totalStudents: 0,
+        activeGroup: { count: 0, avgQuizScore: null },
+        lessActiveGroup: { count: 0, avgQuizScore: null },
+        studentTiers: {},
+      };
+    }
+
+    const studentIds = enrollmentRows.map(r => r.enrollment.studentId);
+
+    const [tradeRows, quizRows] = await Promise.all([
+      db.select({
+        userId: portfolioTransactions.userId,
+        tradeCount: sql<number>`count(*)::int`,
+      }).from(portfolioTransactions)
+        .where(inArray(portfolioTransactions.userId, studentIds))
+        .groupBy(portfolioTransactions.userId),
+      db.select({
+        userId: gameSessions.userId,
+        avgScorePct: sql<number>`avg(${gameSessions.correctAnswers}::float / nullif(${gameSessions.totalQuestions}, 0)) * 100`,
+      }).from(gameSessions)
+        .where(and(
+          inArray(gameSessions.userId, studentIds),
+          sql`${gameSessions.totalQuestions} > 0`,
+        ))
+        .groupBy(gameSessions.userId),
+    ]);
+
+    const tradesByUser = new Map(tradeRows.map(r => [r.userId, Number(r.tradeCount)]));
+    const scoreByUser = new Map(quizRows.map(r => [r.userId, Number(r.avgScorePct)]));
+
+    const activeScores: number[] = [];
+    const lessActiveScores: number[] = [];
+    let activeCount = 0;
+    let lessActiveCount = 0;
+    const studentTiers: Record<string, string> = {};
+
+    for (const sid of studentIds) {
+      const trades = tradesByUser.get(sid) ?? 0;
+      const score = scoreByUser.get(sid);
+      if (trades >= 3) {
+        activeCount++;
+        studentTiers[sid] = "3+ trades";
+        if (score != null && !isNaN(score)) activeScores.push(score);
+      } else {
+        lessActiveCount++;
+        studentTiers[sid] = "fewer than 3 trades";
+        if (score != null && !isNaN(score)) lessActiveScores.push(score);
+      }
+    }
+
+    const avg = (arr: number[]) =>
+      arr.length > 0 ? Math.round(arr.reduce((s, v) => s + v, 0) / arr.length) : null;
+
+    return {
+      totalStudents: studentIds.length,
+      activeGroup: { count: activeCount, avgQuizScore: avg(activeScores) },
+      lessActiveGroup: { count: lessActiveCount, avgQuizScore: avg(lessActiveScores) },
+      studentTiers,
     };
   }
 

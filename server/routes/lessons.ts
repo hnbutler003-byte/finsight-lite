@@ -784,12 +784,47 @@ export async function registerLessonRoutes(app: Express): Promise<void> {
           correctAnswers,
           timeSpent: null,
           xpEarned,
+          moduleSlug: null,
         });
         const { cacheInvalidate } = await import("../cache");
         cacheInvalidate("moneylab:leaderboard:");
       }
 
       res.json({ xpEarned, totalXp: newTotalXp, level: newLevel, correctAnswers, total });
+    } catch (e: any) {
+      if (e instanceof z.ZodError) {
+        return res.status(400).json({ message: e.errors[0]?.message ?? "Validation error" });
+      }
+      res.status(400).json({ message: e.message });
+    }
+  });
+
+  // === QUIZ ATTEMPT RECORDING (static module lessons) ===
+  // Static built-in lessons compute scores client-side and do not call the
+  // /api/lessons/:id/complete endpoint. This lightweight route lets the frontend
+  // record each attempt against a module slug so teachers can see
+  // comprehension growth in the Analytics tab.
+  app.post("/api/quiz-attempts/record", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ message: "Not authenticated" });
+      const { moduleSlug, correctAnswers, totalQuestions } = z.object({
+        moduleSlug: z.string().min(1).max(80),
+        correctAnswers: z.number().int().min(0),
+        totalQuestions: z.number().int().min(1),
+      }).parse(req.body);
+      const pct = Math.round((correctAnswers / totalQuestions) * 100);
+      await storage.createGameSession({
+        userId,
+        mode: "quiz",
+        score: pct,
+        totalQuestions,
+        correctAnswers,
+        timeSpent: null,
+        xpEarned: 0,
+        moduleSlug,
+      });
+      res.json({ recorded: true });
     } catch (e: any) {
       if (e instanceof z.ZodError) {
         return res.status(400).json({ message: e.errors[0]?.message ?? "Validation error" });

@@ -1257,6 +1257,32 @@ Rules:
     }
   });
 
+  app.get("/api/teacher/classes/:id/comprehension-growth", isTeacher, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const cls = await storage.getClassById(id);
+      if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+      const data = await storage.getClassComprehensionGrowth(id);
+      res.json(data);
+    } catch (err: any) {
+      captureError(err);
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/teacher/classes/:id/simulator-correlation", isTeacher, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const cls = await storage.getClassById(id);
+      if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+      const data = await storage.getClassSimulatorCorrelation(id);
+      res.json(data);
+    } catch (err: any) {
+      captureError(err);
+      res.status(500).json({ message: err.message });
+    }
+  });
+
   app.get("/api/teacher/classes/:id/lessons", isTeacher, async (req: any, res) => {
     const id = parseInt(req.params.id);
     const cls = await storage.getClassById(id);
@@ -1410,18 +1436,46 @@ Rules:
   });
 
   app.get("/api/teacher/classes/:id/report.csv", isTeacher, async (req: any, res) => {
-    const id = parseInt(req.params.id);
-    const cls = await storage.getClassById(id);
-    if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
-    const summary = await storage.getClassProgressSummary(id);
-    const rows = [
-      ["Name", "Username", "XP", "Level", "Streak", "Lessons Completed", "Games Played", "Avg Score (%)", "Badges"],
-      ...summary.students.map((s: any) => [s.name, s.username, s.xp, s.level, s.streak, s.lessonsCompleted, s.gamesPlayed, s.avgScore, s.badges]),
-    ];
-    const csv = rows.map(r => r.map(String).map((v: string) => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
-    res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", `attachment; filename="${cls.name.replace(/[^a-z0-9]/gi, "_")}_report.csv"`);
-    res.send(csv);
+    try {
+      const id = parseInt(req.params.id);
+      const cls = await storage.getClassById(id);
+      if (!cls || cls.teacherId !== req.session.teacherId) return res.status(404).json({ message: "Class not found" });
+
+      const [summary, growthData, correlationData] = await Promise.all([
+        storage.getClassProgressSummary(id),
+        storage.getClassComprehensionGrowth(id),
+        storage.getClassSimulatorCorrelation(id),
+      ]);
+
+      const growthByStudent = new Map<string, number[]>();
+      for (const row of (growthData.students as any[])) {
+        if (!growthByStudent.has(row.studentId)) growthByStudent.set(row.studentId, []);
+        growthByStudent.get(row.studentId)!.push(row.delta);
+      }
+      const avgGrowthByStudent = new Map<string, number>();
+      for (const [sid, deltas] of Array.from(growthByStudent.entries())) {
+        avgGrowthByStudent.set(sid, Math.round(deltas.reduce((s: number, d: number) => s + d, 0) / deltas.length));
+      }
+
+      const tierByStudent: Record<string, string> = correlationData.studentTiers ?? {};
+
+      const rows = [
+        ["Name", "Username", "XP", "Level", "Streak", "Lessons Completed", "Games Played", "Avg Score (%)", "Badges", "Comprehension Growth (%)", "Simulator Engagement"],
+        ...summary.students.map((s: any) => {
+          const growth = avgGrowthByStudent.has(s.id) ? String(avgGrowthByStudent.get(s.id)) : "";
+          const tier = tierByStudent[s.id] ?? "fewer than 3 trades";
+          return [s.name, s.username, s.xp, s.level, s.streak, s.lessonsCompleted, s.gamesPlayed, s.avgScore, s.badges, growth, tier];
+        }),
+      ];
+
+      const csv = rows.map(r => r.map(String).map((v: string) => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename="${cls.name.replace(/[^a-z0-9]/gi, "_")}_report.csv"`);
+      res.send(csv);
+    } catch (err: any) {
+      captureError(err);
+      res.status(500).json({ message: err.message });
+    }
   });
 
   // === TEACHER CHALLENGE ROUTES ===

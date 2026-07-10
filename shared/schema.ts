@@ -325,6 +325,7 @@ export const gameSessions = pgTable("game_sessions", {
   timeSpent: integer("time_spent"),
   xpEarned: integer("xp_earned").default(0),
   completedAt: timestamp("completed_at").defaultNow(),
+  moduleSlug: text("module_slug"),
 }, (t) => ({
   userCompletedIdx: index("idx_game_sessions_user_completed").on(t.userId, t.completedAt),
   completedIdx: index("idx_game_sessions_completed").on(t.completedAt),

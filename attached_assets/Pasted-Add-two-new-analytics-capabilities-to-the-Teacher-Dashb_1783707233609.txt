@@ -1,0 +1,21 @@
+Add two new analytics capabilities to the Teacher Dashboard Analytics tab: pre/post quiz score tracking per module, and a correlation view between Investment Simulator activity and quiz performance. Also extend the existing CSV export to include this data.
+Before writing any code, inspect the current database schema (Supabase via Drizzle ORM) to confirm what quiz attempt data already exists. Do not assume a table structure. If quiz attempts are not currently stored with a timestamp and a module/lesson reference, add the columns needed to support that (attempt timestamp, module id, score, student id) via a proper migration, not a manual schema edit.
+Feature 1: Pre/post quiz delta per module
+For each student, for each module, identify their first quiz attempt score and their most recent quiz attempt score on that module's content. Calculate the delta (most recent minus first). Add a new card to the Teacher Dashboard Analytics tab titled "Comprehension Growth" showing, per module, the average delta across all students in the class who have attempted that module more than once. Students with only one attempt on a module should be excluded from that module's average, not counted as zero.
+Below the summary card, add a per-student breakdown table: student name, module, first attempt score, most recent attempt score, delta, shown as a positive or negative percentage change. Use color to indicate direction (positive delta in a success tone, negative in a caution tone), with correct light and dark mode pairings, not a single hardcoded color.
+Feature 2: Simulator activity correlation with quiz performance
+Add a second new card, "Practice to Performance," that cross-references each student's Investment Simulator trade count and diversification (distinct holdings) against their average quiz score. Show this as a simple two-column comparison: students with 3 or more simulator trades vs students with fewer than 3, and the average quiz score for each group. This does not need to be a scatter plot or chart, a clear labeled comparison is enough for now.
+Feature 3: Extend the CSV export
+The class detail page's Download Report button currently exports name, username, XP, level, streak, lessons completed, games played, average score, and badge count. Add two more columns: comprehension growth (average delta across all modules with repeat attempts, blank if no repeat attempts exist for that student) and simulator engagement tier (either "3+ trades" or "fewer than 3 trades"). Confirm the export still generates correctly and the new columns don't break existing column ordering for anyone already relying on the current format.
+Requirements for all three features:
+
+Database writes must throw a clear, catchable error on failure. Never fail silently or return null/undefined/false on a write error.
+No em dashes anywhere, not in code comments, strings, or any UI copy.
+If this requires any new npm/pnpm packages, run the pnpm-lock.yaml proxy fix check before installing (sed check against pnpm-lock.yaml for package-firewall.replit.local URLs) to avoid breaking the Railway deployment.
+Verify both new dashboard cards render correctly in light mode and dark mode: check contrast, glass-card backgrounds per the .dark overrides in index.css, and that any colored text has a paired dark: variant. Do not hardcode text colors that only work in one mode.
+Both new cards must use .glass-card with the standard 28px --radius-glass, not a plain white box. No exceptions.
+All dummy or sample data used for testing must be Caribbean-realistic names and amounts, not "Student 1" or "$100."
+Since this changes teacher-facing UI and the exported report format, update the Analytics tab section of teacher-guide.md in the same change to describe the two new cards, and update the Class Detail Page section to reflect the two new CSV columns.
+
+
+After Replit finishes, remember your standing check: verify the git push with a full 40-character SHA comparison between local HEAD and the live GitHub remote, and confirm on Railway (not Replit's own deploy check) that it actually went live. Let me know when it's done and I'll help you verify.

@@ -751,6 +751,14 @@ export default function Lessons() {
           }
           setQuizResults({ finalCorrect, total, xpEarned, moduleComplete });
           setPageState("results");
+          if (user && activeModule) {
+            fetch("/api/quiz-attempts/record", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ moduleSlug: activeModule.id, correctAnswers: finalCorrect, totalQuestions: total }),
+              credentials: "include",
+            }).catch(() => {});
+          }
         } else {
           const result = await completeMutation.mutateAsync({ id: selectedLesson.id, answers: newAnswers });
           setQuizResults({

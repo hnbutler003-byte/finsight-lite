@@ -554,6 +554,18 @@ export default function TeacherClassDetail() {
     enabled: !!teacher && activeTab === "analytics",
   });
 
+  const { data: growthData, isLoading: growthLoading } = useQuery<any>({
+    queryKey: [`/api/teacher/classes/${classId}/comprehension-growth`],
+    queryFn: () => fetch(`/api/teacher/classes/${classId}/comprehension-growth`, { credentials: "include" }).then(r => r.json()),
+    enabled: !!teacher && activeTab === "analytics",
+  });
+
+  const { data: corrData, isLoading: corrLoading } = useQuery<any>({
+    queryKey: [`/api/teacher/classes/${classId}/simulator-correlation`],
+    queryFn: () => fetch(`/api/teacher/classes/${classId}/simulator-correlation`, { credentials: "include" }).then(r => r.json()),
+    enabled: !!teacher && activeTab === "analytics",
+  });
+
   const TABS = cls?.envId ? [...BASE_TABS, LESSONS_TAB] : BASE_TABS;
 
   const [selectedStudent, setSelectedStudent] = useState<StudentData | null>(null);
@@ -1286,6 +1298,118 @@ export default function TeacherClassDetail() {
                   </div>
                 </div>
               )}
+
+              {/* ── Comprehension Growth ── */}
+              {growthLoading && (
+                <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-emerald-500" /></div>
+              )}
+              {!growthLoading && growthData && (
+                <div className="glass-card p-5 space-y-4" style={{ borderRadius: "var(--radius-glass)" }}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <TrendingUp className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <h3 className="font-bold text-sm text-foreground">Comprehension Growth</h3>
+                    <span className="text-xs text-muted-foreground ml-auto">First vs. latest quiz attempt per module</span>
+                  </div>
+
+                  {growthData.modules.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-growth-empty">
+                      Growth data will appear once students have completed the same module quiz more than once.
+                    </p>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {growthData.modules.map((mod: any) => (
+                          <div key={mod.slug} className="rounded-[var(--radius-glass)] bg-muted/30 border border-border/50 p-3 space-y-1" data-testid={`card-module-growth-${mod.slug}`}>
+                            <p className="text-xs font-medium text-muted-foreground truncate">{mod.title}</p>
+                            <p className={`text-lg font-bold console-mono ${mod.avgDelta >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
+                              {mod.avgDelta >= 0 ? "+" : ""}{mod.avgDelta}%
+                            </p>
+                            <p className="text-xs text-muted-foreground">{mod.studentCount} student{mod.studentCount !== 1 ? "s" : ""}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      {growthData.students.length > 0 && (
+                        <div className="overflow-hidden rounded-[var(--radius-glass)] border border-border/50">
+                          <div className="grid grid-cols-5 bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground">
+                            <span className="col-span-2">Student</span>
+                            <span className="text-right">Module</span>
+                            <span className="text-right">First</span>
+                            <span className="text-right">Latest</span>
+                          </div>
+                          {growthData.students.slice(0, 15).map((row: any, i: number) => (
+                            <div
+                              key={`${row.studentId}-${row.moduleSlug}-${i}`}
+                              className="grid grid-cols-5 px-3 py-2 text-sm border-t border-border/30 hover:bg-muted/20 transition-colors"
+                              data-testid={`row-growth-${row.studentId}-${row.moduleSlug}`}
+                            >
+                              <span className="col-span-2 truncate text-foreground">{row.name}</span>
+                              <span className="truncate text-right text-xs text-muted-foreground">{row.moduleTitle}</span>
+                              <span className="console-mono text-right text-muted-foreground">{row.firstScore}%</span>
+                              <span className={`console-mono text-right font-bold ${row.delta > 0 ? "text-emerald-600 dark:text-emerald-400" : row.delta < 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+                                {row.delta > 0 ? "+" : ""}{row.lastScore}%
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* ── Practice to Performance ── */}
+              {corrLoading && (
+                <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-emerald-500" /></div>
+              )}
+              {!corrLoading && corrData && corrData.totalStudents > 0 && (
+                <div className="glass-card p-5 space-y-4" style={{ borderRadius: "var(--radius-glass)" }}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Zap className="w-4 h-4 text-violet-500 shrink-0" />
+                    <h3 className="font-bold text-sm text-foreground">Practice to Performance</h3>
+                    <span className="text-xs text-muted-foreground ml-auto">Simulator engagement vs. quiz scores</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="rounded-[var(--radius-glass)] bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-4 space-y-1" data-testid="card-active-traders">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                        <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">3+ Trades</p>
+                      </div>
+                      <p className="text-3xl font-bold console-mono text-foreground" data-testid="text-active-count">{corrData.activeGroup.count}</p>
+                      <p className="text-xs text-muted-foreground">students</p>
+                      {corrData.activeGroup.avgQuizScore != null ? (
+                        <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300 pt-1" data-testid="text-active-score">
+                          {corrData.activeGroup.avgQuizScore}% avg quiz score
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground pt-1">No quiz data yet</p>
+                      )}
+                    </div>
+
+                    <div className="rounded-[var(--radius-glass)] bg-muted/40 border border-border p-4 space-y-1" data-testid="card-less-active-traders">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground shrink-0" />
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Fewer than 3</p>
+                      </div>
+                      <p className="text-3xl font-bold console-mono text-foreground" data-testid="text-less-active-count">{corrData.lessActiveGroup.count}</p>
+                      <p className="text-xs text-muted-foreground">students</p>
+                      {corrData.lessActiveGroup.avgQuizScore != null ? (
+                        <p className="text-sm font-semibold text-foreground pt-1" data-testid="text-less-active-score">
+                          {corrData.lessActiveGroup.avgQuizScore}% avg quiz score
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground pt-1">No quiz data yet</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground text-center">
+                    Students who practise with the Investment Simulator regularly tend to score higher on quizzes.
+                  </p>
+                </div>
+              )}
+
             </div>
           )}
         </div>
