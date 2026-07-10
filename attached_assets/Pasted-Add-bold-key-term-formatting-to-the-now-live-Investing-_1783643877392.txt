@@ -1,0 +1,74 @@
+Add bold key-term formatting to the now-live Investing Fundamentals II and Real
+Life Ready II modules. Same standing rule as the other retrofit pass: bold only
+the term being defined, on first mention, nothing else changes.
+
+If the renderer audit from the previous bold key-term prompt hasn't been run yet,
+run it first, confirm the lesson renderer actually parses inline markdown bold
+before applying anything below, otherwise these will show literal asterisks.
+
+============================================================
+INVESTING FUNDAMENTALS II
+============================================================
+
+--- Lesson 1: Growth vs. Dividend Stocks ---
+Content Section 1, Paragraph 1: bold "growth stocks" on first mention.
+Content Section 1, Paragraph 2: bold "dividend" and "dividend stocks" on first
+mention (two separate bolded terms in this paragraph, "A dividend is a direct
+cash payment..." and later "Companies that focus on this are often called
+dividend stocks...").
+
+--- Lesson 2: Diversification and Building a Portfolio ---
+Content Section 1, Paragraph 1: bold "Diversification" on first mention (the
+first word of the paragraph).
+
+--- Lesson 3: Index Funds vs. Individual Stocks ---
+Content Section 1, Paragraph 1: bold "index fund" on first mention.
+
+--- Lesson 4: Reading What a Stock Price Move Actually Means ---
+No changes. This lesson is narrative rather than definitional, there isn't a
+clean single term to anchor, leave it as is rather than forcing a bold term in.
+
+============================================================
+REAL LIFE READY II (BAHAMAS, LOANS AND MORTGAGES)
+============================================================
+
+--- Lesson 1: How Loans Actually Work ---
+Content Section 2, Paragraph 1: bold "Principal" and "Interest" on first mention
+(both are the first words of their respective clauses: "Principal is the actual
+amount you borrowed" and "Interest is the extra cost added on top").
+
+--- Lesson 2: Understanding Credit and Your Credit Report ---
+Content Section 1, Paragraph 1: bold "credit bureau" and "CRIF Information
+Services Bahamas" on first mention.
+Content Section 2, Paragraph 1: bold "credit report" and "credit score" on first
+mention.
+
+--- Lesson 3: Mortgages Explained ---
+Content Section 1, Paragraph 1: bold "mortgage" on first mention.
+Content Section 2, Paragraph 1: bold "down payment" on first mention.
+
+--- Lesson 4: Amortization, Why Your Early Payments Are Mostly Interest ---
+Content Section 1, Paragraph 1: bold "Amortization" on first mention (the first
+word of the paragraph).
+
+============================================================
+STANDING REQUIREMENTS (apply throughout)
+============================================================
+
+- No em dashes anywhere, including code comments, UI copy, and lesson content
+- Do not change wording, structure, quiz questions, or diagram/tool placements,
+  only add the bold markdown around the specified terms
+- Verify the bold formatting renders correctly in both light and dark mode
+- Production-ready, not demo-ware
+
+============================================================
+GIT
+============================================================
+
+Commit with a clear message describing the bold key-term formatting pass on
+these two modules. Push to the GitHub remote. Verify the push landed by
+comparing the full 40-character SHA of local HEAD against the GitHub remote
+HEAD.
+
+Report back with: confirmation of which lessons were updated, and confirmation
+the push landed with matching SHAs.

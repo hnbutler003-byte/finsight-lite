@@ -1,0 +1,289 @@
+# Investing Fundamentals II — Module Content
+GO DEEPER | New module, sits directly after Investing Fundamentals as a sequel/level-up, not a replacement. Same violet family, one shade deeper/richer to signal progression rather than an unrelated topic.
+
+Icon suggestion: PieChart (lucide-react), distinct from the base module's TrendingUp icon.
+
+Localization approach: content is written once with an {EXCHANGE} placeholder that swaps per territory (BISX for Bahamas, JSE for Jamaica, BSE for Barbados, TTSE for Trinidad and Tobago, ECSE for Eastern Caribbean), matching how currency and pricing already localize elsewhere in the app. Named real companies are only used where verified (Bahamas and Jamaica), other territories stay conceptual.
+
+Note on growth vs. dividend classification: rather than asserting that any specific real company (BISX or JSE) is a "growth stock" or "dividend stock," a claim that can change over time and that I haven't independently verified for every ticker, Lesson 1 turns this into an active-learning exercise: students look up the actual dividend history of their own simulator holdings rather than being told a classification that could go stale or be wrong.
+
+---
+
+## LESSON 1: Growth vs. Dividend Stocks
+
+**Instructor:** Finsight Lite Team
+**Grade Level:** 9-12
+**Subject:** Financial Literacy
+**Duration:** 12 minutes
+**Topic:** Stock Investment Strategies
+
+**Learning Objectives:**
+- Understand the difference between a growth stock and a dividend stock
+- Understand what a dividend actually is and how it gets paid
+- Know how to check whether a real company has a history of paying dividends
+- Recognize that most investors hold a mix of both types, not just one
+
+**Content Section 1 Heading:** Two Different Ways a Stock Can Make You Money
+
+**Content Section 1 Body Paragraph 1:** A stock can grow your money in two different ways. The first is the share price itself going up over time, you bought it at one price, and it's now worth more. Stocks that focus on this are often called **growth stocks**, usually younger or expanding companies that reinvest their profits back into the business instead of paying shareholders directly, betting that reinvestment grows the company (and the stock price) faster.
+
+**Content Section 1 Body Paragraph 2:** The second way is through dividends. A **dividend** is a direct cash payment a company makes to its shareholders, usually a small amount per share, paid out regularly (often quarterly). Companies that focus on this are often called **dividend stocks**, usually more established companies that generate steady profits and don't need to reinvest every dollar back into rapid growth.
+
+**Content Section 2 Heading:** Neither One Is "Better"
+
+**Content Section 2 Body Paragraph 1:** Growth stocks tend to be more volatile, the price can swing more sharply in both directions, since their value is based heavily on future expectations. Dividend-paying stocks tend to be steadier, and even if the share price doesn't move much, you're still earning something regularly just for holding it.
+
+**Content Section 2 Body Paragraph 2:** Most real investors don't pick one type exclusively, they hold a mix, some stocks for growth potential, some for steady dividend income. Which mix makes sense depends on your goals and how long you're planning to hold the investment.
+
+**Content Section 3 Heading:** Try This With Your Own Simulator Holdings
+
+**Content Section 3 Body Paragraph 1:** Rather than telling you which specific {EXCHANGE} companies are growth stocks versus dividend stocks, since that can change over time, here's a better exercise: open your Investment Simulator and look up each company you're invested in or considering. Check whether it has a recent dividend history.
+
+**Content Section 3 Body Paragraph 2:** A company that regularly pays dividends is signaling something different about its strategy than one that doesn't. Practice identifying which is which using real, current information rather than memorizing a label that might not stay accurate.
+
+**Quiz Questions:**
+
+1. What is a dividend?
+A) A fee charged for owning a stock
+B) A direct cash payment a company makes to its shareholders
+C) The total value of a stock market
+D) A type of loan
+Correct: B
+
+2. What is a growth stock generally focused on?
+A) Paying out as much cash as possible to shareholders immediately
+B) Reinvesting profits back into the business to grow faster
+C) Avoiding the stock market entirely
+D) Guaranteeing a fixed return every year
+Correct: B
+
+3. Which type of stock tends to be more volatile?
+A) Dividend-paying stocks
+B) Growth stocks
+C) Neither, they're equally stable
+D) Government bonds
+Correct: B
+
+4. Do most real investors pick only one type, growth or dividend?
+A) Yes, you must choose one and never mix them
+B) No, most investors hold a mix of both
+C) Only professional investors are allowed to mix them
+D) Dividend stocks are illegal to combine with growth stocks
+Correct: B
+
+**YouTube Video:** None recommended. This concept is broadly applicable and not exchange-specific, a generic finance explainer risks using non-Caribbean examples that could confuse rather than clarify. Text and the simulator exercise carry this lesson.
+
+---
+
+## LESSON 2: Diversification and Building a Portfolio
+
+**Instructor:** Finsight Lite Team
+**Grade Level:** 9-12
+**Subject:** Financial Literacy
+**Duration:** 12 minutes
+**Topic:** Portfolio Construction
+
+**Learning Objectives:**
+- Understand what diversification means and why it matters
+- Understand the risk of putting all your money into one stock
+- Know how to look at a portfolio and assess how diversified it actually is
+- Apply diversification thinking to your own Investment Simulator holdings
+
+**Content Section 1 Heading:** Why "Don't Put All Your Eggs in One Basket" Applies to Investing
+
+**Content Section 1 Body Paragraph 1:** If you put all your money into a single stock and that company has a bad year, your whole portfolio takes the hit. **Diversification** means spreading your money across multiple different investments instead, so that one company's bad news doesn't sink everything you have.
+
+**Content Section 1 Body Paragraph 2:** This doesn't eliminate risk entirely, the whole market can still go down at once, but it protects you from one specific company's problems wiping out your entire portfolio.
+
+**Content Section 2 Heading:** What Diversification Actually Looks Like
+
+**Content Section 2 Body Paragraph 1 (Bahamas version):** In the Investment Simulator, you have access to six real BISX-listed companies: CBL, FCL, CAB, DHS, JSJ, and CHB. Holding just one of these means your entire result depends on that single company. Holding a mix across several, especially companies in different industries rather than similar ones, is a more diversified approach.
+
+**Content Section 2 Body Paragraph 1 (Jamaica version):** Real companies listed on the JSE, like GraceKennedy (GK) and NCB Financial Group (NCBFG), operate in different industries, food and financial services. Holding a mix across different industries, rather than several companies that all do similar things, is what real diversification looks like.
+
+**Content Section 2 Body Paragraph 1 (other territories):** Think about it this way: if you held shares in five companies that were all in the same industry, say five different banks, and that entire industry had a bad year, all five would likely struggle at once. That's not real diversification, even though it's technically five different stocks. Real diversification means spreading across different types of business, not just different company names.
+
+**Content Section 2 Body Paragraph 2:** A well-diversified portfolio doesn't guarantee you'll make money, but it does mean you're not exposed to any single company's failure wiping out everything.
+
+**Content Section 3 Heading:** Check Your Own Diversification
+
+**Content Section 3 Body Paragraph 1:** Open your Investment Simulator portfolio right now. Are you holding just one company, or several? If several, are they in different industries, or all similar?
+
+**Content Section 3 Body Paragraph 2:** There's no single "correct" number of holdings, but if everything you own would be affected by the same piece of bad news, that's worth noticing and adjusting.
+
+**Quiz Questions:**
+
+1. What does diversification mean in investing?
+A) Buying only one stock and holding it forever
+B) Spreading your money across multiple different investments
+C) Only investing in companies from other countries
+D) Avoiding the stock market entirely
+Correct: B
+
+2. Why is it risky to put all your money into a single stock?
+A) It's not risky at all
+B) If that company has a bad year, your entire portfolio takes the hit
+C) Single stocks are illegal to purchase
+D) Only banks are allowed to hold single stocks
+Correct: B
+
+3. If you own five stocks that are all in the same industry, is that well diversified?
+A) Yes, five stocks is always diversified
+B) Not necessarily, if the whole industry struggles, all five could be affected at once
+C) It's only diversified if all five go up
+D) Diversification only applies to bonds, not stocks
+Correct: B
+
+4. Does diversification guarantee you'll make money?
+A) Yes, it's a guarantee against ever losing money
+B) No, but it reduces the risk of one company's failure wiping out your whole portfolio
+C) It guarantees exactly a 10% return
+D) It only works for professional investors
+Correct: B
+
+**YouTube Video:** None recommended for this lesson.
+
+---
+
+## LESSON 3: Index Funds vs. Individual Stocks
+
+**Instructor:** Finsight Lite Team
+**Grade Level:** 9-12
+**Subject:** Financial Literacy
+**Duration:** 10 minutes
+**Topic:** Investment Vehicles
+
+**Learning Objectives:**
+- Understand what an index fund is at a conceptual level
+- Understand the difference between picking individual stocks and investing in a broad basket of companies at once
+- Recognize why index funds are often recommended for beginner investors
+- Understand this is a global investing concept, not tied to owning individual {EXCHANGE} stocks specifically
+
+**Content Section 1 Heading:** Picking Stocks vs. Buying the Whole Market
+
+**Content Section 1 Body Paragraph 1:** So far, the Investment Simulator has you picking individual companies to invest in. That's one way to invest, but it's not the only way. An **index fund** is a single investment that automatically holds many different companies at once, instead of picking one or two yourself, you own a small piece of dozens or even hundreds of companies through one purchase.
+
+**Content Section 1 Body Paragraph 2:** The word "index" refers to a list of companies grouped together, often by market or category, and the fund simply tracks that whole group rather than betting on any single company.
+
+**Content Section 2 Heading:** Why This Matters, Even If You're Not Investing in One Yet
+
+**Content Section 2 Body Paragraph 1:** Index funds are often recommended for beginner investors because they build in diversification automatically, you're not relying on picking the right individual company, you're spread across many at once by default.
+
+**Content Section 2 Body Paragraph 2:** Picking individual stocks, like you're practicing in the simulator, can potentially earn more if you pick well, but it also carries more risk if you pick poorly. Index funds trade some of that upside potential for steadier, more predictable results over time. Neither approach is wrong, they serve different goals and different comfort levels with risk.
+
+**Content Section 3 Heading:** This Isn't Available in Your Simulator Yet, and That's Okay
+
+**Content Section 3 Body Paragraph 1:** Your Investment Simulator focuses on individual {EXCHANGE} stocks specifically, which is genuinely useful for learning how individual companies and stock prices actually work. Index funds are a broader global concept you'll likely encounter later, especially if you open a real investment account as an adult.
+
+**Content Section 3 Body Paragraph 2:** Understanding the concept now means you won't be starting from zero when it becomes relevant to an actual decision you're making with real money.
+
+**Quiz Questions:**
+
+1. What is an index fund?
+A) A single stock that never changes in price
+B) A single investment that automatically holds many different companies at once
+C) A type of savings account
+D) A loan from a bank
+Correct: B
+
+2. Why are index funds often recommended for beginner investors?
+A) They guarantee the highest possible returns
+B) They build in diversification automatically
+C) They are only available to professional investors
+D) They eliminate all investment risk completely
+Correct: B
+
+3. What's a tradeoff of choosing an index fund over picking individual stocks?
+A) There is no tradeoff, index funds are strictly better in every way
+B) Index funds trade some upside potential for steadier, more predictable results
+C) Index funds are illegal in most countries
+D) Index funds can only be purchased by banks
+Correct: B
+
+4. Is picking individual stocks, like in your Investment Simulator, a "wrong" way to invest?
+A) Yes, only index funds are acceptable
+B) No, it serves a different goal and comfort level with risk than index investing
+C) Yes, individual stocks are always a scam
+D) Individual stocks and index funds are exactly the same thing
+Correct: B
+
+**YouTube Video:** None recommended, this is a global conceptual topic best kept in the student's own reading pace rather than tied to a specific video that may reference markets or funds not relevant here.
+
+---
+
+## LESSON 4: Reading What a Stock Price Move Actually Means
+
+**Instructor:** Finsight Lite Team
+**Grade Level:** 9-12
+**Subject:** Financial Literacy
+**Duration:** 10 minutes
+**Topic:** Market Analysis Basics
+
+**Learning Objectives:**
+- Understand what it means when a stock price moves up or down
+- Understand that a price move reflects changing investor expectations, not a fixed fact about a company
+- Know how to use the AI explanation feature in the Investment Simulator to understand a real price move
+- Avoid overreacting to a single day's price movement
+
+**Content Section 1 Heading:** A Price Move Is Investors Changing Their Minds
+
+**Content Section 1 Body Paragraph 1:** When you check a stock in your Investment Simulator and see the price moved since yesterday, that movement reflects other investors buying or selling, based on new information or changing expectations about the company's future, not a fixed, objective fact.
+
+**Content Section 1 Body Paragraph 2:** A stock price going up doesn't mean the company is definitely doing well, and a price going down doesn't mean it's definitely in trouble. It means enough people currently believe the company's future is worth slightly more or slightly less than they believed yesterday.
+
+**Content Section 2 Heading:** Use the Tool You Already Have
+
+**Content Section 2 Body Paragraph 1:** You've probably noticed that when a stock's price has moved that day in your Investment Simulator, an AI explanation appears in the buy dialog. That feature exists exactly for this purpose, to help you understand the "why" behind a price move you're looking at, instead of just seeing a number change with no context.
+
+**Content Section 2 Body Paragraph 2:** Next time you see that explanation appear, actually read it before buying or skipping a trade. It's giving you real reasoning to practice with, not just decoration.
+
+**Content Section 3 Heading:** Don't Overreact to One Day
+
+**Content Section 3 Body Paragraph 1:** A single day's price movement, up or down, usually isn't a reason to make a big decision on its own. Prices move constantly for lots of small reasons, and reacting strongly to every single movement is a common mistake even experienced investors have to unlearn.
+
+**Content Section 3 Body Paragraph 2:** A more useful habit is looking at the trend over weeks or months, combined with understanding why the company's situation is actually changing, rather than reacting to any one day in isolation.
+
+**Quiz Questions:**
+
+1. What does it mean when a stock price goes up?
+A) The company is guaranteed to be profitable
+B) Enough investors currently believe the company's future is worth more than they believed before
+C) The government has approved the company for growth
+D) The price will only ever go up from here
+Correct: B
+
+2. What feature in the Investment Simulator helps explain why a stock's price moved?
+A) There is no such feature
+B) An AI explanation that appears in the buy dialog when a price has moved
+C) A phone call with a financial advisor
+D) A monthly newsletter
+Correct: B
+
+3. Is a single day's price movement usually a good reason to make a big investment decision on its own?
+A) Yes, always act immediately on any price change
+B) No, it's usually more useful to look at trends over weeks or months
+C) Only if the price goes down
+D) Only if the price goes up
+Correct: B
+
+4. Does a falling stock price definitely mean a company is in trouble?
+A) Yes, always
+B) Not necessarily, it reflects changing investor expectations, not a fixed fact
+C) Only on Mondays
+D) Yes, but only for companies outside the Caribbean
+Correct: B
+
+**YouTube Video:** None recommended, this lesson is specifically built around a feature already inside the app (the AI price-move explanation), a video would be redundant with functionality the student already has.
+
+---
+
+## Notes for Building
+
+- Module title suggestion: "Investing Fundamentals II" or similar, subtitle "GO DEEPER," positioned as a sequel to the existing Investing Fundamentals module, not a replacement
+- Color: a deeper/richer shade within the same violet family as the base Investing Fundamentals module, signaling progression rather than an unrelated topic. Icon: PieChart, distinct from the base module's TrendingUp
+- {EXCHANGE} placeholder swaps to BISX (Bahamas), JSE (Jamaica), BSE (Barbados), TTSE (Trinidad and Tobago), ECSE (Eastern Caribbean) per territory, matching existing currency/pricing localization
+- Lesson 2's Content Section 2 has three territory-specific paragraph variants (Bahamas, Jamaica, other territories), pick the correct one per environment rather than using one generic version everywhere
+- No specific real company is labeled a "growth stock" or "dividend stock" in this content, deliberately, since that classification can change and wasn't independently verified per company. Lesson 1 instead turns this into a research exercise using the student's own simulator holdings
+- All content follows the paragraph-break standing rule already established, no dense single-block paragraphs
+- No em dashes used anywhere in this content
+- Bahamas and Jamaica get real, verified company names where used (BISX: CBL, FCL, CAB, DHS, JSJ, CHB, already verified in the existing simulator; Jamaica: GraceKennedy/GK and NCB Financial Group/NCBFG, verified via research). Barbados, Trinidad, and Eastern Caribbean stay conceptual, no named companies, consistent with those territories being simulated-only rather than real-tracked in the Investment Simulator
