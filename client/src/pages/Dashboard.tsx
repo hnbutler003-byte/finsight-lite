@@ -3,6 +3,7 @@ import { useTransactions, useDeleteTransaction } from "@/hooks/use-transactions"
 import { useCategories } from "@/hooks/use-categories";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useAiStatus } from "@/hooks/use-ai-status";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { StatCard } from "@/components/dashboard/StatCard";
 import {
@@ -79,6 +80,7 @@ export default function Dashboard() {
   const [currency, setCurrency] = useState("BSD");
   const [showAllTransactions, setShowAllTransactions] = useState(false);
   const [showTips, setShowTips] = useState(false);
+  const { enabled: aiEnabled } = useAiStatus();
   const [showTour, setShowTour] = useState(false);
 
   useEffect(() => {
@@ -441,7 +443,15 @@ export default function Dashboard() {
             </button>
             {showTips && (
               <div className="px-5 pb-5 space-y-3">
-                {insightsLoading ? (
+                {!aiEnabled ? (
+                  <div className="rounded-2xl border border-border/50 p-5 text-center space-y-2" data-testid="ai-disabled-tips">
+                    <Sparkles className="w-5 h-5 text-amber-500 mx-auto" />
+                    <p className="text-sm font-medium text-foreground">Smart tips are coming soon</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      This feature is available for Finsight Lite organizations on a paid plan. Reach out to learn more.
+                    </p>
+                  </div>
+                ) : insightsLoading ? (
                   <div className="flex items-center justify-center py-6">
                     <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
                     <span className="ml-2 text-sm text-muted-foreground">Getting smart tips...</span>

@@ -1,4 +1,5 @@
 import { useVideoEmbed } from "@/hooks/use-video-embed";
+import { useAiStatus } from "@/hooks/use-ai-status";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -545,6 +546,7 @@ function getModuleCompleteMessage(moduleTitle: string): string {
 
 export default function Lessons() {
   const { user } = useAuth();
+  const { enabled: aiEnabled } = useAiStatus();
   const certificateFullName = (() => {
     const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
     return fullName || user?.username || "Student";
@@ -1131,7 +1133,7 @@ export default function Lessons() {
                 </Card>
               </div>
 
-              {pct < 60 && (
+              {pct < 60 && aiEnabled && (
                 <Card className="glass-card-teal rounded-glass border-0" data-testid="card-ai-tutor-prompt">
                   <CardContent className="p-5 flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center flex-shrink-0">

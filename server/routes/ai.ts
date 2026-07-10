@@ -24,6 +24,7 @@ import { lt as ltDrizzle, sql as sqlEmail } from "drizzle-orm";
 import { getStudentOrgIds } from "../supabase";
 import { isAdmin, isOrgAdmin, ADMIN_EMAIL } from "./auth";
 import { respondAiFailure } from "../aiFailure";
+import { isAiEnabled, AI_DISABLED_MESSAGE } from "../aiFlag";
 import fs from "fs";
 import * as nodePath from "path";
 import Anthropic from "@anthropic-ai/sdk";
@@ -60,9 +61,16 @@ export const AI_BLOCKED_MSG: Record<"guest" | "qa_test", string> = {
 
 export async function registerAiRoutes(app: Express): Promise<void> {
 
+  app.get("/api/ai/status", isAuthenticated, (_req, res) => {
+    res.json({ enabled: isAiEnabled() });
+  });
+
   // AI Insights
   app.get("/api/ai/insights", isAuthenticated, async (req, res) => {
     try {
+      if (!isAiEnabled()) {
+        return res.status(503).json({ message: AI_DISABLED_MESSAGE, disabled: true });
+      }
       const userId = (req.user as any).id;
 
       const orgIds = await getStudentOrgIds(userId).catch(() => [] as string[]);
@@ -174,6 +182,10 @@ export async function registerAiRoutes(app: Express): Promise<void> {
 
       if (!questionText) {
         return res.status(400).json({ message: "Question text is required" });
+      }
+
+      if (!isAiEnabled()) {
+        return res.status(503).json({ message: AI_DISABLED_MESSAGE, disabled: true });
       }
 
       const orgIds = await getStudentOrgIds(userId).catch(() => [] as string[]);
@@ -315,6 +327,10 @@ ${correctAnswer ? `Correct Answer: ${correctAnswer}` : ""}`;
 
       if (sanitizedMessages.length === 0) {
         return res.status(400).json({ message: "No valid messages provided." });
+      }
+
+      if (!isAiEnabled()) {
+        return res.status(503).json({ message: AI_DISABLED_MESSAGE, disabled: true });
       }
 
       const orgIds = await getStudentOrgIds(userId).catch(() => [] as string[]);

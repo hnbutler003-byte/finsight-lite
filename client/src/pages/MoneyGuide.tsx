@@ -2,6 +2,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useAiStatus } from "@/hooks/use-ai-status";
 import { useSearch } from "wouter";
 import {
   Send, Loader2, Sparkles, Lightbulb, Target, PiggyBank,
@@ -31,6 +32,7 @@ export default function MoneyGuide() {
   const inputRef = useRef<HTMLInputElement>(null);
   const search = useSearch();
   const explainTriggeredRef = useRef(false);
+  const { enabled: aiEnabled } = useAiStatus();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -259,33 +261,47 @@ export default function MoneyGuide() {
 
         <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4" data-testid="chat-messages">
           {messages.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center py-12 space-y-8">
-              <div className="text-center space-y-4">
-                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 flex items-center justify-center mx-auto shadow-xl shadow-purple-300/50 dark:shadow-purple-900/50 animate-float">
-                  <span className="text-5xl">🧠</span>
+            aiEnabled ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-12 space-y-8">
+                <div className="text-center space-y-4">
+                  <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 flex items-center justify-center mx-auto shadow-xl shadow-purple-300/50 dark:shadow-purple-900/50 animate-float">
+                    <span className="text-5xl">🧠</span>
+                  </div>
+                  <h2 className="text-2xl lg:text-3xl font-display font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-pink-500">
+                    Hey {userName}! 👋
+                  </h2>
+                  <p className="text-foreground/80 max-w-md mx-auto font-medium">
+                    I'm your Money Guide. Ask me anything about saving, budgeting, investing, or money in general. No question is too simple!
+                  </p>
                 </div>
-                <h2 className="text-2xl lg:text-3xl font-display font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-pink-500">
-                  Hey {userName}! 👋
-                </h2>
-                <p className="text-foreground/80 max-w-md mx-auto font-medium">
-                  I'm your Money Guide. Ask me anything about saving, budgeting, investing, or money in general. No question is too simple!
-                </p>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-2xl w-full">
-                {QUICK_PROMPTS.map((prompt, i) => (
-                  <button
-                    key={i}
-                    onClick={() => sendMessage(prompt.label)}
-                    className={`glass-card flex items-center gap-3 p-4 rounded-glass text-left transition-all hover:scale-[1.02] hover:shadow-md ${prompt.color}`}
-                    data-testid={`button-quick-prompt-${i}`}
-                  >
-                    <prompt.icon className="w-5 h-5 shrink-0" />
-                    <span className="text-sm font-semibold">{prompt.label}</span>
-                  </button>
-                ))}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-2xl w-full">
+                  {QUICK_PROMPTS.map((prompt, i) => (
+                    <button
+                      key={i}
+                      onClick={() => sendMessage(prompt.label)}
+                      className={`glass-card flex items-center gap-3 p-4 rounded-glass text-left transition-all hover:scale-[1.02] hover:shadow-md ${prompt.color}`}
+                      data-testid={`button-quick-prompt-${i}`}
+                    >
+                      <prompt.icon className="w-5 h-5 shrink-0" />
+                      <span className="text-sm font-semibold">{prompt.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center py-12">
+                <div className="glass-card rounded-glass p-8 max-w-md w-full text-center space-y-4" data-testid="ai-disabled-message">
+                  <div className="w-14 h-14 rounded-2xl bg-violet-500/20 flex items-center justify-center mx-auto">
+                    <Bot className="w-7 h-7 text-violet-500 dark:text-violet-400" />
+                  </div>
+                  <h2 className="font-display text-xl font-bold text-foreground">Money Guide</h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    This feature is available for Finsight Lite organizations on a paid plan. Reach out to learn more.
+                  </p>
+                </div>
+              </div>
+            )
           ) : (
             <>
               {messages.map((msg, i) => (
@@ -327,6 +343,7 @@ export default function MoneyGuide() {
           )}
         </div>
 
+        {aiEnabled && (
         <div className="border-t border-border/50 p-4 lg:p-6">
           <form onSubmit={handleSubmit} className="flex gap-3 max-w-3xl mx-auto">
             <input
@@ -356,6 +373,7 @@ export default function MoneyGuide() {
             Money Guide is powered by Claude AI and gives educational info only, not real financial advice. Always double-check with your teacher!
           </p>
         </div>
+        )}
         </div>
       </main>
     </div>

@@ -15,6 +15,7 @@ FinSight Lite is a financial literacy learning simulator that teaches school-age
 *   `SUPABASE_DATABASE_URL` (primary PostgreSQL connection string: points to Supabase). `DATABASE_URL` is accepted as a fallback but should not be relied upon; Replit may point it at an internal host.
 *   `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (for Supabase integration)
 *   `ADMIN_EMAIL`, `ADMIN_PASSWORD` (for Founder Admin Dashboard)
+*   `AI_FEATURES_ENABLED` (optional, default false): set to `true` to enable all AI features (Money Guide chatbot, AI Tutor, spending tips, investment explainer). When absent or any other value, AI features show a friendly "paid plan" message and no Anthropic API calls are made. Flip to `true` once there is Anthropic credit available.
 *   `AI_PURGE_OLDER_THAN_DAYS` (optional, default 180): how far back the monthly auto-purge of `ai_usage_events` retains records
 *   `RESEND_FROM_EMAIL` (required in production): the verified custom-domain FROM address for all outgoing emails, e.g. `FinSight Lite <noreply@finsight-ltd.com>`. Without this, emails send from the shared Resend sandbox address which school spam filters may block. Must be a domain verified in your Resend account with SPF/DKIM/DMARC DNS records.
 

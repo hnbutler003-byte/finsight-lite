@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import crypto from "crypto";
 import { reportAiFailure } from "../aiFailure";
+import { isAiEnabled } from "../aiFlag";
 import { getCachedExplanation, setCachedExplanation } from "../aiUsage";
 import { db } from "../db";
 import { simulatedStocks } from "@shared/schema";
@@ -34,6 +35,7 @@ function hashStockExplainer(ticker: string, price: string, changePct: string): s
 }
 
 export async function getStockExplainer(stockId: number): Promise<string | null> {
+  if (!isAiEnabled()) return null;
   const [stock] = await db.select().from(simulatedStocks).where(eq(simulatedStocks.id, stockId)).limit(1);
   if (!stock) return null;
 

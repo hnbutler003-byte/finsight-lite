@@ -1,0 +1,73 @@
+Gracefully disable all AI-powered features behind a feature flag, showing a
+friendly message instead of letting the raw Anthropic API error reach students.
+
+BACKGROUND
+The Anthropic API account is currently out of credits, causing Money Guide
+(chatbot), AI Tutor, and AI-generated spending tips to fail with a raw 400 error
+("Your credit balance is too low..."). This is a billing issue, not a code bug,
+and won't be resolved immediately. Rather than let students see a broken error,
+these features should be cleanly gated behind a feature flag until AI is
+affordable again (planned for once there are paying users/orgs).
+
+PART 1: ADD AN AI FEATURE FLAG
+
+Add a single environment variable, e.g. AI_FEATURES_ENABLED, defaulting to
+"false" for now. This should be checked once, centrally, wherever AI feature
+calls originate (Money Guide chatbot, AI Tutor, AI-generated spending tips),
+not duplicated as separate checks in each feature. If a shared AI service/helper
+module already exists, add the check there so all three features are gated
+through one place.
+
+When AI_FEATURES_ENABLED is false, do NOT attempt the Anthropic API call at all,
+short-circuit before making the request. This avoids wasted, guaranteed-to-fail
+API calls and avoids the request delay a student would otherwise experience
+waiting for a call that's going to fail anyway.
+
+PART 2: FRIENDLY FALLBACK MESSAGE
+
+When a student or org admin encounters an AI feature while it's disabled, show a
+clean, on-brand message instead of an error state. Suggested copy, adjust as
+needed to fit each feature's actual UI context, but keep the tone and rules
+consistent across all three:
+
+"This feature is available for Finsight Lite organizations on a paid plan.
+Reach out to learn more."
+
+Requirements for this message:
+- No specific dollar amounts or pricing tier names shown, consistent with the
+  standing rule that no pricing is visible anywhere in an authenticated product
+  view
+- No em dashes
+- Styled as a normal, calm empty-state or info card using the existing
+  .glass-card / .glass-card-teal pattern, not as an error or warning state (no
+  red, no alarming icon), this is a normal unavailable-feature state, not
+  something broken
+- Verify text contrast and card styling in both light and dark mode
+- Apply consistently to all three AI features: Money Guide chatbot, AI Tutor
+  (including the auto-route-on-low-quiz-score trigger, which should simply not
+  trigger at all while the flag is off, not trigger and then show an error), and
+  AI-generated spending tips
+
+PART 3: DO NOT REMOVE THE UNDERLYING CODE
+
+This is a temporary, reversible state, not a feature removal. The actual AI
+integration code, prompts, and logic should remain fully intact and functional,
+only gated by the flag. Turning AI_FEATURES_ENABLED back to "true" once there's
+budget for it should be the only step needed to restore full functionality, no
+further code changes required.
+
+STANDING REQUIREMENTS (apply throughout)
+- No em dashes anywhere, including code comments and UI copy
+- Any database write must throw a clear, catchable error on failure
+- Verify in both light and dark mode
+- Production-ready, not demo-ware
+
+GIT
+Commit with a clear message describing the AI feature flag and graceful
+fallback. Push to the GitHub remote. Verify the push landed by comparing the
+full 40-character SHA of local HEAD against the GitHub remote HEAD.
+
+Report back with: confirmation the flag is centrally checked (not duplicated
+per feature), confirmation no API calls are attempted while disabled,
+confirmation the fallback message renders correctly in both light and dark mode
+across all three features, and confirmation the push landed with matching SHAs.

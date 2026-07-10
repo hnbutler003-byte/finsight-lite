@@ -3,6 +3,8 @@
 - [Supabase org schema migrations](supabase-org-schema-migrations.md) — 6 columns were missing from live organizations table; startup probe uses `display_label` as sentinel for all org migrations.
 - [deleteUserAllData transaction](delete-user-transaction.md) — must be wrapped in db.transaction(); conversations table has no userId so AI chat history is NOT deleted on purge (known gap).
 - [GitHub push workflow](github-push-workflow.md) — main agent can't commit; platform auto-commits on mark_task_complete even when validation FAILS, then push github main + verify via git ls-remote.
+- [AI feature flag](ai-feature-flag.md) — single isAiEnabled() in server/aiFlag.ts gates all Anthropic calls; useAiStatus() hook on frontend; default false.
+- [CRLF in client pages](crlf-client-pages.md) — some client/src/pages/*.tsx files have Windows CRLF endings; edit tool fails silently on them. Strip first: sed -i 's/\r//' <files>.
 - [Org read cache invalidation](org-cache-invalidation.md) — updateOrganization does not invalidate the 5-min getOrganization cache; every write site must invalidate manually.
 - [Public demo guard audit](public-demo-guard-audit.md) — demo read-only guard lives in isOrgAdmin; raw session checks or side-effect GETs bypass it.
 - [executeSql vs app DB](executesql-vs-app-db.md) — the executeSql tool queries Replit's built-in Postgres, but the app uses Supabase; data seeded via executeSql is invisible to the app.
