@@ -1,0 +1,146 @@
+Four fixes in one pass: lesson scroll position, source links per lesson, an
+incorrect module count on the demo page, and inaccurate BISX real market prices.
+
+============================================================
+PART 1: LESSON SCREEN SHOULD OPEN AT THE TOP OF THE PAGE
+============================================================
+
+When a student clicks into a lesson from the Lessons tab, the lesson screen is
+currently opening at whatever scroll position the previous page was at, instead
+of at the top. Fix this so navigating into any lesson always scrolls to the top
+of the page on mount/route change. This is a common React Router issue, add a
+scroll-to-top behavior on route change if one doesn't already exist app-wide, or
+fix it specifically for the lesson detail route if a global fix isn't
+appropriate. Verify by testing navigation into a lesson from partway down a
+scrolled Lessons tab.
+
+============================================================
+PART 2: ADD A CREDIBLE SOURCE LINK TO EVERY LESSON
+============================================================
+
+Add a "Source" or "Learn More" field to the lesson content model, a single
+labeled external link shown at the bottom of the lesson (after the quiz, or
+wherever fits the existing layout), pointing to the primary source the lesson's
+factual content was verified against. This should render as a clearly visible,
+clickable link, not buried, since this is meant to build trust and let a
+student, parent, or teacher verify anything themselves.
+
+Add the following real, verified source links to these lessons. Do not invent or
+guess a URL for any lesson not listed below, leave those without a source link
+for now rather than adding an inaccurate one, and see Part 2b for what to do
+about those.
+
+--- Opening a Bank Account in the Bahamas ---
+Source: Scotiabank Bahamas, Youth Account Opening Requirements
+https://bs.scotiabank.com/personal/chequing-and-savings/electronic-access-youth/how-to-apply.html
+
+--- Understanding Your Payslip and NIB ---
+Source: National Insurance Board of The Bahamas, Benefits and Assistance
+https://www.nib-bahamas.com/about-nib/benefits-and-assistance/
+
+--- Educational Investment Accounts (CFAL & RF) ---
+Two sources, both should be linked since the lesson covers both products:
+Source 1: CFAL Education Plan
+https://www.cfal.com/cfal-education-plan
+Source 2: RF Bank & Trust, Education Investment Account
+https://www.rfgroup.com/individuals/education/
+
+--- Understanding JAM-DEX, Jamaica's Digital Dollar ---
+Source: Bank of Jamaica, Central Bank Digital Currency (CBDC) JAM-DEX
+https://boj.org.jm/core-functions/currency/cbdc/
+
+--- Know Your Money, Trinidad and Tobago's Currency ---
+Source: Central Bank of Trinidad and Tobago, Know Your Money
+https://www.central-bank.org.tt/bank-notes-and-coins/know-your-money/
+
+--- Understanding Credit and Your Credit Report (Real Life Ready II) ---
+Source: CRIF Information Services Bahamas
+https://www.crif.com.bs/
+
+--- Mortgages Explained (Real Life Ready II) ---
+Source: Central Bank of The Bahamas, Bahamas Mortgage Corporation
+https://www.centralbankbahamas.com/bahamas-mortgage-corporation-bonds
+
+--- PART 2b: LESSONS STILL MISSING A CONFIRMED SOURCE LINK ---
+The following lessons do not yet have a verified source URL and should NOT be
+published with the source link section blank or missing, that defeats the
+purpose. Flag each of these back to Hailey for a quick source lookup rather than
+guessing:
+- Opening a Bank Account in Jamaica (needs a specific Scotiabank Jamaica, NCB, or
+  JN Bank page reference)
+- Opening a Bank Account in Trinidad and Tobago (needs a specific bank or credit
+  union page reference)
+- Avoiding Scams and Financial Fraud (predates this content pass, needs a source,
+  likely a Royal Bahamas Police Force or Central Bank consumer protection page)
+- How Loans Actually Work and Amortization (Real Life Ready II), these are more
+  conceptual than institution-specific, a general Central Bank of The Bahamas
+  financial education page may fit, needs confirmation before adding
+- All four Sand Dollar lessons and all Budgeting Basics / Saving Smart /
+  Investing Fundamentals / Investing Fundamentals II lessons, these predate the
+  verification pass done in this conversation and have not been checked against
+  a primary source yet
+
+Do not silently skip this, surface it clearly in your final report so it doesn't
+get lost.
+
+============================================================
+PART 3: FIX THE MODULE COUNT ON THE DEMO PAGE
+============================================================
+
+Find wherever the demo/marketing page displays a summary stat about the number
+of curriculum modules, this currently shows 6 but should show 7, following the
+addition of Real Life Ready II. Search for any hardcoded module count across the
+codebase (marketing pages, the "Our Story" page, footer stats, org admin
+dashboard summaries, anywhere a number like "6 modules" might be hardcoded
+rather than computed live from the actual module count in the database). Fix
+every instance found, and where possible, replace a hardcoded number with a
+live count query so this doesn't silently go stale again the next time a module
+is added.
+
+============================================================
+PART 4: BISX REAL MARKET PRICES ARE INACCURATE
+============================================================
+
+This needs investigation before a fix, the exact nature of the inaccuracy isn't
+specified yet. Diagnose first:
+
+1. Confirm where the Investment Simulator's real BISX price data actually comes
+   from, a live API, a scheduled scrape, or a manually updated data source.
+2. Check when that data source was last successfully updated, compare the
+   timestamp against today's actual date. If it's stale, that's likely the root
+   cause, not a calculation bug.
+3. Check whether the six tracked tickers (CBL, FCL, CAB, DHS, JSJ, CHB) are
+   still correctly mapped to real BISX data, a ticker rename, delisting, or
+   symbol mismatch on BISX's side could cause wrong prices to display under the
+   wrong ticker.
+4. Check for a hardcoded fallback/seed price still being used anywhere instead
+   of live data.
+5. Check currency and decimal formatting, a formatting bug (e.g. displaying
+   cents as dollars, or a stale currency conversion) can look like "wrong
+   prices" without the underlying data actually being wrong.
+
+Report what you find for each of these before applying a fix, since the correct
+fix depends entirely on which of these is the actual cause. Do not guess at a
+fix without first confirming the root cause.
+
+============================================================
+STANDING REQUIREMENTS (apply throughout)
+============================================================
+
+- No em dashes anywhere, including code comments, UI copy, and lesson content
+- Any database write must throw a clear, catchable error on failure
+- Verify all new/changed UI in both light and dark mode
+- Production-ready, not demo-ware
+
+============================================================
+GIT
+============================================================
+
+Commit with a clear message describing all four fixes. Push to the GitHub
+remote. Verify the push landed by comparing the full 40-character SHA of local
+HEAD against the GitHub remote HEAD.
+
+Report back with: confirmation of the scroll fix, confirmation of which lessons
+now have source links and which are still missing one (per Part 2b), where every
+hardcoded module count was found and fixed, and the full diagnostic findings
+from Part 4 before any price fix was applied.

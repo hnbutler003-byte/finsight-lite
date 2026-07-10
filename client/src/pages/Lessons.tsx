@@ -14,6 +14,7 @@ import {
   Globe, Smartphone, Shield, AlertTriangle,
   Landmark, Receipt, ShieldAlert, LineChart, Banknote,
   PieChart, Coins, HandCoins, FileText, Home, Percent,
+  ExternalLink,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { jsPDF } from "jspdf";
@@ -55,6 +56,7 @@ type Lesson = {
   video_url?: string | null;
   objectives: string[];
   content_sections: ContentSection[];
+  source_links?: Array<{ label: string; url: string }> | null;
   is_published: boolean;
   created_at: string;
 };
@@ -87,6 +89,7 @@ type StaticLessonFromAPI = {
   objectives: string[];
   content_sections: ContentSection[];
   questions: QuizQuestion[];
+  source_links?: Array<{ label: string; url: string }> | null;
 };
 
 type StaticModuleFromAPI = {
@@ -665,6 +668,7 @@ export default function Lessons() {
       const data: LessonWithQuestions = await res.json();
       setSelectedLesson(data);
       setActiveModule(null);
+      window.scrollTo(0, 0);
       setPageState("reading");
       setCurrentQ(0);
       setSelected(null);
@@ -685,6 +689,7 @@ export default function Lessons() {
       video_url: staticLesson.video_url ?? null,
       objectives: staticLesson.objectives,
       content_sections: staticLesson.content_sections,
+      source_links: staticLesson.source_links ?? null,
       questions: staticLesson.questions,
       is_published: true,
       created_at: new Date().toISOString(),
@@ -692,6 +697,7 @@ export default function Lessons() {
     };
     setSelectedLesson(asLesson);
     setActiveModule(mod);
+    window.scrollTo(0, 0);
     setPageState("reading");
     setCurrentQ(0);
     setSelected(null);
@@ -977,6 +983,36 @@ export default function Lessons() {
               {selectedLesson.content_sections.map((section, i) => (
                 <LessonContentBlock key={i} section={section} index={i} />
               ))}
+
+              {/* Source Links */}
+              {selectedLesson.source_links && selectedLesson.source_links.length > 0 && (
+                <Card className="glass-card rounded-glass border-0" data-testid="card-source-links">
+                  <CardContent className="p-6">
+                    <h2 className="font-display font-bold text-base flex items-center gap-2 mb-3 text-foreground">
+                      <div className="w-8 h-8 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                        <ExternalLink className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      Sources
+                    </h2>
+                    <ul className="space-y-2">
+                      {selectedLesson.source_links.map((link, i) => (
+                        <li key={i}>
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-start gap-2 text-sm text-teal-700 hover:text-teal-800 dark:text-teal-300 dark:hover:text-teal-200 underline underline-offset-2 break-words"
+                            data-testid={`link-source-${i}`}
+                          >
+                            <ExternalLink className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            {link.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Start Quiz */}
               {selectedLesson.questions.length > 0 && (

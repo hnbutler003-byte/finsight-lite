@@ -20,7 +20,7 @@ const AVATAR_EMOJI: Record<string, string> = {
 };
 
 const FEATURE_LIST = [
-  "6 interactive financial literacy modules",
+  "7 interactive financial literacy modules",
   "7 money games with real-time scoring",
   "Investment simulator with BSD currency",
   "AI Money Guide chatbot",

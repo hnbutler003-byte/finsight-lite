@@ -100,6 +100,7 @@ export type LessonPlan = {
   video_url?: string | null;
   objectives: string[];
   content_sections: ContentSection[];
+  source_links?: Array<{ label: string; url: string }> | null;
   is_published: boolean;
   created_at: string;
   // Teacher class scoping: when class_id is set the lesson is visible ONLY to
@@ -872,6 +873,7 @@ export type StaticLessonRow = {
   objectives: string[];
   content_sections: ContentSection[];
   questions: LessonQuizQuestion[];
+  source_links?: Array<{ label: string; url: string }> | null;
 };
 
 export type StaticModuleWithLessons = StaticModuleRow & { lessons: StaticLessonRow[] };
@@ -1797,6 +1799,34 @@ for (const item of GAME_CONTENT_DATA) {
 
 // ─── Getter functions ──────────────────────────────────────────────────────────
 
+// Verified external source links for static lessons.
+// Key is grade_level (matches lesson_plans.grade_level in Supabase).
+// Lessons not listed here intentionally have no source link (not yet verified).
+const STATIC_LESSON_SOURCE_LINKS: Record<string, Array<{ label: string; url: string }>> = {
+  "static-real-1": [
+    { label: "Scotiabank Bahamas, Youth Account Opening Requirements", url: "https://bs.scotiabank.com/personal/chequing-and-savings/electronic-access-youth/how-to-apply.html" },
+  ],
+  "static-real-2": [
+    { label: "National Insurance Board of The Bahamas, Benefits and Assistance", url: "https://www.nib-bahamas.com/about-nib/benefits-and-assistance/" },
+  ],
+  "static-real-4": [
+    { label: "CFAL Education Plan", url: "https://www.cfal.com/cfal-education-plan" },
+    { label: "RF Bank & Trust, Education Investment Account", url: "https://www.rfgroup.com/individuals/education/" },
+  ],
+  "static-real-2-jm": [
+    { label: "Bank of Jamaica, Central Bank Digital Currency (CBDC) JAM-DEX", url: "https://boj.org.jm/core-functions/currency/cbdc/" },
+  ],
+  "static-real-2-tt": [
+    { label: "Central Bank of Trinidad and Tobago, Know Your Money", url: "https://www.central-bank.org.tt/bank-notes-and-coins/know-your-money/" },
+  ],
+  "static-real2-2": [
+    { label: "CRIF Information Services Bahamas", url: "https://www.crif.com.bs/" },
+  ],
+  "static-real2-3": [
+    { label: "Central Bank of The Bahamas, Bahamas Mortgage Corporation", url: "https://www.centralbankbahamas.com/bahamas-mortgage-corporation-bonds" },
+  ],
+};
+
 export async function getStaticModulesWithLessons(territory?: string): Promise<StaticModuleWithLessons[]> {
   if (!supabase) return [];
   try {
@@ -1846,6 +1876,7 @@ export async function getStaticModulesWithLessons(territory?: string): Promise<S
                   }
                 : s
             ),
+            source_links: STATIC_LESSON_SOURCE_LINKS[l.grade_level ?? ""] ?? null,
             questions: qByLesson[l.id] ?? [],
           })),
       }))

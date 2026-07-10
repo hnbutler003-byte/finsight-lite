@@ -1,4 +1,5 @@
 import { Switch, Route, Redirect, useLocation } from "wouter";
+import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -38,6 +39,15 @@ import OrgHelp from "@/pages/OrgHelp";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import OurStory from "@/pages/OurStory";
+
+// Scrolls to the top of the page on every route change.
+function ScrollToTop() {
+  const [location] = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location]);
+  return null;
+}
 
 // Persistent banner shown during founder admin preview mode.
 // Queries /api/admin/preview/status every 10 s; only visible when previewMode is true.
@@ -226,6 +236,7 @@ function App() {
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
+          <ScrollToTop />
           <PreviewBanner />
           <Router />
           <Toaster />
