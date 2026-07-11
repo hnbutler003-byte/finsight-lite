@@ -1,0 +1,35 @@
+INVESTIGATE FIRST. Do not write any fix code until Phase 1 is complete and you have reported findings.
+
+CONTEXT: The Investment Simulator lets students buy/sell stocks and bonds with a virtual starting balance of B$10,000. Two suspected bugs need root-cause diagnosis before fixing:
+
+BUG 1 — Virtual Cash balance does not decrement after a purchase.
+Example: starting balance B$10,000. Student buys 10 shares of BTC-BS at B$5.25 avg (-B$52.50) and 5 shares of CBL-BS at B$7.90 avg (-B$39.50). Recent Trades ledger correctly shows both debits. Virtual Cash card still displays B$10,000.00 instead of the expected ~B$9,908.
+
+BUG 2 — Price mismatch between the "Real Market Prices" BISX ticker strip and the actual tradable Buy/Sell cards for the same stock.
+Example: CBL (Commonwealth Bank) shows B$17.00 on the ticker strip but B$8.09 on the Buy card. FCL shows B$11.50 on the strip but B$3.73 on the Buy card. These should be the same number, sourced from the same feed.
+
+PHASE 1 — DIAGNOSIS (report back before changing anything)
+1. Locate the buy/sell transaction handler (client and server/API side). Trace exactly what happens to the student's cash balance field on a successful purchase: is it recalculated and written to the database, or only appended to a trade history log?
+2. Locate every place stock/bond prices are sourced or stored. Identify whether there is one price table/feed or multiple (e.g. one for the "Real Market Prices" display strip, another for the tradable Buy/Sell cards). Confirm whether a live BISX data integration exists at all right now, or whether prices are static/seeded/mocked in one or both places.
+3. Check the sell flow for the same cash-crediting issue (does selling correctly add cash back?).
+4. Check whether Net Worth (Virtual Cash + Invested Value) is calculated from the live cash field or from a separately cached/stale value.
+5. Check whether this same cash/price logic is what feeds the Teacher Dashboard's Investment Simulator analytics (Students Invested, Avg Stocks Held, net worth, gain/loss %, gain/loss since starting $10,000). If those analytics pull from the same broken fields, flag that explicitly.
+6. Report back: root cause of each bug in plain terms, every file/table touched, and whether Bug 1 and Bug 2 share a common cause or are fully independent.
+
+Do not proceed to Phase 2 until this diagnosis is reported.
+
+PHASE 2 — FIX (only after Phase 1 is reviewed and approved)
+1. Fix the cash balance so it correctly debits on buy and credits on sell, in real time, persisted to the database, not just reflected in the trade history log.
+2. Unify the price source so the "Real Market Prices" display strip and the tradable Buy/Sell cards read from the exact same source for every ticker, all six BISX tickers (CBL, FCL, CAB, DHS, JSJ, CHB) plus BTC-BS shown separately if it's a duplicate/alias of one of these, confirm and reconcile.
+3. Recalculate Net Worth from the corrected live cash field, not a cached value.
+4. Confirm the write function for cash balance updates throws a clear, catchable error on failure rather than silently returning null, undefined, or false.
+5. Confirm Teacher Dashboard Investment Simulator analytics (net worth, gain/loss, gain/loss %) recalculate correctly once the underlying student data is fixed, spot check with the corrected values.
+6. Do NOT change any UI layout, card structure, or wording, this is a data integrity fix only, not a redesign.
+7. Verify the Virtual Cash, Invested Value, and Net Worth cards render correctly in both light mode and dark mode after the fix (text contrast, colored amount visibility per index.css .dark overrides).
+8. No em dashes in any code comments, strings, or commit messages.
+9. If this fix requires installing or updating any packages, run the pnpm lockfile proxy fix and verify: sed -i 's|http://package-firewall.replit.local/npm|https://registry.npmjs.org|g' pnpm-lock.yaml, then confirm with grep -c "package-firewall.replit.local" pnpm-lock.yaml returns 0, then commit pnpm-lock.yaml with package.json.
+
+PHASE 3 — VERIFICATION (report back with evidence, not a completion claim)
+1. Show the actual before/after cash balance for a test buy and a test sell, with real numbers.
+2. Show the actual price value pulled from both the display strip and the buy card for at least 3 tickers, confirming they now match.
+3. Confirm via git diff or equivalent what files were actually changed, do not just report "fixed" without this evidence.
