@@ -92,6 +92,8 @@ export interface IStorage extends IAuthStorage {
   getMarketStocks(currency?: string): Promise<SimulatedStock[]>;
   getStockById(id: number): Promise<SimulatedStock | undefined>;
   simulateMarketPrices(): Promise<void>;
+  getAdminManagedStocks(): Promise<SimulatedStock[]>;
+  setAdminStockPrice(stockId: number, price: number): Promise<SimulatedStock>;
   getPortfolioHoldings(userId: string): Promise<(PortfolioHolding & { stock: SimulatedStock })[]>;
   getPortfolioHolding(userId: string, stockId: number): Promise<PortfolioHolding | undefined>;
   upsertPortfolioHolding(userId: string, stockId: number, quantity: number, avgPrice: number): Promise<PortfolioHolding>;
@@ -428,6 +430,30 @@ export class DatabaseStorage implements IStorage {
     return stock;
   }
 
+  async getAdminManagedStocks(): Promise<SimulatedStock[]> {
+    return await db.select().from(simulatedStocks)
+      .where(eq(simulatedStocks.isAdminManaged, true));
+  }
+
+  async setAdminStockPrice(stockId: number, price: number): Promise<SimulatedStock> {
+    const [stock] = await db.select().from(simulatedStocks).where(eq(simulatedStocks.id, stockId));
+    if (!stock) throw new Error("Stock not found");
+    const prev = parseFloat(stock.currentPrice as string);
+    const changePct = prev > 0 ? ((price - prev) / prev) * 100 : 0;
+    const [updated] = await db.update(simulatedStocks)
+      .set({
+        previousPrice: stock.currentPrice,
+        currentPrice: price.toFixed(2),
+        priceChangePct: changePct.toFixed(2),
+        lastPriceUpdateDate: new Date().toISOString().slice(0, 10),
+        priceUpdatedAt: new Date(),
+      })
+      .where(eq(simulatedStocks.id, stockId))
+      .returning();
+    if (!updated) throw new Error("Failed to update stock price");
+    return updated;
+  }
+
   async simulateMarketPrices(): Promise<void> {
     const today = new Date().toISOString().slice(0, 10);
     const stocks = await db.select().from(simulatedStocks);
@@ -436,6 +462,7 @@ export class DatabaseStorage implements IStorage {
 
     for (const stock of stocks) {
       if (stock.lastPriceUpdateDate === today) continue;
+      if (stock.isAdminManaged) continue;
       const current = parseFloat(stock.currentPrice as string);
 
       let maxPct: number;
@@ -526,11 +553,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateVirtualBalance(userId: string, newBalance: number): Promise<UserVirtualBalance> {
-    const existing = await this.getVirtualBalance(userId);
+    await this.getVirtualBalance(userId);
     const [updated] = await db.update(userVirtualBalance)
       .set({ balance: newBalance.toFixed(2) })
       .where(eq(userVirtualBalance.userId, userId))
       .returning();
+    if (!updated) throw new Error(`updateVirtualBalance: no row matched userId ${userId}`);
     return updated;
   }
 
@@ -568,10 +596,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   static readonly MARKET_DATA_SEED: (typeof simulatedStocks.$inferInsert)[] = [
-      { name: "Bahamas Telecommunications Company", ticker: "BTC-BS", type: "stock", description: "The national telecom provider of The Bahamas. Owning this stock means you own a small piece of the company that keeps Bahamians connected.", currentPrice: "5.50", currency: "BSD", issuer: "BTC Ltd.", region: "Bahamas", riskLevel: "medium", annualReturnPct: "4.20" },
-      { name: "Commonwealth Bank", ticker: "CBL-BS", type: "stock", description: "One of the largest banks in The Bahamas. Banks make money by lending and investing, and shareholders benefit when the bank does well.", currentPrice: "8.25", currency: "BSD", issuer: "Commonwealth Bank Ltd.", region: "Bahamas", riskLevel: "medium", annualReturnPct: "5.10" },
-      { name: "Focol Holdings", ticker: "FCL-BS", type: "stock", description: "A Bahamian energy company that distributes fuel. Energy companies tend to be stable because people always need electricity and gas.", currentPrice: "3.80", currency: "BSD", issuer: "Focol Holdings Ltd.", region: "Bahamas", riskLevel: "medium", annualReturnPct: "3.50" },
-      { name: "Cable Bahamas", ticker: "CAB-BS", type: "stock", description: "Provides cable TV, internet, and phone services across The Bahamas. Tech and media companies can grow fast but also face competition.", currentPrice: "4.10", currency: "BSD", issuer: "Cable Bahamas Ltd.", region: "Bahamas", riskLevel: "medium", annualReturnPct: "3.80" },
+      { name: "Bahamas Telecommunications Company", ticker: "BTC-BS", type: "stock", description: "The national telecom provider of The Bahamas. Owning this stock means you own a small piece of the company that keeps Bahamians connected.", currentPrice: "5.50", currency: "BSD", issuer: "BTC Ltd.", region: "Bahamas", riskLevel: "medium", annualReturnPct: "4.20", isAdminManaged: true },
+      { name: "Commonwealth Bank", ticker: "CBL-BS", type: "stock", description: "One of the largest banks in The Bahamas. Banks make money by lending and investing, and shareholders benefit when the bank does well.", currentPrice: "8.25", currency: "BSD", issuer: "Commonwealth Bank Ltd.", region: "Bahamas", riskLevel: "medium", annualReturnPct: "5.10", isAdminManaged: true },
+      { name: "Focol Holdings", ticker: "FCL-BS", type: "stock", description: "A Bahamian energy company that distributes fuel. Energy companies tend to be stable because people always need electricity and gas.", currentPrice: "3.80", currency: "BSD", issuer: "Focol Holdings Ltd.", region: "Bahamas", riskLevel: "medium", annualReturnPct: "3.50", isAdminManaged: true },
+      { name: "Cable Bahamas", ticker: "CAB-BS", type: "stock", description: "Provides cable TV, internet, and phone services across The Bahamas. Tech and media companies can grow fast but also face competition.", currentPrice: "4.10", currency: "BSD", issuer: "Cable Bahamas Ltd.", region: "Bahamas", riskLevel: "medium", annualReturnPct: "3.80", isAdminManaged: true },
       { name: "Bahamas Government Registered Stock (5-Year)", ticker: "BGRS-5Y", type: "bond", description: "A bond issued by the Central Bank of The Bahamas. When you buy this, you are lending money to the government, and they pay you back with interest. Government bonds are considered very safe.", currentPrice: "100.00", currency: "BSD", issuer: "Central Bank of The Bahamas", region: "Bahamas", riskLevel: "low", annualReturnPct: "4.50" },
       { name: "Bahamas Treasury Bill (91-Day)", ticker: "BTB-91", type: "bond", description: "A short-term bond from the Bahamas government lasting about 3 months. T-Bills are one of the safest investments because the government backs them.", currentPrice: "99.00", currency: "BSD", issuer: "Central Bank of The Bahamas", region: "Bahamas", riskLevel: "low", annualReturnPct: "3.25" },
       { name: "Jamaica National Building Society", ticker: "JNBS-JM", type: "stock", description: "A major financial institution in Jamaica that helps people save money and buy homes through mortgages.", currentPrice: "125.00", currency: "JMD", issuer: "JN Group", region: "Jamaica", riskLevel: "medium", annualReturnPct: "6.00" },

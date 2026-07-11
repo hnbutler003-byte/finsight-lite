@@ -1,0 +1,87 @@
+INVESTIGATE PHASE 1 FIRST. Do not write fix code until Phase 1 is complete and reported.
+
+BACKGROUND: Two confirmed bugs in the Investment Simulator, plus a data sourcing 
+problem that needs a permanent fix.
+
+BUG 1 — Virtual Cash balance does not decrement/increment correctly on buy/sell.
+Prior diagnosis found that updateVirtualBalance() in storage.ts uses 
+db.update(userVirtualBalance).set(...).where(eq(userVirtualBalance.userId, userId)).returning() 
+and destructures the result as const [updated] = result without checking whether 
+any rows were actually updated. If zero rows match, this returns undefined silently, 
+no error is thrown, and the route proceeds as if the update succeeded.
+
+DATA SOURCING PROBLEM: There is currently no live BISX market data feed anywhere 
+in this codebase. Two disconnected fake price sources exist:
+1. A hardcoded static array (BISX_STOCKS in InvestmentSimulator.tsx) shown on the 
+   "Real Market Prices" ticker strip, which never updates and is mislabeled as 
+   "End of Day" / real-time.
+2. The simulated_stocks Supabase table, which drifts randomly by up to ±1.8%/day 
+   via a simulateMarketPrices() job, and feeds the actual tradeable Buy/Sell cards.
+BISX (bisxbahamas.com) has no public API and no data licensing program found. 
+The fix is to replace both fake sources with ONE real source: prices entered 
+manually by the founder/org admin, copied from the official BISX Price Sheet 
+(bisxbahamas.com/price-sheet) each trading day.
+
+PHASE 1 — CONFIRM BUG 1 ROOT CAUSE (report before fixing)
+1. Query the live Supabase database directly to confirm whether the 
+   user_virtual_balance table exists.
+2. If it exists, query it directly for a test user's row after a confirmed buy 
+   transaction. Report the raw row: userId value, balance value, and exact data 
+   types of both.
+3. Compare that userId's type/format against the value passed into 
+   updateVirtualBalance from the request handler. Confirm or rule out a 
+   type/case mismatch with direct evidence, not inference.
+4. Report findings before proceeding to Phase 2.
+
+PHASE 2 — FIX BUG 1
+1. Fix updateVirtualBalance so it throws a clear, catchable error if zero rows 
+   are updated, instead of silently returning undefined.
+2. Fix the actual root cause identified in Phase 1 so the balance correctly 
+   persists to the database on every buy and sell.
+3. Confirm Net Worth recalculates from the corrected live balance field, not a 
+   cached value.
+4. Confirm the sell flow correctly credits cash back (check for the same class 
+   of bug in reverse).
+
+PHASE 3 — BUILD MANUAL BISX PRICE ADMIN TOOL (replaces both fake price sources)
+1. Add a new table (or extend simulated_stocks) to store, per ticker: current 
+   price, previous close, last updated date, and last updated by (admin user).
+2. Build a simple admin-only interface, accessible only to the founder/org admin 
+   role, NOT visible to teachers or students, where Hailey can enter today's 
+   real closing price for each of the six BISX tickers currently in the app 
+   (CBL, FCL, CAB, plus BTC-BS if it maps to one of these, confirm and reconcile 
+   naming so there is exactly one ticker list, not two overlapping ones).
+3. This admin-entered price becomes the SINGLE source of truth for both the 
+   "Real Market Prices" ticker strip AND the tradeable Buy/Sell cards. Delete 
+   the hardcoded BISX_STOCKS array entirely. Disable/remove the 
+   simulateMarketPrices() random drift job entirely, it should not run anymore.
+4. Bonds (BGRS-5Y, BTB-91) are not on the BISX equity price sheet the same way, 
+   confirm how these are currently priced and leave them on their existing 
+   logic unless told otherwise, this admin tool is for the six equity tickers only.
+5. Display a visible "Prices last updated: [date]" label near the ticker strip 
+   and on the market page, sourced from the real last-updated timestamp, so 
+   students and teachers can see data freshness honestly instead of a fake 
+   "End of Day" label that isn't true.
+6. If a trading day passes with no admin update, prices should simply remain at 
+   the last entered value, not silently regenerate or drift. No synthetic 
+   fallback logic.
+7. Ensure the admin price-entry write function throws a clear, catchable error 
+   on failure rather than silently returning null, undefined, or false.
+8. This changes org-admin-facing UI/flow, so update the corresponding section 
+   of org-guide.md in this same prompt to document how to update daily BISX 
+   prices, written for a non-technical admin.
+9. Verify the admin price-entry screen and the ticker strip render correctly in 
+   both light mode and dark mode (text contrast, colored price/change indicators, 
+   glass-card backgrounds per index.css .dark overrides).
+10. No em dashes anywhere in code comments, UI strings, or the org-guide.md update.
+11. If this requires installing or updating any packages, run the pnpm lockfile 
+    proxy fix: sed -i 's|http://package-firewall.replit.local/npm|https://registry.npmjs.org|g' pnpm-lock.yaml, 
+    then confirm with grep -c "package-firewall.replit.local" pnpm-lock.yaml 
+    returns 0, then commit pnpm-lock.yaml with package.json.
+
+PHASE 4 — VERIFICATION (report with evidence, not a completion claim)
+1. Show before/after cash balance for a test buy and sell, real numbers.
+2. Show that the ticker strip and Buy/Sell cards now read the identical price 
+   for all six tickers, confirmed from the same database field.
+3. Confirm via git diff what files actually changed.
+4. Confirm org-guide.md was actually updated, show the added section.

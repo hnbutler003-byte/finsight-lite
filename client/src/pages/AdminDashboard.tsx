@@ -19,7 +19,7 @@ import {
   LogOut, Search, Download, Plus, Trash2, Pencil, ChevronLeft, ChevronRight,
   LayoutDashboard, BookOpen, X, Globe, ChevronDown, ChevronUp,
   CheckCircle2, XCircle, Layers, Medal, FileText, Eye, EyeOff, Minus, Copy, Check, Loader2,
-  Zap, AlertTriangle, Info, RefreshCw, Play, Clock, MessageCircle, Send, Bot
+  Zap, AlertTriangle, Info, RefreshCw, Play, Clock, MessageCircle, Send, Bot, TrendingUp
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { VideoField } from "@/components/VideoField";
@@ -166,6 +166,7 @@ const TABS = [
   { id: "audit", label: "Audit Log", icon: FileText },
   { id: "dbviewer", label: "DB Viewer", icon: Building2 },
   { id: "demoorg", label: "Demo Org", icon: Eye },
+  { id: "market-prices", label: "Market Prices", icon: TrendingUp },
 ];
 
 function ObservabilityCard() {
@@ -1971,6 +1972,100 @@ function PerfAgentPanel() {
   );
 }
 
+function MarketPricesPanel() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [priceInputs, setPriceInputs] = useState<Record<number, string>>({});
+
+  const { data: stocks = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/market-prices"],
+  });
+
+  const setPriceMutation = useMutation({
+    mutationFn: ({ id, price }: { id: number; price: string }) =>
+      apiRequest("POST", `/api/admin/market-prices/${id}`, { price }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/market-prices"] });
+      toast({ title: "Price updated", description: "Stock price has been saved." });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-2xl font-bold text-white">BISX Market Prices</h2>
+        <p className="text-sm text-slate-400 mt-1">
+          Set today's closing prices for the Bahamas equities shown in the BISX widget on the Investment Simulator.
+          Students see these prices when trading in BSD.
+        </p>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-slate-400 text-sm">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Loading stocks...
+        </div>
+      ) : stocks.length === 0 ? (
+        <p className="text-slate-500 text-sm">No admin-managed stocks found.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {stocks.map((s: any) => {
+            const lastUpdated = s.priceUpdatedAt
+              ? new Date(s.priceUpdatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+              : null;
+            const inputVal = priceInputs[s.id] ?? "";
+            return (
+              <div key={s.id} className="rounded-xl bg-slate-800 border border-slate-700 p-4 space-y-3" data-testid={`market-price-card-${s.id}`}>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-white">{s.ticker}</span>
+                    {lastUpdated && (
+                      <span className="text-xs text-slate-500">Updated {lastUpdated}</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400 truncate">{s.name}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 w-28">Current price</span>
+                  <span className="text-white font-semibold tabular-nums">BSD {parseFloat(s.currentPrice).toFixed(2)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    placeholder="New price"
+                    value={inputVal}
+                    onChange={e => setPriceInputs(p => ({ ...p, [s.id]: e.target.value }))}
+                    className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 h-8 text-sm w-32"
+                    data-testid={`input-market-price-${s.id}`}
+                  />
+                  <Button
+                    size="sm"
+                    disabled={!inputVal || setPriceMutation.isPending}
+                    onClick={() => {
+                      if (!inputVal) return;
+                      setPriceMutation.mutate({ id: s.id, price: inputVal });
+                      setPriceInputs(p => ({ ...p, [s.id]: "" }));
+                    }}
+                    className="bg-teal-600 hover:bg-teal-500 text-white text-xs h-8"
+                    data-testid={`button-set-price-${s.id}`}
+                  >
+                    Set Price
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const { admin, isLoading, logout } = useAdminAuth();
@@ -2887,6 +2982,12 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             )}
+          </div>
+        )}
+
+        {activeTab === "market-prices" && (
+          <div className="space-y-4">
+            <MarketPricesPanel />
           </div>
         )}
 

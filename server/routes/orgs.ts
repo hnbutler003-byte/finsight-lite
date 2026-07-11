@@ -381,6 +381,31 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
     res.json(data);
   });
 
+  // === ADMIN: MARKET PRICES ===
+  app.get("/api/admin/market-prices", isAdmin, async (_req, res) => {
+    try {
+      const stocks = await storage.getAdminManagedStocks();
+      res.json(stocks);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.post("/api/admin/market-prices/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid stock id" });
+      const { price } = req.body;
+      const priceNum = parseFloat(price);
+      if (isNaN(priceNum) || priceNum <= 0) return res.status(400).json({ message: "Price must be a positive number" });
+      const stock = await storage.setAdminStockPrice(id, priceNum);
+      await audit({ actorType: "admin", actorEmail: ADMIN_EMAIL, action: "admin.market_price.update", targetType: "simulated_stock", targetId: String(id), meta: { ticker: stock.ticker, price: stock.currentPrice }, req });
+      res.json(stock);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
   app.get("/api/admin/search", isAdmin, async (req, res) => {
     const q = String(req.query.q || "");
     const data = await storage.adminSearch(q);
@@ -1905,7 +1930,7 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
       const { db: rawDb } = await import("../db");
       const { teachers: teachersTable, classes: classesTable, classEnrollments: enrollmentsTable,
         users: usersTable, userXp, userLearningProgress, gameSessions, transactions, budgets,
-        savingsGoals, categories, portfolioHoldings, portfolioTransactions, simulatedStocks,
+        savingsGoals, categories, portfolioHoldings, portfolioTransactions, simulatedStocks, userVirtualBalance,
       } = await import("@shared/schema");
       const { eq: deq, and: dand, inArray: dinArray, isNull: disNull } = await import("drizzle-orm");
 
@@ -2090,6 +2115,9 @@ export async function registerOrgRoutes(app: Express): Promise<void> {
         if (cblStock) {
           await rawDb.insert(portfolioHoldings).values({ userId: "demo-test-s001", stockId: cblStock.id, quantity: 8, avgPurchasePrice: "7.90" });
           await rawDb.insert(portfolioTransactions).values({ userId: "demo-test-s001", stockId: cblStock.id, type: "buy", quantity: 8, pricePerUnit: "7.90", currency: "BSD" });
+          await rawDb.insert(userVirtualBalance)
+            .values({ userId: "demo-test-s001", balance: (10000 - 8 * 7.90).toFixed(2), currency: "BSD" })
+            .onConflictDoUpdate({ target: userVirtualBalance.userId, set: { balance: (10000 - 8 * 7.90).toFixed(2) } });
         }
       }
 

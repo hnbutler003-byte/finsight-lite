@@ -140,3 +140,25 @@ Use the Sign Out button in the sidebar to leave the demo.
 | Teachers | `/org/teachers` |
 | Lessons | `/org/lessons` |
 | Certificate branding | `/org/branding` |
+
+---
+
+## 10. BISX Market Prices (Founder Admin only)
+
+The BISX widget on the Investment Simulator shows real closing prices for four Bahamas equities: BTC-BS, CBL-BS, FCL-BS, and CAB-BS. These prices are not scraped automatically -- they must be entered manually by the Founder Admin after each market close.
+
+**Who does this:** The Founder Admin (CFAL staff), not school org admins.
+
+**Where:** Log in to the Founder Admin dashboard at `/admin`, then click the "Market Prices" tab in the left sidebar.
+
+**What you see:** A card for each of the four BISX equities showing the ticker, full company name, and current price stored in the system.
+
+**How to update a price:**
+1. In the "New price" box on a card, type today's closing price in BSD (e.g. `8.50`).
+2. Click "Set Price".
+3. The price is saved immediately. The widget on the Investment Simulator updates for all students.
+4. The card shows the date the price was last set, so you can confirm it is current.
+
+**What the student sees:** The BISX widget on the Investment Simulator (BSD territory only) shows the four tickers with today's price, the change from the previous day's price, and the date the prices were set. Prices set by the admin are never overwritten by the system's automatic daily price simulation -- the simulation skips admin-managed stocks.
+
+**When to update:** After the BISX closes each trading day (Monday through Friday). Prices do not need to be updated on weekends or public holidays.

@@ -107,6 +107,8 @@ export const simulatedStocks = pgTable("simulated_stocks", {
   region: text("region"),
   riskLevel: text("risk_level", { enum: ["low", "medium", "high"] }).default("medium").notNull(),
   annualReturnPct: numeric("annual_return_pct", { precision: 5, scale: 2 }),
+  isAdminManaged: boolean("is_admin_managed").default(false).notNull(),
+  priceUpdatedAt: timestamp("price_updated_at"),
 });
 
 export const portfolioHoldings = pgTable("portfolio_holdings", {

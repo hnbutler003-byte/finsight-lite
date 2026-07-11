@@ -17,56 +17,63 @@ import {
 } from "lucide-react";
 
 // ── BISX Widget ────────────────────────────────────────────────────────────
-const BISX_STOCKS = [
-  { symbol: "CBL",  name: "Commonwealth Bank Ltd.",          price: 17.00, change: +0.25, changePct: +1.49, open: 16.75, high: 17.10, low: 16.75, vol: "8,200" },
-  { symbol: "FCL",  name: "FOCOL Holdings Ltd.",             price: 11.50, change: -0.10, changePct: -0.86, open: 11.60, high: 11.65, low: 11.48, vol: "3,500" },
-  { symbol: "CAB",  name: "Cable Bahamas Ltd.",              price:  4.10, change:  0.00, changePct:  0.00, open:  4.10, high:  4.15, low:  4.08, vol: "1,100" },
-  { symbol: "DHS",  name: "Doctors Hospital Health System",  price: 10.25, change: +0.05, changePct: +0.49, open: 10.20, high: 10.30, low: 10.18, vol: "600"   },
-  { symbol: "JSJ",  name: "J.S. Johnson & Company Ltd.",     price: 13.75, change: -0.25, changePct: -1.79, open: 14.00, high: 14.00, low: 13.70, vol: "400"   },
-  { symbol: "CHB",  name: "Colina Holdings (Bahamas) Ltd.",  price:  7.75, change: +0.10, changePct: +1.31, open:  7.65, high:  7.80, low:  7.65, vol: "950"   },
-];
+function BISXWidget({ stocks }: { stocks: SimulatedStock[] }) {
+  const lastUpdated = stocks
+    .map(s => s.priceUpdatedAt)
+    .filter(Boolean)
+    .sort()
+    .at(-1);
+  const lastUpdatedDisplay = lastUpdated
+    ? new Date(lastUpdated as unknown as string).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : null;
 
-function BISXWidget() {
+  if (stocks.length === 0) {
+    return (
+      <div className="rounded-2xl overflow-hidden shadow-lg border border-white/10 p-6 text-center text-sm text-white/50" data-testid="bisx-widget">
+        No BISX prices available. Check back after market close.
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl overflow-hidden shadow-lg border border-white/10" data-testid="bisx-widget">
       {/* Header */}
       <div className="flex items-center gap-2.5 px-5 py-3.5 text-sm font-semibold" style={{ background: "#0A1F44", color: "#fff" }}>
         <span className="px-2 py-0.5 rounded text-xs font-extrabold tracking-wide" style={{ background: "#C9A84C", color: "#0A1F44" }}>BISX</span>
         Bahamas International Securities Exchange
-        <div className="ml-auto flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-green-400" style={{ animation: "pulse 1.8s ease-in-out infinite" }} />
-          <span className="text-xs font-semibold text-green-300">End of Day</span>
-        </div>
+        {lastUpdatedDisplay && (
+          <span className="ml-auto text-xs text-white/70" data-testid="bisx-last-updated">
+            Prices set {lastUpdatedDisplay}
+          </span>
+        )}
       </div>
 
       {/* Ticker grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 bg-white dark:bg-slate-900">
-        {BISX_STOCKS.map((s, idx) => {
-          const dir   = s.change > 0 ? "up" : s.change < 0 ? "down" : "flat";
-          const arrow = s.change > 0 ? "▲" : s.change < 0 ? "▼" : "-";
-          const sign  = s.change > 0 ? "+" : "";
-          const changeBg   = dir === "up" ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
-                           : dir === "down" ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
-                           : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400";
-          const isRightEdge = (idx + 1) % 3 === 0;
+      <div className="grid grid-cols-2 sm:grid-cols-4 bg-white dark:bg-slate-900">
+        {stocks.map((s, idx) => {
+          const current  = parseFloat(s.currentPrice as string);
+          const previous = parseFloat((s.previousPrice ?? s.currentPrice) as string);
+          const change   = current - previous;
+          const changePct = previous > 0 ? (change / previous) * 100 : 0;
+          const dir   = change > 0 ? "up" : change < 0 ? "down" : "flat";
+          const arrow = change > 0 ? "\u25B2" : change < 0 ? "\u25BC" : "-";
+          const changeBg = dir === "up" ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
+                         : dir === "down" ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
+                         : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400";
           return (
             <div
-              key={s.symbol}
-              className={`p-4 transition-colors hover:bg-blue-50 dark:hover:bg-slate-800 ${!isRightEdge ? "border-r border-slate-100 dark:border-slate-700" : ""} ${idx >= 3 ? "border-t border-slate-100 dark:border-slate-700" : ""}`}
-              data-testid={`bisx-ticker-${s.symbol}`}
+              key={s.ticker}
+              className={`p-4 transition-colors hover:bg-blue-50 dark:hover:bg-slate-800 ${idx % 4 !== 3 ? "border-r border-slate-100 dark:border-slate-700" : ""} ${idx >= 4 ? "border-t border-slate-100 dark:border-slate-700" : ""}`}
+              data-testid={`bisx-ticker-${s.ticker}`}
             >
-              <p className="text-xl font-extrabold tabular-nums text-[#0A1F44] dark:text-white">{s.symbol}</p>
+              <p className="text-xl font-extrabold tabular-nums text-[#0A1F44] dark:text-white">{s.ticker.replace("-BS", "")}</p>
               <p className="text-xs text-slate-400 mt-0.5 mb-3 truncate">{s.name}</p>
               <p className="text-2xl font-bold tabular-nums text-slate-800 dark:text-slate-100">
-                <span className="text-xs text-slate-400 font-normal mr-0.5">BSD</span>{s.price.toFixed(2)}
+                <span className="text-xs text-slate-400 font-normal mr-0.5">BSD</span>{current.toFixed(2)}
               </p>
               <span className={`inline-flex items-center gap-1 text-xs font-bold mt-2 px-2 py-1 rounded ${changeBg}`}>
-                {arrow}&nbsp;{sign}{s.change.toFixed(2)} ({sign}{s.changePct.toFixed(2)}%)
+                {arrow}&nbsp;{change >= 0 ? "+" : ""}{change.toFixed(2)} ({changePct >= 0 ? "+" : ""}{changePct.toFixed(2)}%)
               </span>
-              <div className="mt-2 text-xs text-slate-400 space-y-0.5">
-                <p>O: {s.open.toFixed(2)} · H: {s.high.toFixed(2)} · L: {s.low.toFixed(2)}</p>
-                <p>Vol: {s.vol}</p>
-              </div>
             </div>
           );
         })}
@@ -74,7 +81,7 @@ function BISXWidget() {
 
       {/* Footer */}
       <div className="flex items-center justify-between flex-wrap gap-2 px-5 py-2.5 text-xs text-slate-500 bg-slate-50 dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700">
-        <span>Prices in BSD · Updated after market close (Mon–Fri, after 3 pm EST)</span>
+        <span>Prices in BSD · Closing prices entered by CFAL admin</span>
         <a
           href="https://www.bisxbahamas.com/price-sheet/"
           target="_blank"
@@ -603,7 +610,7 @@ export default function InvestmentSimulator() {
                     <h3 className="text-sm font-semibold text-white/80">Real Market Prices</h3>
                     <span className="text-xs text-white/50">Check today's actual BISX prices before you trade</span>
                   </div>
-                  <BISXWidget />
+                  <BISXWidget stocks={(market || []).filter(s => s.isAdminManaged)} />
                 </div>
               )}
 
