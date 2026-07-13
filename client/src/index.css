@@ -443,6 +443,23 @@
   box-shadow: var(--shadow-glow-coral);
 }
 
+/* ── 11. MILESTONE BADGE (Ready to Bank and future real-world milestones) ── */
+/* Deliberately NOT coral: coral is reserved for XP, streaks, and game scores. */
+/* Milestone badges use gold/amber to signal real-world achievement. */
+.badge-milestone {
+  background: linear-gradient(135deg, hsl(43 96% 46%), hsl(36 92% 50%));
+  color: #fff;
+  border-radius: var(--radius-badge);
+  padding: 0.2rem 0.7rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  box-shadow: 0 2px 10px hsl(43 96% 46% / 0.40);
+}
+
 .xp-pill {
   background: linear-gradient(135deg, hsl(var(--coral)), hsl(32 95% 60%));
   color: white;

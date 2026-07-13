@@ -62,6 +62,54 @@ const EXCHANGE_RATES_TO_USD: Record<string, number> = {
   HTG: 0.0075,
 };
 
+const READY_TO_BANK_TERRITORY_NAMES: Record<string, string> = {
+  BSD: "The Bahamas",
+  JMD: "Jamaica",
+  TTD: "Trinidad and Tobago",
+  BBD: "Barbados",
+  XCD: "the Eastern Caribbean",
+  GYD: "Guyana",
+  HTG: "Haiti",
+};
+
+function buildDocumentChecklistText(territory: string): string {
+  if (territory === "BSD") {
+    return "To open an account, your child will need: a valid birth certificate and a valid passport.";
+  }
+  return (
+    "To open an account, bring a form of photo ID and your parent or guardian. " +
+    "Exact requirements vary by bank, ask your Org Admin or teacher to confirm before your visit."
+  );
+}
+
+function buildReadyToBankGuardianEmail(studentName: string, territory: string): string {
+  const countryName = READY_TO_BANK_TERRITORY_NAMES[territory] ?? territory;
+  const docChecklist = buildDocumentChecklistText(territory);
+  return `<!doctype html><html><body style="font-family:system-ui,Arial,sans-serif;background:#f6f7fb;padding:24px;margin:0">
+<div style="max-width:580px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08)">
+  <div style="background:linear-gradient(135deg,#0d9488,#0f766e);padding:24px 32px">
+    <span style="font-family:Georgia,serif;font-size:20px;font-weight:bold;color:#fff;letter-spacing:0.01em">FinSight Lite</span>
+  </div>
+  <div style="height:3px;background:linear-gradient(to right,#d4af37,#f59e0b)"></div>
+  <div style="padding:32px">
+    <h1 style="font-size:22px;font-weight:bold;color:#0f172a;margin:0 0 12px">${escapeHtml(studentName)} is ready to open their first bank account.</h1>
+    <p style="font-size:15px;color:#475569;line-height:1.6;margin:0 0 20px">
+      This is a genuine milestone. ${escapeHtml(studentName)} has completed the Real Life Ready module on FinSight Lite, covering how to open a bank account in ${escapeHtml(countryName)}, how to read a payslip, and how to recognise scams and financial fraud.
+    </p>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:18px 20px;margin:0 0 20px">
+      <p style="font-size:14px;font-weight:600;color:#14532d;margin:0 0 8px">What to bring to the bank</p>
+      <p style="font-size:14px;color:#166534;margin:0;line-height:1.5">${escapeHtml(docChecklist)}</p>
+    </div>
+    <p style="font-size:14px;color:#64748b;line-height:1.6;margin:0 0 16px">Opening a bank account involves no cost or obligation for a minor. Your child can access the document they prepared in their FinSight Lite account at any time.</p>
+    <p style="font-size:14px;color:#64748b;line-height:1.6;margin:0">If you have questions, reach out to ${escapeHtml(studentName)}'s teacher or school for guidance.</p>
+  </div>
+  <div style="padding:16px 32px;background:#f8fafc;border-top:1px solid #e2e8f0">
+    <p style="font-size:12px;color:#94a3b8;margin:0;text-align:center">FinSight Lite  |  Financial Literacy for Caribbean Youth</p>
+  </div>
+</div>
+</body></html>`;
+}
+
 export async function registerStudentRoutes(app: Express): Promise<void> {
 
   // ── YouTube oEmbed proxy ───────────────────────────────────────────────────
@@ -1124,6 +1172,68 @@ Rules:
       res.json(progress);
     } catch (err: any) {
       res.status(500).json({ message: err.message });
+    }
+  });
+
+  // === READY TO BANK ===
+
+  app.get("/api/ready-to-bank", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const record = await storage.getReadyToBank(userId);
+      res.json(record ?? null);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.post("/api/ready-to-bank", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { territory } = z.object({ territory: z.string().min(2).max(10) }).parse(req.body);
+
+      const existing = await storage.getReadyToBank(userId);
+      if (existing) return res.json({ readyToBank: existing, badgeEarned: false, emailSent: false });
+
+      const record = await storage.markReadyToBank(userId, territory);
+
+      let badgeEarned = false;
+      try {
+        await storage.addUserBadge({ userId, badgeId: "ready-to-bank" });
+        badgeEarned = true;
+      } catch {}
+
+      let emailSent = false;
+      try {
+        const user = await storage.getUser(userId);
+        const firstName = (user as any)?.firstName?.trim() || "";
+        const lastName = (user as any)?.lastName?.trim() || "";
+        const studentName = firstName
+          ? (lastName ? `${firstName} ${lastName}` : firstName)
+          : ((user as any)?.username ?? "Your student");
+        const [guardianContact] = await emailDb.select().from(emailContacts).where(
+          andEmail(eqEmail(emailContacts.userKind, "guardian"), eqEmail(emailContacts.userId, userId))
+        );
+        if (guardianContact) {
+          const html = buildReadyToBankGuardianEmail(studentName, territory);
+          const result = await sendEmail({
+            to: guardianContact.email,
+            subject: `${studentName} is ready to open their first bank account`,
+            html,
+            kind: "ready-to-bank",
+            orgId: guardianContact.orgId ?? null,
+            userKind: "guardian",
+            userId,
+          });
+          emailSent = result.ok;
+        }
+      } catch (emailErr) {
+        captureError(emailErr as Error);
+      }
+
+      res.json({ readyToBank: record, badgeEarned, emailSent });
+    } catch (err: any) {
+      res.status(err.message?.startsWith("[ReadyToBank]") ? 500 : 400).json({ message: err.message });
     }
   });
 

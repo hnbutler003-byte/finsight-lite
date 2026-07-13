@@ -43,6 +43,13 @@
       "when": 1783809374971,
       "tag": "0005_short_blackheart",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783900619722,
+      "tag": "0006_mature_catseye",
+      "breakpoints": true
     }
   ]
 }

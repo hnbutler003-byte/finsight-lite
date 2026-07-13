@@ -3,6 +3,8 @@ import { useTransactions, useDeleteTransaction } from "@/hooks/use-transactions"
 import { useCategories } from "@/hooks/use-categories";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { ReadyToBankCard } from "@/components/ReadyToBankCard";
+import type { ReadyToBank } from "@shared/schema";
 import { useAiStatus } from "@/hooks/use-ai-status";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -101,6 +103,15 @@ export default function Dashboard() {
     }
   });
 
+  const { data: readyToBankData } = useQuery<ReadyToBank | null>({
+    queryKey: ["/api/ready-to-bank"],
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const studentName = (user as any)?.firstName
+    ? ((user as any).firstName + ((user as any)?.lastName ? ` ${(user as any).lastName}` : ""))
+    : ((user as any)?.username ?? "Student");
+
   const { data: teacherFeedback } = useQuery<any[]>({
     queryKey: ["/api/student/feedback"],
   });
@@ -196,6 +207,10 @@ export default function Dashboard() {
               </TransactionForm>
             </div>
           </div>
+
+          {readyToBankData && (
+            <ReadyToBankCard readyToBank={readyToBankData} studentName={studentName} />
+          )}
 
           {!checklistDismissed && (
             <div className="glass-card rounded-glass p-5 animate-bounce-in" data-testid="section-student-checklist">

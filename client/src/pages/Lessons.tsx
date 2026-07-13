@@ -740,6 +740,23 @@ export default function Lessons() {
           if (scorePct >= 80) {
             updatedCompleted = markStaticDone(selectedLesson.id);
             queryClient.invalidateQueries({ queryKey: ["/api/user/xp"] });
+            // Check Ready to Bank: trigger when all required real-life lessons are done for the territory
+            const READY_TO_BANK_REQUIRED: Record<string, string[]> = {
+              BSD: ["static-real-1", "static-real-2", "static-real-3"],
+              JMD: ["static-real-1-jm", "static-real-3"],
+              TTD: ["static-real-1-tt", "static-real-3"],
+            };
+            const requiredIds = READY_TO_BANK_REQUIRED[userCurrency] ?? ["static-real-3"];
+            if (requiredIds.every(id => updatedCompleted.includes(id))) {
+              fetch("/api/ready-to-bank", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ territory: userCurrency }),
+              }).then(() => {
+                queryClient.invalidateQueries({ queryKey: ["/api/ready-to-bank"] });
+              }).catch(() => {});
+            }
           }
           // Detect module completion: all lessons in activeModule completed with 80%+
           const moduleComplete = activeModule

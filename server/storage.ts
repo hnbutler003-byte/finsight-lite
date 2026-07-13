@@ -2,6 +2,7 @@ import {
   users, categories, transactions, budgets, linkedCards, documentUploads, savingsGoals, billReminders,
   simulatedStocks, portfolioHoldings, portfolioTransactions, learningModules, userLearningProgress, userVirtualBalance,
   gameSessions, userXp, userBadges,
+  readyToBank,
   schools, sponsors,
   teachers, classes, classEnrollments, challenges, classNotifications, studentFeedback,
   deletionLog, emailContacts,
@@ -36,6 +37,7 @@ import {
   type ContentSection,
   type UserXp,
   type UserBadge, type InsertUserBadge,
+  type ReadyToBank,
 } from "@shared/schema";
 import { type BudgetResponse, type TransactionResponse } from "@shared/routes";
 import { db } from "./db";
@@ -118,6 +120,8 @@ export interface IStorage extends IAuthStorage {
   updateUserXp(userId: string, data: Partial<UserXp>): Promise<UserXp>;
   getUserBadges(userId: string): Promise<UserBadge[]>;
   addUserBadge(badge: InsertUserBadge): Promise<UserBadge>;
+  getReadyToBank(userId: string): Promise<ReadyToBank | undefined>;
+  markReadyToBank(userId: string, territory: string): Promise<ReadyToBank>;
 
   // Teacher Dashboard
   createTeacher(data: InsertTeacher & { passwordHash?: string | null }): Promise<Teacher>;
@@ -883,6 +887,19 @@ export class DatabaseStorage implements IStorage {
     const existing = await db.select().from(userBadges).where(and(eq(userBadges.userId, badge.userId), eq(userBadges.badgeId, badge.badgeId)));
     if (existing.length > 0) return existing[0];
     const [created] = await db.insert(userBadges).values(badge).returning();
+    return created;
+  }
+
+  async getReadyToBank(userId: string): Promise<ReadyToBank | undefined> {
+    const [row] = await db.select().from(readyToBank).where(eq(readyToBank.userId, userId));
+    return row;
+  }
+
+  async markReadyToBank(userId: string, territory: string): Promise<ReadyToBank> {
+    const existing = await this.getReadyToBank(userId);
+    if (existing) return existing;
+    const [created] = await db.insert(readyToBank).values({ userId, territory }).returning();
+    if (!created) throw new Error("[ReadyToBank] Failed to insert ready_to_bank record for user: " + userId);
     return created;
   }
 

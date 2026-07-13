@@ -1,0 +1,53 @@
+# Ready to Bank System — Phase 1 Build Prompt
+
+## Context
+Finsight Lite's core strategic insight, now backed by the Bank of Jamaica's 2022 youth financial literacy survey, is that Caribbean youth score well on financial knowledge (72.68%) but poorly on financial practice (46.56%), driven mainly by low banking rates (60% of in-school youth unbanked). The platform currently has no mechanism that converts a student finishing a lesson into a real-world outcome: an actual bank account. This build closes that gap.
+
+Do not treat this as a simple checklist feature. It is a connected system: a tracked readiness path, a generated artifact, and a parent-facing trigger. All three pieces must exist for this to work as intended.
+
+## Scope: Bahamas fully verified, other territories safe fallback
+Only the Bahamas' account-opening requirement is currently verified: a minor needs a birth certificate and a passport (not a school ID, this was a previously corrected error, do not reintroduce it). For Barbados, Jamaica, Trinidad and Tobago, and the Eastern Caribbean, do NOT hardcode a specific document list. Use this fallback copy instead: "Bring a form of photo ID and your parent or guardian. Exact requirements vary by bank, ask your Org Admin or teacher to confirm before your visit." This is a deliberate, temporary safeguard until each territory is independently verified, do not treat it as a placeholder to fill in with assumed data.
+
+## Part 1: Readiness Path (student-facing)
+Build a tracked progression through the existing Real Life Ready module content: Opening a Bank Account, Your Payslip & NIB, and Avoiding Scams & Fraud. A student completes the path when they finish all three lessons in that module for their territory (reuse existing lesson-completion tracking, do not duplicate it).
+
+On completion, transition the student into a "Ready to Bank" state, tracked per student, per territory, in the database. This must be a genuine database write with a clear catchable error on failure, never a silent no-op. Follow the same pattern used in the recent silent-failure audit: no function should return null/undefined/false on a failed write, throw instead.
+
+## Part 2: Generated Artifact
+When a student reaches the Ready to Bank state, generate a document reusing the platform's existing certificate generation infrastructure (do not build new PDF/document infrastructure from scratch). The artifact should include:
+- Student's name and territory
+- A clear "Ready to Open a Bank Account" heading
+- The territory-specific document checklist (Bahamas: verified list; all others: the safe fallback copy above)
+- Finsight Lite branding per the standard letterhead: primary logo top right, thin brand-gradient rule below it
+- A short, warm note framing this as an achievement, not a bureaucratic form
+
+Store a reference to the generated artifact on the student's record so it can be re-accessed later (e.g. from their dashboard), do not generate it as a one-time, unretrievable file.
+
+## Part 3: Parent-Facing Trigger
+Add an optional parent/guardian email field, collected at student signup if not already present (check existing schema first, do not duplicate a field that may already exist). If a parent email is on file, sending the Ready to Bank artifact and a short notification message triggers automatically the moment the student reaches the Ready to Bank state. If no parent email is on file, surface the artifact prominently on the student's own dashboard instead, with a clear prompt encouraging them to share it with a parent or guardian.
+
+The notification email itself:
+- Subject should be warm and specific (e.g. "[Student name] is ready to open their first bank account")
+- Body explains what the student accomplished, what to bring, and that no cost or obligation is involved
+- No em dashes anywhere in this copy
+- If any AI generation is used to personalize this message, use claude-sonnet-4-6 exclusively, never a deprecated model
+
+## Part 4: Gamification Tie-In
+Add a distinct "Ready to Bank" badge to the existing badge system. This must be visually distinct from streak, XP, and quiz badges, this is a milestone achievement, not a gamification loop element, so avoid defaulting it to the coral gamification color per the design system's usage rules (coral is reserved for XP, streaks, and game scores specifically). Use the badge unlock moment to trigger the existing bounce-in animation, consistent with how other achievement unlocks behave.
+
+## Standing requirements for this build
+- No em dashes anywhere: code comments, UI copy, email copy, generated document text
+- Every new or modified database write function must throw a clear, catchable error on failure, never return null/undefined/false silently
+- Verify all new UI (student dashboard prompt, badge, any admin-visible indicator) renders correctly in both light and dark mode: check text contrast, glass-card backgrounds, and badge color visibility in both modes
+- Use existing glass-card and radius conventions (--radius-glass, 28px), do not introduce new card styles
+- All dummy/test data must use realistic Caribbean names and territory-appropriate details, not generic placeholders
+- This is production code, not a demo. No hardcoded test values left in the final implementation
+- If this requires any new package installation, apply the pnpm-lock.yaml proxy fix (`sed -i 's|http://package-firewall.replit.local/npm|https://registry.npmjs.org|g' pnpm-lock.yaml`, then verify with `grep -c "package-firewall.replit.local" pnpm-lock.yaml` returns 0) before committing
+
+## Explicitly out of scope for Phase 1 (do not build yet)
+- Teacher/Org Admin dashboard analytics on readiness completions (this is Phase 2, a separate prompt)
+- Verified document requirements for Barbados, Jamaica, Trinidad and Tobago, or the Eastern Caribbean (requires dedicated research first)
+- Named partner bank recommendations per territory (requires an actual banking relationship first, do not invent one)
+
+## Before finishing
+Report back with direct evidence, not a self-graded summary: confirm the database write path for the Ready to Bank state with an actual query result, confirm the artifact generation produces a real file by generating one for a test student, and confirm the parent email trigger by showing the actual code path that fires it, not just a description of intended behavior.

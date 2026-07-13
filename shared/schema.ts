@@ -352,6 +352,19 @@ export const userBadges = pgTable("user_badges", {
   userIdx: index("idx_user_badges_user").on(t.userId),
 }));
 
+// === READY TO BANK ===
+
+export const readyToBank = pgTable("ready_to_bank", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().unique().references(() => users.id),
+  territory: text("territory").notNull(),
+  achievedAt: timestamp("achieved_at").defaultNow().notNull(),
+});
+
+export const insertReadyToBankSchema = createInsertSchema(readyToBank).omit({ id: true, achievedAt: true });
+export type ReadyToBank = typeof readyToBank.$inferSelect;
+export type InsertReadyToBank = z.infer<typeof insertReadyToBankSchema>;
+
 // === BACKGROUND JOBS ===
 
 export const jobs = pgTable("jobs", {
