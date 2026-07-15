@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeProvider } from "@/lib/theme";
 import { Loader2, Eye, X } from "lucide-react";
+import { InstallPromptBanner } from "@/components/InstallPromptBanner";
 import NotFound from "@/pages/not-found";
 
 import Dashboard from "@/pages/Dashboard";
@@ -238,6 +239,7 @@ function App() {
         <TooltipProvider>
           <ScrollToTop />
           <PreviewBanner />
+          <InstallPromptBanner />
           <Router />
           <Toaster />
         </TooltipProvider>

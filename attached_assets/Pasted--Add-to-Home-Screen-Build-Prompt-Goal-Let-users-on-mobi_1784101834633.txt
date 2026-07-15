@@ -1,0 +1,34 @@
+# Add to Home Screen — Build Prompt
+
+## Goal
+Let users on mobile browsers add Finsight Lite to their home screen with the Finsight Lite icon as the app cover, and show a small, dismissible instructional note guiding them through it. Reference behavior: a small banner near the bottom of the screen with brief, plain instructions, similar to how other consumer apps prompt this on first visit.
+
+## Part 1: Manifest and icons
+Add a `manifest.json` (or `manifest.webmanifest`) with:
+- `name`: "Finsight Lite"
+- `short_name`: "Finsight Lite"
+- `icons`: generate and reference properly sized versions of the icon-only mark (the bar-chart icon, not the full wordmark logo) at minimum 192x192 and 512x512
+- `theme_color` and `background_color` matching the brand's deep violet tone from the design tokens (`--grad-stop-1` / `--sidebar` values), not a generic default
+- `display: "standalone"`
+- `start_url` set to the app root
+
+Link the manifest in the document head. Separately, add the iOS-specific `<link rel="apple-touch-icon" href="...">` tag (180x180) in the head, since iOS Safari does not read manifest.json icons for home screen purposes, it only reads apple-touch-icon links. Confirm both icon sizes actually render as the bar-chart mark, not the wordmark or a placeholder, before finishing.
+
+## Part 2: Install prompt component
+Build a small, dismissible banner component that:
+- Detects whether the user is on a mobile browser and not already running in standalone/installed mode (check `window.matchMedia('(display-mode: standalone)')`)
+- Shows different copy depending on platform:
+  - iOS Safari: no native install API exists, show manual instructions, something like "Tap the Share icon, then Add to Home Screen" with a small share-icon glyph for clarity
+  - Android Chrome: listen for the native `beforeinstallprompt` event and offer a real one-tap "Add to Home Screen" button using that browser API, falling back to manual instructions if the event never fires
+- Is dismissible, and once dismissed, does not reappear for that user for a reasonable window (store dismissal state, don't nag on every visit)
+- Never shows to users already in standalone mode, or on desktop browsers
+
+## Styling
+- Use the existing `.glass-card` or `.glass-card-teal` convention, don't invent a new card style
+- Baloo 2 for the instructional heading, Nunito for the body text
+- Verify the banner is legible in both light and dark mode before finishing, check text contrast against whatever surface it sits on
+- Keep it small and non-blocking, this should feel like a light nudge, not a modal takeover
+- No em dashes in any of the instructional copy
+
+## Before finishing
+Confirm, with direct evidence rather than a summary: the manifest file is valid and correctly linked, the apple-touch-icon tag is present and points to the correct icon-only asset (not the wordmark), and the banner correctly does not appear when `display-mode: standalone` is already active. Report the actual file contents and the actual conditional logic, not just a description of intended behavior.
